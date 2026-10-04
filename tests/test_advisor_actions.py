@@ -335,6 +335,47 @@ class WindowAndIntegrityTests(unittest.TestCase):
 
 
 class ActionBoundaryRuleTests(unittest.TestCase):
+    def test_added_kan_supplies_ron_eligibility_only_for_robbery(self):
+        for tile, pon, points in (("0p", "555p", 2000), ("5p", "055p", 1000)):
+            with self.subTest(tile=tile):
+                s = own_action(tile + "123m456s77z12s", 6, ["0p|5p|5p|5p"])
+                s["melds"][0] = [{"type": 1, "tiles": tiles(pon)}]
+                s["melds"][1] = [{"type": 0, "tiles": tiles("123m")}]
+                s["left"] = 4
+                original = deepcopy(s)
+                advice = advise(s)
+                added = next(c for c in advice["candidates"] if c["action"] == "shouminkan")
+                discarded = next(c for c in advice["candidates"]
+                                 if c["action"] == "discard" and c["tile"] == tile)
+                robbery = next(r for r in added["opponentRisks"] if r["seat"] == 1)
+                ordinary = next(r for r in discarded["opponentRisks"] if r["seat"] == 1)
+                self.assertEqual(ordinary["yakuConfidence"], .6)
+                self.assertEqual(ordinary["probability"], .0108)
+                self.assertEqual(robbery["yakuConfidence"], 1)
+                self.assertEqual(robbery["probability"], .018)
+                self.assertEqual(added["robKanProbability"], .0258)
+                self.assertEqual(robbery["lossPoints"], points)
+                self.assertEqual(ordinary["lossPoints"], points)
+                self.assertAlmostEqual(sum(added["scoreBreakdown"].values()), added["score"], places=8)
+                self.assertEqual(s, original)
+                s["rivers"][1] = [{"tile": "5p", "called": True}]
+                safe = get_action(s, "shouminkan")
+                self.assertEqual(next(r for r in safe["opponentRisks"] if r["seat"] == 1)["probability"], 0)
+
+    def test_kita_retains_unknown_yaku_eligibility_discount(self):
+        s = own_action("123p123s789s45p77z4z", 11, [], players=3)
+        s["melds"][1] = [{"type": 1, "tiles": tiles("999p")}]
+        s["left"] = 4
+        original = deepcopy(s)
+        candidate = get_action(s, "kita")
+        remaining = unseen_counts(s)
+        ordinary = _danger("4z", remaining, _opponents(s, remaining))
+        self.assertEqual(candidate["opponentRisks"], ordinary[2])
+        self.assertEqual(candidate["robKanProbability"], round(ordinary[0], 4))
+        self.assertEqual(candidate["opponentRisks"][0]["yakuConfidence"], .6)
+        self.assertGreater(candidate["opponentRisks"][0]["probability"], 0)
+        self.assertEqual(s, original)
+
     def test_kita_replacement_has_rinshan_yaku_for_otherwise_yakuless_open_hand(self):
         s = own_action("456p789s23s55z4z", 11, [], players=3)
         s["melds"][0] = [{"type": 1, "tiles": tiles("111p")}]
