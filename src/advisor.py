@@ -431,6 +431,11 @@ def _one_shanten_branches(hand, counts, improvements, remaining, state, discard,
         unseen = list(remaining)
         unseen[index] -= 1
         opponents = _opponents(drawn, unseen)
+        if discard is not None:
+            # Reaching this draw means the root discard passed every locked hand.
+            for enemy in opponents:
+                if enemy["riichi"]:
+                    enemy["safe"].add(tile_index(discard))
         options = []
         for tile in sorted(_legal_discards(drawn)):
             _check_search()

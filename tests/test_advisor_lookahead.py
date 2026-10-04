@@ -227,6 +227,76 @@ class OneShantenProbabilityTests(unittest.TestCase):
 
 
 class OneShantenRiskTests(unittest.TestCase):
+    def test_survived_root_discard_matches_expanded_window_without_waiving_root_risk(self):
+        s = state()
+        s["riichi"][1] = True
+        s["riichiStep"][1] = 20
+        s["rivers"][1] = [{"tile": "9m", "step": 20}]
+        before = deepcopy(s)
+        branches, remaining = branches_for(s, "7z")
+        branch = next(b for b in branches if b["draw"] == "3s")
+        option = option_for(branches, "3s", "7z")
+        self.assertAlmostEqual(option["dealInProbability"], .00519324)
+        self.assertAlmostEqual(option["expectedDealInLoss"], 6.76)
+
+        expanded = deepcopy(s)
+        expanded["hand"].remove("7z")
+        expanded["hand"].append("3s")
+        expanded["rivers"][0].append({"tile": "7z", "step": 41})
+        expanded.update(lastDraw="3s", lastStep=49, left=44,
+                        lastAction={"name": "ActionDealTile", "seat": 0, "step": 49})
+        unseen = advisor.unseen_counts(expanded)
+        self.assertEqual(unseen, branch["remaining"])
+        opponents = advisor._opponents(expanded, unseen)
+        self.assertEqual(advisor._danger("7z", unseen, opponents[:1])[:2], (0., 0.))
+        events = advisor._opportunities(expanded, after_discard=True)
+        actual = advisor.advise(expanded)
+        self.assertEqual(actual["status"], "ready")
+        for option in branch["options"]:
+            with self.subTest(discard=option["discard"]):
+                outcome = advisor._ready_discard(
+                    {**branch, "options": [option]}, sum(unseen), opponents, events, expanded)
+                candidate = next(c for c in actual["candidates"] if c["tile"] == option["discard"])
+                self.assertEqual(outcome["score"], candidate["score"])
+                self.assertEqual(round(outcome["winProbability"], 4), candidate["winProbability"])
+                self.assertEqual(round(outcome["dealInProbability"], 4), candidate["dealInProbability"])
+                self.assertEqual(round(outcome["expectedDealInLoss"]), candidate["expectedDealInLoss"])
+        chosen = advisor._ready_discard(branch, sum(unseen), opponents, events, expanded)
+        self.assertEqual(chosen["discard"], actual["best"]["tile"])
+
+        root_danger, root_loss, _ = advisor._danger("7z", remaining, advisor._opponents(s, remaining))
+        root = next(c for c in advisor.advise(s)["candidates"] if c["tile"] == "7z")
+        self.assertAlmostEqual(root_danger, .0698556794)
+        self.assertAlmostEqual(root_loss, 344.76)
+        self.assertEqual(root["dealInProbability"], round(root_danger, 4))
+        self.assertEqual(root["expectedDealInLoss"], round(root_loss))
+        self.assertAlmostEqual(root["scoreBreakdown"]["currentDealInLoss"], -root_loss)
+        self.assertEqual(s, before)
+
+    def test_survived_root_five_is_safe_only_for_locked_opponents(self):
+        for suit in "mps":
+            for pair, discard, followup in (("55", "5", "5"), ("05", "0", "5"), ("05", "5", "0")):
+                for locked in ((), (1,), (1, 2), (1, 2, 3)):
+                    with self.subTest(suit=suit, discard=discard, followup=followup, locked=locked):
+                        s = state("123m123p123s45s" + pair + suit + "1z")
+                        for seat in locked:
+                            s["riichi"][seat] = True
+                            s["riichiStep"][seat] = 20
+                            s["rivers"][seat] = [{"tile": "9m", "step": 20}]
+                        branches, _ = branches_for(s, discard + suit)
+                        branch = next(b for b in branches if b["draw"] == "3s")
+                        option = option_for(branches, "3s", followup + suit)
+                        opponents = advisor._opponents(s, branch["remaining"])
+                        unlocked = [o for o in opponents if not o["riichi"]]
+                        danger, loss, _ = advisor._danger(followup + suit, branch["remaining"], unlocked)
+                        self.assertAlmostEqual(option["dealInProbability"], danger)
+                        self.assertAlmostEqual(option["expectedDealInLoss"], loss)
+                        if unlocked:
+                            self.assertGreater(danger, 0)
+                            self.assertGreater(loss, 0)
+                        else:
+                            self.assertEqual((danger, loss), (0., 0.))
+
     def test_followup_agrees_with_expanded_window_under_riichi_pressure(self):
         s = state("2345667m34568p44s")
         s["riichi"][1] = True
@@ -237,8 +307,8 @@ class OneShantenRiskTests(unittest.TestCase):
         expanded = deepcopy(s)
         expanded["hand"].remove("8p")
         expanded["hand"].append("4s")
-        expanded["rivers"][0].append({"tile": "8p"})
-        expanded.update(lastDraw="4s", left=12)
+        expanded["rivers"][0].append({"tile": "8p", "step": 41})
+        expanded.update(lastDraw="4s", lastStep=49, left=12)
         remaining = advisor.unseen_counts(expanded)
         self.assertEqual(remaining, branch["remaining"])
         opponents = advisor._opponents(expanded, remaining)
