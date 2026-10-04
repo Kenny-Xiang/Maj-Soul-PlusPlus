@@ -59,13 +59,15 @@ def score_components(advice):
         income = candidate["winProbability"] * candidate["expectedWinPoints"]
         loss = weight * candidate["expectedDealInLoss"]
         future = weight * candidate.get("futureForcedDealInLoss", 0)
+        followup = weight * candidate.get("futureDiscardDealInLoss", 0)
         deposit = candidate.get("expectedRiichiCost", 0)
         dora = candidate.get("newDoraRiskPenalty", 0)
         components[candidate["actionId"]] = {
             "winIncome": income, "weightedCurrentDealInLoss": loss,
             "weightedFutureForcedDealInLoss": future, "riichiCost": deposit,
+            "weightedFutureDiscardDealInLoss": followup,
             "newDoraRiskPenalty": dora,
-            "residual": candidate["score"] - income + loss + future + deposit + dora}
+            "residual": candidate["score"] - income + loss + future + followup + deposit + dora}
     return components
 
 

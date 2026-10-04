@@ -37,9 +37,11 @@ class AdvisorBenchmarkTests(unittest.TestCase):
                 self.assertTrue(candidates)
                 self.assertEqual(len({c["actionId"] for c in candidates}), len(candidates))
                 for candidate in candidates:
-                    for field in ("winProbability", "dealInProbability"):
-                        self.assertGreaterEqual(candidate[field], 0)
-                        self.assertLessEqual(candidate[field], 1)
+                    for field in ("winProbability", "dealInProbability", "futureDiscardDealInProbability"):
+                        self.assertGreaterEqual(candidate.get(field, 0), 0)
+                        self.assertLessEqual(candidate.get(field, 0), 1)
+                    self.assertLessEqual(candidate["winProbability"] + candidate["dealInProbability"] +
+                                         candidate.get("futureDiscardDealInProbability", 0), 1.0002)
                 # Reject NaN/Infinity anywhere, including nested replacement branches.
                 json.dumps(advice, allow_nan=False)
 
