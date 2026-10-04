@@ -1,0 +1,72 @@
+{
+  "session": "1791083755567-l18ejro5njd",
+  "serial": 5,
+  "time": "2026-10-04T03:16:12.402Z",
+  "kind": "turn",
+  "trigger": "ActionNewRound",
+  "step": 0,
+  "turnNumber": 1,
+  "statistics": {
+    "received": 4,
+    "errors": 0
+  },
+  "state": {
+    "phase": "playing",
+    "selfSeat": 0,
+    "hand": [
+      "8s",
+      "2z",
+      "9p",
+      "6s",
+      "1s",
+      "6s",
+      "7s",
+      "7s",
+      "8p",
+      "2z",
+      "2z",
+      "6z",
+      "7z",
+      "3p"
+    ],
+    "handComplete": true,
+    "historyComplete": true,
+    "baseline": "new_round",
+    "lastStep": 0,
+    "lastDraw": null,
+    "left": 54,
+    "doras": [
+      "8p"
+    ],
+    "scores": [
+      82600,
+      16100,
+      6300
+    ],
+    "rivers": [
+      [],
+      [],
+      [],
+      []
+    ],
+    "melds": [
+      [],
+      [],
+      [],
+      []
+    ],
+    "north": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "playerCount": 3,
+    "warning": "",
+    "round": {
+      "chang": 0,
+      "ju": 0,
+      "ben": 5
+    }
+  }
+}

@@ -1,0 +1,100 @@
+{
+  "date": "2026-10-04",
+  "name": "Maj-Soul++",
+  "version": "5.0",
+  "bundle": "/Users/kenny/Desktop/Maj-Soul++.app",
+  "architecture": "arm64",
+  "minimum_macos": "14.0",
+  "packager": "PyInstaller 6.22.0 onedir windowed",
+  "embedded_python": "3.12.14",
+  "embedded_pyobjc": "11.1",
+  "user_data": "~/Library/Application Support/Maj-Soul++",
+  "requires_external_python_node_xcode": false,
+  "javascript_tests": {
+    "passed": 16,
+    "failed": 0
+  },
+  "python_tests": {
+    "passed": 4,
+    "failed": 0
+  },
+  "frozen_native_test": {
+    "frames": 60,
+    "actions": 48,
+    "statistics_updates": 48,
+    "errors": 0,
+    "network_requests": false
+  },
+  "frozen_overlay_test": {
+    "upper_half": true,
+    "click_through": true,
+    "end_reset": true,
+    "sizes": [
+      [
+        1200,
+        760
+      ],
+      [
+        800,
+        600
+      ],
+      [
+        600,
+        400
+      ],
+      [
+        1200,
+        760
+      ]
+    ]
+  },
+  "dependency_scan": {
+    "mach_o_files": 10,
+    "external_non_system_dependencies": []
+  },
+  "gui": {
+    "name_window_menu_overlay_verified": true,
+    "game_login_page_loaded": true,
+    "new_login_required": true,
+    "single_instance_verified": true,
+    "stdin": "/dev/null",
+    "stdout_stderr": "launcher.log",
+    "tty": false
+  },
+  "previous_same_policy_live_match": {
+    "statistics_updates": 341,
+    "initial_deals": 6,
+    "other_player_action_updates": 214,
+    "max_parse_errors": 0,
+    "end_reset_signal_at": "2026-10-04T04:54:19.377Z",
+    "note": "End status is a reset signal; actual cleared state and UI verified separately in offline tests"
+  },
+  "limitations": [
+    "Apple Silicon build; other Macs not tested",
+    "New bundle has live initial deals and all-player action updates; complete-match reset also has offline coverage",
+    "Mid-round history depends on server recovery data"
+  ],
+  "new_bundle_live_match": {
+    "log": "/Users/kenny/Library/Application Support/Maj-Soul++/logs/2026-10-04T04-56-22-382027Z.jsonl",
+    "observed_until": "2026-10-04T05:04:04.757Z",
+    "statistics_updates": 166,
+    "triggers": {
+      "GameRestore": 1,
+      "ActionMJStart": 1,
+      "ActionNewRound": 3,
+      "ActionBaBei": 3,
+      "ActionDealTile": 71,
+      "ActionDiscardTile": 76,
+      "ActionChiPengGang": 8,
+      "ActionHule": 2,
+      "ActionAnGangAddGang": 1
+    },
+    "max_parse_errors": 0
+  },
+  "original_desktop_files_absent_during_frozen_tests": true,
+  "archive": {
+    "verified_original_files": 786,
+    "location": "Contents/Resources/archive/桌面原文件备份.tar.gz"
+  },
+  "recorded_at": "2026-10-04T05:04:07.667642+00:00"
+}

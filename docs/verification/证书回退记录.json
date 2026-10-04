@@ -1,0 +1,12 @@
+{
+  "recorded_at": "2026-10-04T03:32:40.541083+00:00",
+  "certificate_sha256": "6F2F2F7847A4BC92D290161A23411DDCC06ED0F479AC1EE2B129E25077B11192",
+  "scope": "仅撤回本项目加入用户钥匙串的 localhost 证书与其信任",
+  "delete_certificate_exit_code": 0,
+  "verification_after_removal": "CSSMERR_TP_NOT_TRUSTED",
+  "certificate_file_removed": true,
+  "private_key_file_removed": true,
+  "old_https_receiver_stopped": true,
+  "http_relay_proof": "已在真实雀魂 App 验证 postMessage → 本机 HTTP → 终端",
+  "http_relay_proof_server_stopped": true
+}

@@ -1,0 +1,26 @@
+{
+  "app": "雀魂麻將 Safari Web App",
+  "url": "https://game.maj-soul.com/1/",
+  "captured_start": "2026-10-04T10:29:22.291000+08:00",
+  "captured_end": "2026-10-04T10:30:18.107000+08:00",
+  "retained_websocket_frames": 60,
+  "decoded_action_count": 48,
+  "first_step": 63,
+  "last_step": 110,
+  "action_counts": {
+    "ActionDiscardTile": 23,
+    "ActionDealTile": 22,
+    "ActionBaBei": 1,
+    "ActionChiPengGang": 2
+  },
+  "seat_with_private_draw_tiles": 1,
+  "known_draws": 6,
+  "draws_without_tile_field": 16,
+  "complete_starting_hand_captured": false,
+  "complete_discard_history_captured": false,
+  "observer_removed": true,
+  "method": "Existing game WebSocket inbound message listener; offline XOR deobfuscation and Protobuf parsing",
+  "limitations": "Captured mid-round. No ActionNewRound or GameRestore in retained actions. Seat 1 is inferred to be the local player from private tile and operation fields.",
+  "schema_reference": "https://github.com/Apricot-S/majsoulrpa/blob/main/src/majsoulrpa/assets/protocol/liqi.proto",
+  "deobfuscation_reference": "https://github.com/Apricot-S/majsoulrpa/blob/main/src/majsoulrpa/screens/match/_action.py"
+}

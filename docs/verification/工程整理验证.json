@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-04",
+  "project": "Maj-Soul++",
+  "change_scope": "Organize source, tests, legacy code and documentation; update resource paths and build entrypoints",
+  "git_at_validation": {"initialized": false, "staged": false, "committed": false, "reason": "Historical state when the source organization checks were run, before the later request to create a commit"},
+  "source_tests": {
+    "entrypoint": "scripts/test.sh",
+    "javascript": {"passed": 16, "failed": 0},
+    "python": {"passed": 4, "failed": 0},
+    "native_webkit": {"frames": 60, "statistics_updates": 48, "errors": 0, "last_step": 110},
+    "overlay": {"upper_half": true, "click_through": true, "literal_text": true, "whole_match_reset": true, "sizes": [[1200, 760], [800, 600], [600, 400], [1200, 760]]}
+  },
+  "build": {
+    "entrypoint": "scripts/build.sh",
+    "output": "dist/Maj-Soul++.app",
+    "python": "3.12.14",
+    "pyobjc": "11.1",
+    "pyinstaller": "6.22.0",
+    "success": true,
+    "codesign_verify_deep_strict": "passed",
+    "frozen_verify_native": "passed",
+    "frozen_verify_overlay": "passed"
+  },
+  "test_isolation": "Local fixtures and nonpersistent WebKit data store; no game-server requests or active game interaction",
+  "installed_desktop_app_modified": false,
+  "runtime_logs_or_login_data_copied_into_project": false,
+  "legacy_full_backup_copied_into_project": false
+}

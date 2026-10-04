@@ -1,0 +1,17 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+.local/
+logs/
+archive/
+build/
+dist/
+*.app/
+*.egg-info/
+.pytest_cache/
+.env
+.env.*
+*.pem
+*.key
+/legacy/安装终端监听.js
