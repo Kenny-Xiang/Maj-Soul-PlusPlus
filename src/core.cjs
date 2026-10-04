@@ -83,7 +83,7 @@ function action(bytes, obfuscated = true) {
   } else if (['ActionDealTile', 'ActionDiscardTile'].includes(name)) {
     Object.assign(e, {seat: first(f, 1), tile: str(f, 2)});
     if (name === 'ActionDealTile') Object.assign(e, {left: first(f, 3), doras: strings(f, 6)});
-    else Object.assign(e, {moqie: Boolean(first(f, 5)), riichi: Boolean(first(f, 3)), doras: strings(f, 8)});
+    else Object.assign(e, {moqie: Boolean(first(f, 5)), riichi: Boolean(first(f, 3) || first(f, 9)), doras: strings(f, 8)});
   } else if (name === 'ActionChiPengGang') {
     Object.assign(e, {seat: first(f, 1), type: first(f, 2), tiles: strings(f, 3), froms: integers(f, 4)});
   } else if (name === 'ActionAnGangAddGang') {
@@ -124,6 +124,7 @@ function emptyState() {
   return {phase: 'waiting', selfSeat: null, hand: [], handComplete: false, historyComplete: false,
     baseline: null, lastStep: null, lastDraw: null, left: null, doras: [], scores: [],
     rivers: [[], [], [], []], melds: [[], [], [], []], north: [0, 0, 0, 0],
+    riichi: [null, null, null, null],
     playerCount: 4, warning: '尚未取得开局或恢复基线', round: null};
 }
 const tileFamily = t => t?.replace(/^0/, '5');
@@ -135,6 +136,7 @@ function apply(state, e) {
     const seat = e.selfSeat ?? state.selfSeat;
     Object.assign(state, emptyState(), {phase: 'playing', selfSeat: seat, hand: [...e.hand],
       handComplete: e.hand.length > 0, historyComplete: true, baseline: 'new_round',
+      riichi: [false, false, false, false],
       warning: '', lastStep: e.step, left: e.left, doras: e.doras, scores: e.scores,
       playerCount: e.scores.length || 4, round: {chang: e.chang, ju: e.ju, ben: e.ben}});
     return true;
@@ -150,7 +152,10 @@ function apply(state, e) {
   if (e.name === 'ActionDealTile' && e.tile) state.selfSeat = e.seat;
   if (e.doras?.length) state.doras = e.doras;
   if (e.scores?.length) state.scores = e.scores;
-  if (e.liqiSuccess && !e.liqiSuccess.failed) state.scores[e.liqiSuccess.seat] = e.liqiSuccess.score;
+  if (e.liqiSuccess) {
+    state.riichi[e.liqiSuccess.seat] = !e.liqiSuccess.failed;
+    if (!e.liqiSuccess.failed) state.scores[e.liqiSuccess.seat] = e.liqiSuccess.score;
+  }
   function invalidate(reason) {
     state.handComplete = state.historyComplete = false;
     state.warning = reason;

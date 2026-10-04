@@ -85,6 +85,78 @@ test('round end is not confused with end of whole match', () => {
   core.apply(s, {name:'ActionHule', step:11, matchEnd:true}); assert.equal(s.phase, 'ended');
 });
 
+test('normal and double riichi are confirmed per player and reset on the next round', () => {
+  for (const flag of [3, 9]) {
+    const s = core.emptyState();
+    assert.deepEqual(s.riichi, [null,null,null,null]);
+    const deal = {name:'ActionNewRound', step:0, selfSeat:0, hand:['1p'],
+      scores:[25000,25000,25000,25000], doras:['7p'], left:60, chang:0, ju:0, ben:0};
+    core.apply(s, deal);
+    const discard = core.action(core.envelope(actionFrame('ActionDiscardTile',1,
+      [...num(1,1), ...str(2,'3p'), ...num(flag,1)])).data);
+    assert.equal(discard.riichi, true);
+    core.apply(s, discard);
+    assert.equal(s.rivers[1][0].riichi, true);
+    assert.deepEqual(s.riichi, [false,false,false,false]);
+    const draw = core.action(core.envelope(actionFrame('ActionDealTile',2,
+      [...num(1,2), ...num(3,59), ...bytes(5,[...num(1,1), ...num(2,24000)])])).data);
+    core.apply(s, draw);
+    assert.deepEqual(s.riichi, [false,true,false,false]);
+    assert.equal(s.scores[1],24000);
+    assert.equal(core.apply(s, draw),false);
+    assert.equal(core.apply(s, deal),false);
+    assert.equal(s.riichi[1],true);
+    core.apply(s, {name:'ActionDiscardTile',step:3,seat:2,tile:'5p'});
+    core.apply(s, {name:'ActionHule',step:4,matchEnd:false});
+    assert.equal(s.riichi[1],true);
+    core.apply(s, {...deal,ju:1});
+    assert.deepEqual(s.riichi, [false,false,false,false]);
+  }
+});
+
+test('failed or interrupted declarations do not become confirmed riichi', () => {
+  for (const outcome of ['failed','ron']) {
+    const s = core.emptyState();
+    core.apply(s, {name:'ActionNewRound',step:0,hand:['1p'],scores:[35000,35000,35000],doras:[],left:50});
+    core.apply(s, {name:'ActionDiscardTile',step:1,seat:1,tile:'3p',riichi:true});
+    const frame = outcome === 'failed' ? actionFrame('ActionDealTile',2,
+      [...num(1,2), ...num(3,49), ...bytes(5,[...num(1,1), ...num(2,35000), ...num(4,1)])]) :
+      actionFrame('ActionHule',2);
+    core.apply(s, core.action(core.envelope(frame).data));
+    assert.deepEqual(s.riichi, [false,false,false,false]);
+    assert.equal(s.scores[1],35000);
+  }
+});
+
+test('riichi confirmations on calls and abortive draws are recorded without a declaration baseline', () => {
+  const confirmation = bytes(5,[...num(1,1), ...num(2,24000)]);
+  for (const frame of [
+    actionFrame('ActionChiPengGang',42,[...num(1,2), ...num(2,1),
+      ...str(3,'3p'), ...str(3,'3p'), ...str(3,'3p'), ...num(4,2), ...num(4,2), ...num(4,1), ...confirmation]),
+    actionFrame('ActionLiuJu',42,[...num(1,4), ...confirmation])
+  ]) {
+    const s = core.emptyState();
+    core.apply(s, core.action(core.envelope(frame).data));
+    assert.deepEqual(s.riichi, [null,true,null,null]);
+  }
+});
+
+test('restored actions recover confirmed riichi while an unverified snapshot leaves it unknown', () => {
+  const raw = (name, step, data) => bytes(2,[...num(1,step), ...str(2,name), ...bytes(3,data)]);
+  const response = new Uint8Array([...num(3,2), ...bytes(4,[
+    ...raw('ActionNewRound',0,[...str(4,'1p'), ...num(6,35000), ...num(6,35000), ...num(6,35000)]),
+    ...raw('ActionDiscardTile',1,[...num(1,1), ...str(2,'3p'), ...num(3,1)]),
+    ...raw('ActionDealTile',2,[...num(1,2), ...num(3,49), ...bytes(5,[...num(1,1), ...num(2,34000)])])
+  ])]);
+  const s = core.emptyState();
+  core.applyRestore(s, core.restore(response));
+  assert.deepEqual(s.riichi, [false,true,false,false]);
+  assert.equal(s.historyComplete,false);
+  core.applyRestore(s, {actions:[],step:2,snapshot:{selfSeat:0,hand:['1p'],doras:[],left:49,
+    chang:0,ju:0,ben:0,players:[{score:35000,discards:[],melds:[]}]}});
+  assert.deepEqual(s.riichi, [null,null,null,null]);
+});
+
 test('terminal shows missing baseline clearly', () => {
   const s = core.emptyState(); decoded.slice(0,4).forEach(e => core.apply(s,e));
   const out = formatTurn({time:'2026-10-04T02:29:24Z', step:66, turnNumber:1, trigger:'ActionDealTile', state:s, statistics:{received:4, errors:0}});
@@ -260,6 +332,9 @@ test('whole-match end resets all live statistics once and next match starts at u
       assert.equal(between.state.north[1],1);
       assert.equal(posts.filter(p=>p.reset).length,0);
       await feed(deal(1));
+      await feed(actionFrame('ActionDealTile',1,[...num(1,2), ...num(3,49),
+        ...bytes(5,[...num(1,0), ...num(2,34000)])]));
+      assert.equal(window.__mjMonitor.getSnapshot().state.riichi[0],true);
       const updatesBeforeEnd = posts.filter(p=>p.kind==='turn').length;
       const end = async () => {
         if (ending === 'notification') {
@@ -269,7 +344,7 @@ test('whole-match end resets all live statistics once and next match starts at u
           await feed(new Uint8Array([3,42,0,...bytes(2,num(2,1))]));
         } else {
           const payload = ending === 'ActionHule' ? bytes(6,[]) : ending === 'ActionNoTile' ? num(4,1) : bytes(2,[]);
-          await feed(actionFrame(ending,1,payload));
+          await feed(actionFrame(ending,2,payload));
         }
       };
       await end();

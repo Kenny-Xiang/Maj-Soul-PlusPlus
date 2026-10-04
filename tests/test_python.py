@@ -40,6 +40,26 @@ class OutputTests(unittest.TestCase):
             self.assertEqual(out.getvalue(), "")
             self.assertFalse(log.json_path.exists())
 
+    def test_riichi_marker_follows_other_players_names(self):
+        for players in (3, 4):
+            with self.subTest(players=players):
+                self.event['state'].update(playerCount=players, selfSeat=0,
+                                           riichi=[True, True, False, True])
+                text = format_turn(self.event)
+                self.assertIn('座位0 弃牌', text)
+                self.assertIn('座位1（已立直） 弃牌', text)
+                self.assertIn('座位2 弃牌', text)
+                self.assertNotIn('座位0（已立直）', text)
+                self.assertNotIn('座位2（已立直）', text)
+                self.assertEqual(text.count('（已立直）'), players - 2)
+
+    def test_unconfirmed_riichi_discard_does_not_mark_player(self):
+        self.event['state']['riichi'] = [False] * 4
+        self.event['state']['rivers'][1] = [{'tile': '1p', 'riichi': True}]
+        text = format_turn(self.event)
+        self.assertIn('1筒[立直]', text)
+        self.assertNotIn('（已立直）', text)
+
     def test_incomplete_hand_does_not_count_stale_tiles(self):
         event = deepcopy(self.event)
         event["state"]["handComplete"] = False

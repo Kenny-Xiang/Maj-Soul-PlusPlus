@@ -43,6 +43,7 @@ event = json.loads((ROOT / 'fixtures/turn.json').read_text())
 # A full four-player river/meld layout exercises the largest normal output.
 event['state']['playerCount'] = 4
 event['state']['rivers'] = [[{'tile': f'{i % 9 + 1}p'} for i in range(24)] for _ in range(4)]
+event['state']['riichi'] = [True, True, False, False]
 event['state']['warning'] = '<img src="invalid"> 是文本，不应变成 HTML 元素'
 evaluate(overlay_update(event))
 checks = []
@@ -64,8 +65,9 @@ for width, height in [(1200, 760), (800, 600), (600, 400), (1200, 760)]:
     assert info['top'] >= 0 and info['rows'] >= 16, info
     assert info['gameRight'] < info['recordingLeft'], info
     for label in ['最新动作：', '本机座位：', '剩余牌：', '本人手牌：', '宝牌指示：', '分数：',
-                  '座位0 弃牌', '座位3 弃牌', '副露：', '拔北：', '已知牌计数']:
+                  '座位0 弃牌', '座位1（已立直） 弃牌', '座位3 弃牌', '副露：', '拔北：', '已知牌计数']:
         assert label in info['gameText'] and label not in info['recordingText'], (label, info)
+    assert info['gameText'].count('（已立直）') == 1, info
     for label in ['次更新', '动作 #', '状态：', '完整性：', '说明：', '触发：', '入站', '解析错误']:
         assert label in info['recordingText'] and label not in info['gameText'], (label, info)
     assert info['clickTarget'] == 'underlay' and info['images'] == 0 and info['containsWarning'], info

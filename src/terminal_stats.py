@@ -72,7 +72,8 @@ def format_turn(event):
         discards = " ".join(tile(d["tile"]) + ("[立直]" if d.get("riichi") else "")
                             + ("[被鸣]" if d.get("called") else "") for d in river) or "—"
         melds = " / ".join(tiles(m["tiles"]) for m in state["melds"][index]) or "—"
-        lines += [f"座位{index} 弃牌({len(river)})：{discards}",
+        riichi = "（已立直）" if index != state["selfSeat"] and state.get("riichi", [None] * 4)[index] is True else ""
+        lines += [f"座位{index}{riichi} 弃牌({len(river)})：{discards}",
                   f"      副露：{melds}  拔北：{state['north'][index]}"]
     partial = "" if state["historyComplete"] and state["handComplete"] else "（仅已观察部分）"
     counts_text = " ".join(f"{tile(t)}×{n}" for t, n in sorted(counts.items())) or "—"
