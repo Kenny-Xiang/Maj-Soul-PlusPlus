@@ -14,4 +14,3 @@ dist/
 .env.*
 *.pem
 *.key
-/legacy/安装终端监听.js
