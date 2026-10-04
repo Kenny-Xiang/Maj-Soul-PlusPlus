@@ -209,8 +209,12 @@ if __name__ == "__main__":
         # Exercise the packaged runtime offline, without touching the game profile.
         import runpy
         test_root = ROOT / "source/tests" if getattr(sys, "frozen", False) else ROOT.parent / "tests"
-        test_name = {"--verify-native": "test_native.py", "--verify-overlay": "test_overlay.py",
-                     "--verify-advisor": "test_advisor.py"}[sys.argv[1]]
+        if sys.argv[1] == '--verify-advisor':
+            import unittest
+            suite = unittest.defaultTestLoader.discover(str(test_root), pattern='test_advisor*.py')
+            result = unittest.TextTestRunner(verbosity=2).run(suite)
+            raise SystemExit(0 if result.wasSuccessful() else 1)
+        test_name = "test_native.py" if sys.argv[1] == '--verify-native' else "test_overlay.py"
         sys.argv = [str(test_root / test_name)]
         runpy.run_path(str(test_root / test_name), run_name="__main__")
     else:

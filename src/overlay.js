@@ -22,13 +22,16 @@
     .advice { margin:0 0 9px; padding-bottom:9px; border-bottom:1px solid rgba(220,235,255,.18); }
     .advice-title { color:#aee6d1; font-weight:600; }
     .advice-message { color:#c7d4e2; }
+    .advice-warning { color:#ffe1a4; line-height:1.35; overflow-wrap:anywhere; }
     .recommendation { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px 12px; }
     .best-tile { color:#ffe1a4; font-size:1.8em; font-weight:700; line-height:1.3; }
+    .best-action { font-size:1.45em; }
     .efficiency { color:#c7e7ff; }
     .metrics { display:grid; grid-template-columns:1fr 1fr; gap:2px 10px; margin:4px 0; }
     .metric-label { display:inline; color:#bacbd9; }
     .metric-value { display:inline; color:#f4f7fc; font-weight:600; margin-left:4px; }
     .alternatives, .reasons { color:#d0dfec; overflow-wrap:anywhere; }
+    .alternatives { line-height:1.35; }
     .reasons { margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
     @media (max-width:850px) {
       .heading, .columns { grid-template-columns:minmax(0,3fr) minmax(0,2fr); column-gap:16px; }
@@ -44,7 +47,7 @@
       .alternatives { display:none; }
     }
   </style><section class="panel" aria-label="最新牌局统计">
-    <div class="heading"><span class="label">Maj-Soul++ · 牌局统计</span><span class="label">出牌建议 · 记录状态</span></div>
+    <div class="heading"><span class="label">Maj-Soul++ · 牌局统计</span><span class="label">行动建议 · 记录状态</span></div>
     <div class="columns"><div class="game"></div><div class="recording">
       <div class="advice" aria-live="polite" hidden></div>
       <div class="caption">等待对局 · 发牌及场上动作后自动更新</div><div class="details"></div>
@@ -52,7 +55,7 @@
   const panel = shadow.querySelector('.panel'), caption = shadow.querySelector('.caption');
   const game = shadow.querySelector('.game'), details = shadow.querySelector('.details');
   const advice = shadow.querySelector('.advice');
-  let adviceKey = null;
+  let adviceKey = null, expectedAdviceKey = null;
   function row(parent, className, text) {
     const element = document.createElement('div');
     element.className = className;
@@ -74,13 +77,54 @@
     return Number.isFinite(value) ? `${(Math.max(0, Math.min(1, value)) * 100).toFixed(1)}%` : '—';
   }
   function shantenLabel(candidate) {
+    if (candidate.replacementDraw) return (Number.isFinite(candidate.shanten)
+      ? candidate.shanten.toLocaleString('zh-CN', {maximumFractionDigits:1}) : '—') + ' 向听';
     return candidate.shanten === 0 ? (candidate.hasValidWait === false ? '形0向听·无有效听口' : '听牌') : number(candidate.shanten, ' 向听');
   }
-  function invalidateAdvice() {
+  function actionName(candidate) {
+    const tile = tileName(candidate.calledTile || candidate.tile || candidate.consumed?.[0]);
+    let name;
+    switch (candidate.action) {
+      case 'riichi': return `立直 · 打 ${tileName(candidate.tile)}`;
+      case 'chi': {
+        const tiles = [...(candidate.consumed || []), ...(candidate.calledTile ? [candidate.calledTile] : [])];
+        tiles.sort((a, b) => (Number(a[0]) || 5) - (Number(b[0]) || 5));
+        name = `吃 ${tiles.map(tileName).join('') || tile}`;
+        break;
+      }
+      case 'pon': name = `碰 ${tile}`; break;
+      case 'daiminkan': return `大明杠 ${tile}`;
+      case 'ankan': return `暗杠 ${tile}`;
+      case 'shouminkan': return `加杠 ${tile}`;
+      case 'kita': return '拔北';
+      case 'pass': return candidate.followupDiscard
+        ? `跳过 · 随后摸切 ${tileName(candidate.followupDiscard)}` : '不鸣牌 / 跳过';
+      case 'abort': return '九种九牌流局';
+      case 'wait': return '等待下一次行动';
+      default: return `打 ${tileName(candidate.tile)}`;
+    }
+    return name + (candidate.followupDiscard ? ` · 再打 ${tileName(candidate.followupDiscard)}` : '');
+  }
+  function actionKey(candidate) {
+    return candidate.actionId || JSON.stringify([candidate.action || 'discard', candidate.tile,
+      candidate.consumed, candidate.calledTile, candidate.followupDiscard]);
+  }
+  function efficiencyLabel(candidate) {
+    return `${candidate.replacementDraw ? '补牌后预计 ' : ''}${shantenLabel(candidate)} · 进张 ${number(candidate.ukeire, ' 张')}`;
+  }
+  function clearAdvice() {
     adviceKey = null;
     advice.replaceChildren();
     advice.hidden = true;
     fit();
+  }
+  function invalidateAdvice() {
+    expectedAdviceKey = null;
+    clearAdvice();
+  }
+  function expectAdvice(key) {
+    clearAdvice();
+    expectedAdviceKey = key;
   }
   function renderAdvice(result) {
     advice.replaceChildren();
@@ -88,31 +132,47 @@
     if (!result) return;
     advice.dataset.status = result.status || 'unavailable';
     const best = result.best || result.candidates?.[0];
-    if (result.status !== 'ready' || !best) {
+    if (!['ready', 'analysis'].includes(result.status) || !best) {
       row(advice, 'advice-message', result.message || '等待可分析的手牌');
       return;
     }
-    row(advice, 'advice-title', '当前建议 · 启发式估计，未校准');
+    row(advice, 'advice-title', (result.status === 'analysis' ? '当前手牌评估' : '当前建议') + ' · 启发式估计，未校准');
     const recommendation = row(advice, 'recommendation', '');
-    row(recommendation, 'best-tile', `打 ${tileName(best.tile)}`);
-    row(recommendation, 'efficiency', `${shantenLabel(best)} · 进张 ${number(best.ukeire, ' 张')}`);
-    const metrics = row(advice, 'metrics', '');
-    for (const [label, value] of [
-      ['后续胡牌率（估计）', percent(best.winProbability)],
-      ['本次放铳率（估计）', percent(best.dealInProbability)],
-      ['胡牌得点（估计）', number(best.expectedWinPoints)],
-      ['放铳输点（估计）', number(best.dealInPoints)],
-      ['攻守评分', number(best.score)],
-      ['本次预期损失（估计）', number(best.expectedDealInLoss)]
-    ]) {
-      const metric = row(metrics, '', '');
-      row(metric, 'metric-label', label);
-      row(metric, 'metric-value', value);
+    row(recommendation, 'best-tile' + (best.action && best.action !== 'discard' ? ' best-action' : ''), actionName(best));
+    if (best.action !== 'abort') {
+      row(recommendation, 'efficiency', efficiencyLabel(best));
+      const metrics = row(advice, 'metrics', '');
+      const replacement = best.replacementDraw;
+      const metricValues = [
+        ['后续胡牌率（估计）', percent(best.winProbability)],
+        ['胡牌得点（估计）', number(best.expectedWinPoints)],
+        ['攻守评分', number(best.score)]
+      ];
+      if (result.status !== 'analysis' && best.action !== 'wait') {
+        const riskLabel = replacement ? '操作风险（估计）'
+          : best.followupDiscard ? '后续弃牌风险（估计）' : '本次放铳率（估计）';
+        metricValues.splice(1, 0, [riskLabel, percent(best.dealInProbability)]);
+        metricValues.splice(3, 0, ['放铳输点（估计）', number(best.dealInPoints)]);
+        metricValues.push([replacement ? '操作预期损失（估计）' : '本次预期损失（估计）', number(best.expectedDealInLoss)]);
+      }
+      for (const [label, value] of metricValues) {
+        const metric = row(metrics, '', '');
+        row(metric, 'metric-label', label);
+        row(metric, 'metric-value', value);
+      }
     }
-    const alternatives = (result.candidates || []).filter(candidate => candidate.tile !== best.tile).slice(0, 2);
-    for (const candidate of alternatives) row(advice, 'alternatives',
-      `备选 ${tileName(candidate.tile)} · ${shantenLabel(candidate)} / ${number(candidate.ukeire, '张')} · 风险 ${percent(candidate.dealInProbability)} · 打点 ${number(candidate.expectedWinPoints)}（估计）`);
+    const seen = new Set([actionKey(best)]);
+    const alternatives = (result.candidates || []).filter(candidate => {
+      const key = actionKey(candidate);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    }).slice(0, result.warnings?.length ? 1 : 2);
+    for (const candidate of alternatives) row(advice, 'alternatives', candidate.action === 'abort'
+      ? `备选 ${actionName(candidate)}`
+      : `备选 ${actionName(candidate)} · ${candidate.replacementDraw ? '补牌后预计 ' : ''}${shantenLabel(candidate)} / ${number(candidate.ukeire, '张')} · 风险 ${percent(candidate.dealInProbability)} · 打点 ${number(candidate.expectedWinPoints)}（估计）`);
     if (best.reasons?.length) row(advice, 'reasons', best.reasons.slice(0, 2).join('；'));
+    if (result.warnings?.length) row(advice, 'advice-warning', `仅比较已核实动作 · ${result.warnings[0]}`);
   }
   function fit() {
     // Keep game and recording information in fixed columns within the upper half.
@@ -132,7 +192,7 @@
     parent.appendChild(host);
     fit();
   }
-  window.__mjStatsOverlay = {invalidateAdvice, update(packet) {
+  window.__mjStatsOverlay = {invalidateAdvice, expectAdvice, update(packet) {
     if (packet.kind === 'advice') {
       if (!adviceKey || packet.adviceKey !== adviceKey) return;
       renderAdvice(packet.advice);
@@ -140,6 +200,8 @@
       return;
     }
     if (packet.kind === 'turn') {
+      // Browser input can invalidate a turn before its native reply arrives.
+      if (!expectedAdviceKey || packet.adviceKey !== expectedAdviceKey) return;
       adviceKey = packet.adviceKey || null;
       renderAdvice(packet.advice);
       const lines = packet.text.split('\n').filter(line => line && !/^═+$/.test(line));
@@ -153,7 +215,8 @@
         (recording ? details : game).appendChild(row);
       }
     } else {
-      invalidateAdvice();
+      // A queued status may precede an already-published newer browser turn.
+      clearAdvice();
       caption.textContent = packet.text;
       if (packet.reset || ['waiting','connected','playing','ended'].includes(packet.phase)) {
         game.replaceChildren(); details.replaceChildren();
