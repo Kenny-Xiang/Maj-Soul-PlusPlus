@@ -7,8 +7,10 @@ tiles include opponents' hands and the dead wall; they are never called live
 wall tiles. The engine never sends game actions; riichi is considered only when offered.
 """
 from collections import Counter
+from contextvars import ContextVar
 from copy import deepcopy
 from functools import lru_cache
+from math import fsum
 import time
 
 from mahjong.hand_calculating.hand import HandCalculator
@@ -18,7 +20,9 @@ from mahjong.meld import Meld
 from mahjong.shanten import Shanten
 
 
-MODEL = "public-information-actions-ev-v3 (未校准启发式)"
+MODEL = "public-information-actions-ev-v4 (未校准启发式)"
+SEARCH_SECONDS = 2.
+_SEARCH = ContextVar("advisor_search", default=None)
 TILES = tuple(f"{n}{s}" for s in "mps" for n in range(1, 10)) + tuple(f"{n}z" for n in range(1, 8))
 ORPHANS = (0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33)
 OPTIONS = OptionalRules(has_open_tanyao=True, has_aka_dora=True,
@@ -405,27 +409,74 @@ def _win_model(sh, ukeire, unseen, draws, opponents, waits, projected=None, yaku
     return min(1., win), 0.
 
 
-def _next_waits(counts, improvements, remaining, special):
-    """Bounded one-shanten lookahead, at most four effective draw types."""
-    weight = total = 0.
-    for improvement in sorted(improvements, key=lambda d: -d["count"])[:4]:
-        index = tile_index(improvement["tile"])
-        drawn = list(counts)
-        drawn[index] += 1
+def _one_shanten_branches(hand, counts, improvements, remaining, state, discard, special):
+    """Every effective physical draw and legal discard into a scored wait."""
+    after = deepcopy(state)
+    after["hand"] = hand.copy()
+    if discard is not None:
+        after["rivers"][state["selfSeat"]].append({"tile": discard})
+    effective = {tile_index(t["tile"]) for t in improvements}
+    branches = []
+    for draw, weight in sorted(_draw_pool(after, remaining)):
+        _check_search()
+        index = tile_index(draw)
+        if index not in effective:
+            continue
+        drawn = deepcopy(after)
+        drawn["hand"].append(draw)
+        drawn["lastDraw"] = draw
+        drawn["forbiddenDiscards"] = []  # The preceding call's kuikae window ended.
         unseen = list(remaining)
         unseen[index] -= 1
-        best = 0
-        for discard, count in enumerate(drawn):
-            if not count:
-                continue
-            trial = drawn.copy()
-            trial[discard] -= 1
+        options = []
+        for tile in sorted(_legal_discards(drawn)):
+            _check_search()
+            next_hand = _remove_exact(drawn["hand"], [tile])
+            trial = list(counts)
+            trial[index] += 1
+            trial[tile_index(tile)] -= 1
             trial = tuple(trial)
             if shanten(trial, special) == 0:
-                best = max(best, sum(t["count"] for t in _improvements(trial, unseen, special)))
-        weight += improvement["count"] * best
-        total += improvement["count"]
-    return weight / total if total else 0.
+                waits, furiten = _wait_values(next_hand, trial, unseen, drawn, tile, special)
+                options.append({"discard": tile, "waits": waits, "furiten": furiten})
+        branches.append({"draw": draw, "count": weight, "remaining": tuple(unseen), "options": options})
+    return branches
+
+
+def _one_shanten_model(branches, unseen, opponents, opportunities, own_seat):
+    """First effective draw without replacement, followed by the actual suffix.
+
+    If H+A-X waits on B, H+B-X waits on A. Thus live waits are effective
+    families already: preceding ineffective tsumogiri cannot deplete them or
+    make them furiten. Only their total unknown mass needs tracking here.
+    Opponents and the later ready-hand pool still use the public-info heuristic.
+    """
+    effective = sum(branch["count"] for branch in branches)
+    live, misses = 1., 0
+    wins, incomes = [], []
+    survival = _event_survival(opponents)
+    for index, actor in enumerate(opportunities):
+        _check_search()
+        if actor == own_seat:
+            pool = unseen - misses
+            if pool <= 0 or live == 0:
+                break
+            for branch in sorted(branches, key=lambda b: b["draw"]):
+                outcomes = []
+                for option in sorted(branch["options"], key=lambda o: o["discard"]):
+                    probability, value = _win_model(
+                        0, sum(w["count"] for w in option["waits"]), pool - 1, 0,
+                        opponents, option["waits"], opportunities=opportunities[index + 1:], own_seat=own_seat)
+                    outcomes.append((probability * value, probability, value))
+                income, probability, _ = max(outcomes, default=(0., 0., 0.))
+                mass = live * branch["count"] / pool * survival
+                wins.append(mass * probability)
+                incomes.append(mass * income)
+            live *= max(0., 1 - effective / pool)
+            misses += 1
+        live *= survival
+    probability = fsum(wins)
+    return probability, fsum(incomes) / probability if probability else 0.
 
 
 def _kokushi_probability(counts, remaining, draws, opponents, state, discard, tail, opportunities=None):
@@ -501,7 +552,7 @@ def _risk_weight(state):
     return weight
 
 
-def _position(hand, state, remaining, discard=None, refine=False):
+def _position(hand, state, remaining, discard=None):
     """Evaluate a 13-tile-equivalent position with a common score scale."""
     special = not state["melds"][state["selfSeat"]]
     counts = counts34(hand)
@@ -514,16 +565,22 @@ def _position(hand, state, remaining, discard=None, refine=False):
     danger, loss, detail = _danger(discard, remaining, opponents) if discard is not None else (0., 0., [])
     waits, furiten = _wait_values(hand, counts, remaining, state, discard, special) if sh == 0 else (None, False)
     value, yaku_factor = _future_value(hand, state, counts, special)
-    kokushi_route = special and 0 < sh <= 2 and Shanten.calculate_shanten_for_kokushi_hand(counts) == sh
-    projected = _next_waits(counts, improvements, remaining, special) if refine and sh == 1 and not kokushi_route else None
-    probability, ready_value = _win_model(sh, ukeire, unseen, draws, opponents, waits,
-                                         projected=projected, yaku_factor=yaku_factor,
-                                         opportunities=opportunities, own_seat=state["selfSeat"])
-    if kokushi_route:
-        probability = _kokushi_probability(counts, remaining, draws, opponents, state, discard, 0, opportunities)
+    kokushi_route = special and sh == 2 and Shanten.calculate_shanten_for_kokushi_hand(counts) == sh
+    branches = None
+    if sh == 1:
+        branches = _one_shanten_branches(hand, counts, improvements, remaining, state, discard, special)
+        probability, value = _one_shanten_model(branches, unseen, opponents, opportunities, state["selfSeat"])
+        yaku_factor = float(any(w["ronPoints"] or w["tsumoPoints"]
+                               for b in branches for o in b["options"] for w in o["waits"]))
+    else:
+        probability, ready_value = _win_model(sh, ukeire, unseen, draws, opponents, waits,
+                                             yaku_factor=yaku_factor,
+                                             opportunities=opportunities, own_seat=state["selfSeat"])
+        if kokushi_route:
+            probability = _kokushi_probability(counts, remaining, draws, opponents, state, discard, 0, opportunities)
+        if waits is not None:
+            value = ready_value
     probability *= 1 - danger
-    if waits is not None:
-        value = ready_value
     reasons = [f"{'听牌' if sh == 0 else str(sh) + ' 向听'}；有效未见牌 {ukeire} 张"]
     if sh == 0 and not waits:
         reasons[0] = "形式 0 向听，但没有实体上合法的听口"
@@ -538,7 +595,7 @@ def _position(hand, state, remaining, discard=None, refine=False):
     if discard and discard[0] == "0":
         reasons.append("打出赤宝牌，打点下降")
     if yaku_factor != 1 and sh:
-        reasons.append("副露后役尚未确定，和牌前景已折减")
+        reasons.append("一向听前瞻未找到有役等待" if sh == 1 else "副露后役尚未确定，和牌前景已折减")
     if kokushi_route:
         reasons.append("国士路线按缺少幺九及雀头估计推进")
     efficiency = 70 * (6 - sh) + 2 * ukeire
@@ -554,11 +611,14 @@ def _position(hand, state, remaining, discard=None, refine=False):
               "expectedDealInLoss": round(loss), "dealInPoints": round(loss / danger) if danger else 0,
               "dealInLossIfHit": round(loss / danger) if danger else 0,
               "score": round(score, 1), "reasons": reasons, "opponentRisks": detail,
-              "valueMethod": "听牌逐张计分" if sh == 0 else "未来牌型估值",
+              "valueMethod": "听牌逐张计分" if sh == 0 else "一向听逐分支计分" if sh == 1 else "未来牌型估值",
               "yakuConfidence": yaku_factor}
-    if projected is not None:
-        result["nextWaitEstimate"] = round(projected, 1)
-        reasons.append(f"推进后等待枚数估计 {projected:.1f}（限量前瞻）")
+    if branches is not None:
+        result["lookahead"] = {"drawVariants": len(branches),
+                               "readyDiscards": sum(len(b["options"]) for b in branches)}
+        reasons.append("完整枚举有效进张及后续弃牌；逐分支计役与点值，保留未进张概率")
+    elif sh >= 2:
+        reasons.append("二向听以上仍使用未来进张与打点估算")
     return result
 
 
@@ -573,18 +633,13 @@ def _legal_discards(state):
     return legal
 
 
-def _discards(state, remaining, refine=True):
+def _discards(state, remaining):
     candidates = []
     for tile in _legal_discards(state):
+        _check_search()
         hand = state["hand"].copy()
         hand.remove(tile)
         candidates.append(_position(hand, state, remaining, tile))
-    if refine:
-        for current in sorted(candidates, key=lambda c: -c["score"])[:3]:
-            if current["shanten"] == 1:
-                hand = state["hand"].copy()
-                hand.remove(current["tile"])
-                current.update(_position(hand, state, remaining, current["tile"], refine=True))
     return candidates
 
 
@@ -810,6 +865,7 @@ def _replacement(state, choice, remaining):
     next_["forbiddenDiscards"] = []
     outcomes = []
     for draw, weight in _draw_pool(next_, remaining):
+        _check_search()
         drawn = deepcopy(next_)
         drawn["hand"].append(draw)
         drawn["lastDraw"] = draw
@@ -825,7 +881,7 @@ def _replacement(state, choice, remaining):
                     "tile": None, "furiten": False}
         else:
             drawn["replacementWin"] = False
-            legal = _discards(drawn, tuple(unseen), refine=False)
+            legal = _discards(drawn, tuple(unseen))
             if not legal:
                 raise ValueError("补牌后没有合法弃牌")
             if abort_after_discard:
@@ -883,7 +939,7 @@ def _replacement(state, choice, remaining):
                  "winProbability": c["winProbability"]} for weight, c, draw in outcomes]}
 
 
-def advise(state):
+def _advise(state):
     """Return JSON-safe action advice for one immutable public snapshot."""
     started = time.monotonic()
 
@@ -929,7 +985,7 @@ def advise(state):
         if not isinstance(left, int) or left < 0:
             raise ValueError("剩余牌山信息不完整")
         remaining = unseen_counts(state)
-        candidates = _discards(state, remaining) if own_turn else [_position(state["hand"], state, remaining, refine=True)]
+        candidates = _discards(state, remaining) if own_turn else [_position(state["hand"], state, remaining)]
         if not candidates:
             raise ValueError("没有已确认合法的弃牌")
         opportunities = _opportunities(state, after_discard=own_turn)
@@ -1010,3 +1066,33 @@ def advise(state):
                                    "概率未经实战校准，非保证最优或真实胜率"])
     except (KeyError, TypeError, ValueError, IndexError) as exc:
         return result("unavailable", f"牌局状态无法可靠计算：{exc}")
+
+
+class _SearchStopped(Exception):
+    pass
+
+
+def _check_search():
+    search = _SEARCH.get()
+    if search is not None:
+        deadline, cancelled = search
+        if cancelled is not None and cancelled():
+            raise _SearchStopped("局面已更新，撤销过期计算")
+        if time.monotonic() >= deadline:
+            raise _SearchStopped("前瞻计算超过时间预算，等待下一次局面")
+
+
+def advise(state, cancelled=None):
+    """Publish only a complete, uniformly evaluated decision within the budget."""
+    started = time.monotonic()
+    token = _SEARCH.set((started + SEARCH_SECONDS, cancelled))
+    try:
+        _check_search()
+        result = _advise(state)
+        _check_search()
+        return result
+    except _SearchStopped as error:
+        return {"status": "unavailable", "message": str(error), "candidates": [],
+                "best": None, "model": MODEL, "elapsedMs": round((time.monotonic() - started) * 1000, 1)}
+    finally:
+        _SEARCH.reset(token)

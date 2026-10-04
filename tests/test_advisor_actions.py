@@ -423,8 +423,14 @@ class ActionBoundaryRuleTests(unittest.TestCase):
         weak = own_action("19m19p19s123z245p67s", 10, [])
         self.assertEqual(advise(weak)["best"]["action"], "abort")
         strong = own_action("119m19p19s123456z2p", 10, [])
-        self.assertEqual(advise(strong)["best"]["action"], "discard")
-        self.assertEqual(advise(strong)["best"]["tile"], "2p")
+        advice = advise(strong)
+        self.assertEqual(advice["best"]["action"], "discard")
+        # Full one-shanten search also values the furiten thirteen-sided
+        # double-yakuman route; the old exact recommendation was a heuristic.
+        ready = next(c for c in advice["candidates"] if c["tile"] == "2p")
+        self.assertEqual(ready["shanten"], 0)
+        self.assertGreater(ready["winProbability"], 0)
+        self.assertEqual(ready["expectedWinPoints"], 48000)
 
     def test_abort_and_kita_share_point_scale_regardless_of_operation_order(self):
         s = own_action("19m19p19s124z245p67s", 10, [], players=3)

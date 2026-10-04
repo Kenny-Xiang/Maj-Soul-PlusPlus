@@ -5,6 +5,7 @@ from threading import Condition, Thread
 
 class AdviceWorker:
     def __init__(self, calculate=None):
+        self.cooperative = calculate is None
         if calculate is None:
             from advisor import advise
             calculate = advise
@@ -41,6 +42,10 @@ class AdviceWorker:
             self.pending = self.completed = None
             self.condition.notify()
 
+    def _cancelled(self, key):
+        with self.condition:
+            return self.closed or key != self.current_key
+
     def _run(self):
         while True:
             with self.condition:
@@ -50,10 +55,14 @@ class AdviceWorker:
                 key, state = self.pending
                 self.pending = None
             try:
-                result = self.calculate(state)
+                if self.cooperative:
+                    result = self.calculate(state, cancelled=lambda: self._cancelled(key))
+                else:
+                    result = self.calculate(state)
             except Exception as error:
                 result = {"status": "unavailable", "message": "评估失败，等待下一次牌局更新",
                           "error": f"{type(error).__name__}: {error}"}
             with self.condition:
                 if not self.closed and key == self.current_key:
                     self.completed = {"kind": "advice", "adviceKey": key, "advice": result}
+                    self.condition.notify_all()
