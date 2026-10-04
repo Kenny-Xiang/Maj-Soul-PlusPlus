@@ -89,6 +89,48 @@ class PublicThreatTests(unittest.TestCase):
         s["rivers"][2] = [{"tile": "5p"}] * 3
         self.assertEqual(enemy_risk(s, "5p")[1][:2], (0., 0.))
 
+    def test_concealed_kans_support_point_weighted_closed_flush_routes(self):
+        for groups, weight, ordinary, normal, red in (
+                (["2222m", "6666m"], .25, 2300, 3725, 5375),
+                (["2222m", "6666m", "9999m"], .5, 3200, 5600, 7200)):
+            with self.subTest(groups=groups):
+                s = public_hand(groups, [3] * len(groups))
+                s["hand"] = tiles("123p456p789s45s11z8m")
+                s["doras"] = []
+                before = deepcopy(s)
+                enemy, same = enemy_risk(s, "8m")
+                self.assertEqual(enemy["openMeldCount"], 0)
+                self.assertEqual(enemy["flushWeight"], weight)
+                self.assertEqual(same[2][0]["lossPoints"], normal)
+                plain = enemy_risk(s, "5m")[1]
+                aka = enemy_risk(s, "0m")[1]
+                self.assertEqual(plain[2][0]["lossPoints"], normal)
+                self.assertEqual(aka[2][0]["lossPoints"], red)
+                self.assertEqual(plain[0], aka[0])
+                off_suit = enemy_risk(s, "8p")[1]
+                self.assertGreater(off_suit[0], 0)
+                self.assertLess(off_suit[0], same[0])
+                self.assertEqual(off_suit[2][0]["lossPoints"], ordinary)
+                for danger in (same, plain, aka, off_suit):
+                    self.assertAlmostEqual(danger[1], danger[0] * danger[2][0]["lossPoints"])
+                self.assertEqual(s, before)
+
+    def test_closed_flush_evidence_requires_two_compatible_suited_groups(self):
+        for groups in (["2222m"], ["2222m", "5555z"], ["2222m", "6666p"]):
+            with self.subTest(groups=groups):
+                s = public_hand(groups, [3] * len(groups))
+                s["hand"] = tiles("123p789p123s456s11z")
+                enemy = enemy_risk(s, "8m")[0]
+                self.assertIsNone(enemy["flushSuit"])
+                self.assertEqual(enemy["flushWeight"], 0)
+        s = public_hand(["2222m", "6666m"], [3, 2])
+        s["hand"] = tiles("123p789p123s456s11z")
+        s["doras"] = []
+        enemy, danger = enemy_risk(s, "8m")
+        self.assertEqual(enemy["flushWeight"], .25)
+        self.assertEqual(enemy["openMeldCount"], 1)
+        self.assertEqual(danger[2][0]["lossPoints"], 2171.4)
+
     def test_four_meld_tanki_probabilities_are_mutually_exclusive(self):
         s = public_hand(["555z", "333p", "666s", "999m"])
         remaining = unseen_counts(s)
@@ -104,6 +146,38 @@ class PublicThreatTests(unittest.TestCase):
         exact = _hand_value(["5m"], "5m", scoring, False)
         self.assertEqual(danger[2][0]["lossPoints"], exact["points"])
         self.assertIn("Honitsu", exact["yaku"])
+
+    def test_honor_only_four_groups_prove_honitsu_on_suited_tanki(self):
+        s = public_hand(["222z", "333z", "444z", "555z"])
+        s["doras"] = []
+        before = deepcopy(s)
+        for tile in ("4m", "4p", "4s", "5m", "0m"):
+            with self.subTest(tile=tile):
+                enemy, danger = enemy_risk(s, tile)
+                exact = _hand_value(["5m" if tile == "0m" else tile], tile,
+                                    {**s, "selfSeat": 1}, False)
+                self.assertIn("Honitsu", exact["yaku"])
+                self.assertEqual(exact["points"], 12000)
+                self.assertEqual(danger[2][0]["lossPoints"], exact["points"])
+                self.assertAlmostEqual(danger[1], danger[0] * exact["points"])
+                self.assertEqual(enemy["tenpai"], 1)
+        self.assertEqual(enemy_risk(s, "5m")[1][0], enemy_risk(s, "0m")[1][0])
+        self.assertEqual(enemy_risk(s, "2z")[1][:2], (0., 0.))
+        self.assertEqual(s, before)
+
+    def test_four_suited_groups_distinguish_chinitsu_and_honitsu(self):
+        s = public_hand(["123m", "345m", "789m", "222m"], [0, 0, 0, 1])
+        s["hand"] = tiles("123p789p123s456s11z")
+        s["doras"] = []
+        for tile, yaku, points in (("5m", "Chinitsu", 8000), ("0m", "Chinitsu", 12000),
+                                   ("2z", "Honitsu", 2000)):
+            with self.subTest(tile=tile):
+                exact = _hand_value(["5m" if tile == "0m" else tile], tile,
+                                    {**s, "selfSeat": 1}, False)
+                self.assertIn(yaku, exact["yaku"])
+                self.assertEqual(exact["points"], points)
+                self.assertEqual(enemy_risk(s, tile)[1][2][0]["lossPoints"], points)
+        self.assertGreater(enemy_risk(s, "5p")[1][0], 0)
 
     def test_tanki_yakuhai_pair_fu_and_sanma_north_payment(self):
         s = public_hand(["555z", "999m", "123p", "456s"], [1, 1, 0, 0])

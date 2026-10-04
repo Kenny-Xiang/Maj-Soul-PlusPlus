@@ -394,7 +394,7 @@ def _opponents(state, remaining, *, after_current=False, passed_discard=None):
                           "allTriplets": len(melds) == 4 and all(m["type"] != 0 for m in melds),
                           "flushSuit": flush_suit,
                           "flushWeight": min(.5, FLUSH_ROUTE_WEIGHT * (suited_melds - 1))
-                          if open_melds and flush_suit is not None else 0.,
+                          if flush_suit is not None else 0.,
                           "han": han, "fu": fu, "publicFu": public_fu, "config": cfg,
                           "playerCount": players, "canKokushi": not melds})
     return opponents
@@ -413,6 +413,8 @@ def _ron_evidence(tile, enemy):
     known_han = enemy["yakuhai"] + 2 * enemy["allTriplets"] + int(simple)
     confidence = 1. if enemy["riichi"] or not enemy["openMeldCount"] or known_han else OPEN_YAKU_CONFIDENCE
     compatible = enemy["flushSuit"] is not None and (index >= 27 or index // 9 == enemy["flushSuit"])
+    # With four honor groups, a suited tanki pair establishes honitsu's suit.
+    compatible |= four and index < 27 and not any(counts[:27])
     weight = float(compatible) if four else enemy["flushWeight"]
     ordinary = (1 - weight) * confidence
     flush = weight * compatible
