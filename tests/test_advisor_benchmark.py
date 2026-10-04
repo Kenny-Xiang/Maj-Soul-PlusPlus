@@ -22,6 +22,7 @@ spec.loader.exec_module(comparison)
 class AdvisorBenchmarkTests(unittest.TestCase):
     def test_representative_snapshots_are_valid_and_do_not_mutate(self):
         cases = comparison.load_cases(comparison.FIXTURES)
+        cases += comparison.load_cases(ROOT / "tests/fixtures/advisor_threat_cases.json")
         tags = {tag for case in cases for tag in case["tags"]}
         self.assertTrue({"efficiency", "no-yaku", "furiten", "riichi", "opponent-riichi",
                          "chi", "pon", "ankan", "daiminkan", "shouminkan", "kita", "three-player",

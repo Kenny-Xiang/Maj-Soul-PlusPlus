@@ -20,8 +20,11 @@ from mahjong.meld import Meld
 from mahjong.shanten import Shanten
 
 
-MODEL = "public-information-actions-ev-v5-riichi-lookahead-risk-rules (未校准启发式)"
+MODEL = "public-information-actions-ev-v6-public-threat (未校准启发式)"
 SEARCH_SECONDS = 2.
+# Public-evidence priors, not frequencies fitted to game records.
+OPEN_YAKU_CONFIDENCE = .6
+FLUSH_ROUTE_WEIGHT = .25
 _SEARCH = ContextVar("advisor_search", default=None)
 _HAND_VALUES = ContextVar("advisor_hand_values", default=None)
 TILES = tuple(f"{n}{s}" for s in "mps" for n in range(1, 10)) + tuple(f"{n}z" for n in range(1, 8))
@@ -358,7 +361,9 @@ def _opponents(state, remaining, *, after_current=False, passed_discard=None):
             safe.add(tile_index(passed_discard))
         open_melds = [m for m in melds if m["type"] != 3]
         turn = len(river)
-        tenpai = 1.0 if riichi else min(.65, .04 + turn * .018 + len(open_melds) * .14)
+        # Four completed groups leave a singleton, not necessarily a legal ron
+        # wait. A concealed kan advances structure without opening the hand.
+        tenpai = 1.0 if riichi or len(melds) == 4 else min(.65, .04 + turn * .018 + len(melds) * .14)
         cfg = _config(state, seat=enemy)
         cfg.kyoutaku_number = 0  # Existing deposits are not paid by the discarder.
         visible = [t for m in melds for t in m["tiles"]]
@@ -368,28 +373,90 @@ def _opponents(state, remaining, *, after_current=False, passed_discard=None):
         han += sum(t[0] == "0" for t in visible)
         han += state.get("north", [0] * 4)[enemy] * (1 + dora.count(30))
         fu = 40 if riichi or not open_melds else 30
+        public_fu = 20 + (10 if not open_melds else 0) + (2 if len(melds) == 4 else 0)
+        for meld in melds:
+            index = tile_index(meld["tiles"][0])
+            if meld["type"] != 0:
+                public_fu += (16 if meld["type"] == 3 else 8 if meld["type"] == 2 else 2) * (
+                    2 if index in ORPHANS else 1)
+        fu = max(fu, (public_fu + 9) // 10 * 10)
+        suits = {tile_index(t) // 9 for t in visible if tile_index(t) < 27}
+        suited_melds = sum(any(tile_index(t) < 27 for t in m["tiles"]) for m in melds)
+        flush_suit = next(iter(suits)) if len(suits) == 1 and (suited_melds >= 2 or len(melds) == 4) else None
         yakuman = _visible_yakuman_payment(state, enemy)
         loss = yakuman["lower"] if yakuman else _points(han, fu, cfg, players)
         red_loss = loss if yakuman else _points(han + 1, fu, cfg, players)
         opponents.append({"seat": enemy, "safe": safe, "tenpai": tenpai,
                           "loss": loss, "riichi": riichi, "dora": dora,
                           "redLoss": red_loss, "yakumanPayment": yakuman,
+                          "openMeldCount": len(open_melds), "meldCount": len(melds),
+                          "visibleCounts": visible_counts, "yakuhai": yakuhai,
+                          "allTriplets": len(melds) == 4 and all(m["type"] != 0 for m in melds),
+                          "flushSuit": flush_suit,
+                          "flushWeight": min(.5, FLUSH_ROUTE_WEIGHT * (suited_melds - 1))
+                          if flush_suit is not None else 0.,
+                          "han": han, "fu": fu, "publicFu": public_fu, "config": cfg,
                           "playerCount": players, "canKokushi": not melds})
     return opponents
 
 
-def _danger(tile, remaining, opponents):
+def _ron_evidence(tile, enemy, *, chankan=False):
+    """Conditional yaku/route weight and payment, separate from readiness.
+
+    Unknown yaku keeps nonzero mass: hidden and event yaku are not enumerated.
+    Mix point-weighted hits, never han before the nonlinear score table.
+    """
+    index = tile_index(tile)
+    four = enemy["meldCount"] == 4
+    counts = enemy["visibleCounts"]
+    simple = four and index not in ORPHANS and all(i not in ORPHANS for i, n in enumerate(counts) if n)
+    known_han = enemy["yakuhai"] + 2 * enemy["allTriplets"] + int(simple)
+    # Added-kan robbery supplies eligibility; North extraction does not.
+    confidence = 1. if chankan or enemy["riichi"] or not enemy["openMeldCount"] or known_han else OPEN_YAKU_CONFIDENCE
+    compatible = enemy["flushSuit"] is not None and (index >= 27 or index // 9 == enemy["flushSuit"])
+    # With four honor groups, a suited tanki pair establishes honitsu's suit.
+    compatible |= four and index < 27 and not any(counts[:27])
+    weight = float(compatible) if four else enemy["flushWeight"]
+    ordinary = (1 - weight) * confidence
+    flush = weight * compatible
+    factor = ordinary + flush
+    if enemy["yakumanPayment"]:
+        return factor, enemy["loss"]
+    bonus = enemy["han"] - (3 if enemy["riichi"] else max(1, enemy["yakuhai"]))
+    # On a four-group tanki hit the concealed singleton is the same dora too;
+    # its red identity is still unknown and must not be invented.
+    bonus += enemy["dora"].count(index) * (2 if four else 1) + int(tile[0] == "0")
+    han = max(3 if enemy["riichi"] else 1, known_han) + bonus
+    cfg = enemy["config"]
+    pair_fu = 2 * (int(index >= 31) + int(index == cfg.player_wind) + int(index == cfg.round_wind))
+    fu = max(enemy["fu"], (enemy["publicFu"] + pair_fu + 9) // 10 * 10) if four else enemy["fu"]
+    payment = _points(han, fu, cfg, enemy["playerCount"])
+    if not flush:
+        return factor, payment
+    flush_han = (5 if four and index < 27 and not any(counts[27:]) else 2)
+    flush_han += int(not enemy["openMeldCount"])
+    flush_payment = _points(known_han + int(enemy["riichi"]) + flush_han + bonus, fu, cfg, enemy["playerCount"])
+    return factor, (ordinary * payment + flush * flush_payment) / factor
+
+
+def _danger(tile, remaining, opponents, *, chankan=False):
     index = tile_index(tile)
     survival, expected_loss, details = 1., 0., []
     for enemy in opponents:
+        factor, loss = _ron_evidence(tile, enemy, chankan=chankan)
         if index in enemy["safe"]:
-            chance = 0.
+            shape = 0.
             reason = "现物"
+        elif enemy["meldCount"] == 4:
+            # The sole concealed tile has an explicitly uniform unknown-tile
+            # prior. Tanki types are mutually exclusive; suji/walls do not apply.
+            shape = remaining[index] / max(1, sum(remaining)) if enemy["visibleCounts"][index] < 3 else 0.
+            reason = "四组面子单骑（仍需实体等待及役）"
         elif index >= 27 or (enemy["playerCount"] == 3 and index in (0, 8) and remaining[index] == 0):
             # Exhausted honors and sanma manzu terminals cannot complete a
             # sequence, pair or triplet. Kokushi can still win on a missing
             # singleton when the opponent has no melds. Keep other rates intact.
-            chance = ((.001 if enemy["canKokushi"] else 0.), .025, .065, .10, .12)[remaining[index]] * enemy["tenpai"]
+            shape = ((.001 if enemy["canKokushi"] else 0.), .025, .065, .10, .12)[remaining[index]]
             reason = "字牌剩余枚数" if index >= 27 else "三麻幺九万剩余枚数"
         else:
             n = index % 9
@@ -404,15 +471,17 @@ def _danger(tile, remaining, opponents):
             if any(remaining[j] == 0 for j in (index - 1, index + 1)
                    if 0 <= j < 27 and j // 9 == index // 9):
                 shape *= .75
-            chance = shape * enemy["tenpai"]
             reason = "筋（仍可能放铳）" if suji else "无安全依据"
-        if index in enemy["dora"] and chance:
-            chance *= 1.2
+        if index in enemy["dora"] and enemy["meldCount"] != 4:
+            shape *= 1.2
+        conditional = shape * factor
+        chance = conditional * enemy["tenpai"]
         survival *= 1 - chance
-        loss = enemy["redLoss"] if tile[0] == "0" else enemy["loss"]
         expected_loss += chance * loss
         details.append({"seat": enemy["seat"], "probability": round(chance, 4),
-                        "lossPoints": loss, "reason": reason})
+                        "tenpaiProbability": round(enemy["tenpai"], 4),
+                        "conditionalRonProbability": round(conditional, 4),
+                        "yakuConfidence": factor, "lossPoints": round(loss, 1), "reason": reason})
         if enemy["yakumanPayment"]:
             details[-1]["yakumanPayment"] = enemy["yakumanPayment"]
     return 1 - survival, expected_loss, details
@@ -1075,7 +1144,7 @@ def _replacement(state, choice, remaining):
     mean = lambda field: sum(w * c[field] for w, c, _ in outcomes) / total
     opponents = _opponents(state, remaining)
     if action in ("shouminkan", "kita"):
-        rob, rob_loss, risks = _danger(choice["tile"], remaining, opponents)
+        rob, rob_loss, risks = _danger(choice["tile"], remaining, opponents, chankan=action == "shouminkan")
     elif action == "ankan":
         # Only kokushi may rob an ankan; north robbery permits other yaku.
         applicable = tile_index(choice["tile"]) in ORPHANS

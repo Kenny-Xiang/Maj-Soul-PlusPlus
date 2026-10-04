@@ -6,6 +6,85 @@ action. It measures reproducibility, rule regressions, recommendation changes,
 and local calculation time; it does not establish stronger play or calibrated
 win probabilities.
 
+## Public opponent evidence (v6, uncalibrated)
+
+Opponent risk now exposes three separate quantities in `opponentRisks`:
+`tenpaiProbability`, `conditionalRonProbability`, and `lossPoints`. The first
+two multiply to the single-opponent hit estimate (before display rounding).
+The design follows the decomposition in
+[Mizukami and Tsuruoka (2015)](https://www.logos.t.u-tokyo.ac.jp/~tsuruoka/papers/cig2015mizukami.pdf),
+DOI 10.1109/CIG.2015.7317929; no trained parameters or performance claims from
+that paper are imported.
+
+The existing river-length/0–3-group readiness curve and 65% cap remain.
+Concealed kans count as completed groups, without opening the hand. Four
+groups imply structural tanki readiness, not a known legal ron wait: the
+singleton uses an uncalibrated uniform unknown-tile prior, physical pair
+exclusions, and no sequence-based suji/wall discount. Its mutually exclusive
+tile-type probabilities sum to at most one. Bonus tiles and dealer status
+affect payment, not readiness; `_event_survival` consumes the same readiness
+estimate without an additional open-hand penalty.
+
+An open hand without identified yaku gets a 0.6 eligibility weight. This is
+an evidence discount, not a measured yaku probability; 1 means no discount,
+not proof of legal ron. Two/three same-suit numerical groups support a
+0.25/0.5 flush mixture only when every public group is compatible, including
+concealed kans. Off-suit tiles retain the ordinary branch. Four groups can
+confirm toitoi, tanyao and compatible honitsu/chinitsu. Route hits and their
+payments are mixed together, rather than averaging han across scoring caps.
+Missing identified yaku never becomes a false-safe exclusion: hidden yaku,
+river-bottom/robbery events and other unenumerated public yaku remain outside
+this approximate eligibility model. Hidden discard styles and call times are
+not fabricated, and three calls never imply certain readiness.
+
+Conditional payments include the discarded tile's known dora and red bonus,
+public meld-fu floors, and the known pair dora/fu on a four-group tanki hit.
+The concealed singleton's red identity remains unknown. Existing yakuman/pao
+payment bounds, honba and exclusion of the winner's existing deposits remain.
+These are incomplete public-value estimates, not exact hidden-hand scores.
+
+`tests/fixtures/advisor_threat_cases.json` adds 19 synthetic public states with
+legal tile inventories, called-river/source records and achievable turn counts.
+They cover early/late weak and valuable hands, early riichi, 0–4 open groups,
+unknown/confirmed yaku, suit evidence, visible bonus/red tiles, concealed kan,
+dealer status, sanma North and multiple threats. Calls consume fewer normal
+draws, so the matched ten-discard 0–4-group series has `left=29..33`; identical
+river counts are not incorrectly paired with identical wall counts.
+
+On 2026-10-04, comparison with `c207045` used the existing 24 states plus these
+19 states, one warmup and five measured passes (215 samples per version).
+Baseline median/P95/max were 5.999/481.739/717.691 ms; v6 measured
+6.192/517.220/747.326 ms. Every repeat was deterministic; availability and
+root recommendations were unchanged. For the four-group `4p` probe, seat 1's
+hit estimate changes from 6.5% to 2.74% despite structural readiness becoming
+100%: the new model respects the narrower tanki shape. The two-group unknown
+yaku probe changes from 5% to 3%, while identified yakuhai retains its full
+weight. These are model changes, not accuracy or playing-strength evidence.
+
+The sensitivity command below evaluates all 43 states at nine combinations of
+eligibility weight 0.4/0.6/0.8 and flush step 0.15/0.25/0.35 (still capped at
+0.5). No root recommendation changed versus defaults; candidate scores and
+risk estimates remain parameter-dependent. This small, mostly clear-choice
+corpus does not establish robustness near every decision boundary.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/advisor_threat_sensitivity.py \
+  --output build/public-threat-sensitivity.json
+.venv/bin/python scripts/advisor_compare.py --baseline c207045 \
+  --fixtures tests/fixtures/advisor_threat_cases.json \
+  --output build/public-threat-only-comparison.json
+```
+
+The combined report is `build/public-threat-comparison.json`; it uses the
+concatenated `cases` arrays of both fixture files. All 163 advisor/worker/
+benchmark tests, 31 JS tests and 6 formatter/logging tests passed. Native
+WebKit replay and overlay checks remain unverified: both v6 and unchanged
+`c207045` reproduce empty replay messages / `WKErrorDomain Code=5`, alongside
+sandbox-extension failures. No extra permissions or game connections were
+used. The two-second cooperative deadline, cancellation, stale-snapshot
+rejection, scoring-cache isolation and confirmed-riichi absorption regressions
+remain covered.
+
 ## Run a comparison
 
 From the repository root, using the existing development environment:
