@@ -204,11 +204,12 @@ step 4; it does not replace the score with terminal-outcome expected returns.
 ## Remaining validation prerequisites
 
 The original-score ledger is the first part of step 4. Replacing it with a
-complete terminal-return model remains pending: current competition combines
-opponent endings without separating self-draw, discards between opponents, and
-our future deal-ins. The riichi lock estimate does not share a joint survival
-state with all those outcomes, and exhaustive-draw settlement needs the joint
-tenpai distribution. Adding these independent estimates together would not
+complete terminal-return model remains pending: competition does not separate
+opponent self-draw and discards between opponents or assign their payments.
+New riichi declarations now share survival across own wins and forced deal-ins,
+but their residual competition still has no payment model, and exhaustive-draw
+settlement needs the joint tenpai distribution. Adding independent estimates
+together would not
 produce mutually exclusive terminal probabilities. Existing deposits are already
 in winning scores; weighted deal-in losses already include their probability.
 Neither should be charged or credited a second time.
@@ -268,6 +269,63 @@ measured 1.308/28.108/29.386 ms. These are a small warmed sample on one machine,
 not a performance guarantee. A separate comparison against pre-fix commit
 `33afbb4` detected the changed `new-riichi-changed-waits` recommendation, confirming
 the report also captures a real historical behavior change.
+
+## Riichi forced-discard absorption (model v5-riichi-risk)
+
+New riichi declarations now evaluate future wins and forced-discard deal-ins in
+one event recurrence. At an own draw, winning tiles and discarded tiles are
+disjoint branches: the live mass credits its win income and probability-weighted
+forced-discard payment once, then removes both terminal probabilities before
+continuing. Enemy discards can produce ron before the next own draw. The new
+`futureForcedDealInProbability` and existing loss both include survival of the
+declaration discard, so neither represents an independent extra first-discard
+hazard. Riichi replaces its earlier unlocked win income with the joint income;
+the deposit calculation uses the resulting win probability.
+
+The existing competition coefficient is unchanged. Within this recurrence it
+is explicitly a conditional residual hazard for other endings, applied once
+after own wins and forced deal-ins. It is not another estimate of the same
+forced-discard event. This defines consistent model accounting, not evidence
+that these uncalibrated rates correctly separate real opponents' outcomes. The
+unknown pool, public opponent features, `.45` ron factor, and point estimates
+remain frozen. Reusing the same own-draw hit rate is still a with-replacement
+approximation; later public reveals and safe-tile changes are not simulated.
+Each forced-discard danger assessment does remove its just-drawn physical tile
+from the unknown counts; later draws still reuse those frozen conditional rates.
+This change applies only to new-riichi evaluation, not every later locked action.
+Shape and late-tenpai rewards remain heuristic score terms, not terminal payments.
+The former separate 12-draw risk cutoff is removed so both future wins and
+losses use the same existing bounded opportunity horizon (at most 24 own draws).
+Four-player fourth-riichi aborts still have no future wins or forced discards.
+
+The two-draw mathematical probe with a 10% forced deal-in rate and 8000-point
+payment now produces `8000 * (1 - .9 ** 2) = 1520`, replacing the old 1600.
+Additional regressions cover empty horizons/pools, zero risk, certain deal-in,
+declaration survival, winning draws never being discarded, a later ron being
+excluded after a terminal loss, coupled ron/tsumo point weights, residual
+competition mass, and the common horizon past twelve draws. With a 20% self-draw
+win rate and 10% danger on nonwinning tiles, two own draws give win probability
+`.2 + .72 * .2 = .344` and forced-deal-in probability `.08 + .72 * .08 = .1376`;
+the remaining `.72 ** 2` completes the unit probability mass.
+
+All 115 advisor, worker, and benchmark tests passed. The 19-state comparison
+against `b658903` used one warmup and five measured passes (95 samples per
+version), with deterministic repeat outputs. Baseline median/P95/max were
+20.837/789.142/832.036 ms; the working variant measured
+21.094/815.869/825.643 ms. This was a shared-machine measurement, not an isolated
+speed comparison. Only `new-riichi-changed-waits` changed recommendation, from
+riichi on `7m` to discard `9m`. Its `7m` riichi still clears old discard furiten
+and retains legal ron, but now accounts for future loss suppressing later wins.
+The old assertion that this legal candidate must rank first was replaced with
+the actual rule contract. These results validate accounting and regressions;
+they do not establish calibrated probabilities or improved real-game returns.
+The complete local report is `build/advisor-riichi-risk-comparison.json`.
+
+A follow-up count regression verifies that drawing the last unknown honor makes
+it safe against an open opponent: the drawn tile cannot remain in that opponent's
+hand. The added regression fails before conditioning on the physical draw, and
+all 116 advisor-related tests pass after the correction. The timing comparison
+above predates this follow-up count correction.
 
 ## Decision-local exact scoring cache
 
