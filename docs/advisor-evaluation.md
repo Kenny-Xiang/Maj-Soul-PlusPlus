@@ -85,6 +85,66 @@ used. The two-second cooperative deadline, cancellation, stale-snapshot
 rejection, scoring-cache isolation and confirmed-riichi absorption regressions
 remain covered.
 
+## Efficiency rewards with remaining draw opportunities
+
+The late unready-hand controls expose a separate scoring problem after the
+opponent change: when no remaining own draws can reach tenpai, the full
+`70 * (6 - shanten) + 2 * ukeire` bonus can still favor a riskier discard.
+For `phase-no-own-draw`, all candidates are at least two shanten with zero
+modeled win probability. The old score picks `1s` with expected deal-in loss
+29 rather than `7z` with loss 22, because it still credits 272 efficiency points.
+
+Unready candidates now share an opportunity coefficient within the same
+discard set. Let `required` be at least one and otherwise the structural
+shanten of the parent hand before discarding; `draws` is the actual future
+own-draw count from the existing ordered event sequence. The coefficient is
+`min(1, max(0, draws - required + 1) / required)`. It is zero below the necessary
+advance count, partial just above that boundary, and saturates with additional
+opportunities. Sharing it across the discard set prevents the common
+420-point score offset from becoming a new candidate-specific incentive to
+push. Calls and replacement children use their own resulting hands/events.
+
+This structural lower bound is not proof that a legal tenpai is reachable;
+live effective tiles, legal-discard restrictions and unknown future calls can
+further constrain it. The saturation at `2 * required - 1` draws is an
+uncalibrated design choice, not a measured probability. Ready-hand rewards and
+the existing late-tenpai bonus retain their previous meaning. In particular,
+no-yaku or furiten hands can still have exhaustive-draw tenpai value. Those
+bonuses remain heuristic preferences, not a complete terminal settlement EV.
+There is no new late-game multiplier on deal-in loss or opponent competition.
+
+Five focused regressions and six fixed phase controls cover zero/one/two
+remaining own draws, early quiet play, early riichi and valuable late tenpai.
+The no-own-draw and one-own-draw controls now choose `7z`, reducing their
+modeled immediate losses from 29 to 22 and 28 to 21 respectively. Both still
+have zero modeled win probability; unreachable efficiency rewards disappear.
+The two-own-draw control retains the safer `7z` while assigning partial credit
+to progress. Early quiet play still chooses `4p`; adding early riichi still
+changes it to safe `1s`. Late valuable tenpai keeps `1z`, four live waiting
+copies and nonzero risk, instead of being forced to fold.
+
+All 168 advisor/worker/benchmark tests, 31 JS tests and 6 formatter/logging
+tests passed. Against unchanged `c207045`, three of the five new phase tests
+fail as intended. Existing expanded-window, passed-discard, confirmed-riichi,
+terminal absorption, cancellation and decision-cache tests continue to pass.
+Native WebKit validation remains limited by the baseline-reproduced failures
+described above; it is not counted as passing.
+
+The final batch combines all three fixture files: 49 identical states, one
+warmup and five repeats (245 measurements per source), with timing runs kept
+separate from tests. Against `c207045`, baseline median/P95/max were
+4.977/482.828/756.985 ms and the final model measured
+5.150/522.338/766.551 ms. The isolated phase comparison against opponent-only
+commit `96e8e93` measured 4.891/512.273/750.998 ms before and
+5.079/516.009/757.602 ms after. Both comparisons were deterministic and retained
+all availability statuses; only `phase-no-own-draw` and `phase-one-own-draw`
+changed root recommendation. Reports with every candidate and score ledger are
+`build/final-main-comparison.json` and `build/final-phase-comparison.json`.
+The phase-only fixture set can be rerun with `--fixtures
+tests/fixtures/advisor_phase_cases.json`; concatenate the three `cases` arrays
+for the complete batch. These warmed samples on one machine are not a latency
+guarantee or evidence of calibrated risk or stronger play.
+
 ## Run a comparison
 
 From the repository root, using the existing development environment:

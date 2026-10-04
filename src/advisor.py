@@ -20,7 +20,7 @@ from mahjong.meld import Meld
 from mahjong.shanten import Shanten
 
 
-MODEL = "public-information-actions-ev-v6-public-threat (未校准启发式)"
+MODEL = "public-information-actions-ev-v6-public-threat-opportunities (未校准启发式)"
 SEARCH_SECONDS = 2.
 # Public-evidence priors, not frequencies fitted to game records.
 OPEN_YAKU_CONFIDENCE = .6
@@ -610,7 +610,7 @@ def _ready_discard(branch, unseen, opponents, opportunities, state):
         # This discard ends the branch on deal-in; only its survivors can win.
         probability *= 1 - option["dealInProbability"]
         score, _, _ = _position_score(probability, value, option["expectedDealInLoss"],
-                                       0, ukeire, option["waits"], state)
+                                       0, ukeire, option["waits"], state, opportunities.count(state["selfSeat"]))
         outcomes.append({**option, "winProbability": probability, "expectedWinPoints": value,
                          "score": round(score, 1), "ukeire": ukeire})
     return min(outcomes, key=lambda c: (-c["score"], -c["ukeire"],
@@ -730,9 +730,15 @@ def _risk_weight(state):
     return weight
 
 
-def _position_score(probability, value, loss, sh, ukeire, waits, state):
+def _position_score(probability, value, loss, sh, ukeire, waits, state, own_draws):
     """Shared score for a present discard and a future ready-hand decision."""
     efficiency = 70 * (6 - sh) + 2 * ukeire
+    # Share the pre-discard progress requirement across candidates: otherwise
+    # scaling their common score offset differently can itself encourage risk.
+    # Unknown future calls are not part of this necessary-draw estimate.
+    if sh > 0:
+        required = max(1, shanten(counts34(state["hand"]), not state["melds"][state["selfSeat"]]))
+        efficiency *= min(1., max(0, own_draws - required + 1) / required)
     tenpai_bonus = ((1500 if state["playerCount"] == 4 else 1000) *
                     max(0., 1 - state["left"] / 28)) if sh == 0 and waits else 0
     return probability * value - _risk_weight(state) * loss + efficiency + tenpai_bonus, efficiency, tenpai_bonus
@@ -806,7 +812,7 @@ def _position(hand, state, remaining, discard=None):
     if kokushi_route:
         reasons.append("国士路线按缺少幺九及雀头估计推进")
     score, efficiency, tenpai_bonus = _position_score(
-        probability, value, loss + future_loss, sh, ukeire, waits, state)
+        probability, value, loss + future_loss, sh, ukeire, waits, state, draws)
     result = {"tile": discard, "action": "discard" if discard is not None else "pass",
               "actionId": f"discard:{discard}" if discard is not None else "pass", "consumed": [],
               "shanten": sh, "ukeire": ukeire, "improvingTiles": improvements,
