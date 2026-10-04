@@ -533,3 +533,30 @@ branch also propagates the resulting suji evidence for its alternative `2p`
 discard. Regression checks compare all legal ready discards, chosen follow-up,
 probabilities and scores with the same unknown pool and remaining event suffix.
 This repairs state consistency and does not establish stronger play.
+
+## Confirmed-riichi continuation absorption
+
+Confirmed riichi now enters the same joint win/forced-discard recurrence from
+the common position evaluator. Ordinary tsumogiri, skipping a server-offered
+legal ankan or North extraction, and nonwinning replacement children therefore
+absorb wins and deal-ins before later events. Waiting analysis supplies its
+actual event order, including a final own draw or a pending enemy discard.
+The current discard uses its unrounded danger once; its expected loss remains
+separate from future forced losses. Already-paid riichi sticks are never charged
+again. New declarations alone add the existing deposit calculation and retain
+the fourth-riichi abort reset.
+
+Future forced discards reuse the passed-discard safety evidence above: the
+survived root discard or current public discard is safe against the relevant
+riichi opponents, while the current discard risk and non-riichi risks remain.
+No hypothetical intervening opponent actions are inserted into the snapshot.
+
+Replacement decisions average future forced probability/loss from their children
+and apply robbery survival once, alongside the existing child score ledger.
+Immediate replacement wins and fourth-kan aborts have no subsequent forced
+discard losses. The three new confirmed-riichi fixtures use an ordinary locked
+discard, a just-drawn fourth triplet tile that can legally be concealed-kanned,
+and a drawn North in sanma. These are consistency regressions with real optional
+choices, not evidence of stronger play or calibrated probabilities. The frozen
+unknown-pool approximation, risk coefficients, competition model, two-second
+budget, cancellation, and decision-scoped scoring cache remain in place.

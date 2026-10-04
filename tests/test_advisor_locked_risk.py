@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import advisor
 from test_advisor import state, tiles
-from test_advisor_actions import own_action
+from test_advisor_actions import get_action, own_action
 
 
 class LockedRiskTests(unittest.TestCase):
@@ -133,8 +133,8 @@ class LockedRiskTests(unittest.TestCase):
         committed["riichi"][0] = True
         hand = s["hand"].copy()
         hand.remove("1z")
-        before = advisor._position(hand, committed, remaining, "1z")
         with patch.object(advisor, "_locked_risk", return_value=(.125, 7000., .2, 1520.)):
+            before = advisor._position(hand, committed, remaining, "1z")
             candidate = advisor._riichi(s, choice, remaining)
         terms = candidate["scoreBreakdown"]
         self.assertEqual(candidate["winProbability"], .125)
@@ -142,10 +142,197 @@ class LockedRiskTests(unittest.TestCase):
         self.assertEqual(candidate["futureForcedDealInProbability"], .2)
         self.assertEqual(terms["winIncome"], .125 * 7000)
         self.assertEqual(terms["futureForcedDealInLoss"], -1520)
-        expected = (before["score"] - before["scoreBreakdown"]["winIncome"] + .125 * 7000 -
-                    candidate["expectedRiichiCost"] - advisor._risk_weight(s) * 1520)
+        expected = before["score"] - candidate["expectedRiichiCost"]
         self.assertAlmostEqual(candidate["score"], expected, delta=.55)
         self.assertEqual(s, original)
+
+
+class ConfirmedRiichiTests(unittest.TestCase):
+    def locked(self, hand="123m123p123s45s77z1z", players=4):
+        s = state(hand, players)
+        s["riichi"][:2] = [True, True]
+        s["riichiStep"][:2] = [10, 20]
+        s["rivers"][0] = [{"tile": "9m", "step": 10}]
+        s["rivers"][1] = [{"tile": "9p", "step": 20}]
+        s.update(left=16, lastDraw=s["hand"][-1], riichiSticks=2,
+                 lastAction={"name": "ActionDealTile", "seat": 0,
+                             "tile": s["hand"][-1], "step": 40})
+        return s
+
+    def test_confirmed_discard_uses_joint_outcomes_without_repaying_stick(self):
+        s = self.locked()
+        original = deepcopy(s)
+        remaining = advisor.unseen_counts(s)
+        c = get_action(s, "discard")
+        danger, loss, _ = advisor._danger("1z", remaining, advisor._opponents(s, remaining))
+        expected = advisor._locked_risk(s, remaining, {**c, "dealInProbability": danger})
+        win, points, forced, forced_loss = expected
+        self.assertEqual(c["winProbability"], round(win, 4))
+        self.assertEqual(c["expectedWinPoints"], round(points))
+        self.assertEqual(c["futureForcedDealInProbability"], round(forced, 4))
+        self.assertEqual(c["futureForcedDealInLoss"], round(forced_loss))
+        self.assertAlmostEqual(c["scoreBreakdown"]["winIncome"], win * points)
+        self.assertEqual(c["scoreBreakdown"]["currentDealInLoss"], -loss)
+        self.assertAlmostEqual(c["scoreBreakdown"]["futureForcedDealInLoss"], -forced_loss)
+        self.assertNotIn("riichiCost", c["scoreBreakdown"])
+        self.assertNotIn("expectedRiichiCost", c)
+        self.assertEqual(s, original)
+
+    def test_current_discard_and_two_future_draws_absorb_exactly_once(self):
+        s = self.locked()
+        remaining = advisor.unseen_counts(s)
+        danger, loss = .123456, 987.654
+        with patch.object(advisor, "_event_survival", return_value=1.), patch.object(
+                advisor, "_danger", return_value=(danger, loss, [])), patch.object(
+                advisor, "_opportunities", return_value=(0, 0)):
+            c = get_action(s, "discard")
+        waits = c["winningTiles"]
+        hit = sum(w["count"] for w in waits if w["tsumoPoints"]) / sum(remaining)
+        income = sum(w["count"] * w["tsumoPoints"] for w in waits) / sum(remaining)
+        survived_draw = (1 - hit) * (1 - danger)
+        live_draws = (1 - danger) * (1 + survived_draw)
+        self.assertEqual(c["winProbability"], round(live_draws * hit, 4))
+        self.assertEqual(c["futureForcedDealInProbability"], round(live_draws * (1 - hit) * danger, 4))
+        terms = c["scoreBreakdown"]
+        self.assertAlmostEqual(terms["winIncome"], live_draws * income)
+        self.assertAlmostEqual(terms["futureForcedDealInLoss"], -live_draws * (1 - hit) * loss)
+        self.assertEqual(terms["currentDealInLoss"], -loss)
+        self.assertAlmostEqual(terms["riskPreferenceAdjustment"], (advisor._risk_weight(s) - 1) *
+                               (terms["currentDealInLoss"] + terms["futureForcedDealInLoss"]))
+        self.assertAlmostEqual(sum(terms.values()), c["score"])
+
+    def test_known_passed_tile_is_safe_only_for_future_riichi_opponents(self):
+        for current in ("5p", "0p"):
+            for root in (True, False):
+                with self.subTest(current=current, root=root):
+                    s = self.locked("123m123p123s45s77z" + current)
+                    if not root:
+                        s["hand"].remove(current)
+                        s["lastDraw"] = None
+                        s["rivers"][3] = [{"tile": current, "step": 40}]
+                        s["lastAction"] = {"name": "ActionDiscardTile", "seat": 3,
+                                           "tile": current, "step": 40}
+                    original = deepcopy(s)
+                    remaining = advisor.unseen_counts(s)
+                    enemies = advisor._opponents(s, remaining)
+                    danger = advisor._danger(current, remaining, enemies)[0] if root else 0
+                    after = deepcopy(enemies)
+                    for enemy in after:
+                        if enemy["riichi"]:
+                            enemy["safe"].add(advisor.tile_index(current))
+                    drawn_remaining = list(remaining)
+                    drawn_remaining[advisor.tile_index("5p")] -= 1
+                    future, loss, details = advisor._danger("5p", drawn_remaining, after)
+                    self.assertGreater(future, 0)  # Non-riichi seat 2 remains dangerous.
+                    self.assertEqual(next(d for d in details if d["seat"] == 1)["probability"], 0)
+                    c = {"winningTiles": [], "dealInProbability": danger, "tile": current if root else None}
+                    with patch.object(advisor, "_draw_pool", return_value=[("5p", 1)]):
+                        outcome = advisor._locked_risk(s, remaining, c, opportunities=(0,))
+                    self.assertAlmostEqual(outcome[2], (1 - danger) * future / sum(remaining))
+                    self.assertAlmostEqual(outcome[3], (1 - danger) * loss / sum(remaining))
+                    self.assertEqual(s, original)
+
+    def optional(self, action):
+        if action == "ankan":
+            # The just-drawn fourth 1m only extends the existing triplet;
+            # both paths retain the same 3s/6s waits and decomposition.
+            s = self.locked("111m123p123s45s77z1m")
+            kind, combination = 4, ["1m|1m|1m|1m"]
+        else:
+            s = self.locked("123p123s789s45p77z4z", 3)
+            kind, combination = 11, []
+        s.update(canAct=True, canDiscard=False, operations=[kind],
+                 operationDetails=[{"type": kind, "combination": combination}])
+        return s
+
+    def test_legal_optional_skip_matches_forced_discard(self):
+        for action in ("ankan", "kita"):
+            with self.subTest(action=action):
+                s = self.optional(action)
+                before = deepcopy(s)
+                a = advisor.advise(s)
+                self.assertEqual({c["action"] for c in a["candidates"]}, {"pass", action})
+                skip = next(c for c in a["candidates"] if c["action"] == "pass")
+                discard_state = deepcopy(s)
+                discard_state.update(canDiscard=True, operations=[1])
+                discard = get_action(discard_state, "discard")
+                for field in ("winProbability", "expectedWinPoints", "dealInProbability",
+                              "futureForcedDealInProbability", "futureForcedDealInLoss", "score", "scoreBreakdown"):
+                    self.assertEqual(skip[field], discard[field], field)
+                self.assertGreater(skip["futureForcedDealInLoss"], 0)
+                self.assertEqual(skip["followupDiscard"], s["lastDraw"])
+                self.assertNotIn("expectedRiichiCost", skip)
+                self.assertEqual(s, before)
+
+    def test_legal_replacements_keep_child_absorption_and_robbery_survival(self):
+        for action in ("ankan", "kita"):
+            with self.subTest(action=action):
+                s = self.optional(action)
+                before = deepcopy(s)
+                choice = advisor._action_choices(s)[0][0]
+                children = {}
+                original_discards = advisor._discards
+
+                def capture(snapshot, remaining):
+                    candidates = original_discards(snapshot, remaining)
+                    self.assertEqual(len(candidates), 1)
+                    children[snapshot["lastDraw"]] = candidates[0]
+                    return candidates
+
+                with patch.object(advisor, "_discards", side_effect=capture):
+                    c = advisor._replacement(s, choice, advisor.unseen_counts(s))
+                outcomes = c["replacementOutcomes"]
+                total = sum(o["count"] for o in outcomes)
+                rob = (sum(r["probability"] for r in c["opponentRisks"]) if action == "ankan" else
+                       advisor._danger("4z", advisor.unseen_counts(s),
+                                       advisor._opponents(s, advisor.unseen_counts(s)))[0])
+                for field, digits in (("futureForcedDealInProbability", 4), ("futureForcedDealInLoss", 0)):
+                    weighted = sum(o["count"] * children[o["draw"]][field]
+                                   for o in outcomes if o["draw"] in children) / total
+                    self.assertEqual(c[field], round((1 - rob) * weighted, digits))
+                    self.assertGreater(c[field], 0)
+                self.assertTrue(any(o["draw"] not in children for o in outcomes))
+                for o in outcomes:
+                    if o["draw"] in children:
+                        self.assertEqual(o["followupDiscard"], o["draw"])
+                        self.assertEqual(o["winProbability"], children[o["draw"]]["winProbability"])
+                    else:
+                        self.assertIsNone(o["followupDiscard"])
+                        self.assertEqual(o["winProbability"], 1)
+                self.assertNotIn("riichiCost", c["scoreBreakdown"])
+                self.assertAlmostEqual(sum(c["scoreBreakdown"].values()), c["score"])
+                self.assertEqual(s, before)
+
+    def test_fourth_kan_absorbs_locked_children_after_current_discard(self):
+        s = self.locked("222m123p45s77z2m")
+        s["melds"][0] = [{"type": 3, "tiles": tiles("8888m")}]
+        s["melds"][1] = [{"type": 3, "tiles": tiles(t)} for t in ("7777m", "7777p")]
+        s.update(canAct=True, canDiscard=False, operations=[4],
+                 operationDetails=[{"type": 4, "combination": ["2m|2m|2m|2m"]}])
+        c = get_action(s, "ankan")
+        self.assertTrue(c["abortAfterDiscard"])
+        self.assertGreater(c["winProbability"], 0)
+        self.assertGreater(c["dealInProbability"], 0)
+        self.assertEqual(c["futureForcedDealInProbability"], 0)
+        self.assertEqual(c["futureForcedDealInLoss"], 0)
+        self.assertTrue(all(o["winProbability"] in (0, 1) for o in c["replacementOutcomes"]))
+        self.assertNotIn("futureForcedDealInLoss", c["scoreBreakdown"])
+
+    def test_locked_waiting_analysis_preserves_actual_next_draw_order(self):
+        s = self.locked("123m123p123s45s77z")
+        s.update(canDiscard=False, canAct=False, operations=[], lastDraw=None, left=1,
+                 lastAction={"name": "ActionDiscardTile", "seat": 3, "tile": "1z", "step": 40})
+        s["rivers"][3] = [{"tile": "1z", "step": 40}]
+        c = get_action(s, "wait")
+        self.assertGreater(c["winProbability"], 0)
+        self.assertGreater(c["futureForcedDealInProbability"], 0)
+        self.assertEqual(c["dealInProbability"], 0)
+        # A last enemy draw still has its discard to come, even at left=0.
+        s.update(left=0, lastAction={"name": "ActionDealTile", "seat": 1, "tile": None, "step": 40})
+        c = get_action(s, "wait")
+        self.assertGreater(c["winProbability"], 0)
+        self.assertEqual(c["futureForcedDealInProbability"], 0)
+        self.assertEqual(c["futureForcedDealInLoss"], 0)
 
 
 if __name__ == "__main__":

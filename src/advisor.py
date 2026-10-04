@@ -699,7 +699,12 @@ def _position(hand, state, remaining, discard=None):
     kokushi_route = special and sh == 2 and Shanten.calculate_shanten_for_kokushi_hand(counts) == sh
     branches = None
     future_danger, future_loss = 0., 0.
-    if sh == 1:
+    locked = bool(state.get("riichi", [False] * 4)[state["selfSeat"]])
+    if locked:
+        probability, value, future_danger, future_loss = _locked_risk(
+            state, remaining, {"winningTiles": waits or [], "dealInProbability": danger, "tile": discard},
+            opportunities=opportunities)
+    elif sh == 1:
         branches = _one_shanten_branches(hand, counts, improvements, remaining, state, discard, special)
         probability, value, future_danger, future_loss = _one_shanten_model(
             branches, unseen, opponents, opportunities, state)
@@ -713,9 +718,10 @@ def _position(hand, state, remaining, discard=None):
             probability = _kokushi_probability(counts, remaining, draws, opponents, state, discard, 0, opportunities)
         if waits is not None:
             value = ready_value
-    probability *= 1 - danger
-    future_danger *= 1 - danger
-    future_loss *= 1 - danger
+    if not locked:
+        probability *= 1 - danger
+        future_danger *= 1 - danger
+        future_loss *= 1 - danger
     reasons = [f"{'听牌' if sh == 0 else str(sh) + ' 向听'}；有效未见牌 {ukeire} 张"]
     if sh == 0 and not waits:
         reasons[0] = "形式 0 向听，但没有实体上合法的听口"
@@ -747,10 +753,15 @@ def _position(hand, state, remaining, discard=None):
               "valueMethod": "听牌逐张计分" if sh == 0 else "一向听逐分支计分" if sh == 1 else "未来牌型估值",
               "yakuConfidence": yaku_factor}
     _record_score(result, winIncome=probability * value, currentDealInLoss=-loss,
-                  futureDiscardDealInLoss=-future_loss,
+                  futureDiscardDealInLoss=-future_loss if not locked else 0,
+                  futureForcedDealInLoss=-future_loss if locked else 0,
                   riskPreferenceAdjustment=-(_risk_weight(state) - 1) * (loss + future_loss),
                   efficiencyReward=efficiency, lateTenpaiReward=tenpai_bonus)
-    if branches is not None:
+    if locked:
+        result.update(futureForcedDealInProbability=round(future_danger, 4),
+                      futureForcedDealInLoss=round(future_loss))
+        reasons.append("立直后不能自由弃和，和牌与强制摸切放铳共用存活概率")
+    elif branches is not None:
         result.update(futureDiscardDealInProbability=round(future_danger, 4),
                       futureDiscardDealInLoss=round(future_loss))
         result["lookahead"] = {"drawVariants": len(branches),
@@ -912,7 +923,7 @@ def _apply_choice(state, choice):
     return next_
 
 
-def _locked_risk(state, remaining, candidate):
+def _locked_risk(state, remaining, candidate, *, opportunities=None):
     """Joint future win probability/value and forced-deal-in probability/loss.
 
     Winning and forced-discard tiles are disjoint own-draw outcomes. The
@@ -923,7 +934,7 @@ def _locked_risk(state, remaining, candidate):
     unseen = sum(remaining)
     if not unseen:
         return 0., 0., 0., 0.
-    opponents = _opponents(state, remaining)
+    opponents = _opponents(state, remaining, after_current=True, passed_discard=candidate.get("tile"))
     waits = candidate["winningTiles"]
     outcomes = {}
     for key, rate, cap in (("tsumoPoints", 1., 1.), ("ronPoints", .45, .65)):
@@ -943,7 +954,9 @@ def _locked_risk(state, remaining, candidate):
     survival = _event_survival(opponents)
     live = 1 - candidate["dealInProbability"]
     win, income, deal_in, loss = 0., 0., 0., 0.
-    for actor in _opportunities(state, after_discard=True):
+    if opportunities is None:
+        opportunities = _opportunities(state, after_discard=True)
+    for actor in opportunities:
         _check_search()
         own_draw = actor == state["selfSeat"]
         hit, points = outcomes["tsumoPoints" if own_draw else "ronPoints"]
@@ -976,31 +989,20 @@ def _riichi(state, choice, remaining):
     # The new stick is our own money: recover it only if we win. Existing pot
     # remains in hand values; adding our stick as a free 1000-point prize is wrong.
     four_riichi = state["playerCount"] == 4 and all(next_["riichi"][:4])
-    locked_probability, locked_loss = 0., 0.
     if four_riichi:
         candidate.update(winProbability=0., expectedWinPoints=0,
+                         futureForcedDealInProbability=0., futureForcedDealInLoss=0,
                          score=-_risk_weight(state) * candidate["expectedDealInLoss"],
                          abortAfterRiichi=True, valueMethod="四家立直流局")
         _record_score(candidate, currentDealInLoss=-candidate["expectedDealInLoss"],
                       riskPreferenceAdjustment=-(_risk_weight(state) - 1) * candidate["expectedDealInLoss"])
         candidate["reasons"].append("第四家立直：宣言牌未被荣和则途中流局，无后续和牌机会或听牌料")
-    else:
-        probability, value, locked_probability, locked_loss = _locked_risk(next_, remaining, candidate)
-        terms = dict(candidate["scoreBreakdown"])
-        income = probability * value
-        candidate["score"] += income - terms.get("winIncome", 0.)
-        candidate.update(winProbability=round(probability, 4), expectedWinPoints=round(value))
-        terms["winIncome"] = income
-        _record_score(candidate, **terms)
     deposit_loss = 1000 * max(0., 1 - candidate["dealInProbability"] - candidate["winProbability"])
-    candidate["score"] = round(candidate["score"] - deposit_loss - _risk_weight(state) * locked_loss, 1)
+    candidate["score"] = round(candidate["score"] - deposit_loss, 1)
     candidate.update(choice, riichiDeposit=1000, expectedRiichiCost=round(deposit_loss),
-                     futureForcedDealInLoss=round(locked_loss),
-                     futureForcedDealInProbability=round(locked_probability, 4),
                      doubleRiichi=bool(state.get("canDoubleRiichi")))
     terms = dict(candidate["scoreBreakdown"])
-    terms.update(riichiCost=-deposit_loss, futureForcedDealInLoss=-locked_loss)
-    terms["riskPreferenceAdjustment"] = terms.get("riskPreferenceAdjustment", 0) - (_risk_weight(state) - 1) * locked_loss
+    terms["riichiCost"] = -deposit_loss
     _record_score(candidate, **terms)
     candidate["reasons"].extend(["按两立直加役计分" if state.get("canDoubleRiichi") else "立直加役计分，与同张默听弃牌比较",
                                  "扣除未获胜时留在供托的 1000 点；未计一发与里宝牌",
@@ -1114,7 +1116,8 @@ def _replacement(state, choice, remaining):
             "robKanProbability": round(rob, 4), "abortAfterDiscard": abort_after_discard, "replacementOutcomes": [
                 {"draw": draw, "count": weight, "followupDiscard": c["tile"], "shanten": c["shanten"],
                  "winProbability": c["winProbability"]} for weight, c, draw in outcomes]}
-    for field, digits in (("futureDiscardDealInProbability", 4), ("futureDiscardDealInLoss", 0)):
+    for field, digits in (("futureDiscardDealInProbability", 4), ("futureDiscardDealInLoss", 0),
+                          ("futureForcedDealInProbability", 4), ("futureForcedDealInLoss", 0)):
         result[field] = round((1 - rob) * sum(w * c.get(field, 0) for w, c, _ in outcomes) / total, digits)
     fields = dict.fromkeys(key for _, candidate, _ in outcomes for key in candidate["scoreBreakdown"]
                            if key != "roundingAdjustment")
