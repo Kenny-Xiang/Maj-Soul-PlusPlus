@@ -126,6 +126,13 @@
       "notes": "",
       "expectedStatus": "ready",
       "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["1m", "2m", "3m", "1p", "2p", "3p", "1s", "2s", "3s", "4s", "5s", "7z", "7z", "1z"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], []], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 0, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": "1z", "furiten": false, "riichiSticks": 0, "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": "1z", "step": 40}}
+    },
+    {
+      "id": "chi-called-low-yakuhai",
+      "tags": ["chi", "yakuhai", "regression"],
+      "notes": "Called 1s follows consumed 2s/3s in the meld; scoring must ignore presentation order.",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["5z", "5z", "5z", "1m", "2m", "3m", "4p", "5p", "2s", "3s", "9p", "9p", "2z"], "handComplete": true, "historyComplete": true, "canDiscard": false, "operations": [2], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], [{"tile": "1s", "step": 40}]], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": null, "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 2, "combination": ["2s|3s"]}], "lastAction": {"name": "ActionDiscardTile", "seat": 3, "tile": "1s", "step": 40}}
     }
   ]
 }

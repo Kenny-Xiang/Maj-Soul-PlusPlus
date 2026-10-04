@@ -20,7 +20,7 @@ from mahjong.meld import Meld
 from mahjong.shanten import Shanten
 
 
-MODEL = "public-information-actions-ev-v4 (未校准启发式)"
+MODEL = "public-information-actions-ev-v5 (未校准启发式)"
 SEARCH_SECONDS = 2.
 _SEARCH = ContextVar("advisor_search", default=None)
 TILES = tuple(f"{n}{s}" for s in "mps" for n in range(1, 10)) + tuple(f"{n}z" for n in range(1, 8))
@@ -156,8 +156,10 @@ def _scoring_tiles(concealed, meld_data):
             for n, tile in enumerate(group):
                 if (tile[0] == "0") == red:
                     values[n] = allocate(tile)
+    # The scorer expects the lowest chi tile first. Sort a copy: the allocation
+    # order below must still match the original tile strings for implicit reds.
     melds = [Meld(Meld.CHI if m["type"] == 0 else Meld.PON if m["type"] == 1 else Meld.KAN,
-                  ids[n + 1], opened=m["type"] != 3)
+                  sorted(ids[n + 1]), opened=m["type"] != 3)
              for n, m in enumerate(meld_data)]
     # A kan encoded as four ordinary fives carries no known aka information.
     # Avoid assigning an invented red bonus merely because IDs require slot 0.
