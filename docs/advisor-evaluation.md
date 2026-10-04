@@ -78,7 +78,7 @@ outputs are retained in `changedRepeats` instead of hidden by averaging.
 
 `tests/fixtures/advisor_cases.json` contains full synthetic snapshots adapted
 from `test_advisor.py` and `test_advisor_actions.py`, plus the existing recorded
-sanma snapshot from `turn.json`. The 18 cases cover ordinary efficiency, a broad
+sanma snapshot from `turn.json`. The original 18 cases cover ordinary efficiency, a broad
 one-shanten discard set, closed hands without ron yaku, discard and confirmed
 riichi furiten, new riichi, opponent riichi, chi, pon, all three kans, red fives,
 sanma North extraction, final-draw ordering, and waiting analysis. Their expected
@@ -234,6 +234,31 @@ labels and match/time-separated evaluation sets exist. Long-run decision return
 also remains unverified until a rule-consistent simulator, explicit continuation
 policies, paired initial conditions, and varied opponents are available. A real
 continuation after action A cannot be reused as the outcome of proposed action B.
+
+## Meld scoring order regression (model v5)
+
+Rule review found that the scorer expects a chi's lowest tile first, while a
+called low tile is naturally appended after the consumed tiles. A valid
+`[2s, 3s, 1s]` meld could therefore be rejected as a nonwinning hand. Sort a copy
+of each meld's physical IDs at the scoring boundary, retaining original
+allocation order for red-tile accounting and leaving the public snapshot intact.
+
+The focused regression changes a valid white-dragon self-draw from zero to
+1500 points. Permutations of red chi, pon, open/closed kan, and an implicitly
+encoded normal-five kan retain consistent scores and physical identities.
+`chi-called-low-yakuhai` extends the corpus to 19 cases; its called-low chi now
+receives its legal value. This is a rule correction, not a calibrated risk change.
+
+Final verification passed 104 advisor-related tests, 31 Node tests, 6
+formatting/logging tests, and both offline WebKit suites. Comparing the original
+`59a30d5` source with the final working source across 19 cases, one warmup and
+five measured passes (95 samples each), produced deterministic repeated outputs.
+Baseline median/P95/max were 1.402/31.241/33.073 ms; final v5 measured
+21.104/808.405/819.043 ms. Recommendations changed for `broad-one-shanten`,
+`river-furiten`, and `chi-called-low-yakuhai`. The added case changes the workload
+mix, so compare the two sides of this run rather than aggregate percentiles
+across different corpora. The wider search is more expensive, and none of these
+results establishes improved real-game returns.
 
 The initial local smoke comparison on 2026-10-04 used source `59a30d5`, all 18
 cases, one warmup pass, and five measured passes (90 samples per version).
