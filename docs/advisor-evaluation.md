@@ -154,8 +154,8 @@ first winning self-draw: only its remaining event suffix can win.
 This is complete enumeration of the next effective draw and discard, not a
 complete game tree. Earlier ineffective tsumogiri cannot cause branch furiten:
 if H+A-X waits on B, swapping A and B proves B was an effective family too.
-Future opponent reveals/calls, later ready-hand pool changes, and danger of the
-simulated future discard remain outside this lookahead. Two-shanten and farther
+Future opponent reveals/calls and later ready-hand pool changes remain outside
+this lookahead. The follow-up discard risk addition is described below. Two-shanten and farther
 positions retain explicitly labelled estimates; future riichi is not assumed.
 
 Expanded search has a cooperative two-second budget and cancellation checks
@@ -268,3 +268,53 @@ measured 1.308/28.108/29.386 ms. These are a small warmed sample on one machine,
 not a performance guarantee. A separate comparison against pre-fix commit
 `33afbb4` detected the changed `new-riichi-changed-waits` recommendation, confirming
 the report also captures a real historical behavior change.
+
+## Conditional one-shanten follow-up risk (v5-lookahead-risk)
+
+The previous continuation policy maximized gross winning income. In the
+`2345667m34568p44s` regression, discard `8p` and draw `4s` against seat 1's
+riichi with safe `3p`. With twelve events left, that policy chose `6m` for
+563.52 gross income despite 530.40 expected immediate loss; `3p` offered 243.52
+gross income and 10.40 expected loss. The expanded real decision window already
+preferred `3p`. Future legal tenpai discards now reuse the present-position score,
+including risk weight, efficiency, late-tenpai reward, rounding and tie order.
+All three ready-discard scores agree with the expanded window: `3p` 1510.8,
+`6m` 1180.3, and `6p` 888.6. No heuristic coefficients were fitted or changed.
+
+Each effective-draw arrival has a conditional follow-up deal-in probability
+`q`, expected payment `L`, and surviving ready-hand win probability/value
+`p`/`V`. For arrival weight `a`, it contributes `a*q` to the modeled follow-up
+deal-in terminal, `a*L` to loss, and `a*(1-q)*p` / `a*(1-q)*p*V` to winning
+probability/income. The current discard's survival multiplies both future
+metrics once. Thus a follow-up deal-in cannot also earn subsequent win income,
+and a final effective draw still incurs its discard risk with no winning suffix.
+The original competition factor remains in `a`, before the follow-up decision,
+as in the prior effective-arrival model. It is an uncalibrated residual survival
+estimate, not another explicit follow-up payment. This preserves its historical
+placement; it does not unify event ordering across all advisor submodels.
+
+`futureDiscardDealInProbability` and `futureDiscardDealInLoss` expose the
+unconditional weighted future event separately from the current discard. The
+native ledger and comparison runner retain the separate loss, including
+replacement-draw weighting and abort normalization. Shape and late-tenpai
+rewards retain their heuristic meanings; the score is not full terminal EV.
+Only the first effective draw's legal tenpai discards are compared. Folding
+back out of tenpai, earlier ineffective tsumogiri danger, unknown opponent
+reveals, and later pool changes remain outside this bounded search.
+
+Regressions cover the expanded-window mismatch, zero/certain risk, terminal
+mass conservation, no suffix, competition and first-arrival miss weights,
+current-discard survival, replacement robbery survival, and preservation of
+future loss during abort normalization. The added
+`one-shanten-followup-risk` fixture extends this branch's corpus to 20 states.
+
+All 110 advisor, worker and benchmark tests passed. The offline comparison
+against merged v5 source `b658903` used one warmup and five measured passes
+(100 samples per version), with deterministic output across repeats and no
+availability changes. Baseline median/P95/max were 23.099/691.176/781.489 ms;
+the follow-up-risk model measured 26.308/771.446/856.035 ms. Only
+`river-furiten` changed its root recommendation. The added regression retains
+its root recommendation while correcting the modeled `4s` continuation.
+This warmed sample shows additional computation cost; it does not establish
+better game returns, calibrated probabilities, or a universal latency bound.
+The full report is `build/advisor-lookahead-risk-comparison.json` (ignored).

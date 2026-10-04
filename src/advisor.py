@@ -20,7 +20,7 @@ from mahjong.meld import Meld
 from mahjong.shanten import Shanten
 
 
-MODEL = "public-information-actions-ev-v5 (未校准启发式)"
+MODEL = "public-information-actions-ev-v5-lookahead-risk (未校准启发式)"
 SEARCH_SECONDS = 2.
 _SEARCH = ContextVar("advisor_search", default=None)
 TILES = tuple(f"{n}{s}" for s in "mps" for n in range(1, 10)) + tuple(f"{n}z" for n in range(1, 8))
@@ -430,6 +430,7 @@ def _one_shanten_branches(hand, counts, improvements, remaining, state, discard,
         drawn["forbiddenDiscards"] = []  # The preceding call's kuikae window ended.
         unseen = list(remaining)
         unseen[index] -= 1
+        opponents = _opponents(drawn, unseen)
         options = []
         for tile in sorted(_legal_discards(drawn)):
             _check_search()
@@ -440,45 +441,70 @@ def _one_shanten_branches(hand, counts, improvements, remaining, state, discard,
             trial = tuple(trial)
             if shanten(trial, special) == 0:
                 waits, furiten = _wait_values(next_hand, trial, unseen, drawn, tile, special)
-                options.append({"discard": tile, "waits": waits, "furiten": furiten})
+                danger, loss, _ = _danger(tile, unseen, opponents)
+                options.append({"discard": tile, "waits": waits, "furiten": furiten,
+                                "dealInProbability": danger, "expectedDealInLoss": loss})
         branches.append({"draw": draw, "count": weight, "remaining": tuple(unseen), "options": options})
     return branches
 
 
-def _one_shanten_model(branches, unseen, opponents, opportunities, own_seat):
+def _ready_discard(branch, unseen, opponents, opportunities, state):
+    """Choose the same scored tenpai discard as an expanded action window."""
+    outcomes = []
+    for option in branch["options"]:
+        _check_search()
+        ukeire = sum(w["count"] for w in option["waits"])
+        probability, value = _win_model(
+            0, ukeire, unseen, 0, opponents, option["waits"],
+            opportunities=opportunities, own_seat=state["selfSeat"])
+        # This discard ends the branch on deal-in; only its survivors can win.
+        probability *= 1 - option["dealInProbability"]
+        score, _, _ = _position_score(probability, value, option["expectedDealInLoss"],
+                                       0, ukeire, option["waits"], state)
+        outcomes.append({**option, "winProbability": probability, "expectedWinPoints": value,
+                         "score": round(score, 1), "ukeire": ukeire})
+    return min(outcomes, key=lambda c: (-c["score"], -c["ukeire"],
+                                        c["discard"].startswith("0"), c["discard"])) if outcomes else None
+
+
+def _one_shanten_model(branches, unseen, opponents, opportunities, state):
     """First effective draw without replacement, followed by the actual suffix.
 
     If H+A-X waits on B, H+B-X waits on A. Thus live waits are effective
     families already: preceding ineffective tsumogiri cannot deplete them or
     make them furiten. Only their total unknown mass needs tracking here.
-    Opponents and the later ready-hand pool still use the public-info heuristic.
+    The chosen follow-up discard splits arrival mass into terminal deal-in and
+    surviving continuation, sharing the actual position score and risk weight.
+    Earlier misses, opponents and later ready-hand draws remain heuristic.
     """
     effective = sum(branch["count"] for branch in branches)
     live, misses = 1., 0
-    wins, incomes = [], []
+    wins, incomes, dangers, losses = [], [], [], []
     survival = _event_survival(opponents)
     for index, actor in enumerate(opportunities):
         _check_search()
-        if actor == own_seat:
+        if actor == state["selfSeat"]:
             pool = unseen - misses
             if pool <= 0 or live == 0:
                 break
+            suffix = opportunities[index + 1:]
+            after = {**state, "left": len(suffix)}
             for branch in sorted(branches, key=lambda b: b["draw"]):
-                outcomes = []
-                for option in sorted(branch["options"], key=lambda o: o["discard"]):
-                    probability, value = _win_model(
-                        0, sum(w["count"] for w in option["waits"]), pool - 1, 0,
-                        opponents, option["waits"], opportunities=opportunities[index + 1:], own_seat=own_seat)
-                    outcomes.append((probability * value, probability, value))
-                income, probability, _ = max(outcomes, default=(0., 0., 0.))
+                outcome = _ready_discard(branch, pool - 1, opponents, suffix, after)
+                if outcome is None:
+                    continue
+                # Preserve the prior residual competition factor on arrival;
+                # the explicit follow-up deal-in is charged only after arrival.
                 mass = live * branch["count"] / pool * survival
-                wins.append(mass * probability)
-                incomes.append(mass * income)
+                wins.append(mass * outcome["winProbability"])
+                incomes.append(mass * outcome["winProbability"] * outcome["expectedWinPoints"])
+                dangers.append(mass * outcome["dealInProbability"])
+                losses.append(mass * outcome["expectedDealInLoss"])
             live *= max(0., 1 - effective / pool)
             misses += 1
         live *= survival
     probability = fsum(wins)
-    return probability, fsum(incomes) / probability if probability else 0.
+    return probability, fsum(incomes) / probability if probability else 0., fsum(dangers), fsum(losses)
 
 
 def _kokushi_probability(counts, remaining, draws, opponents, state, discard, tail, opportunities=None):
@@ -554,6 +580,14 @@ def _risk_weight(state):
     return weight
 
 
+def _position_score(probability, value, loss, sh, ukeire, waits, state):
+    """Shared score for a present discard and a future ready-hand decision."""
+    efficiency = 70 * (6 - sh) + 2 * ukeire
+    tenpai_bonus = ((1500 if state["playerCount"] == 4 else 1000) *
+                    max(0., 1 - state["left"] / 28)) if sh == 0 and waits else 0
+    return probability * value - _risk_weight(state) * loss + efficiency + tenpai_bonus, efficiency, tenpai_bonus
+
+
 def _record_score(candidate, **terms):
     """Diagnose the existing score; never use this ledger to rank candidates.
 
@@ -580,9 +614,11 @@ def _position(hand, state, remaining, discard=None):
     value, yaku_factor = _future_value(hand, state, counts, special)
     kokushi_route = special and sh == 2 and Shanten.calculate_shanten_for_kokushi_hand(counts) == sh
     branches = None
+    future_danger, future_loss = 0., 0.
     if sh == 1:
         branches = _one_shanten_branches(hand, counts, improvements, remaining, state, discard, special)
-        probability, value = _one_shanten_model(branches, unseen, opponents, opportunities, state["selfSeat"])
+        probability, value, future_danger, future_loss = _one_shanten_model(
+            branches, unseen, opponents, opportunities, state)
         yaku_factor = float(any(w["ronPoints"] or w["tsumoPoints"]
                                for b in branches for o in b["options"] for w in o["waits"]))
     else:
@@ -594,6 +630,8 @@ def _position(hand, state, remaining, discard=None):
         if waits is not None:
             value = ready_value
     probability *= 1 - danger
+    future_danger *= 1 - danger
+    future_loss *= 1 - danger
     reasons = [f"{'听牌' if sh == 0 else str(sh) + ' 向听'}；有效未见牌 {ukeire} 张"]
     if sh == 0 and not waits:
         reasons[0] = "形式 0 向听，但没有实体上合法的听口"
@@ -611,10 +649,8 @@ def _position(hand, state, remaining, discard=None):
         reasons.append("一向听前瞻未找到有役等待" if sh == 1 else "副露后役尚未确定，和牌前景已折减")
     if kokushi_route:
         reasons.append("国士路线按缺少幺九及雀头估计推进")
-    efficiency = 70 * (6 - sh) + 2 * ukeire
-    tenpai_bonus = ((1500 if state["playerCount"] == 4 else 1000) *
-                    max(0., 1 - state["left"] / 28)) if sh == 0 and waits else 0
-    score = probability * value - _risk_weight(state) * loss + efficiency + tenpai_bonus
+    score, efficiency, tenpai_bonus = _position_score(
+        probability, value, loss + future_loss, sh, ukeire, waits, state)
     result = {"tile": discard, "action": "discard" if discard is not None else "pass",
               "actionId": f"discard:{discard}" if discard is not None else "pass", "consumed": [],
               "shanten": sh, "ukeire": ukeire, "improvingTiles": improvements,
@@ -627,12 +663,15 @@ def _position(hand, state, remaining, discard=None):
               "valueMethod": "听牌逐张计分" if sh == 0 else "一向听逐分支计分" if sh == 1 else "未来牌型估值",
               "yakuConfidence": yaku_factor}
     _record_score(result, winIncome=probability * value, currentDealInLoss=-loss,
-                  riskPreferenceAdjustment=-(_risk_weight(state) - 1) * loss,
+                  futureDiscardDealInLoss=-future_loss,
+                  riskPreferenceAdjustment=-(_risk_weight(state) - 1) * (loss + future_loss),
                   efficiencyReward=efficiency, lateTenpaiReward=tenpai_bonus)
     if branches is not None:
+        result.update(futureDiscardDealInProbability=round(future_danger, 4),
+                      futureDiscardDealInLoss=round(future_loss))
         result["lookahead"] = {"drawVariants": len(branches),
                                "readyDiscards": sum(len(b["options"]) for b in branches)}
-        reasons.append("完整枚举有效进张及后续弃牌；逐分支计役与点值，保留未进张概率")
+        reasons.append("完整枚举有效进张及后续弃牌；按相同综合分续打，后续弃牌放铳后不再计和牌收益")
     elif sh >= 2:
         reasons.append("二向听以上仍使用未来进张与打点估算")
     return result
@@ -962,6 +1001,8 @@ def _replacement(state, choice, remaining):
             "robKanProbability": round(rob, 4), "abortAfterDiscard": abort_after_discard, "replacementOutcomes": [
                 {"draw": draw, "count": weight, "followupDiscard": c["tile"], "shanten": c["shanten"],
                  "winProbability": c["winProbability"]} for weight, c, draw in outcomes]}
+    for field, digits in (("futureDiscardDealInProbability", 4), ("futureDiscardDealInLoss", 0)):
+        result[field] = round((1 - rob) * sum(w * c.get(field, 0) for w, c, _ in outcomes) / total, digits)
     fields = dict.fromkeys(key for _, candidate, _ in outcomes for key in candidate["scoreBreakdown"]
                            if key != "roundingAdjustment")
     terms = {key: (1 - rob) * sum(w * c["scoreBreakdown"].get(key, 0) for w, c, _ in outcomes) / total
@@ -1082,14 +1123,16 @@ def _advise(state):
                 if candidate["action"] == "abort":
                     continue
                 continuation_loss = background_loss * (1 - candidate["winProbability"])
+                future_loss = candidate.get("futureForcedDealInLoss", 0) + candidate.get("futureDiscardDealInLoss", 0)
                 candidate["score"] = round(candidate["winProbability"] * candidate["expectedWinPoints"] -
-                                           _risk_weight(state) * (candidate["expectedDealInLoss"] + candidate.get("futureForcedDealInLoss", 0)) -
+                                           _risk_weight(state) * (candidate["expectedDealInLoss"] + future_loss) -
                                            candidate.get("expectedRiichiCost", 0) - candidate.get("newDoraRiskPenalty", 0) - continuation_loss, 1)
                 _record_score(candidate, winIncome=candidate["winProbability"] * candidate["expectedWinPoints"],
                               currentDealInLoss=-candidate["expectedDealInLoss"],
                               futureForcedDealInLoss=-candidate.get("futureForcedDealInLoss", 0),
+                              futureDiscardDealInLoss=-candidate.get("futureDiscardDealInLoss", 0),
                               riskPreferenceAdjustment=-(_risk_weight(state) - 1) *
-                              (candidate["expectedDealInLoss"] + candidate.get("futureForcedDealInLoss", 0)),
+                              (candidate["expectedDealInLoss"] + future_loss),
                               riichiCost=-candidate.get("expectedRiichiCost", 0),
                               newDoraPenalty=-candidate.get("newDoraRiskPenalty", 0),
                               abortContinuationLoss=-continuation_loss)
