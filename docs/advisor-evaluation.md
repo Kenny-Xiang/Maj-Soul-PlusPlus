@@ -560,3 +560,69 @@ and a drawn North in sanma. These are consistency regressions with real optional
 choices, not evidence of stronger play or calibrated probabilities. The frozen
 unknown-pool approximation, risk coefficients, competition model, two-second
 budget, cancellation, and decision-scoped scoring cache remain in place.
+
+## State-consistency verification (2026-10-04)
+
+The latest main is `df7293e` (README-only PR #15 after `ffc3030`). The two
+changes are stacked: passed-discard evidence at `3d18085`, then confirmed-riichi
+absorption at `c91fa11`. Rebasing onto the README update changed none of their
+source, tests, scripts, or evaluation documentation. Source hashes and every
+non-runtime output in the subsequent latest-main comparison match the original
+comparison. The independent final source review found no blocking issue.
+
+The unchanged baseline passed 141 advisor/worker/benchmark tests; the first
+change passed 144; the combined source passed 151. Each version also passed
+31 JavaScript and 6 formatting/logging tests. The new regressions were run
+against the old source first: passed-discard checks failed in 11 subcases,
+and the confirmed-riichi checks exposed missing fields and excessive win mass.
+These checks include cancellation, budget expiry, stale-worker suppression,
+cached/uncached equivalence, score reconciliation, physical counts, immutable
+snapshots, and mutually exclusive terminal probability bounds.
+
+All comparisons used the same 24-case corpus (the original 20 plus one
+passed-discard and three confirmed-riichi cases), one excluded warmup pass,
+and five measured passes: 120 observations per version. The shared fixture
+SHA-256 is `188161c7c7db6a2fe1f6d34b4e699ea84826f67331fadd55e7fc78e6051fe4f7`.
+Both sides were deterministic in every run, with no availability or root
+recommendation changes. Timing runs were serialized after test completion.
+
+| Comparison | Baseline median/P95/max (ms) | Changed median/P95/max (ms) |
+| --- | --- | --- |
+| Original main source to passed-discard evidence | 22.437 / 653.038 / 763.067 | 22.860 / 637.688 / 754.639 |
+| Passed-discard evidence to confirmed-riichi absorption | 22.671 / 633.595 / 755.356 | 22.222 / 639.224 / 758.546 |
+| Latest main `df7293e` to combined `c91fa11` | 20.730 / 598.771 / 689.759 | 21.616 / 601.516 / 700.827 |
+
+The first change affects only the pass candidate's score in its new fixture:
+419.5 becomes 495.7, while pass remains preferred. The second changes scores in
+five cases: new-riichi changed waits, confirmed-riichi furiten, ordinary locked
+discard, legal ankan, and legal North extraction. Existing choices remain
+preferred. The new declaration's small score change reflects use of unrounded
+current danger; no coefficients were changed. For the original ordinary-discard
+reproduction with no existing pot, win probability becomes 30.09% from 33.85%,
+and future forced loss is now included. The exact result also accounts for the
+root tile becoming safe against the riichi opponent after surviving its current
+discard. This is accounting consistency, not evidence of calibrated probability
+or stronger play. These warmed local timings do not establish a latency bound
+or a speed improvement; version order and machine load remain confounders.
+
+Full reports are retained under ignored `build/` as
+`passed-discard-comparison.json`, `confirmed-riichi-incremental-comparison.json`,
+and `confirmed-riichi-latest-main-comparison.json`. Reports contain their full
+input corpus, source hashes, every candidate field, and individual timings.
+Reproduce the final comparison with `scripts/advisor_compare.py --baseline
+df7293e --current-ref c91fa11 --warmups 1 --repeats 5 --output
+build/confirmed-riichi-latest-main-comparison.json` using the existing Python
+environment. The first two runs used the pre-rebase commits with identical
+source hashes and the same combined fixture file.
+
+Both native WebKit suites remain unverified: the replay receives no script
+messages and the overlay fails with `WKErrorDomain Code=5`. The unchanged
+baseline and both changed versions reproduce these failures in this sandbox;
+baseline logs also contain sandbox-extension failures. They are not counted
+as passes. No permission was expanded and no game session was opened.
+
+Deferred work remains separate: temporary furiten clearing on normal draws;
+haitei/houtei/chankan event yaku; repeated terminal loss in nine-terminals abort
+comparisons; multi-ron honba allocation; a complete terminal net-EV ledger;
+without-replacement winning draws; same-shanten red-tile exchanges; two-shanten
+search; and a complete terminal-outcome dataset. None is implemented here.
