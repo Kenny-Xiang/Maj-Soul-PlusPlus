@@ -140,6 +140,13 @@
       "notes": "After discarding 8p and drawing 4s, the twelve-event continuation must prefer safe 3p over income-only 6m.",
       "expectedStatus": "ready",
       "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["2m", "3m", "4m", "5m", "6m", "6m", "7m", "3p", "4p", "5p", "6p", "8p", "4s", "4s"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [{"tile": "3p", "step": 20}], [], []], "north": [0, 0, 0, 0], "riichi": [false, true, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, 20, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 16, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": "8p", "furiten": false, "riichiSticks": 0}
+    },
+    {
+      "id": "passed-current-discard",
+      "tags": ["one-shanten", "opponent-riichi", "chi", "regression"],
+      "notes": "After passing the current 5p, future draw 1z then discard 5p must retain its passage against the already riichi opponent.",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["1m", "2m", "3m", "2p", "3p", "4p", "6s", "7s", "8s", "5z", "5z", "5p", "1z"], "handComplete": true, "historyComplete": true, "canDiscard": false, "operations": [2], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [{"tile": "9p", "step": 20}], [], [{"tile": "5p", "step": 40}]], "north": [0, 0, 0, 0], "riichi": [false, true, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, 20, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": null, "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 2, "combination": ["3p|4p"]}], "lastAction": {"name": "ActionDiscardTile", "seat": 3, "tile": "5p", "step": 40}}
     }
   ]
 }

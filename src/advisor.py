@@ -332,7 +332,12 @@ def _visible_yakuman_payment(state, enemy):
     return {"yaku": names, "lower": lower + (0 if shared else honba), "upper": upper + honba}
 
 
-def _opponents(state, remaining):
+def _opponents(state, remaining, *, after_current=False, passed_discard=None):
+    """Public risk features, optionally after known discards have survived.
+
+    Continuations may include the current river event and an explicit root
+    discard as locked-hand safety evidence without advancing the event clock.
+    """
     opponents = []
     players, seat = state["playerCount"], state["selfSeat"]
     dora = [_dora_index(t, players) for t in state.get("doras", [])]
@@ -346,7 +351,11 @@ def _opponents(state, remaining):
         step = state.get("riichiStep", [None] * 4)[enemy]
         if riichi and step is not None:
             safe.update(tile_index(d["tile"]) for r in state["rivers"] for d in r
-                        if step < d.get("step", -1) < state.get("lastStep", -1))
+                        if step < d.get("step", -1) and
+                        (d.get("step", -1) < state.get("lastStep", -1) or
+                         after_current and d.get("step", -1) == state.get("lastStep", -1)))
+        if riichi and passed_discard is not None:
+            safe.add(tile_index(passed_discard))
         open_melds = [m for m in melds if m["type"] != 3]
         turn = len(river)
         tenpai = 1.0 if riichi else min(.65, .04 + turn * .018 + len(open_melds) * .14)
@@ -504,12 +513,8 @@ def _one_shanten_branches(hand, counts, improvements, remaining, state, discard,
         drawn["forbiddenDiscards"] = []  # The preceding call's kuikae window ended.
         unseen = list(remaining)
         unseen[index] -= 1
-        opponents = _opponents(drawn, unseen)
-        if discard is not None:
-            # Reaching this draw means the root discard passed every locked hand.
-            for enemy in opponents:
-                if enemy["riichi"]:
-                    enemy["safe"].add(tile_index(discard))
+        # Reaching this draw proves the known current and root discards passed.
+        opponents = _opponents(drawn, unseen, after_current=True, passed_discard=discard)
         options = []
         for tile in sorted(_legal_discards(drawn)):
             _check_search()
