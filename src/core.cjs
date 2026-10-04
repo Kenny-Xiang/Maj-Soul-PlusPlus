@@ -131,24 +131,33 @@ function restore(bytes) {
 
 function emptyState() {
   return {phase: 'waiting', selfSeat: null, hand: [], handComplete: false, historyComplete: false,
-    baseline: null, lastStep: null, lastDraw: null, left: null, doras: [], scores: [],
+    baseline: null, lastStep: null, lastDraw: null, lastAction: null, left: null, doras: [], scores: [],
     rivers: [[], [], [], []], melds: [[], [], [], []], north: [0, 0, 0, 0],
     riichi: [null, null, null, null], riichiPending: [false, false, false, false],
     doubleRiichi: [null, null, null, null], doubleRiichiPending: [false, false, false, false],
     riichiStep: [null, null, null, null], riichiSticks: null, furiten: null,
-    canDiscard: false, operations: [], operationDetails: [], forbiddenDiscards: [],
+    canAct: false, canDiscard: false, noCallsYet: false, canDoubleRiichi: false,
+    operations: [], operationDetails: [], forbiddenDiscards: [],
     playerCount: 4, warning: '尚未取得开局或恢复基线', round: null};
 }
 const tileFamily = t => t?.replace(/^0/, '5');
 function setOperations(state, e) {
   state.operations = [...(e.operations || [])];
   state.operationDetails = (e.operationDetails || []).map(op => ({...op, combination: [...op.combination]}));
+  // The offered tile belongs to this exact action, never a previous river entry.
+  state.lastAction = e.name && state.phase === 'playing' && !e.unsupported ? {
+    name: e.name, seat: e.seat ?? (e.name === 'ActionNewRound' ? e.ju ?? null : null),
+    tile: e.tile ?? (e.name === 'ActionBaBei' ? '4z' : e.name === 'ActionNewRound' ? state.lastDraw : null),
+    type: e.type ?? null, step: e.step,
+  } : null;
   // In type 1, combination lists forbidden kuikae discards, not legal candidates.
   // See majsoulrpa screens/match/operation/_decode.py at the revision above.
   state.forbiddenDiscards = state.operationDetails.filter(op => op.type === 1).flatMap(op => op.combination);
-  state.canDiscard = state.phase === 'playing' && state.handComplete && state.historyComplete &&
+  state.canAct = state.phase === 'playing' && state.handComplete && state.historyComplete &&
     Number.isInteger(state.selfSeat) && state.selfSeat >= 0 && state.selfSeat < state.playerCount &&
-    e.selfSeat === state.selfSeat && state.operations.includes(1);
+    e.selfSeat === state.selfSeat && state.operations.some(type => Number.isInteger(type) && type >= 1 && type <= 11);
+  state.canDiscard = state.canAct && state.operations.includes(1);
+  state.canDoubleRiichi = state.canAct && state.noCallsYet && state.rivers[state.selfSeat].length === 0;
 }
 function apply(state, e) {
   if (e.name === 'ActionNewRound') {
@@ -159,7 +168,7 @@ function apply(state, e) {
     Object.assign(state, emptyState(), {phase: 'playing', selfSeat: seat, hand: [...e.hand],
       handComplete: e.hand.length > 0, historyComplete: true, baseline: 'new_round',
       riichi: [false, false, false, false], doubleRiichi: [false, false, false, false],
-      riichiSticks: e.riichiSticks ?? 0, furiten: false,
+      riichiSticks: e.riichiSticks ?? 0, furiten: false, noCallsYet: true,
       lastDraw: e.hand.length === 14 && seat === e.ju ? e.hand.at(-1) : null,
       warning: '', lastStep: e.step, left: e.left, doras: e.doras, scores: e.scores,
       playerCount: e.scores.length || 4, round: {chang: e.chang, ju: e.ju, ben: e.ben}});
@@ -222,6 +231,7 @@ function apply(state, e) {
     }
     if (e.seat === state.selfSeat) { remove(e.tile); state.lastDraw = null; }
   } else if (e.name === 'ActionChiPengGang') {
+    state.noCallsYet = false;
     state.melds[e.seat].push({type: e.type, tiles: e.tiles, froms: e.froms});
     e.tiles.forEach((tile, index) => {
       const from = e.froms[index];
@@ -234,6 +244,7 @@ function apply(state, e) {
     });
     if (e.seat === state.selfSeat) state.lastDraw = null;
   } else if (e.name === 'ActionAnGangAddGang') {
+    state.noCallsYet = false;
     if (e.type === 2) {
       const meld = state.melds[e.seat].find(m => m.type === 1 && tileFamily(m.tiles[0]) === tileFamily(e.tile));
       if (meld) {meld.type = 2; meld.tiles.push(e.tile);}
@@ -249,6 +260,7 @@ function apply(state, e) {
     } else invalidate(`未知杠类型 ${e.type}`);
     if (e.seat === state.selfSeat) state.lastDraw = null;
   } else if (e.name === 'ActionBaBei') {
+    state.noCallsYet = false;
     state.north[e.seat]++; state.playerCount = 3;
     if (e.seat === state.selfSeat) { remove('4z'); state.lastDraw = null; }
   } else if (['ActionHule', 'ActionNoTile', 'ActionLiuJu'].includes(e.name)) {
@@ -285,6 +297,7 @@ function applyRestore(state, result) {
     });
   } else {
     state.phase = 'connected';
+    state.handComplete = state.historyComplete = false;
     setOperations(state, {});
     state.warning = '恢复响应没有可独立使用的开局或快照';
   }

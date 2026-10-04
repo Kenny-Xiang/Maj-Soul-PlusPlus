@@ -23,5 +23,5 @@ coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='Maj-Soul+
 app = BUNDLE(coll, name='Maj-Soul++.app', icon=None,
              bundle_identifier='local.kenny.mahjong-monitor',
              info_plist={'CFBundleName': 'Maj-Soul++', 'CFBundleDisplayName': 'Maj-Soul++',
-                         'CFBundleShortVersionString': '6.0', 'CFBundleVersion': '6',
+                         'CFBundleShortVersionString': '6.1', 'CFBundleVersion': '8',
                          'LSMinimumSystemVersion': '14.0', 'NSHighResolutionCapable': True})

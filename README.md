@@ -1,6 +1,6 @@
 # Maj-Soul++
 
-A standalone macOS window for Mahjong Soul with live tile tracking, a translucent statistics overlay, and discard recommendations based on your hand and public game information.
+A standalone macOS window for Mahjong Soul with live tile tracking, a translucent statistics overlay, and action recommendations based on your hand, public game information, and the operations offered by the server.
 
 The app uses the system WebKit engine to load the game, observes messages received by that window, and passes statistics to Python through a native message bridge. The overlay updates after the initial deal and every accepted table action, including other players' actions.
 
@@ -8,14 +8,15 @@ Source repository: [Kenny-Xiang/Maj-Soul-PlusPlus](https://github.com/Kenny-Xian
 
 ## Features
 
-- **Fixed overlay columns:** game information on the left; recording status, diagnostics, and current discard advice on the right. The overlay stays in the upper half of the window and lets mouse clicks pass through to the game.
+- **Fixed overlay columns:** game information on the left; recording status, diagnostics, and current action advice on the right. The overlay stays in the upper half of the window and lets mouse clicks pass through to the game.
 - **Live game statistics:** your hand and seat, round information, scores, remaining tile count, dora indicators, each player's discards and melds, extracted North tiles, and known tile counts.
 - **Confirmed riichi labels:** opponents' labels indicate confirmed normal or double riichi. A declaration alone is not treated as confirmation. Labels clear when a new round starts or the match ends.
-- **Discard recommendations:** when it is your turn and the required information is complete, compare legal discards by shanten, effective unseen tiles, estimated win probability and hand value, and estimated immediate deal-in risk and loss. Recommendations are displayed only; the app does not play moves for you.
+- **Action recommendations:** when you have a legal operation window and the required information is complete, compare server-offered discards, chi, pon, all three kan types, riichi, North extraction, a nine-terminals abortive draw, and pass. Chi and pon recommendations include the tiles to use and a legal follow-up discard. Available tsumo or ron operations take priority. Recommendations are displayed only; the app does not play moves for you.
+- **Hand analysis between actions:** hand changes trigger a new evaluation. Outside a legal operation window, the overlay shows current shanten, effective unseen tiles, and estimated hand value while waiting for an action; it does not present an immediately executable discard or its deal-in risk.
 - **Clear update boundaries:** duplicate actions do not produce duplicate updates. Statistics remain visible between rounds and clear at the end of a match; historical logs are retained.
 - **Local operation:** a dedicated WebKit login profile, one running game window, and text and JSONL logs stored in your user data directory.
 
-The advisor assumes standard three-player or four-player Mahjong Soul rules. Its probability estimates use an uncalibrated public-information model and are not measured win rates or a guarantee of optimal play. See the [discard advisor documentation](docs/出牌建议.md) for the model, metrics, and limitations.
+The advisor assumes standard three-player or four-player Mahjong Soul rules. Its probability estimates use an uncalibrated public-information model and are not measured win rates or a guarantee of optimal play. See the [action advisor documentation](docs/出牌建议.md) for the model, metrics, and limitations.
 
 ## Using the app
 
@@ -95,7 +96,7 @@ Maj-Soul-PlusPlus/
 │   ├── core.cjs               Protocol decoding and game state
 │   ├── browser.js             Passive collection, action updates, and match resets
 │   ├── overlay.js             Translucent overlay with click-through behavior
-│   ├── advisor.py             Rule calculations and discard evaluation
+│   ├── advisor.py             Rule calculations and legal action evaluation
 │   └── advice_worker.py       Background evaluation and stale-result invalidation
 ├── tests/                     JavaScript, Python, and native WebKit tests
 │   └── fixtures/              Recorded replay fixtures
@@ -128,7 +129,9 @@ The collector only sees messages delivered to its own game window. A new-round d
 
 The app does not infer opponents' concealed hands or reconstruct information that was never received. Known tile counts combine red and ordinary fives and avoid counting a called discard again as part of a meld. These counts are not the exact composition of the remaining live wall: unseen tiles can also be in opponents' hands or the dead wall.
 
-Advice pauses when it is not your turn, the required baseline is missing, recovery is unverified, the connection is lost, or the round has ended. New actions invalidate stale recommendations. Custom room rules and event modes are outside the advisor's standard-rule assumptions.
+Analysis pauses when the required baseline is missing, recovery is unverified, the connection is lost, or the round has ended. New actions and submitted operations invalidate stale recommendations; server messages determine the next legal operation window. Custom room rules and event modes are outside the advisor's standard-rule assumptions.
+
+Action scores combine estimated hand value, winning chances, efficiency, and risk. Kan and North extraction use weighted estimates over unknown replacement draws, with estimated robbery risk and uncertainty about new kan dora; they do not name an unseen draw as a certain follow-up discard. The model compares the current action and necessary next draw or discard, without exhaustively simulating future action sequences, opponents' play, or final match placement.
 
 Offline replay verifies behavior against fixtures; it does not establish that every server recovery scenario or live-game edge case has been validated.
 
@@ -143,7 +146,7 @@ Git tracks source, tests, fixtures, documentation, dependency lists, and build c
 The detailed guides below are currently in Chinese:
 
 - [Usage guide](docs/使用说明.md)
-- [Discard advisor: metrics, model, and limitations](docs/出牌建议.md)
+- [Action advisor: metrics, model, and limitations](docs/出牌建议.md)
 - [Message collection and game-state completeness analysis](docs/监听方法与完整对局信息获取分析.md)
 - [Mahjong Soul rules reference](docs/雀魂规则_Agent参考.md)
 

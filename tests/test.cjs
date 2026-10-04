@@ -108,6 +108,113 @@ test('advisor operations decode forbidden discards, riichi choices and authorita
   assert.equal(ron.furiten,false);
 });
 
+test('operation combinations retain exact consumed tiles and red kan candidates', () => {
+  // Shapes checked against majsoulrpa operation/_decode.py and _materialize.py
+  // at 13698e226eace210ff8772fcabacfd2916299c4e. An added kan describes all four
+  // tiles, including the three already in the pon; it does not consume four.
+  const details = [
+    {type:2,combination:['3p|4p','4p|6p']}, {type:3,combination:['0p|5p']},
+    {type:4,combination:['0p|5p|5p|5p']}, {type:5,combination:['0p|5p|5p']},
+    {type:6,combination:['0p|5p|5p|5p']}, {type:7,combination:['0p','9s']},
+    {type:10,combination:[]}, {type:11,combination:[]},
+  ];
+  const operations = details.flatMap(op => bytes(2,[...num(1,op.type),
+    ...op.combination.flatMap(combination => str(2,combination))]));
+  const event = core.action(core.envelope(actionFrame('ActionDealTile',4,[
+    ...num(1,0), ...str(2,'5p'), ...num(3,30), ...bytes(4,[...num(1,0), ...operations]),
+  ])).data);
+  assert.deepEqual(event.operationDetails,details);
+  assert.deepEqual(event.operations,details.map(op => op.type));
+});
+
+test('call decision context tracks the current red discard and closes on the next action', () => {
+  const s = core.emptyState();
+  core.apply(s,{name:'ActionNewRound',step:0,selfSeat:0,hand:['5p','5p','1s'],
+    scores:[25000,25000,25000,25000],doras:[],left:60,chang:0,ju:1,ben:0});
+  const offered = {name:'ActionDiscardTile',step:1,seat:3,tile:'0p',selfSeat:0,
+    operations:[3],operationDetails:[{type:3,combination:['5p|5p']}]};
+  core.apply(s,offered);
+  assert.equal(s.canAct,true);
+  assert.equal(s.canDiscard,false);
+  assert.deepEqual(s.lastAction,{name:'ActionDiscardTile',seat:3,tile:'0p',type:null,step:1});
+  assert.equal(core.apply(s,offered),false);
+  assert.equal(s.canAct,true);
+  core.apply(s,{name:'ActionDealTile',step:2,seat:1,tile:null,left:59});
+  assert.equal(s.canAct,false);
+  assert.deepEqual(s.operations,[]);
+  assert.deepEqual(s.lastAction,{name:'ActionDealTile',seat:1,tile:null,type:null,step:2});
+  core.apply(s,{name:'ActionBaBei',step:3,seat:1,selfSeat:0,operations:[9]});
+  assert.equal(s.canAct,true);
+  assert.equal(s.lastAction.tile,'4z');
+  core.apply(s,{name:'ActionHule',step:4,matchEnd:false});
+  assert.equal(s.canAct,false);
+  assert.equal(s.lastAction,null);
+});
+
+test('non-discard decisions require intact history and matching local operation seat', () => {
+  const opening = {name:'ActionNewRound',step:0,selfSeat:0,hand:['5p','5p','1s'],
+    scores:[25000,25000,25000,25000],doras:[],left:60,chang:0,ju:1,ben:0};
+  const offered = {name:'ActionDiscardTile',step:1,seat:3,tile:'0p',selfSeat:0,
+    operations:[3],operationDetails:[{type:3,combination:['5p|5p']}]};
+  const s = core.emptyState();
+  core.apply(s,offered);
+  assert.equal(s.canAct,false);
+  for (const invalid of [{...offered,step:2},{...offered,selfSeat:2},
+    {...offered,selfSeat:undefined},{...offered,operations:[99]}]) {
+    const state = core.emptyState();
+    core.apply(state,opening);
+    core.apply(state,invalid);
+    assert.equal(state.canAct,false);
+    assert.equal(state.canDoubleRiichi,false);
+  }
+  core.apply(s,opening);
+  core.apply(s,offered);
+  core.apply(s,{name:'ActionUnsupported',step:2,unsupported:true,selfSeat:0,operations:[3]});
+  assert.equal(s.canAct,false);
+  assert.equal(s.lastAction,null);
+  assert.deepEqual(s.operations,[]);
+  for (const restored of [
+    {ended:true,actions:[]}, {ended:false,actions:[opening,offered]},
+    {ended:false,actions:[],snapshot:null},
+  ]) {
+    const state = core.emptyState();
+    core.apply(state,opening);
+    core.apply(state,offered);
+    core.applyRestore(state,restored);
+    assert.equal(state.canAct,false);
+    assert.equal(state.canDoubleRiichi,false);
+    assert.equal(state.lastAction,null);
+    assert.deepEqual(state.operations,[]);
+  }
+});
+
+test('first-turn riichi eligibility ends on any call, kan, kita or own discard', () => {
+  const opening = {name:'ActionNewRound',step:0,selfSeat:0,hand:['1p','4z'],
+    scores:[35000,35000,35000],doras:[],left:50,chang:0,ju:1,ben:0};
+  const decision = {selfSeat:0,operations:[1,7],operationDetails:[{type:1,combination:[]},
+    {type:7,combination:['4z']}]};
+  const interruptions = [
+    {name:'ActionChiPengGang',seat:1,type:1,tiles:['2p','2p','2p'],froms:[1,1,2]},
+    {name:'ActionAnGangAddGang',seat:1,type:3,tile:'2p'},
+    {name:'ActionBaBei',seat:1}, {name:'ActionDiscardTile',seat:0,tile:'1p'},
+  ];
+  for (const interruption of interruptions) {
+    const s = core.emptyState();
+    core.apply(s,opening);
+    core.apply(s,{name:'ActionDealTile',step:1,seat:0,tile:'9s',left:49,...decision});
+    assert.equal(s.canDoubleRiichi,true);
+    core.apply(s,{...interruption,step:2});
+    core.apply(s,{name:'ActionDealTile',step:3,seat:0,tile:'8s',left:48,...decision});
+    assert.equal(s.canDoubleRiichi,false);
+  }
+  const s = core.emptyState();
+  core.apply(s,{...opening,ju:0,...decision});
+  assert.equal(s.canDoubleRiichi,true);
+  core.apply(s,{name:'ActionDiscardTile',step:1,seat:1,tile:'9p'});
+  core.apply(s,{name:'ActionDealTile',step:2,seat:0,tile:'9s',left:49,...decision});
+  assert.equal(s.canDoubleRiichi,true);
+});
+
 test('advisor discard window follows actual server operations and closes on every next action', () => {
   const hand = ['1p','2p','3p','4p','5p','6p','6p','7p','8p','1s','2s','3s','4s','9s'];
   const permission = {selfSeat:0,operations:[1],operationDetails:[{type:1,combination:[]}]};
@@ -339,6 +446,83 @@ test('native listener preserves socket sends and fully detaches on uninstall', a
   game.dispatchEvent(new MessageEvent('message', {data:Uint8Array.from(Buffer.from(frames[0].hex,'hex')).buffer}));
   await new Promise(setImmediate);
   assert.equal(posts.length, before);
+});
+
+test('sending a decision clears stale advice immediately and preserves the original RPC unchanged', async () => {
+  const posts = [], sent = [];
+  let invalidations = 0;
+  class Socket extends EventTarget {
+    constructor(url) {super(); this.url = url; this.readyState = 1;}
+    send(...args) {sent.push({socket:this,args}); return 'original-result';}
+  }
+  const window = {WebSocket:Socket, __mjStatsOverlay:{invalidateAdvice(){invalidations++;}},
+    webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
+  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+    setInterval:fn=>fn, clearInterval(){}, console:{log(){}}};
+  vm.runInNewContext(collectorCode,sandbox);
+  const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
+  const feed = async frame => {
+    game.dispatchEvent(new MessageEvent('message',{data:frame.buffer}));
+    await new Promise(setImmediate);
+  };
+  for (const [index, method] of ['inputOperation','inputChiPengGang'].entries()) {
+    await feed(actionFrame('ActionNewRound',0,[...num(2,index), ...str(4,'1p'), ...str(4,'5p'),
+      ...num(6,35000), ...num(6,35000), ...num(6,35000),
+      ...bytes(7,[...num(1,0), ...bytes(2,num(1,1)), ...bytes(2,[...num(1,7), ...str(2,'1p')])]), ...num(13,50)]));
+    assert.equal(window.__mjMonitor.getSnapshot().state.canAct,true);
+    const before = invalidations;
+    const heartbeat = new Uint8Array([2,10,0,...str(1,'.lq.FastTest.heartbeat'),...bytes(2,[])]);
+    assert.equal(game.send(heartbeat),'original-result');
+    assert.equal(invalidations,before);
+    assert.equal(window.__mjMonitor.getSnapshot().state.canAct,true);
+    const decision = new Uint8Array([2,11,0,...str(1,`.lq.FastTest.${method}`),...bytes(2,num(1,1))]);
+    assert.equal(game.send(decision,'extra'),'original-result');
+    assert.equal(sent.at(-1).socket,game);
+    assert.equal(sent.at(-1).args[0],decision);
+    assert.equal(sent.at(-1).args[1],'extra');
+    assert.equal(invalidations,before+1);
+    const state = window.__mjMonitor.getSnapshot().state;
+    assert.equal(state.canAct,false);
+    assert.equal(state.canDiscard,false);
+    assert.equal(state.canDoubleRiichi,false);
+    assert.equal(state.lastAction,null);
+    assert.equal(state.operations.length,0);
+    assert.equal(state.operationDetails.length,0);
+    assert.equal(state.forbiddenDiscards.length,0);
+  }
+  window.__mjMonitor.uninstall();
+});
+
+test('parse errors, disconnection and stopping all close an active decision window', async () => {
+  for (const ending of ['error','close','stop']) {
+    class Socket extends EventTarget {
+      constructor(url) {super(); this.url = url; this.readyState = 1;}
+      send() {}
+    }
+    const window = {WebSocket:Socket, __mjStatsOverlay:{invalidateAdvice(){}},
+      webkit:{messageHandlers:{mjStatistics:{postMessage(){}}}}};
+    const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+      setInterval:fn=>fn, clearInterval(){}, console:{log(){}}};
+    vm.runInNewContext(collectorCode,sandbox);
+    const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
+    const opening = actionFrame('ActionNewRound',0,[...str(4,'1p'), ...num(6,35000), ...num(6,35000),
+      ...num(6,35000), ...bytes(7,[...num(1,0), ...bytes(2,num(1,1))]), ...num(13,50)]);
+    game.dispatchEvent(new MessageEvent('message',{data:opening.buffer}));
+    await new Promise(setImmediate);
+    assert.equal(window.__mjMonitor.getSnapshot().state.canAct,true);
+    if (ending === 'error') {
+      game.dispatchEvent(new MessageEvent('message',{data:new Uint8Array([1,0]).buffer}));
+      await new Promise(setImmediate);
+    } else if (ending === 'close') game.dispatchEvent(new Event('close'));
+    else window.__mjMonitor.stop();
+    const state = window.__mjMonitor.getSnapshot().state;
+    assert.equal(state.canAct,false);
+    assert.equal(state.canDiscard,false);
+    assert.equal(state.canDoubleRiichi,false);
+    assert.equal(state.lastAction,null);
+    assert.equal(state.operations.length,0);
+    window.__mjMonitor.uninstall();
+  }
 });
 
 test('native bridge publishes every action and one initial deal without requiring own discard operation', async () => {
