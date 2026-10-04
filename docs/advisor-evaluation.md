@@ -181,6 +181,60 @@ the full search can favor a furiten thirteen-sided double-yakuman route. A new
 rule test verifies its zero ron/96000-point dealer tsumo values and the ordinary
 48000-point alternative; the strong-hand continuation assertion remains.
 
+## Native original-score ledger
+
+Candidates now include `scoreBreakdown`: signed original win income, base
+deal-in losses, risk-preference adjustment, efficiency and late-tenpai rewards,
+riichi cost, and applicable action penalties. Zero terms are omitted.
+`roundingAdjustment` explicitly reconciles original intermediate/final rounding,
+including rounded child scores in replacement averages. These diagnostic terms
+sum to the score already used for ranking; they never drive a new score.
+The report exposes this ledger separately as `nativeScoreBreakdowns`, retaining
+the legacy derived `scoreComponents` and its residual for older versions.
+
+The native-ledger change preserved all existing advice fields and candidate
+order after stripping only the new ledger and runtime: all 18 fixed states and
+131 published candidates matched the pre-ledger source. All ledgers reconciled
+to their scores. Special tests also cover fourth riichi, fourth kan, immediate
+replacement wins, no-yaku calls, and abort normalization. The 102-test advisor
+suite passed, alongside the existing Node, formatter/logging, and offline
+WebKit components. This completes the original-score decomposition part of
+step 4; it does not replace the score with terminal-outcome expected returns.
+
+## Remaining validation prerequisites
+
+The original-score ledger is the first part of step 4. Replacing it with a
+complete terminal-return model remains pending: current competition combines
+opponent endings without separating self-draw, discards between opponents, and
+our future deal-ins. The riichi lock estimate does not share a joint survival
+state with all those outcomes, and exhaustive-draw settlement needs the joint
+tenpai distribution. Adding these independent estimates together would not
+produce mutually exclusive terminal probabilities. Existing deposits are already
+in winning scores; weighted deal-in losses already include their probability.
+Neither should be charged or credited a second time.
+
+The repository's recorded replay contains 60 frames and 48 actions (steps
+63–110), with no opening or terminal event. Its tests explicitly retain
+`handComplete=false` and `historyComplete=false`; 16 of its 22 draws hide the
+tile. `turn.json` is a separate opening snapshot, and the evaluation corpus is
+primarily synthetic. The terminal decoder currently retains final scores and
+end flags, not full winner/payer, ron/tsumo, payment, tenpai, or draw-reason labels.
+This is useful regression evidence but not a calibration dataset.
+
+Step 5 risk features, ippatsu/ura and kan-dora estimates, and second-level
+optional actions need separate rule definitions and independent comparisons.
+No new coefficients or accuracy claims are introduced without evidence. Before
+using discard style or river-pattern features, verify complete histories and
+feature availability at the decision time. The protocol's `moqie` and riichi
+step fields alone do not establish that dataset coverage.
+
+Step 6 rule, stability, stale-result, and runtime checks run locally now.
+Probability accuracy remains unverified until complete, trustworthy outcome
+labels and match/time-separated evaluation sets exist. Long-run decision return
+also remains unverified until a rule-consistent simulator, explicit continuation
+policies, paired initial conditions, and varied opponents are available. A real
+continuation after action A cannot be reused as the outcome of proposed action B.
+
 The initial local smoke comparison on 2026-10-04 used source `59a30d5`, all 18
 cases, one warmup pass, and five measured passes (90 samples per version).
 Both identical source versions produced the same candidates and recommendations.

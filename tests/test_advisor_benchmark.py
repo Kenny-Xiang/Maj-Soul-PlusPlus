@@ -53,6 +53,15 @@ class AdvisorBenchmarkTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unknown case"):
             comparison.load_cases(comparison.FIXTURES, ["not-a-fixture"])
 
+    def test_native_accounts_are_distinct_from_derived_residuals(self):
+        cases = comparison.load_cases(comparison.FIXTURES, ["closed-tsumo-only-tenpai"])
+        report = comparison.run_version(ROOT / "src", cases, warmups=0, repeats=1)
+        item = report["cases"][cases[0]["id"]]
+        for candidate in item["advice"]["candidates"]:
+            self.assertEqual(item["nativeScoreBreakdowns"][candidate["actionId"]], candidate["scoreBreakdown"])
+            self.assertNotIn("residual", candidate["scoreBreakdown"])
+            self.assertIn("residual", item["scoreComponents"][candidate["actionId"]])
+
     def test_same_ref_isolated_comparison_preserves_analysis_and_reports_provenance(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
