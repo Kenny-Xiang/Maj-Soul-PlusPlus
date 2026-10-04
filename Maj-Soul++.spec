@@ -13,7 +13,7 @@ for name in ('README.md', '.gitignore', 'requirements.txt', 'requirements-build.
     datas.append((str(root / name), 'source'))
 
 a = Analysis([str(root / 'src/monitor.py')], pathex=[str(root / 'src')], datas=datas,
-             hiddenimports=['monitor', 'Foundation', 'AppKit', 'WebKit'],
+             hiddenimports=['monitor', 'Foundation', 'AppKit', 'WebKit', 'unittest'],
              hookspath=[], runtime_hooks=[], excludes=[], noarchive=False)
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='Maj-Soul++',
@@ -23,5 +23,5 @@ coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='Maj-Soul+
 app = BUNDLE(coll, name='Maj-Soul++.app', icon=None,
              bundle_identifier='local.kenny.mahjong-monitor',
              info_plist={'CFBundleName': 'Maj-Soul++', 'CFBundleDisplayName': 'Maj-Soul++',
-                         'CFBundleShortVersionString': '5.0', 'CFBundleVersion': '5',
+                         'CFBundleShortVersionString': '6.0', 'CFBundleVersion': '6',
                          'LSMinimumSystemVersion': '14.0', 'NSHighResolutionCapable': True})

@@ -2,6 +2,8 @@
 
 macOS 雀魂独立游戏窗口：通过 WebKit 原生消息通道接收当前页面的对局消息，在窗口上半区显示半透明统计。每小局发牌后立即刷新，此后随所有玩家的场上动作刷新；整场结束后清空当前统计。无需本机 HTTP 服务或证书设置。
 
+本人出牌时，右侧同时显示综合出牌建议：推荐牌、向听数、有效未见进张、估计和牌率、打点、当次放铳率和损失，以及备选牌比较。推荐按普通三麻／四麻规则计算，概率使用未校准的公开信息模型，不能视作真实胜率或严格最优策略。详细口径见 [出牌建议](docs/出牌建议.md)。
+
 普通使用直接打开桌面的 `Maj-Soul++.app`。本目录是可以独立测试、重新构建并使用本地 Git 跟踪的源码工程。
 
 ## 目录
@@ -13,7 +15,9 @@ Maj-Soul++/
 │   ├── terminal_stats.py      统计格式化与本地日志（不打印终端）
 │   ├── core.cjs               协议解码与对局状态
 │   ├── browser.js             被动监听、动作更新与结束重置
-│   └── overlay.js             半透明、鼠标穿透浮层
+│   ├── overlay.js             半透明、鼠标穿透浮层
+│   ├── advisor.py             规则计算、候选牌攻守评估
+│   └── advice_worker.py       后台计算与过期结果撤销
 ├── tests/                     JavaScript、Python 和原生 WebKit 测试
 │   └── fixtures/              固定回放样本
 ├── legacy/                    旧方案参考及回归测试所需文件
@@ -70,6 +74,7 @@ open 'dist/Maj-Soul++.app'
 ```sh
 'dist/Maj-Soul++.app/Contents/MacOS/Maj-Soul++' --verify-native
 'dist/Maj-Soul++.app/Contents/MacOS/Maj-Soul++' --verify-overlay
+'dist/Maj-Soul++.app/Contents/MacOS/Maj-Soul++' --verify-advisor
 ```
 
 以上入口同样使用离线样本。需要保存浮层预览时，在源码目录运行 `PYTHONPATH=src .venv/bin/python tests/test_overlay.py --snapshot`，图片输出到被 Git 忽略的 `build/overlay-preview.png`。

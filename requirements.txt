@@ -1,3 +1,4 @@
 pyobjc-core==11.1
 pyobjc-framework-Cocoa==11.1
 pyobjc-framework-WebKit==11.1
+mahjong==2.0.0

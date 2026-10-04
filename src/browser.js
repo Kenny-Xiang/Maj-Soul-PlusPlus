@@ -71,16 +71,19 @@ function publish(event) {
 }
 function status(message) {publish({kind:'status', message, phase:state.phase});}
 function fail(error) {
+  window.__mjStatsOverlay?.invalidateAdvice();
   errors++; state.handComplete = state.historyComplete = false;
   state.warning = `解析失败：${error.message}，当前数据可能不完整`;
   publish({kind:'error', message:state.warning});
 }
 function updateStatistics(event) {
+  window.__mjStatsOverlay?.invalidateAdvice();
   turns++;
   publish({kind:'turn', trigger:event.name, actorSeat:event.seat, step:event.step, turnNumber:turns,
     statistics:{received, errors}, state:JSON.parse(JSON.stringify(state))});
 }
 function resetStatistics() {
+  window.__mjStatsOverlay?.invalidateAdvice();
   const alreadyReset = state.phase === 'ended' && state.lastStep === null && turns === 0;
   Object.assign(state, core.emptyState(), {phase:'ended', warning:''});
   received = errors = turns = 0;
@@ -140,6 +143,7 @@ function attach(socket) {
   };
   meta.close = () => {
     if ((activeSocket === meta.id || activeSocket === null) && state.phase !== 'ended') {
+      window.__mjStatsOverlay?.invalidateAdvice();
       state.phase = 'disconnected';
       state.handComplete = state.historyComplete = false;
       state.warning = '牌局连接关闭，等待自动重新连接';

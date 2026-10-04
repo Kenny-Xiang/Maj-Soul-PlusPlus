@@ -85,6 +85,120 @@ test('round end is not confused with end of whole match', () => {
   core.apply(s, {name:'ActionHule', step:11, matchEnd:true}); assert.equal(s.phase, 'ended');
 });
 
+test('advisor operations decode forbidden discards, riichi choices and authoritative wins', () => {
+  const operation = (type, choices = []) => bytes(2,[...num(1,type), ...choices.flatMap(tile => str(2,tile))]);
+  const e = core.action(core.envelope(actionFrame('ActionDealTile',4,[
+    ...num(1,0), ...str(2,'0p'), ...num(3,30), ...num(7,1),
+    ...bytes(4,[...num(1,0), ...operation(1,['5p','8p']), ...operation(7,['0p']), ...operation(8)])
+  ])).data);
+  assert.deepEqual(e.operations,[1,7,8]);
+  assert.deepEqual(e.operationDetails,[{type:1,combination:['5p','8p']},
+    {type:7,combination:['0p']},{type:8,combination:[]}]);
+  assert.equal(e.canDiscard,true);
+  assert.equal(e.furiten,true);
+  const ron = core.action(core.envelope(actionFrame('ActionDiscardTile',5,[
+    ...num(1,1), ...str(2,'3p'), ...bytes(4,[...num(1,0), ...operation(9)])
+  ])).data);
+  assert.deepEqual(ron.operations,[9]);
+  assert.equal(ron.canDiscard,false);
+  assert.equal(ron.furiten,false);
+});
+
+test('advisor discard window follows actual server operations and closes on every next action', () => {
+  const hand = ['1p','2p','3p','4p','5p','6p','6p','7p','8p','1s','2s','3s','4s','9s'];
+  const permission = {selfSeat:0,operations:[1],operationDetails:[{type:1,combination:[]}]};
+  const s = core.emptyState();
+  const deal = {name:'ActionNewRound',step:0,hand,scores:[35000,35000,35000],
+    doras:['1z'],left:54,chang:0,ju:0,ben:0,...permission};
+  core.apply(s,deal);
+  assert.equal(s.lastDraw,'9s');
+  assert.equal(s.canDiscard,true);
+  core.apply(s,deal);
+  assert.equal(s.canDiscard,true);
+  core.apply(s,{name:'ActionDiscardTile',step:1,seat:0,tile:'9s'});
+  assert.equal(s.canDiscard,false);
+  assert.deepEqual(s.operations,[]);
+  core.apply(s,{name:'ActionDiscardTile',step:2,seat:1,tile:'6p',selfSeat:0,operations:[3]});
+  assert.equal(s.canDiscard,false);
+  core.apply(s,{name:'ActionChiPengGang',step:3,seat:0,type:1,tiles:['6p','6p','6p'],froms:[0,0,1],
+    ...permission,operationDetails:[{type:1,combination:['6p']}]});
+  assert.equal(s.canDiscard,true);
+  assert.deepEqual(s.forbiddenDiscards,['6p']);
+  assert.equal(s.lastDraw,null);
+  core.apply(s,{name:'ActionDiscardTile',step:4,seat:0,tile:'1p'});
+  core.apply(s,{name:'ActionDealTile',step:5,seat:0,tile:'5s',left:53,...permission});
+  assert.equal(s.canDiscard,true);
+  assert.equal(s.lastDraw,'5s');
+  assert.deepEqual(s.forbiddenDiscards,[]);
+  core.apply(s,{name:'ActionHule',step:6,matchEnd:false});
+  assert.equal(s.canDiscard,false);
+  assert.deepEqual(s.operations,[]);
+});
+
+test('advisor never opens a discard window with missing baseline, action gaps or conflicting seat', () => {
+  const permission = {selfSeat:0,operations:[1],operationDetails:[{type:1,combination:[]}]};
+  const draw = {name:'ActionDealTile',step:2,seat:0,tile:'1p',left:50,...permission};
+  const s = core.emptyState();
+  core.apply(s,draw);
+  assert.equal(s.canDiscard,false);
+  const deal = {name:'ActionNewRound',step:0,hand:['1p'],scores:[35000,35000,35000],
+    doras:[],left:50,chang:0,ju:0,ben:0,...permission};
+  core.apply(s,deal);
+  core.apply(s,draw);
+  assert.equal(s.canDiscard,false);
+  assert.match(s.warning,/缺口/);
+  core.apply(s,{...deal,ben:1});
+  core.apply(s,{...draw,step:1,seat:1,selfSeat:1});
+  assert.equal(s.canDiscard,false);
+  assert.equal(s.selfSeat,0);
+  assert.match(s.warning,/座位/);
+});
+
+test('advisor records confirmed riichi timing, pending declarations, furiten and table sticks', () => {
+  const s = core.emptyState();
+  const initial = core.action(core.envelope(actionFrame('ActionNewRound',0,[
+    ...str(4,'1p'), ...num(6,25000), ...num(6,25000), ...num(6,25000), ...num(6,25000), ...num(8,2)
+  ])).data);
+  core.apply(s,initial);
+  assert.equal(s.riichiSticks,2);
+  assert.equal(s.furiten,false);
+  core.apply(s,{name:'ActionDiscardTile',step:1,seat:1,tile:'3p',riichi:true,furiten:true});
+  assert.equal(s.riichiPending[1],true);
+  assert.equal(s.riichi[1],false);
+  assert.equal(s.riichiStep[1],1);
+  assert.equal(s.furiten,true);
+  core.apply(s,core.action(core.envelope(actionFrame('ActionDealTile',2,[
+    ...num(1,2), ...num(3,49), ...bytes(5,[...num(1,1), ...num(2,24000), ...num(3,3)])
+  ])).data));
+  assert.equal(s.riichi[1],true);
+  assert.equal(s.riichiPending[1],false);
+  assert.equal(s.riichiStep[1],1);
+  assert.equal(s.riichiSticks,3);
+  core.apply(s,{name:'ActionDiscardTile',step:3,seat:2,tile:'4p'});
+  assert.equal(s.rivers[2][0].step,3);
+  core.apply(s,{name:'ActionDiscardTile',step:4,seat:3,tile:'5s',riichi:true});
+  core.apply(s,{name:'ActionHule',step:5,matchEnd:false});
+  assert.equal(s.riichiPending[3],false);
+  assert.equal(s.riichiStep[3],null);
+  assert.equal(s.riichi[3],false);
+  assert.equal(s.riichi[1],true);
+});
+
+test('closed kans preserve actual own red tiles and represent opponent red fives once', () => {
+  const s = core.emptyState();
+  core.apply(s,{name:'ActionNewRound',step:0,selfSeat:0,
+    hand:['0p','5p','5p','5p','1s','2s','3s','4s','5s','6s','7s','8s','9s','1z'],
+    scores:[35000,35000,35000],doras:[],left:50,chang:0,ju:0,ben:0});
+  core.apply(s,{name:'ActionAnGangAddGang',step:1,seat:0,type:3,tile:'5p'});
+  assert.deepEqual(s.melds[0][0].tiles,['0p','5p','5p','5p']);
+  assert.equal(s.melds[0][0].redAssumed,false);
+  assert.equal(s.hand.length,10);
+  assert.equal(s.handComplete,true);
+  core.apply(s,{name:'ActionAnGangAddGang',step:2,seat:1,type:3,tile:'0s'});
+  assert.deepEqual(s.melds[1][0].tiles,['0s','5s','5s','5s']);
+  assert.equal(s.melds[1][0].redAssumed,true);
+});
+
 test('normal and double riichi are confirmed per player and reset on the next round', () => {
   for (const flag of [3, 9]) {
     const s = core.emptyState();
@@ -95,13 +209,18 @@ test('normal and double riichi are confirmed per player and reset on the next ro
     const discard = core.action(core.envelope(actionFrame('ActionDiscardTile',1,
       [...num(1,1), ...str(2,'3p'), ...num(flag,1)])).data);
     assert.equal(discard.riichi, true);
+    assert.equal(discard.doubleRiichi, flag === 9);
     core.apply(s, discard);
     assert.equal(s.rivers[1][0].riichi, true);
     assert.deepEqual(s.riichi, [false,false,false,false]);
+    assert.equal(s.doubleRiichiPending[1], flag === 9);
+    assert.equal(s.doubleRiichi[1], false);
     const draw = core.action(core.envelope(actionFrame('ActionDealTile',2,
       [...num(1,2), ...num(3,59), ...bytes(5,[...num(1,1), ...num(2,24000)])])).data);
     core.apply(s, draw);
     assert.deepEqual(s.riichi, [false,true,false,false]);
+    assert.equal(s.doubleRiichi[1], flag === 9);
+    assert.equal(s.doubleRiichiPending[1], false);
     assert.equal(s.scores[1],24000);
     assert.equal(core.apply(s, draw),false);
     assert.equal(core.apply(s, deal),false);
@@ -111,7 +230,23 @@ test('normal and double riichi are confirmed per player and reset on the next ro
     assert.equal(s.riichi[1],true);
     core.apply(s, {...deal,ju:1});
     assert.deepEqual(s.riichi, [false,false,false,false]);
+    assert.deepEqual(s.doubleRiichi, [false,false,false,false]);
   }
+});
+
+test('interrupted double riichi remains unconfirmed and unknown history stays unknown', () => {
+  const s = core.emptyState();
+  assert.deepEqual(s.doubleRiichi,[null,null,null,null]);
+  core.apply(s,{name:'ActionDealTile',step:4,seat:2,left:40,liqiSuccess:{seat:1,score:24000,failed:false}});
+  assert.equal(s.riichi[1],true);
+  assert.equal(s.doubleRiichi[1],null);
+  core.apply(s,{name:'ActionNewRound',step:0,selfSeat:0,hand:['1p'],scores:[25000,25000,25000,25000],
+    doras:[],left:69,chang:0,ju:0,ben:0});
+  core.apply(s,{name:'ActionDiscardTile',step:1,seat:1,tile:'3p',riichi:true,doubleRiichi:true});
+  assert.equal(s.doubleRiichiPending[1],true);
+  core.apply(s,{name:'ActionHule',step:2,matchEnd:false});
+  assert.equal(s.doubleRiichi[1],false);
+  assert.equal(s.doubleRiichiPending[1],false);
 });
 
 test('failed or interrupted declarations do not become confirmed riichi', () => {
