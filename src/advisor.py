@@ -713,6 +713,11 @@ def _riichi(state, choice, remaining):
             state["scores"][seat] < 1000 or state["left"] < state["playerCount"]):
         raise ValueError("立直前提不完整")
     next_ = deepcopy(state)
+    # This is a new declaration, not an already locked hand. A normal draw
+    # clears temporary furiten; old discard-based waits must be recomputed for
+    # the proposed discard before the hypothetical riichi flag locks them.
+    if state.get("lastDraw") is not None:
+        next_["furiten"] = False
     next_["riichi"][seat] = True
     next_.setdefault("doubleRiichi", [False] * 4)[seat] = bool(state.get("canDoubleRiichi"))
     hand = _remove_exact(state["hand"], [choice["tile"]])

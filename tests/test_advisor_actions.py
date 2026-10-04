@@ -123,6 +123,27 @@ class RiichiAdviceTests(unittest.TestCase):
         self.assertEqual(a["best"]["action"], "discard")
         self.assertTrue(get_action(s, "riichi")["furiten"])
 
+    def test_new_riichi_recomputes_furiten_after_changing_waits(self):
+        s = own_action("11223344556679m", 7, ["7m"])
+        s["rivers"][0] = [{"tile": "1m"}]
+        s["furiten"] = True
+        c = get_action(s, "riichi")
+        self.assertFalse(c["furiten"])
+        self.assertEqual([w["tile"] for w in c["winningTiles"]], ["9m"])
+        self.assertGreater(c["winningTiles"][0]["ronPoints"], 0)
+        self.assertEqual(advise(s)["best"]["action"], "riichi")
+        s["furiten"] = False
+        self.assertEqual(c, get_action(s, "riichi"))
+
+    def test_confirmed_riichi_preserves_server_furiten_after_draw(self):
+        s = state()
+        s["riichi"][0] = True
+        s["furiten"] = True
+        c = get_action(s, "discard")
+        self.assertTrue(c["furiten"])
+        self.assertTrue(all(w["ronPoints"] == 0 for w in c["winningTiles"]))
+        self.assertTrue(any(w["tsumoPoints"] > 0 for w in c["winningTiles"]))
+
     def test_deposit_only_lost_on_nonwinning_survival_not_a_free_prize(self):
         s = own_action("123m123p123s45s77z1z", 7, ["1z"])
         s["riichiSticks"] = 2
