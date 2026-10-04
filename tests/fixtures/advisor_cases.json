@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "ordinary-efficiency",
+      "tags": ["efficiency", "three-player", "recorded"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "hand": ["8s", "2z", "9p", "6s", "1s", "6s", "7s", "7s", "8p", "2z", "2z", "6z", "7z", "3p"], "handComplete": true, "historyComplete": true, "baseline": "new_round", "lastStep": 0, "lastDraw": null, "left": 54, "doras": ["8p"], "scores": [82600, 16100, 6300], "rivers": [[], [], [], []], "melds": [[], [], [], []], "north": [0, 0, 0, 0], "playerCount": 3, "warning": "", "round": {"chang": 0, "ju": 0, "ben": 5}, "operations": [1], "canDiscard": true, "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": null, "step": 0}}
+    },
+    {
+      "id": "broad-one-shanten",
+      "tags": ["one-shanten", "efficiency"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["2m", "3m", "4m", "5m", "6m", "6m", "7m", "3p", "4p", "5p", "6p", "8p", "4s", "4s"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], []], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": "4s", "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 1, "combination": []}], "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": "4s", "step": 40}}
+    },
+    {
+      "id": "closed-tsumo-only-one-shanten",
+      "tags": ["one-shanten", "no-yaku", "regression", "waiting-analysis"],
+      "notes": "Direct 6p/9p/3s then discard 1z branches have menzen-tsumo only; later shape changes are not ruled out.",
+      "expectedStatus": "analysis",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["1m", "2m", "3m", "4m", "5m", "6m", "7p", "8p", "1s", "2s", "5z", "5z", "1z"], "handComplete": true, "historyComplete": true, "canDiscard": false, "operations": [], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[{"tile": "2z", "step": 40}], [], [], []], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": null, "furiten": false, "riichiSticks": 0, "lastAction": {"name": "ActionDiscardTile", "seat": 0, "tile": "2z", "step": 40}}
+    },
+    {
+      "id": "closed-tsumo-only-tenpai",
+      "tags": ["tenpai", "no-yaku"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["1m", "2m", "3m", "4m", "5m", "6m", "7p", "8p", "9p", "1s", "2s", "5z", "5z", "1z"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], []], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": "1z", "furiten": false, "riichiSticks": 0, "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": "1z", "step": 40}}
+    },
+    {
+      "id": "river-furiten",
+      "tags": ["furiten", "tenpai"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["1m", "2m", "3m", "1p", "2p", "3p", "1s", "2s", "3s", "4s", "5s", "7z", "7z", "1z"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[{"tile": "3s", "step": 20}], [], [], []], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": "1z", "furiten": false, "riichiSticks": 0, "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": "1z", "step": 40}}
+    },
+    {
+      "id": "new-riichi-changed-waits",
+      "tags": ["riichi", "furiten", "regression"],
+      "notes": "Upstream 0ba7879 fixes stale furiten for the new 9m-only wait.",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["1m", "1m", "2m", "2m", "3m", "3m", "4m", "4m", "5m", "5m", "6m", "6m", "7m", "9m"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1, 7], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[{"tile": "1m", "step": 20}], [], [], []], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": "9m", "furiten": true, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 7, "combination": ["7m"]}], "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": "9m", "step": 40}}
+    },
+    {
+      "id": "confirmed-riichi-furiten",
+      "tags": ["riichi", "furiten"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["1m", "2m", "3m", "1p", "2p", "3p", "1s", "2s", "3s", "4s", "5s", "7z", "7z", "1z"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], []], "north": [0, 0, 0, 0], "riichi": [true, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": "1z", "furiten": true, "riichiSticks": 0, "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": "1z", "step": 40}}
+    },
+    {
+      "id": "opponent-riichi-defense",
+      "tags": ["opponent-riichi", "late-wall"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["1m", "4m", "7m", "1p", "4p", "7p", "1s", "4s", "7s", "1z", "2z", "3z", "4z", "5z"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [{"tile": "1m", "step": 21}], [{"tile": "1m", "step": 22}], [{"tile": "1m", "step": 23}]], "north": [0, 0, 0, 0], "riichi": [false, true, true, true], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 8, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": "1z", "furiten": false, "riichiSticks": 0, "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": "1z", "step": 40}}
+    },
+    {
+      "id": "chi-no-yaku",
+      "tags": ["chi", "no-yaku"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["1m", "2m", "3m", "4p", "5p", "6p", "7s", "8s", "9s", "5z", "5z", "2s", "3s"], "handComplete": true, "historyComplete": true, "canDiscard": false, "operations": [2], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], [{"tile": "1s", "step": 40}]], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": null, "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 2, "combination": ["2s|3s"]}], "lastAction": {"name": "ActionDiscardTile", "seat": 3, "tile": "1s", "step": 40}}
+    },
+    {
+      "id": "pon-yakuhai",
+      "tags": ["pon", "yakuhai"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["5z", "5z", "1m", "2m", "3m", "4p", "5p", "6p", "2s", "3s", "9p", "9p", "1z"], "handComplete": true, "historyComplete": true, "canDiscard": false, "operations": [3], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], [{"tile": "5z", "step": 40}]], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": null, "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 3, "combination": ["5z|5z"]}], "lastAction": {"name": "ActionDiscardTile", "seat": 3, "tile": "5z", "step": 40}}
+    },
+    {
+      "id": "pon-red-choices",
+      "tags": ["pon", "red-five"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["0p", "5p", "5p", "1m", "2m", "3m", "4s", "5s", "6s", "7z", "7z", "1s", "2s"], "handComplete": true, "historyComplete": true, "canDiscard": false, "operations": [3], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], [{"tile": "5p", "step": 40}]], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": null, "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 3, "combination": ["0p|5p", "5p|5p"]}], "lastAction": {"name": "ActionDiscardTile", "seat": 3, "tile": "5p", "step": 40}}
+    },
+    {
+      "id": "ankan",
+      "tags": ["kan", "replacement", "ankan"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["1m", "1m", "1m", "1m", "1p", "2p", "3p", "1s", "2s", "3s", "1s", "2s", "5z", "5z"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1, 4], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], []], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": "5z", "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 4, "combination": ["1m|1m|1m|1m"]}], "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": "5z", "step": 40}}
+    },
+    {
+      "id": "daiminkan",
+      "tags": ["kan", "replacement", "daiminkan"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["5z", "5z", "5z", "1m", "2m", "3m", "4p", "5p", "6p", "2s", "3s", "9p", "9p"], "handComplete": true, "historyComplete": true, "canDiscard": false, "operations": [5], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], [{"tile": "5z", "step": 40}]], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": null, "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 5, "combination": ["5z|5z|5z"]}], "lastAction": {"name": "ActionDiscardTile", "seat": 3, "tile": "5z", "step": 40}}
+    },
+    {
+      "id": "shouminkan-red",
+      "tags": ["kan", "red-five", "replacement", "shouminkan"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["5p", "1m", "2m", "3m", "4s", "5s", "6s", "7z", "7z", "1s", "2s"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1, 6], "forbiddenDiscards": [], "melds": [[{"type": 1, "tiles": ["0p", "5p", "5p"]}], [], [], []], "rivers": [[], [], [], []], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": "2s", "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 6, "combination": ["0p|5p|5p|5p"]}], "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": "2s", "step": 40}}
+    },
+    {
+      "id": "sanma-kita",
+      "tags": ["three-player", "kita", "replacement"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 3, "hand": ["1m", "1m", "1m", "1p", "2p", "3p", "1s", "2s", "3s", "4s", "5s", "7z", "7z", "4z"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1, 11], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], []], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 48, "doras": [], "scores": [25000, 25000, 25000], "lastStep": 40, "lastDraw": "4z", "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 11, "combination": []}], "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": "4z", "step": 40}}
+    },
+    {
+      "id": "last-draw-after-pass",
+      "tags": ["chi", "late-wall", "regression"],
+      "notes": "Passing the upper seat leaves one own draw; calling and discarding changes that order.",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["7m", "8m", "1p", "2p", "3p", "4s", "5s", "6s", "5z", "5z", "7p", "8p", "9p"], "handComplete": true, "historyComplete": true, "canDiscard": false, "operations": [2], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], [{"tile": "9m", "step": 40}]], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 1, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": null, "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 2, "combination": ["7m|8m"]}], "lastAction": {"name": "ActionDiscardTile", "seat": 3, "tile": "9m", "step": 40}}
+    },
+    {
+      "id": "sanma-last-draw-after-pass",
+      "tags": ["three-player", "pon", "late-wall"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 3, "hand": ["7p", "8p", "1s", "2s", "3s", "4s", "5s", "6s", "5z", "5z", "7s", "8s", "9s"], "handComplete": true, "historyComplete": true, "canDiscard": false, "operations": [3], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [{"tile": "5z", "step": 40}], []], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 1, "doras": [], "scores": [25000, 25000, 25000], "lastStep": 40, "lastDraw": null, "furiten": false, "riichiSticks": 0, "canAct": true, "operationDetails": [{"type": 3, "combination": ["5z|5z"]}], "lastAction": {"name": "ActionDiscardTile", "seat": 2, "tile": "5z", "step": 40}}
+    },
+    {
+      "id": "exhausted-wall",
+      "tags": ["late-wall", "tenpai"],
+      "notes": "",
+      "expectedStatus": "ready",
+      "state": {"phase": "playing", "selfSeat": 0, "playerCount": 4, "hand": ["1m", "2m", "3m", "1p", "2p", "3p", "1s", "2s", "3s", "4s", "5s", "7z", "7z", "1z"], "handComplete": true, "historyComplete": true, "canDiscard": true, "operations": [1], "forbiddenDiscards": [], "melds": [[], [], [], []], "rivers": [[], [], [], []], "north": [0, 0, 0, 0], "riichi": [false, false, false, false], "riichiPending": [false, false, false, false], "riichiStep": [null, null, null, null], "round": {"chang": 0, "ju": 0, "ben": 0}, "left": 0, "doras": [], "scores": [25000, 25000, 25000, 25000], "lastStep": 40, "lastDraw": "1z", "furiten": false, "riichiSticks": 0, "lastAction": {"name": "ActionDealTile", "seat": 0, "tile": "1z", "step": 40}}
+    }
+  ]
+}

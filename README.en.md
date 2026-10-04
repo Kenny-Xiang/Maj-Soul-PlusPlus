@@ -61,6 +61,8 @@ The script runs JavaScript protocol and state checks, Python formatting and logg
 
 The native WebKit and overlay checks require an active macOS graphical session. They use local fixtures and a nonpersistent WebKit data store without connecting to game servers or interacting with a live match.
 
+Compare advisor versions on fixed offline states with `scripts/advisor_compare.py`; see the [evaluation guide](docs/advisor-evaluation.md) for fixtures, score breakdowns, latency statistics, and validation limits.
+
 To save a local overlay preview:
 
 ```sh

@@ -61,6 +61,8 @@ python3.12 -m venv .venv
 
 原生 WebKit 和浮层检查需要有效的 macOS 图形会话。它们使用本地固定样本和非持久化 WebKit 数据存储，不连接游戏服务器，也不操作真实对局。
 
+使用 `scripts/advisor_compare.py` 可在固定离线状态上比较推荐算法版本；样本、评分分项、耗时统计及验证边界见[离线评估说明](docs/advisor-evaluation.md)。
+
 保存本地浮层预览：
 
 ```sh
