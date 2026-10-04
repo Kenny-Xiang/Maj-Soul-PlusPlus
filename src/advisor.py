@@ -18,7 +18,7 @@ from mahjong.meld import Meld
 from mahjong.shanten import Shanten
 
 
-MODEL = "public-information-actions-ev-v2 (未校准启发式)"
+MODEL = "public-information-actions-ev-v3 (未校准启发式)"
 TILES = tuple(f"{n}{s}" for s in "mps" for n in range(1, 10)) + tuple(f"{n}z" for n in range(1, 8))
 ORPHANS = (0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33)
 OPTIONS = OptionalRules(has_open_tanyao=True, has_aka_dora=True,
@@ -329,54 +329,79 @@ def _danger(tile, remaining, opponents):
     return 1 - survival, expected_loss, details
 
 
-def _win_model(sh, ukeire, unseen, draws, opponents, waits, projected=None, yaku_factor=1., tail=0):
+def _opportunities(state, after_discard=False):
+    """Ordered own draws and enemy discards, excluding the current action.
+
+    A draw already reflected in ``left`` still has a pending enemy discard.
+    Legacy snapshots without action metadata assume the position after our
+    discard; a hypothetical discard always establishes that order explicitly.
+    """
+    players, seat = state["playerCount"], state["selfSeat"]
+    start, prefix = (seat + 1) % players, ()
+    action = state.get("lastAction") or {}
+    actor, name = action.get("seat"), action.get("name")
+    if (not after_discard and isinstance(actor, int) and actor in range(players) and
+            action.get("step") == state.get("lastStep")):
+        if name == "ActionDiscardTile":
+            start = (actor + 1) % players
+        elif name in ("ActionDealTile", "ActionNewRound") or (name == "ActionChiPengGang" and action.get("type") in (0, 1)):
+            prefix = (actor,) if actor != seat else ()
+            start = (actor + 1) % players
+        elif name in ("ActionAnGangAddGang", "ActionBaBei") or (name == "ActionChiPengGang" and action.get("type") == 2):
+            start = actor
+    return prefix + tuple((start + i) % players for i in range(min(state["left"], 24 * players)))
+
+
+def _event_survival(opponents):
+    # Preserve the existing full-cycle competition factor at finer granularity.
+    competition = min(.22, .025 + sum(o["tenpai"] for o in opponents) * .04)
+    return (1 - competition) ** (1 / (len(opponents) + 1))
+
+
+def _win_model(sh, ukeire, unseen, draws, opponents, waits, projected=None, yaku_factor=1., tail=0,
+               opportunities=None, own_seat=0):
     if not unseen or not ukeire:
         return 0., 0.
-    # Background hazard represents opponents progressing beyond their currently
-    # observed shapes; an early quiet table is not assumed quiet for 18 turns.
-    competition = min(.22, .025 + sum(o["tenpai"] for o in opponents) * .04)
+    if opportunities is None:
+        opportunities = ((own_seat,) + (None,) * len(opponents)) * draws + (None,) * tail
+    survival = _event_survival(opponents)
     if waits is not None:
-        tsumo_mass = sum(w["count"] for w in waits if w["tsumoPoints"])
-        ron_mass = sum(w["count"] for w in waits if w["ronPoints"])
-        pt = tsumo_mass / unseen
-        pr = min(.65, ron_mass / unseen * len(opponents) * .45)
-        point_weight = sum(w["count"] * w["tsumoPoints"] for w in waits) / unseen
-        point_weight += sum(w["count"] * w["ronPoints"] for w in waits) / unseen * len(opponents) * .45 * (1 - pt)
-        hit = pt + (1 - pt) * pr
+        outcomes = {}
+        for key, rate, cap in (("tsumoPoints", 1., 1.), ("ronPoints", .45, .65)):
+            mass = sum(w["count"] for w in waits if w[key])
+            points = sum(w["count"] * w[key] for w in waits) / mass if mass else 0.
+            outcomes[key] = (min(cap, mass / unseen * rate), points)
         live, win, ev = 1., 0., 0.
-        for _ in range(draws):
+        for actor in opportunities:
+            hit, points = outcomes["tsumoPoints" if actor == own_seat else "ronPoints"]
             win += live * hit
-            ev += live * point_weight
-            live *= (1 - hit) * (1 - competition)
-        # Fewer than a full cycle can still contain opponent discards, even
-        # though the player will get no further draw before an exhaustive draw.
-        for _ in range(tail):
-            ron_hit = min(.65, ron_mass / unseen * .45)
-            win += live * ron_hit
-            ev += live * sum(w["count"] * w["ronPoints"] for w in waits) / unseen * .45
-            live *= (1 - ron_hit) * (1 - competition / max(1, len(opponents)))
-        value = ev / win if win else point_weight / hit if hit else 0.
-        return min(1., win), value
+            ev += live * hit * points
+            live *= (1 - hit) * survival
+        return min(1., win), ev / win if win else 0.
     # A small absorbing Markov chain needs sh+1 effective draws. Later-stage
     # ukeire is projected; it is not held equal to the current wide ukeire.
     final_waits = projected if projected is not None else 6.
     rates = [min(.9, (min(32, ukeire) if k == 0 else
                      max(final_waits, min(16 * .60 ** (k - 1), ukeire * .60 ** k))) / unseen)
-             for k in range(sh)] + [min(.8, final_waits / unseen * (1 + .45 * len(opponents)))]
+             for k in range(sh)] + [min(.8, final_waits / unseen)]
+    ron_rate = min(.8, final_waits / unseen * .45)
     active = [1.] + [0.] * sh
     win = 0.
-    for _ in range(draws):
+    for actor in opportunities:
+        if actor != own_seat:
+            win += active[-1] * ron_rate * yaku_factor
+            active[-1] *= 1 - ron_rate
+            active = [mass * survival for mass in active]
+            continue
         next_ = [0.] * len(active)
         for stage, mass in enumerate(active):
             hit = mass * rates[stage]
             if stage == sh:
                 win += hit * yaku_factor
             else:
-                next_[stage + 1] += hit * (1 - competition)
-            next_[stage] += mass * (1 - rates[stage]) * (1 - competition)
+                next_[stage + 1] += hit * survival
+            next_[stage] += mass * (1 - rates[stage]) * survival
         active = next_
-    if tail:
-        win += active[-1] * (1 - (1 - min(.8, final_waits / unseen * .45)) ** tail) * yaku_factor
     return min(1., win), 0.
 
 
@@ -403,7 +428,7 @@ def _next_waits(counts, improvements, remaining, special):
     return weight / total if total else 0.
 
 
-def _kokushi_probability(counts, remaining, draws, opponents, state, discard, tail):
+def _kokushi_probability(counts, remaining, draws, opponents, state, discard, tail, opportunities=None):
     """Small shape-state model for missing orphans and whether a pair exists.
 
     Using generic wide ukeire here can incorrectly prefer breaking an existing
@@ -420,10 +445,12 @@ def _kokushi_probability(counts, remaining, draws, opponents, state, discard, ta
     own_river = {tile_index(d["tile"]) for d in state["rivers"][state["selfSeat"]]}
     if discard is not None:
         own_river.add(tile_index(discard))
-    competition = min(.22, .025 + sum(o["tenpai"] for o in opponents) * .04)
+    if opportunities is None:
+        opportunities = ((state["selfSeat"],) + (None,) * len(opponents)) * draws + (None,) * tail
+    survival = _event_survival(opponents)
     win = 0.
 
-    def ron_probability(mask, pair, opportunities):
+    def ron_probability(mask, pair):
         if pair and mask.bit_count() == 1:
             waits = [missing[k] for k in range(len(missing)) if mask & (1 << k)]
         elif not pair and mask == 0:
@@ -433,9 +460,15 @@ def _kokushi_probability(counts, remaining, draws, opponents, state, discard, ta
         if own_river.intersection(waits):
             return 0.
         mass = sum(remaining[i] - int(i in missing and not mask & (1 << missing.index(i))) for i in waits)
-        return min(.65, max(0, mass) / unseen * .45 * opportunities)
+        return min(.65, max(0, mass) / unseen * .45)
 
-    for _ in range(draws):
+    for actor in opportunities:
+        if actor != state["selfSeat"]:
+            for (mask, pair), mass in active.copy().items():
+                ron = ron_probability(mask, pair)
+                win += mass * ron
+                active[(mask, pair)] = mass * (1 - ron) * survival
+            continue
         next_ = {}
         for (mask, pair), mass in active.items():
             transitions = []
@@ -452,13 +485,7 @@ def _kokushi_probability(counts, remaining, draws, opponents, state, discard, ta
                     win += mass * probability
                 else:
                     next_[target] = next_.get(target, 0.) + mass * probability
-        active = {}
-        for (mask, pair), mass in next_.items():
-            ron = ron_probability(mask, pair, len(opponents))
-            win += mass * ron
-            active[(mask, pair)] = mass * (1 - ron) * (1 - competition)
-    for (mask, pair), mass in active.items():
-        win += mass * ron_probability(mask, pair, tail)
+        active = {target: mass * survival for target, mass in next_.items()}
     return min(1., win)
 
 
@@ -482,16 +509,18 @@ def _position(hand, state, remaining, discard=None, refine=False):
     improvements = _improvements(counts, remaining, special)
     ukeire, unseen = sum(t["count"] for t in improvements), sum(remaining)
     opponents = _opponents(state, remaining)
-    draws, tail = min(24, state["left"] // state["playerCount"]), state["left"] % state["playerCount"]
+    opportunities = _opportunities(state, after_discard=discard is not None)
+    draws = opportunities.count(state["selfSeat"])
     danger, loss, detail = _danger(discard, remaining, opponents) if discard is not None else (0., 0., [])
     waits, furiten = _wait_values(hand, counts, remaining, state, discard, special) if sh == 0 else (None, False)
     value, yaku_factor = _future_value(hand, state, counts, special)
     kokushi_route = special and 0 < sh <= 2 and Shanten.calculate_shanten_for_kokushi_hand(counts) == sh
     projected = _next_waits(counts, improvements, remaining, special) if refine and sh == 1 and not kokushi_route else None
     probability, ready_value = _win_model(sh, ukeire, unseen, draws, opponents, waits,
-                                         projected=projected, yaku_factor=yaku_factor, tail=tail)
+                                         projected=projected, yaku_factor=yaku_factor,
+                                         opportunities=opportunities, own_seat=state["selfSeat"])
     if kokushi_route:
-        probability = _kokushi_probability(counts, remaining, draws, opponents, state, discard, tail)
+        probability = _kokushi_probability(counts, remaining, draws, opponents, state, discard, 0, opportunities)
     probability *= 1 - danger
     if waits is not None:
         value = ready_value
@@ -700,11 +729,18 @@ def _locked_risk(state, remaining, candidate):
     winning = {tile_index(w["tile"]) for w in candidate["winningTiles"] if w["tsumoPoints"]}
     average_loss = sum(n * _danger(TILES[i], remaining, opponents)[1]
                        for i, n in enumerate(remaining) if n and i not in winning) / max(1, unseen)
-    hazard = min(.22, .025 + sum(o["tenpai"] for o in opponents) * .04)
-    turns = min(12, state["left"] // state["playerCount"])
+    survival = _event_survival(opponents)
     hit = sum(n for i, n in enumerate(remaining) if i in winning) / max(1, unseen)
-    exposure = sum(((1 - hit) * (1 - hazard)) ** turn for turn in range(turns))
-    return average_loss * exposure * (1 - candidate["dealInProbability"])
+    ron = min(.65, sum(w["count"] for w in candidate["winningTiles"] if w["ronPoints"]) / max(1, unseen) * .45)
+    live, loss, turns = 1., 0., 0
+    for actor in _opportunities(state, after_discard=True):
+        if actor == state["selfSeat"]:
+            loss += live * average_loss
+            turns += 1
+            if turns == 12:
+                break
+        live *= (1 - (hit if actor == state["selfSeat"] else ron)) * survival
+    return loss * (1 - candidate["dealInProbability"])
 
 
 def _riichi(state, choice, remaining):
@@ -896,6 +932,7 @@ def advise(state):
         candidates = _discards(state, remaining) if own_turn else [_position(state["hand"], state, remaining, refine=True)]
         if not candidates:
             raise ValueError("没有已确认合法的弃牌")
+        opportunities = _opportunities(state, after_discard=own_turn)
         if locked_optional and not discard_window:
             for candidate in candidates:
                 candidate.update(action="pass", actionId="pass", followupDiscard=candidate["tile"], metricContext="followup")
@@ -925,7 +962,8 @@ def advise(state):
                     best.update(choice)
                     # A small shape gain alone must not encourage opening a
                     # hand whose plausible yaku was destroyed by the call.
-                    if best["yakuConfidence"] < 1 or (best["shanten"] == 0 and best["expectedWinPoints"] == 0):
+                    if best["yakuConfidence"] < 1 or (best["shanten"] == 0 and
+                            not any(w["ronPoints"] or w["tsumoPoints"] for w in best["winningTiles"])):
                         best["score"] = round(best["score"] - 500, 1)
                         best["reasons"].append("鸣牌破坏门清且缺少可确认役，另计无役路线代价")
                     best["reasons"].append("已比较鸣牌后的合法弃牌，排除同牌及筋食替")
@@ -946,8 +984,7 @@ def advise(state):
             # Use point values for every continuation when comparing with a
             # zero-transfer abort, rather than awarding only play shape points.
             opponents = _opponents(state, remaining)
-            hazard = min(.22, .025 + sum(o["tenpai"] for o in opponents) * .04)
-            background_loss = ((1 - (1 - hazard) ** min(24, left // players)) * .4 *
+            background_loss = ((1 - _event_survival(opponents) ** len(opportunities)) * .4 *
                                sum(o["loss"] for o in opponents) / max(1, len(opponents)) / (players - 1))
             for candidate in candidates:
                 if candidate["action"] == "abort":
@@ -961,7 +998,8 @@ def advise(state):
                                        -c["ukeire"], (c.get("tile") or "").startswith("0"), c["actionId"]))
         return result("analysis" if analysis_only else "ready",
                       "等待下一次行动 · 当前手牌评估" if analysis_only else "综合动作推荐（概率为未校准估计）", candidates,
-                      riskWeight=_risk_weight(state), unseenTileCount=sum(remaining), remainingOwnDraws=min(24, left // players),
+                      riskWeight=_risk_weight(state), unseenTileCount=sum(remaining),
+                      remainingOwnDraws=opportunities.count(seat),
                       warnings=list(dict.fromkeys(warnings)),
                       assumptions=["未见牌包含对手手牌与王牌，并非实际牌山余张",
                                    "按普通三麻/四麻规则，未解析自定义规则",

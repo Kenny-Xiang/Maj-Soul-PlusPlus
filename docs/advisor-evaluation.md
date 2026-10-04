@@ -119,6 +119,28 @@ and an identical-ref comparison in isolated interpreters. The existing worker
 tests continue to check that superseded snapshots never reach the overlay.
 Timing is reported, not asserted as a universal latency guarantee.
 
+## Turn-order and value-weight corrections (model v3)
+
+The model now traverses the actual remaining own-draw/enemy-discard order for
+pass, own discard, post-call discard, and pending enemy draws/calls/replacements.
+Legacy snapshots without current-action metadata retain the documented
+post-own-discard fallback. Unknown future calls are not simulated. The existing
+competition factor is distributed across events so a full cycle retains its
+original survival factor; no heuristic coefficients were fitted or retuned.
+
+Every ready-hand event accumulates probability and points from the same weights.
+The 39-of-54 equal-value probe now returns a conditional 96000 points, and the
+final-draw pass case retains one own draw. A zero-probability horizon reports
+zero conditional winning points without confusing a legal wait with no yaku.
+The upstream new-riichi fix and confirmed-riichi furiten checks remain intact.
+
+All 79 advisor-related tests, 31 Node tests, 6 formatting/logging tests, and both
+offline WebKit suites passed. Comparing 18 cases with one warmup and five
+measured passes produced no recommendation changes; candidate probabilities and
+values changed where the corrected clock applies. Baseline median/P95/max were
+1.342/28.920/31.035 ms; v3 measured 1.350/31.605/32.570 ms on this machine.
+These small-sample results verify regression behavior, not calibration.
+
 The initial local smoke comparison on 2026-10-04 used source `59a30d5`, all 18
 cases, one warmup pass, and five measured passes (90 samples per version).
 Both identical source versions produced the same candidates and recommendations.
