@@ -4,12 +4,12 @@ from pathlib import Path
 root = Path(SPECPATH)
 datas = [(str(root / 'src' / name), '.') for name in ('core.cjs', 'browser.js', 'overlay.js')]
 datas += [(str(root / 'docs'), 'docs')]
-datas += [(str(root / 'README.md'), '.')]
+datas += [(str(root / name), '.') for name in ('README.md', 'README.en.md')]
 for folder in ('src', 'tests', 'docs', 'scripts'):
     for path in (root / folder).rglob('*'):
         if path.is_file() and '__pycache__' not in path.parts and path.suffix not in ('.pyc', '.pyo'):
             datas.append((str(path), str(Path('source') / path.relative_to(root).parent)))
-for name in ('README.md', '.gitignore', 'requirements.txt', 'requirements-build.txt', 'Maj-Soul++.spec'):
+for name in ('README.md', 'README.en.md', '.gitignore', 'requirements.txt', 'requirements-build.txt', 'Maj-Soul++.spec'):
     datas.append((str(root / name), 'source'))
 
 a = Analysis([str(root / 'src/monitor.py')], pathex=[str(root / 'src')], datas=datas,
