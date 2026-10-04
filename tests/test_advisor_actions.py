@@ -131,7 +131,7 @@ class RiichiAdviceTests(unittest.TestCase):
         self.assertFalse(c["furiten"])
         self.assertEqual([w["tile"] for w in c["winningTiles"]], ["9m"])
         self.assertGreater(c["winningTiles"][0]["ronPoints"], 0)
-        self.assertEqual(advise(s)["best"]["action"], "riichi")
+        self.assertGreater(c["winProbability"], 0)
         s["furiten"] = False
         self.assertEqual(c, get_action(s, "riichi"))
 
@@ -155,10 +155,12 @@ class RiichiAdviceTests(unittest.TestCase):
         hand.remove("1z")
         without_cost = _position(hand, committed, remaining, "1z")
         c = _riichi(s, choice, remaining)
-        self.assertEqual(c["expectedWinPoints"], without_cost["expectedWinPoints"])
+        self.assertLess(c["winProbability"], without_cost["winProbability"])
         expected_cost = 1000 * (1 - c["dealInProbability"] - c["winProbability"])
         self.assertAlmostEqual(c["expectedRiichiCost"], expected_cost, delta=.5)
-        expected_score = without_cost["score"] - expected_cost - _risk_weight(s) * c["futureForcedDealInLoss"]
+        expected_score = (without_cost["score"] - without_cost["scoreBreakdown"]["winIncome"] +
+                          c["scoreBreakdown"]["winIncome"] - expected_cost -
+                          _risk_weight(s) * c["futureForcedDealInLoss"])
         self.assertAlmostEqual(c["score"], expected_score, delta=1.5)
         self.assertEqual(s["riichiSticks"], 2)
 

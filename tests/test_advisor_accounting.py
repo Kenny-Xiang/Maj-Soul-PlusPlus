@@ -54,7 +54,7 @@ class ScoreAccountingTests(unittest.TestCase):
     def test_riichi_appends_raw_costs_without_overwriting_current_risk(self):
         s = own_action("123m123p123s45s77z1z", 7, ["1z"])
         locked_loss = 123.456789
-        with patch.object(advisor, "_locked_risk", return_value=locked_loss):
+        with patch.object(advisor, "_locked_risk", return_value=(.25, 4000., .1, locked_loss)):
             candidate = get_action(s, "riichi")
         terms = self.assert_ledger(candidate)
         self.assertEqual(terms["futureForcedDealInLoss"], -locked_loss)

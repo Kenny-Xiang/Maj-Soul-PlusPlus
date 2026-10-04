@@ -20,9 +20,10 @@ from mahjong.meld import Meld
 from mahjong.shanten import Shanten
 
 
-MODEL = "public-information-actions-ev-v5-lookahead-risk (未校准启发式)"
+MODEL = "public-information-actions-ev-v5-riichi-lookahead-risk (未校准启发式)"
 SEARCH_SECONDS = 2.
 _SEARCH = ContextVar("advisor_search", default=None)
+_HAND_VALUES = ContextVar("advisor_hand_values", default=None)
 TILES = tuple(f"{n}{s}" for s in "mps" for n in range(1, 10)) + tuple(f"{n}z" for n in range(1, 8))
 ORPHANS = (0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33)
 OPTIONS = OptionalRules(has_open_tanyao=True, has_aka_dora=True,
@@ -169,6 +170,30 @@ def _scoring_tiles(concealed, meld_data):
 
 
 def _hand_value(concealed, winning_tile, state, tsumo):
+    _check_search()
+    cache = _HAND_VALUES.get()
+    if cache is None:
+        return _score_hand(concealed, winning_tile, state, tsumo)
+    seat = state["selfSeat"]
+    round_ = state.get("round") or {}
+    # Preserve physical red identity and every input read by the scorer/config.
+    # These values change along riichi, call and replacement continuations.
+    key = (tuple(concealed), winning_tile, tsumo, seat, state["playerCount"],
+           tuple((m["type"], tuple(m["tiles"])) for m in state["melds"][seat]),
+           bool(state.get("replacementWin", False)),
+           bool(state.get("riichi", [False] * 4)[seat]),
+           bool(state.get("doubleRiichi", [False] * 4)[seat]),
+           round_.get("ju", 0), round_.get("chang", 0), round_.get("ben", 0),
+           state.get("riichiSticks", 0), state.get("north", [0] * 4)[seat],
+           tuple(state.get("doras", [])), tuple(vars(OPTIONS).items()))
+    if key not in cache:
+        cache[key] = _score_hand(concealed, winning_tile, state, tsumo)
+    value = cache[key]
+    # Keep each caller's result independent, including the only nested field.
+    return {**value, "yaku": value["yaku"].copy()} if "yaku" in value else value.copy()
+
+
+def _score_hand(concealed, winning_tile, state, tsumo):
     seat, players = state["selfSeat"], state["playerCount"]
     tiles, win, melds, implicit_red = _scoring_tiles(concealed + [winning_tile], state["melds"][seat])
     config = _config(state, tsumo)
@@ -834,28 +859,47 @@ def _apply_choice(state, choice):
 
 
 def _locked_risk(state, remaining, candidate):
-    """Expected future forced discards, bounded by competition and winning.
+    """Joint future win probability/value and forced-deal-in probability/loss.
 
-    Dama can fold; this is a conservative cost of surrendering that option.
-    It is separate from the declaration tile's immediate deal-in probability.
+    Winning and forced-discard tiles are disjoint own-draw outcomes. The
+    unchanged competition factor is a residual hazard for other endings,
+    applied only after explicit wins and deal-ins. These frozen public-info
+    rates remain uncalibrated; the ledger is not a complete terminal model.
     """
     unseen = sum(remaining)
+    if not unseen:
+        return 0., 0., 0., 0.
     opponents = _opponents(state, remaining)
-    winning = {tile_index(w["tile"]) for w in candidate["winningTiles"] if w["tsumoPoints"]}
-    average_loss = sum(n * _danger(TILES[i], remaining, opponents)[1]
-                       for i, n in enumerate(remaining) if n and i not in winning) / max(1, unseen)
+    waits = candidate["winningTiles"]
+    outcomes = {}
+    for key, rate, cap in (("tsumoPoints", 1., 1.), ("ronPoints", .45, .65)):
+        mass = sum(w["count"] for w in waits if w[key])
+        points = sum(w["count"] * w[key] for w in waits) / mass if mass else 0.
+        outcomes[key] = (min(cap, mass / unseen * rate), points)
+    winning = {tile_index(w["tile"]) for w in waits if w["tsumoPoints"]}
+    forced, average_loss = 0., 0.
+    for tile, count in _draw_pool(state, remaining):
+        index = tile_index(tile)
+        if index not in winning:
+            after_draw = list(remaining)
+            after_draw[index] -= 1
+            chance, loss, _ = _danger(tile, after_draw, opponents)
+            forced += count / unseen * chance
+            average_loss += count / unseen * loss
     survival = _event_survival(opponents)
-    hit = sum(n for i, n in enumerate(remaining) if i in winning) / max(1, unseen)
-    ron = min(.65, sum(w["count"] for w in candidate["winningTiles"] if w["ronPoints"]) / max(1, unseen) * .45)
-    live, loss, turns = 1., 0., 0
+    live = 1 - candidate["dealInProbability"]
+    win, income, deal_in, loss = 0., 0., 0., 0.
     for actor in _opportunities(state, after_discard=True):
-        if actor == state["selfSeat"]:
+        _check_search()
+        own_draw = actor == state["selfSeat"]
+        hit, points = outcomes["tsumoPoints" if own_draw else "ronPoints"]
+        win += live * hit
+        income += live * hit * points
+        if own_draw:
+            deal_in += live * forced
             loss += live * average_loss
-            turns += 1
-            if turns == 12:
-                break
-        live *= (1 - (hit if actor == state["selfSeat"] else ron)) * survival
-    return loss * (1 - candidate["dealInProbability"])
+        live *= max(0., 1 - hit - (forced if own_draw else 0.)) * survival
+    return win, income / win if win else 0., deal_in, loss
 
 
 def _riichi(state, choice, remaining):
@@ -878,6 +922,7 @@ def _riichi(state, choice, remaining):
     # The new stick is our own money: recover it only if we win. Existing pot
     # remains in hand values; adding our stick as a free 1000-point prize is wrong.
     four_riichi = state["playerCount"] == 4 and all(next_["riichi"][:4])
+    locked_probability, locked_loss = 0., 0.
     if four_riichi:
         candidate.update(winProbability=0., expectedWinPoints=0,
                          score=-_risk_weight(state) * candidate["expectedDealInLoss"],
@@ -885,11 +930,20 @@ def _riichi(state, choice, remaining):
         _record_score(candidate, currentDealInLoss=-candidate["expectedDealInLoss"],
                       riskPreferenceAdjustment=-(_risk_weight(state) - 1) * candidate["expectedDealInLoss"])
         candidate["reasons"].append("第四家立直：宣言牌未被荣和则途中流局，无后续和牌机会或听牌料")
+    else:
+        probability, value, locked_probability, locked_loss = _locked_risk(next_, remaining, candidate)
+        terms = dict(candidate["scoreBreakdown"])
+        income = probability * value
+        candidate["score"] += income - terms.get("winIncome", 0.)
+        candidate.update(winProbability=round(probability, 4), expectedWinPoints=round(value))
+        terms["winIncome"] = income
+        _record_score(candidate, **terms)
     deposit_loss = 1000 * max(0., 1 - candidate["dealInProbability"] - candidate["winProbability"])
-    locked_loss = 0 if four_riichi else _locked_risk(next_, remaining, candidate)
     candidate["score"] = round(candidate["score"] - deposit_loss - _risk_weight(state) * locked_loss, 1)
     candidate.update(choice, riichiDeposit=1000, expectedRiichiCost=round(deposit_loss),
-                     futureForcedDealInLoss=round(locked_loss), doubleRiichi=bool(state.get("canDoubleRiichi")))
+                     futureForcedDealInLoss=round(locked_loss),
+                     futureForcedDealInProbability=round(locked_probability, 4),
+                     doubleRiichi=bool(state.get("canDoubleRiichi")))
     terms = dict(candidate["scoreBreakdown"])
     terms.update(riichiCost=-deposit_loss, futureForcedDealInLoss=-locked_loss)
     terms["riskPreferenceAdjustment"] = terms.get("riskPreferenceAdjustment", 0) - (_risk_weight(state) - 1) * locked_loss
@@ -1178,6 +1232,7 @@ def advise(state, cancelled=None):
     """Publish only a complete, uniformly evaluated decision within the budget."""
     started = time.monotonic()
     token = _SEARCH.set((started + SEARCH_SECONDS, cancelled))
+    values_token = _HAND_VALUES.set({})
     try:
         _check_search()
         result = _advise(state)
@@ -1187,4 +1242,5 @@ def advise(state, cancelled=None):
         return {"status": "unavailable", "message": str(error), "candidates": [],
                 "best": None, "model": MODEL, "elapsedMs": round((time.monotonic() - started) * 1000, 1)}
     finally:
+        _HAND_VALUES.reset(values_token)
         _SEARCH.reset(token)

@@ -204,11 +204,12 @@ step 4; it does not replace the score with terminal-outcome expected returns.
 ## Remaining validation prerequisites
 
 The original-score ledger is the first part of step 4. Replacing it with a
-complete terminal-return model remains pending: current competition combines
-opponent endings without separating self-draw, discards between opponents, and
-our future deal-ins. The riichi lock estimate does not share a joint survival
-state with all those outcomes, and exhaustive-draw settlement needs the joint
-tenpai distribution. Adding these independent estimates together would not
+complete terminal-return model remains pending: competition does not separate
+opponent self-draw and discards between opponents or assign their payments.
+New riichi declarations now share survival across own wins and forced deal-ins,
+but their residual competition still has no payment model, and exhaustive-draw
+settlement needs the joint tenpai distribution. Adding independent estimates
+together would not
 produce mutually exclusive terminal probabilities. Existing deposits are already
 in winning scores; weighted deal-in losses already include their probability.
 Neither should be charged or credited a second time.
@@ -268,6 +269,116 @@ measured 1.308/28.108/29.386 ms. These are a small warmed sample on one machine,
 not a performance guarantee. A separate comparison against pre-fix commit
 `33afbb4` detected the changed `new-riichi-changed-waits` recommendation, confirming
 the report also captures a real historical behavior change.
+
+## Riichi forced-discard absorption (model v5-riichi-risk)
+
+New riichi declarations now evaluate future wins and forced-discard deal-ins in
+one event recurrence. At an own draw, winning tiles and discarded tiles are
+disjoint branches: the live mass credits its win income and probability-weighted
+forced-discard payment once, then removes both terminal probabilities before
+continuing. Enemy discards can produce ron before the next own draw. The new
+`futureForcedDealInProbability` and existing loss both include survival of the
+declaration discard, so neither represents an independent extra first-discard
+hazard. Riichi replaces its earlier unlocked win income with the joint income;
+the deposit calculation uses the resulting win probability.
+
+The existing competition coefficient is unchanged. Within this recurrence it
+is explicitly a conditional residual hazard for other endings, applied once
+after own wins and forced deal-ins. It is not another estimate of the same
+forced-discard event. This defines consistent model accounting, not evidence
+that these uncalibrated rates correctly separate real opponents' outcomes. The
+unknown pool, public opponent features, `.45` ron factor, and point estimates
+remain frozen. Reusing the same own-draw hit rate is still a with-replacement
+approximation; later public reveals and safe-tile changes are not simulated.
+Each forced-discard danger assessment does remove its just-drawn physical tile
+from the unknown counts; later draws still reuse those frozen conditional rates.
+This change applies only to new-riichi evaluation, not every later locked action.
+Shape and late-tenpai rewards remain heuristic score terms, not terminal payments.
+The former separate 12-draw risk cutoff is removed so both future wins and
+losses use the same existing bounded opportunity horizon (at most 24 own draws).
+Four-player fourth-riichi aborts still have no future wins or forced discards.
+
+The two-draw mathematical probe with a 10% forced deal-in rate and 8000-point
+payment now produces `8000 * (1 - .9 ** 2) = 1520`, replacing the old 1600.
+Additional regressions cover empty horizons/pools, zero risk, certain deal-in,
+declaration survival, winning draws never being discarded, a later ron being
+excluded after a terminal loss, coupled ron/tsumo point weights, residual
+competition mass, and the common horizon past twelve draws. With a 20% self-draw
+win rate and 10% danger on nonwinning tiles, two own draws give win probability
+`.2 + .72 * .2 = .344` and forced-deal-in probability `.08 + .72 * .08 = .1376`;
+the remaining `.72 ** 2` completes the unit probability mass.
+
+All 115 advisor, worker, and benchmark tests passed. The 19-state comparison
+against `b658903` used one warmup and five measured passes (95 samples per
+version), with deterministic repeat outputs. Baseline median/P95/max were
+20.837/789.142/832.036 ms; the working variant measured
+21.094/815.869/825.643 ms. This was a shared-machine measurement, not an isolated
+speed comparison. Only `new-riichi-changed-waits` changed recommendation, from
+riichi on `7m` to discard `9m`. Its `7m` riichi still clears old discard furiten
+and retains legal ron, but now accounts for future loss suppressing later wins.
+The old assertion that this legal candidate must rank first was replaced with
+the actual rule contract. These results validate accounting and regressions;
+they do not establish calibrated probabilities or improved real-game returns.
+The complete local report is `build/advisor-riichi-risk-comparison.json`.
+
+A follow-up count regression verifies that drawing the last unknown honor makes
+it safe against an open opponent: the drawn tile cannot remain in that opponent's
+hand. The added regression fails before conditioning on the physical draw, and
+all 116 advisor-related tests pass after the correction. The timing comparison
+above predates this follow-up count correction.
+
+## Decision-local exact scoring cache
+
+Repeated complete-hand scores now share a cache within one `advise` call. The
+key retains concealed/winning red identity, meld tiles and types, ron/tsumo,
+seat and player count, riichi/double riichi, replacement-win status, seat/round
+winds, honba, deposits, North extractions, dora indicators, and every configured
+optional scoring rule. It does not approximate or merge scoring inputs. Returned
+score dictionaries and yaku lists remain independent. The cache is released in
+`finally` on success, cancellation, budget expiry, or an unexpected exception;
+hits still check the cooperative search boundary. The model stays v5, and the
+two-second production budget and snapshot-key rejection remain intact.
+
+All 109 advisor/worker/benchmark tests passed, including full output equality
+between cached and uncached scoring for all 19 fixtures after removing only
+`elapsedMs`, individual scoring-key dependencies, cache lifetime, mutable-result
+isolation, cancellation, and budget checks. An independent source review found
+no blocking issue. No deep-copy or model changes are part of this optimization.
+
+The 2026-10-04 comparison against `b658903` measured these local latencies:
+
+| Protocol | Samples per version | Baseline median/P95/max (ms) | Cached median/P95/max (ms) |
+| --- | --- | --- | --- |
+| One excluded warmup pass, five measured passes | 95 | 21.209 / 812.027 / 836.572 | 20.904 / 644.154 / 660.915 |
+| Fresh interpreter for every case, three repetitions | 57 | 34.332 / 782.109 / 799.420 | 33.450 / 614.041 / 623.720 |
+
+Both series preserved every candidate field and recommendation, with consistent
+repeated outputs. The warm series used `scripts/advisor_compare.py --baseline
+b658903 --warmups 1 --repeats 5`; the cold series called its
+`run_version(source, [case], warmups=0, repeats=1)` in a fresh worker for every
+case and repetition. Imports and process startup remain outside measured time.
+Timing runs were serialized with the other development tests. Baseline ran
+before cached source in each series, so load and run order still limit causal
+latency claims; the smaller cold tail is not evidence that cold calls are
+intrinsically faster. These are samples from one machine, not a universal bound.
+
+A separate allocation probe warmed the whole corpus, then ran one measured pass
+with `tracemalloc.start(1)` and garbage collection before each case. Its diagnostic
+process alone extended the search deadline to 120 seconds to accommodate tracing;
+none of those instrumented times enters the latency table. Maximum per-decision
+traced Python allocation was 6.153 MiB at baseline and 11.932 MiB with caching,
+both on `sanma-kita`. This includes structural-cache allocations and scorer
+temporaries, not total process RSS. The scoring ContextVar was empty after every
+call. In that case 7908 scoring requests became 3996 actual scorer calls; the
+`ankan` fixture went from 4103 requests to 1599 scorer calls. These fixture counts
+are not the previously sampled, different concealed-kan hand and do not imply
+the same factor of end-to-end speedup.
+
+The ignored `build/scoring-cache-warm.json`, `build/scoring-cache-cold.json`, and
+`build/scoring-cache-memory-{baseline,current}.json` retain local samples and
+allocation evidence. The optimization trades temporary decision memory for fewer
+scorer calls; it establishes output equivalence on these regressions, not better
+win rates or calibrated probabilities.
 
 ## Conditional one-shanten follow-up risk (v5-lookahead-risk)
 
