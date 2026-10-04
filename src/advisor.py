@@ -810,8 +810,11 @@ def _locked_risk(state, remaining, candidate):
     winning = {tile_index(w["tile"]) for w in waits if w["tsumoPoints"]}
     forced, average_loss = 0., 0.
     for tile, count in _draw_pool(state, remaining):
-        if tile_index(tile) not in winning:
-            chance, loss, _ = _danger(tile, remaining, opponents)
+        index = tile_index(tile)
+        if index not in winning:
+            after_draw = list(remaining)
+            after_draw[index] -= 1
+            chance, loss, _ = _danger(tile, after_draw, opponents)
             forced += count / unseen * chance
             average_loss += count / unseen * loss
     survival = _event_survival(opponents)

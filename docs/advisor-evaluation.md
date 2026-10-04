@@ -290,6 +290,8 @@ that these uncalibrated rates correctly separate real opponents' outcomes. The
 unknown pool, public opponent features, `.45` ron factor, and point estimates
 remain frozen. Reusing the same own-draw hit rate is still a with-replacement
 approximation; later public reveals and safe-tile changes are not simulated.
+Each forced-discard danger assessment does remove its just-drawn physical tile
+from the unknown counts; later draws still reuse those frozen conditional rates.
 This change applies only to new-riichi evaluation, not every later locked action.
 Shape and late-tenpai rewards remain heuristic score terms, not terminal payments.
 The former separate 12-draw risk cutoff is removed so both future wins and
@@ -318,3 +320,9 @@ The old assertion that this legal candidate must rank first was replaced with
 the actual rule contract. These results validate accounting and regressions;
 they do not establish calibrated probabilities or improved real-game returns.
 The complete local report is `build/advisor-riichi-risk-comparison.json`.
+
+A follow-up count regression verifies that drawing the last unknown honor makes
+it safe against an open opponent: the drawn tile cannot remain in that opponent's
+hand. The added regression fails before conditioning on the physical draw, and
+all 116 advisor-related tests pass after the correction. The timing comparison
+above predates this follow-up count correction.

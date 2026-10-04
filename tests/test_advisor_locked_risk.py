@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 import advisor
-from test_advisor import state
+from test_advisor import state, tiles
 from test_advisor_actions import own_action
 
 
@@ -43,6 +43,25 @@ class LockedRiskTests(unittest.TestCase):
             {"tile": "1m", "count": 10, "tsumoPoints": 0, "ronPoints": 8000}]
         self.assertEqual(self.outcomes(chance=1., loss=8000., events=(0, 1)),
                          (0., 0., 1., 8000.))
+
+    def test_last_unknown_honor_is_safe_after_drawing_it_against_open_hand(self):
+        s = state()
+        s["rivers"][2] = [{"tile": "1z"}] * 2
+        s["melds"][1] = [{"type": 1, "tiles": tiles("555z")}]
+        before = deepcopy(s)
+        remaining = advisor.unseen_counts(s)
+        self.assertEqual(remaining[advisor.tile_index("1z")], 1)
+        enemy = advisor._opponents(s, remaining)[:1]
+        self.assertGreater(advisor._danger("1z", remaining, enemy)[0], 0.)
+        # Isolate the final unseen honor's physical draw. Once it is in our
+        # hand, the open opponent cannot hold a pair or win kokushi on it.
+        with patch.object(advisor, "_opponents", return_value=enemy), patch.object(
+                advisor, "_draw_pool", return_value=[("1z", 1)]), patch.object(
+                advisor, "_opportunities", return_value=(0,)), patch.object(
+                advisor, "_event_survival", return_value=1.):
+            self.assertEqual(advisor._locked_risk(s, remaining, self.candidate), (0., 0., 0., 0.))
+        self.assertEqual(s, before)
+        self.assertEqual(remaining, advisor.unseen_counts(s))
 
     def test_declaration_deal_in_excludes_all_later_outcomes(self):
         for danger in (.2, 1.):
