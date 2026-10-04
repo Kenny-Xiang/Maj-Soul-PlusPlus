@@ -1,84 +1,86 @@
 # Maj-Soul++
 
-A standalone macOS window for Mahjong Soul with live tile tracking, a translucent statistics overlay, and action recommendations based on your hand, public game information, and the operations offered by the server.
+**简体中文** | [English](README.en.md)
 
-The app uses the system WebKit engine to load the game, observes messages received by that window, and passes statistics to Python through a native message bridge. The overlay updates after the initial deal and every accepted table action, including other players' actions.
+为雀魂提供独立 macOS 游戏窗口，支持实时记牌、半透明统计浮层，以及根据本人手牌、公开牌局信息和服务端允许的操作生成行动建议。
 
-Source repository: [Kenny-Xiang/Maj-Soul-PlusPlus](https://github.com/Kenny-Xiang/Maj-Soul-PlusPlus). The application interface and detailed reference documents are currently in Chinese.
+应用使用系统 WebKit 引擎加载游戏，监听该窗口收到的消息，并通过原生消息桥将统计信息传递给 Python。开局发牌及每个被接受的牌桌动作都会触发浮层更新，包括其他玩家的动作。
 
-## Features
+源代码仓库：[Kenny-Xiang/Maj-Soul-PlusPlus](https://github.com/Kenny-Xiang/Maj-Soul-PlusPlus)。应用界面和详细参考文档目前使用中文。
 
-- **Fixed overlay columns:** game information on the left; recording status, diagnostics, and current action advice on the right. The overlay stays in the upper half of the window and lets mouse clicks pass through to the game.
-- **Live game statistics:** your hand and seat, round information, scores, remaining tile count, dora indicators, each player's discards and melds, extracted North tiles, and known tile counts.
-- **Confirmed riichi labels:** opponents' labels indicate confirmed normal or double riichi. A declaration alone is not treated as confirmation. Labels clear when a new round starts or the match ends.
-- **Action recommendations:** when you have a legal operation window and the required information is complete, compare server-offered discards, chi, pon, all three kan types, riichi, North extraction, a nine-terminals abortive draw, and pass. Chi and pon recommendations include the tiles to use and a legal follow-up discard. Available tsumo or ron operations take priority. Recommendations are displayed only; the app does not play moves for you.
-- **Hand analysis between actions:** hand changes trigger a new evaluation. Outside a legal operation window, the overlay shows current shanten, effective unseen tiles, and estimated hand value while waiting for an action; it does not present an immediately executable discard or its deal-in risk.
-- **Clear update boundaries:** duplicate actions do not produce duplicate updates. Statistics remain visible between rounds and clear at the end of a match; historical logs are retained.
-- **Local operation:** a dedicated WebKit login profile, one running game window, and text and JSONL logs stored in your user data directory.
+## 功能
 
-The advisor assumes standard three-player or four-player Mahjong Soul rules. Its probability estimates use an uncalibrated public-information model and are not measured win rates or a guarantee of optimal play. See the [action advisor documentation](docs/出牌建议.md) for the model, metrics, and limitations.
+- **固定双栏浮层：** 左侧显示牌局信息，右侧显示记录状态、诊断信息和当前行动建议。浮层位于窗口上半部分，鼠标点击可以穿透到游戏。
+- **实时牌局统计：** 本人手牌与座位、场局信息、各家点数、剩余牌数、宝牌指示牌、各家牌河与副露、拔北数量，以及已知牌计数。
+- **已确认立直标记：** 对手名称旁标记已确认的立直或两立直状态。仅有立直宣言时不会视为已确认；新一局开始或整场对局结束时清除标记。
+- **行动建议：** 在存在合法操作窗口且所需信息完整时，比较服务端允许的弃牌、吃、碰、三种杠、立直、拔北、九种九牌流局和跳过操作。吃碰建议会列出所用牌及后续合法弃牌；可以自摸或荣和时优先提示和牌。应用只展示建议，不代替玩家执行操作。
+- **行动间的手牌分析：** 手牌变化后重新评估。在没有合法操作窗口时，展示当前向听数、有效未见牌和手牌估值，等待下一次行动；此时不展示可立即执行的弃牌及其放铳风险。
+- **明确的更新边界：** 重复动作不会重复更新。小局之间保留统计，整场结束时清空显示，历史日志继续保留。
+- **本地运行：** 使用独立的 WebKit 登录数据，同时只运行一个游戏窗口，并将文本与 JSONL 日志保存在用户数据目录中。
 
-## Using the app
+推荐算法按雀魂普通三麻或四麻规则进行估算。概率来自未经实战校准的公开信息模型，不是实测胜率，也不保证最优决策。模型、指标和限制详见[行动建议文档](docs/出牌建议.md)。
 
-Open `Maj-Soul++.app` and sign in inside its game window on first use. The app keeps its own WebKit website data and can reuse a valid login on later launches. Launching it again activates the existing window. Close the main window or quit the app to exit.
+## 使用应用
 
-A built app includes Python, its dependencies, and the application resources. It runs independently of the source checkout and does not require an external Python, Node.js, or Xcode installation. See the build instructions below to create the app from source.
+打开 `Maj-Soul++.app`，首次使用时在游戏窗口内登录。应用保存独立的 WebKit 网站数据，后续启动可以复用仍有效的登录状态。再次启动时会激活已有窗口。关闭主窗口或退出应用即可结束运行。
 
-## Requirements for development
+构建后的应用包含 Python、依赖和应用资源，可脱离源码目录独立运行，无需额外安装 Python、Node.js 或 Xcode。从源码构建的方法见下文。
 
-- Apple Silicon Mac running macOS 14 or later.
-- An independently installed **Python 3.12**.
-- **Node.js 18 or later** for the JavaScript tests.
+## 开发环境要求
 
-Runtime dependencies are pinned in `requirements.txt`: PyObjC 11.1 and `mahjong` 2.0.0. Build dependencies are listed in `requirements-build.txt`, including PyInstaller 6.22.0.
+- Apple Silicon Mac，运行 macOS 14 或更新版本。
+- 独立安装的 **Python 3.12**。
+- **Node.js 18 或更新版本**，用于运行 JavaScript 测试。
 
-From the repository root, create an isolated environment and install the dependencies:
+运行依赖固定在 `requirements.txt` 中：PyObjC 11.1 和 `mahjong` 2.0.0。构建依赖列在 `requirements-build.txt` 中，包括 PyInstaller 6.22.0。
+
+在仓库根目录创建独立环境并安装依赖：
 
 ```sh
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements-build.txt
 ```
 
-## Run from source
+## 从源码运行
 
 ```sh
 .venv/bin/python src/monitor.py
 ```
 
-The collector is installed before the game page loads. No manual script injection is required.
+采集脚本会在游戏页面加载前安装，无需手动注入。
 
-## Test
+## 测试
 
-Run the complete test suite:
+运行完整测试：
 
 ```sh
 ./scripts/test.sh
 ```
 
-The script runs JavaScript protocol and state checks, Python formatting and logging checks, advisor and background-worker tests, an isolated native WebKit replay, and overlay layout checks.
+脚本依次运行 JavaScript 协议与状态检查、Python 格式化与日志检查、推荐算法及后台线程测试、隔离的原生 WebKit 回放，以及浮层布局检查。
 
-The native WebKit and overlay checks require an active macOS graphical session. They use local fixtures and a nonpersistent WebKit data store without connecting to game servers or interacting with a live match.
+原生 WebKit 和浮层检查需要有效的 macOS 图形会话。它们使用本地固定样本和非持久化 WebKit 数据存储，不连接游戏服务器，也不操作真实对局。
 
-To save a local overlay preview:
+保存本地浮层预览：
 
 ```sh
 PYTHONPATH=src .venv/bin/python tests/test_overlay.py --snapshot
 ```
 
-The image is written to `build/overlay-preview.png`, which is ignored by Git.
+图片输出到 `build/overlay-preview.png`，该文件由 Git 忽略。
 
-## Build a standalone app
+## 构建独立应用
 
 ```sh
 ./scripts/build.sh
 open 'dist/Maj-Soul++.app'
 ```
 
-The output is `dist/Maj-Soul++.app`. PyInstaller uses `onedir` and `windowed` mode to package the Python runtime, dependencies, collector scripts, documentation, and source into a macOS app without a console window.
+构建产物为 `dist/Maj-Soul++.app`。PyInstaller 使用 `onedir` 和 `windowed` 模式，将 Python 运行时、依赖、采集脚本、文档和源码打包为不带控制台窗口的 macOS 应用。
 
-The build writes to the repository's `build/` and `dist/` directories. It does not replace an app already installed elsewhere. Update the source and rebuild rather than editing files inside a signed app bundle.
+构建过程写入仓库内的 `build/` 和 `dist/` 目录，不会替换其他位置已经安装的应用。更新应用时应修改源码后重新构建，不要直接编辑已签名的应用包。
 
-Verify the packaged runtime with the offline entrypoints:
+使用离线入口验证打包后的运行环境：
 
 ```sh
 'dist/Maj-Soul++.app/Contents/MacOS/Maj-Soul++' --verify-native
@@ -86,68 +88,70 @@ Verify the packaged runtime with the offline entrypoints:
 'dist/Maj-Soul++.app/Contents/MacOS/Maj-Soul++' --verify-advisor
 ```
 
-## Repository layout
+## 仓库结构
 
 ```text
 Maj-Soul-PlusPlus/
 ├── src/
-│   ├── monitor.py             macOS window, native message bridge, and startup
-│   ├── terminal_stats.py      Statistics formatting and local logs; no console output
-│   ├── core.cjs               Protocol decoding and game state
-│   ├── browser.js             Passive collection, action updates, and match resets
-│   ├── overlay.js             Translucent overlay with click-through behavior
-│   ├── advisor.py             Rule calculations and legal action evaluation
-│   └── advice_worker.py       Background evaluation and stale-result invalidation
-├── tests/                     JavaScript, Python, and native WebKit tests
-│   └── fixtures/              Recorded replay fixtures
-├── docs/                      Usage guide, protocol analysis, and rules references
-├── scripts/test.sh            Complete test suite
-├── scripts/build.sh           Standalone app build
-├── requirements.txt           Runtime dependencies
-├── requirements-build.txt     Build dependencies
-├── Maj-Soul++.spec            PyInstaller configuration
-└── .gitignore                 Excludes environments, runtime data, and build outputs
+│   ├── monitor.py             macOS 窗口、原生消息桥与启动入口
+│   ├── terminal_stats.py      统计格式化与本地日志，不输出到控制台
+│   ├── core.cjs               协议解码与牌局状态
+│   ├── browser.js             被动采集、动作更新与整场重置
+│   ├── overlay.js             支持点击穿透的半透明浮层
+│   ├── advisor.py             牌理计算与合法行动评估
+│   └── advice_worker.py       后台评估与过期结果失效处理
+├── tests/                     JavaScript、Python 和原生 WebKit 测试
+│   └── fixtures/              已录制的回放样本
+├── docs/                      使用说明、协议分析和规则参考
+├── README.md                  中文项目说明（默认）
+├── README.en.md               英文项目说明
+├── scripts/test.sh            完整测试入口
+├── scripts/build.sh           独立应用构建入口
+├── requirements.txt           运行依赖
+├── requirements-build.txt     构建依赖
+├── Maj-Soul++.spec            PyInstaller 配置
+└── .gitignore                 忽略环境、运行数据和构建产物
 ```
 
-## Local data
+## 本地数据
 
-Runtime files are stored in:
+运行文件保存在：
 
 ```text
 ~/Library/Application Support/Maj-Soul++/
 ```
 
-- `logs/`: text (`.txt`) and structured (`.jsonl`) records for each run.
-- `launcher.log`: startup and runtime diagnostics.
-- `monitor.lock`: the single-instance lock.
+- `logs/`：每次运行的文本（`.txt`）与结构化（`.jsonl`）记录。
+- `launcher.log`：启动与运行诊断信息。
+- `monitor.lock`：单实例锁。
 
-WebKit stores login data in the user's profile, outside the repository. Statistics are written in the background, with displayed timestamps in Beijing time (UTC+8). Runtime data is not written back into the app bundle.
+WebKit 将登录数据保存在用户配置中，不写入仓库。统计日志在后台写入，显示的时间戳使用北京时间（UTC+8）。运行数据不会写回应用包。
 
-## Information boundaries
+## 信息边界
 
-The collector only sees messages delivered to its own game window. A new-round deal can establish a complete baseline; joining mid-round depends on the recovery data supplied by the server. Missing steps, unknown actions, inconsistent updates, and unverified recovery boundaries are reported instead of being presented as complete history.
+采集器只能看到当前游戏窗口收到的消息。开局发牌可以建立完整基线；中途加入则取决于服务端提供的恢复数据。遇到动作缺失、未知动作、状态不一致或尚未验证的恢复边界时，会明确报告，不会将其显示为完整历史。
 
-The app does not infer opponents' concealed hands or reconstruct information that was never received. Known tile counts combine red and ordinary fives and avoid counting a called discard again as part of a meld. These counts are not the exact composition of the remaining live wall: unseen tiles can also be in opponents' hands or the dead wall.
+应用不推断对手暗手，也不重建从未收到的信息。已知牌计数会合并赤五与普通五，并避免将被鸣走的弃牌在副露中重复计数。它不代表剩余活牌山的准确组成：未见牌也可能位于对手手中或王牌中。
 
-Analysis pauses when the required baseline is missing, recovery is unverified, the connection is lost, or the round has ended. New actions and submitted operations invalidate stale recommendations; server messages determine the next legal operation window. Custom room rules and event modes are outside the advisor's standard-rule assumptions.
+缺少所需基线、恢复尚未验证、连接断开或小局结束时，分析会暂停。新动作和已提交的操作会使旧建议失效，下一个合法操作窗口由服务端消息确定。自定义房间规则和活动模式不在推荐算法的普通规则假设范围内。
 
-Action scores combine estimated hand value, winning chances, efficiency, and risk. Kan and North extraction use weighted estimates over unknown replacement draws, with estimated robbery risk and uncertainty about new kan dora; they do not name an unseen draw as a certain follow-up discard. The model compares the current action and necessary next draw or discard, without exhaustively simulating future action sequences, opponents' play, or final match placement.
+行动评分综合手牌估值、和牌机会、牌效率与风险。杠和拔北按未知补牌的可能结果加权，估计抢杠或抢北风险及新杠宝牌的不确定性，不会将某张未知补牌当作确定的后续弃牌。模型比较当前行动及必要的下一次摸牌或弃牌，不会穷举未来的行动序列、对手打法或最终顺位。
 
-Offline replay verifies behavior against fixtures; it does not establish that every server recovery scenario or live-game edge case has been validated.
+离线回放只验证固定样本中的行为，不能证明所有服务端恢复场景和真实对局边界情况都已经得到验证。
 
-## Contributing
+## 参与开发
 
-Make changes on a feature branch, run the relevant checks, and open a pull request targeting `main`. Use English commit messages, PR titles, and PR descriptions. Source changes and app builds are separate steps: pushing code to GitHub does not automatically update an installed app.
+在功能分支上修改代码，运行相关检查，并向 `main` 提交 Pull Request。提交说明、PR 标题和 PR 正文统一使用英文。源码修改与应用构建是两个独立步骤：向 GitHub 推送代码不会自动更新已安装的应用。
 
-Git tracks source, tests, fixtures, documentation, dependency lists, and build configuration. Virtual environments, runtime data, caches, generated app bundles, and build outputs are excluded by `.gitignore`.
+Git 跟踪源码、测试、固定样本、文档、依赖清单和构建配置。虚拟环境、运行数据、缓存、生成的应用包和构建产物由 `.gitignore` 排除。
 
-## Further documentation
+## 更多文档
 
-The detailed guides below are currently in Chinese:
+以下详细文档目前均为中文：
 
-- [Usage guide](docs/使用说明.md)
-- [Action advisor: metrics, model, and limitations](docs/出牌建议.md)
-- [Message collection and game-state completeness analysis](docs/监听方法与完整对局信息获取分析.md)
-- [Mahjong Soul rules reference](docs/雀魂规则_Agent参考.md)
+- [使用说明](docs/使用说明.md)
+- [行动建议：指标、模型与限制](docs/出牌建议.md)
+- [消息监听与牌局信息完整性分析](docs/监听方法与完整对局信息获取分析.md)
+- [雀魂规则参考](docs/雀魂规则_Agent参考.md)
 
-The license for the bundled `mahjong` dependency is included in [mahjong-LICENSE.txt](docs/mahjong-LICENSE.txt).
+随应用打包的 `mahjong` 依赖许可证见 [mahjong-LICENSE.txt](docs/mahjong-LICENSE.txt)。
