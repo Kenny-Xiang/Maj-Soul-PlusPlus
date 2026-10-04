@@ -131,6 +131,21 @@ class PublicThreatTests(unittest.TestCase):
         self.assertEqual(enemy["openMeldCount"], 1)
         self.assertEqual(danger[2][0]["lossPoints"], 2171.4)
 
+    def test_concealed_kan_flush_route_retains_known_riichi_han(self):
+        s = public_hand(["2222m", "6666m"], [3, 3])
+        s["hand"] = tiles("123p789p123s456s11z")
+        s["doras"] = ["4m"]
+        s["riichi"][1] = True
+        exact = _hand_value(tiles("34m789m33z"), "0m", {**s, "selfSeat": 1}, False)
+        self.assertEqual(exact["points"], 12000)
+        self.assertIn("Riichi", exact["yaku"])
+        self.assertIn("Honitsu", exact["yaku"])
+        normal = enemy_risk(s, "5m")[1]
+        red = enemy_risk(s, "0m")[1]
+        self.assertEqual(normal[0], red[0])
+        self.assertEqual(normal[2][0]["lossPoints"], 8000)
+        self.assertEqual(red[2][0]["lossPoints"], .75 * 8000 + .25 * exact["points"])
+
     def test_four_meld_tanki_probabilities_are_mutually_exclusive(self):
         s = public_hand(["555z", "333p", "666s", "999m"])
         remaining = unseen_counts(s)

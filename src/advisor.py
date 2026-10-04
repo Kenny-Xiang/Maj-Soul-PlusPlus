@@ -434,7 +434,7 @@ def _ron_evidence(tile, enemy):
         return factor, payment
     flush_han = (5 if four and index < 27 and not any(counts[27:]) else 2)
     flush_han += int(not enemy["openMeldCount"])
-    flush_payment = _points(known_han + flush_han + bonus, fu, cfg, enemy["playerCount"])
+    flush_payment = _points(known_han + int(enemy["riichi"]) + flush_han + bonus, fu, cfg, enemy["playerCount"])
     return factor, (ordinary * payment + flush * flush_payment) / factor
 
 
