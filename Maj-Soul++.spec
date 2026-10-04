@@ -5,7 +5,7 @@ root = Path(SPECPATH)
 datas = [(str(root / 'src' / name), '.') for name in ('core.cjs', 'browser.js', 'overlay.js')]
 datas += [(str(root / 'docs'), 'docs')]
 datas += [(str(root / 'README.md'), '.')]
-for folder in ('src', 'tests', 'legacy', 'docs', 'scripts'):
+for folder in ('src', 'tests', 'docs', 'scripts'):
     for path in (root / folder).rglob('*'):
         if path.is_file() and '__pycache__' not in path.parts and path.suffix not in ('.pyc', '.pyo'):
             datas.append((str(path), str(Path('source') / path.relative_to(root).parent)))

@@ -13,8 +13,8 @@ DATA = Path.home() / "Library/Application Support/Maj-Soul++"
 def collector_source():
     core = (ROOT / "core.cjs").read_text(encoding="utf-8")
     browser = (ROOT / "browser.js").read_text(encoding="utf-8")
-    return ("(function(discover){'use strict';const core=(()=>{const module={exports:{}};\n"
-            + core + "\nreturn module.exports;})();\n" + browser + "\n})(null);")
+    return ("(function(){'use strict';const core=(()=>{const module={exports:{}};\n"
+            + core + "\nreturn module.exports;})();\n" + browser + "\n})();")
 
 
 def overlay_update(event):

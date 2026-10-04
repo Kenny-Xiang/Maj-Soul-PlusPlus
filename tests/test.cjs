@@ -4,7 +4,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 const core = require('../src/core.cjs');
-const {formatTurn} = require('../legacy/terminal.cjs');
+const collectorCode = `(function(){'use strict';const core=(()=>{const module={exports:{}};
+${fs.readFileSync(path.join(__dirname, '../src/core.cjs'), 'utf8')}
+return module.exports;})();
+${fs.readFileSync(path.join(__dirname, '../src/browser.js'), 'utf8')}
+})();`;
 const sampleFolder = path.join(__dirname, 'fixtures/recording');
 const frames = JSON.parse(fs.readFileSync(path.join(sampleFolder, 'capture.json')));
 const expected = JSON.parse(fs.readFileSync(path.join(sampleFolder, 'decoded-events.json')));
@@ -157,88 +161,49 @@ test('restored actions recover confirmed riichi while an unverified snapshot lea
   assert.deepEqual(s.riichi, [null,null,null,null]);
 });
 
-test('terminal shows missing baseline clearly', () => {
-  const s = core.emptyState(); decoded.slice(0,4).forEach(e => core.apply(s,e));
-  const out = formatTurn({time:'2026-10-04T02:29:24Z', step:66, turnNumber:1, trigger:'ActionDealTile', state:s, statistics:{received:4, errors:0}});
-  assert.match(out, /本人完整手牌：尚未取得/); assert.match(out, /南/); assert.match(out, /历史不完整/);
+test('collector requires the native bridge and leaves unsupported pages untouched', () => {
+  class Socket {}
+  const window = {WebSocket:Socket};
+  const missing = vm.runInNewContext(collectorCode, {window, location:{hostname:'game.maj-soul.com'}, TextDecoder});
+  assert.equal(missing.installed, false);
+  assert.equal(missing.reason, 'native bridge unavailable');
+  assert.equal(window.WebSocket, Socket);
+  assert.equal(window.__mjMonitor, undefined);
+  const unrelated = vm.runInNewContext(collectorCode, {window, location:{hostname:'other.example'}, TextDecoder});
+  assert.equal(unrelated.installed, false);
+  assert.equal(unrelated.reason, 'not game page');
 });
 
-test('browser attachment forwards game sends unchanged, publishes all 48 actions, stops cleanly', async () => {
-  const sent = [], posts = [], intervals = [];
+test('native listener preserves socket sends and fully detaches on uninstall', async () => {
+  const posts = [], sent = [], timers = new Set();
   class Socket extends EventTarget {
     constructor(url) {super(); this.url = url; this.readyState = 1;}
-    send(data) {sent.push(data); return 'original-result';}
+    send(...args) {sent.push({socket:this,args}); return 'original-result';}
   }
-  const game = new Socket('wss://route-2.maj-soul.com/game-gateway-zone');
-  const lobby = new Socket('wss://route-2.maj-soul.com/gateway');
-  const window = new EventTarget();
-  const button = {style:{}, remove(){this.removed = true;}};
-  let channel;
-  const dispatch = data => {
-    const event = new Event('message');
-    Object.assign(event, {origin:'http://127.0.0.1:17361', source:relay, data:{channel, ...data}});
-    window.dispatchEvent(event);
-  };
-  const relay = {closed:false, postMessage(packet, origin) {
-    assert.equal(origin, 'http://127.0.0.1:17361');
-    posts.push(...packet.events);
-    queueMicrotask(() => dispatch({type:'mj-relay-ack', batchId:packet.batchId}));
-  }};
-  window.WebSocket = Socket;
-  window.open = url => {
-    channel = new URL(url).hash.slice(1);
-    queueMicrotask(() => dispatch({type:'mj-relay-ready'}));
-    return relay;
-  };
-  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob,
-    document:{createElement:()=>button, body:{appendChild(){}}},
-    URL, AbortSignal, setInterval:fn => {intervals.push(fn); return fn;}, clearInterval:fn => intervals.splice(intervals.indexOf(fn),1),
-    console:{warn(){}, log(){}}, queryInstances:() => [game,lobby]};
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../legacy/安装终端监听.js'),'utf8'), sandbox);
-  window.__mjMonitor.openRelay();
+  const window = {WebSocket:Socket, webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
+  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+    setInterval:fn=>{timers.add(fn);return fn;}, clearInterval:fn=>timers.delete(fn), console:{log(){}}};
+  vm.runInNewContext(collectorCode, sandbox);
+  const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
+  const lobby = new window.WebSocket('wss://sample.maj-soul.com/gateway');
+  const data = new Uint8Array([2,9,0,...str(1,'.lq.FastTest.heartbeat'),...bytes(2,[])]);
+  assert.equal(game.send(data, 'extra'), 'original-result');
+  assert.equal(sent[0].socket, game);
+  assert.equal(sent[0].args[0], data);
+  assert.equal(sent[0].args[1], 'extra');
+  assert.equal(lobby.send, Socket.prototype.send);
   assert.equal(window.__mjMonitor.getSnapshot().gameSockets, 1);
-  const untouched = new Uint8Array([1,2,3]);
-  assert.equal(lobby.send(untouched), 'original-result'); assert.equal(sent[0], untouched);
-  const request = new Uint8Array([2,250,255,...str(1,'.lq.FastTest.syncGame'),...bytes(2,[])]);
-  assert.equal(game.send(request), 'original-result'); assert.equal(sent[1], request);
-  for (const frame of frames) {
-    const event = new Event('message'); event.data = Uint8Array.from(Buffer.from(frame.hex,'hex')).buffer; game.dispatchEvent(event);
-  }
-  await new Promise(setImmediate);
-  for (const fn of [...intervals]) fn();
-  await new Promise(setImmediate);
-  assert.equal(window.__mjMonitor.getSnapshot().turns,48);
-  assert.deepEqual(posts.filter(e => e.kind==='turn').map(e => e.step), decoded.map(e => e.step));
-  assert.equal(window.__mjMonitor.getSnapshot().errors,0);
-  // New game sockets created after installation are caught immediately.
-  const later = new window.WebSocket('wss://route-4.maj-soul.com/game-gateway-zone');
-  assert.equal(window.__mjMonitor.getSnapshot().gameSockets,2);
+  const later = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-next');
+  assert.equal(window.__mjMonitor.getSnapshot().gameSockets, 2);
   window.__mjMonitor.uninstall();
-  assert.equal(window.WebSocket,Socket); assert.equal(game.send,Socket.prototype.send);
-  assert.equal(later.send,Socket.prototype.send); assert.equal(intervals.length,0);
-  assert.equal(button.removed, true);
-});
-
-test('relay validates sender, retries failed delivery, acknowledges duplicate without reposting', async () => {
-  let listener, attempts = 0;
-  const messages = [], status = {}, opener = {postMessage:message => messages.push(message)};
-  const sandbox = {window:{opener, addEventListener:(name, fn)=>{listener=fn;}},
-    location:{hash:'#test-channel'}, document:{getElementById:()=>status}, setInterval(){}, AbortSignal,
-    fetch:async () => {attempts++; return {ok:attempts > 1, status:503};}};
-  vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../legacy/relay.js'),'utf8'), sandbox);
-  const event = {origin:'https://game.maj-soul.com', source:opener,
-    data:{type:'mj-relay-batch',channel:'test-channel',batchId:'one',events:[{kind:'turn'}]}};
-  await listener({...event, origin:'https://other.example'});
-  await listener({...event, source:{}});
-  await listener({...event, data:{...event.data, channel:'wrong'}});
-  assert.equal(attempts, 0);
-  await listener(event);
-  assert.equal(messages.filter(m=>m.type==='mj-relay-ack').length, 0);
-  await listener(event);
-  await listener(event);
-  assert.equal(attempts, 2);
-  assert.equal(messages.filter(m=>m.type==='mj-relay-ack').length, 2);
-  assert.match(status.textContent, /1 次/);
+  assert.equal(window.WebSocket, Socket);
+  assert.equal(game.send, Socket.prototype.send);
+  assert.equal(later.send, Socket.prototype.send);
+  assert.equal(timers.size, 0);
+  const before = posts.length;
+  game.dispatchEvent(new MessageEvent('message', {data:Uint8Array.from(Buffer.from(frames[0].hex,'hex')).buffer}));
+  await new Promise(setImmediate);
+  assert.equal(posts.length, before);
 });
 
 test('native bridge publishes every action and one initial deal without requiring own discard operation', async () => {
@@ -250,7 +215,7 @@ test('native bridge publishes every action and one initial deal without requirin
   const window = {WebSocket:Socket, webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
   const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
     setInterval:fn=>{timers.add(fn);return fn;}, clearInterval:fn=>timers.delete(fn), console:{log(){}}};
-  const code = fs.readFileSync(path.join(__dirname,'../legacy/安装终端监听.js'),'utf8');
+  const code = collectorCode;
   const installed = vm.runInNewContext(code, sandbox);
   assert.equal(installed.transport, 'webkit-native-message');
   assert.equal(vm.runInNewContext(code, sandbox).installed, false);
@@ -294,7 +259,6 @@ test('native bridge publishes every action and one initial deal without requirin
   assert.equal(updates[6].state.north[0],1);
   assert.equal(updates[7].state.phase,'between_rounds');
   assert.equal(window.__mjMonitor.getSnapshot().errors,0);
-  assert.equal(window.__mjMonitor.getSnapshot().pending,0);
   game.dispatchEvent(new Event('close'));
   assert.equal(window.__mjMonitor.getSnapshot().state.phase,'disconnected');
   window.__mjMonitor.uninstall();
@@ -312,7 +276,7 @@ test('whole-match end resets all live statistics once and next match starts at u
       const window = {WebSocket:Socket, webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
       const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
         setInterval:fn=>{timers.add(fn);return fn;}, clearInterval:fn=>timers.delete(fn), console:{log(){}}};
-      vm.runInNewContext(fs.readFileSync(path.join(__dirname,'../legacy/安装终端监听.js'),'utf8'),sandbox);
+      vm.runInNewContext(collectorCode,sandbox);
       const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
       const feed = async frame => {
         const event = new Event('message'); event.data=frame.buffer; game.dispatchEvent(event);
