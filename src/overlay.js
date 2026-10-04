@@ -136,7 +136,7 @@
       row(advice, 'advice-message', result.message || '等待可分析的手牌');
       return;
     }
-    row(advice, 'advice-title', (result.status === 'analysis' ? '当前手牌评估' : '当前建议') + ' · 启发式估计，未校准');
+    row(advice, 'advice-title', result.status === 'analysis' ? '当前手牌评估' : '当前建议');
     const recommendation = row(advice, 'recommendation', '');
     row(recommendation, 'best-tile' + (best.action && best.action !== 'discard' ? ' best-action' : ''), actionName(best));
     if (best.action !== 'abort') {

@@ -124,7 +124,7 @@ assert '后续胡牌率（估计）' in advisor_state()['text']
 assert '本次放铳率（估计）' in advisor_state()['text']
 assert '本次预期损失（估计）' in advisor_state()['text']
 assert '放铳输点（估计）' in advisor_state()['text']
-assert '未校准' in advisor_state()['text'] and '风险 4.4%' in advisor_state()['text']
+assert '未校准' not in advisor_state()['text'] and '风险 4.4%' in advisor_state()['text']
 # Action identity preserves a riichi declaration and dama discard of the same tile.
 action_advice = json.loads(json.dumps(recommendation))
 riichi = dict(action_advice['best'], action='riichi', actionId='riichi:7z',
