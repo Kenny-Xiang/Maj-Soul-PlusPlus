@@ -141,6 +141,46 @@ values changed where the corrected clock applies. Baseline median/P95/max were
 1.342/28.920/31.035 ms; v3 measured 1.350/31.605/32.570 ms on this machine.
 These small-sample results verify regression behavior, not calibration.
 
+## Full one-shanten lookahead (model v4)
+
+Every one-shanten discard, pass, call continuation, and replacement continuation
+uses all effective physical draws and legal subsequent tenpai discards. Each
+branch reuses exact wait scoring for ron/tsumo yaku, red fives, and river/server
+furiten. Branch probabilities multiply their own points before aggregation.
+Earlier ineffective own draws retain their probability mass and deplete the
+unknown pool without replacement. The draw reaching tenpai cannot also be the
+first winning self-draw: only its remaining event suffix can win.
+
+This is complete enumeration of the next effective draw and discard, not a
+complete game tree. Earlier ineffective tsumogiri cannot cause branch furiten:
+if H+A-X waits on B, swapping A and B proves B was an effective family too.
+Future opponent reveals/calls, later ready-hand pool changes, and danger of the
+simulated future discard remain outside this lookahead. Two-shanten and farther
+positions retain explicitly labelled estimates; future riichi is not assumed.
+
+Expanded search has a cooperative two-second budget and cancellation checks
+inside branches and before returning. An expired or cancelled decision returns
+no candidates, rather than ranking a mix of search precisions. The worker still
+rejects results whose situation key is stale. This is a cooperative boundary,
+not a hard real-time deadline inside a scoring-library call.
+
+The final 18-state comparison used one warmup and five measured passes (90
+samples per version), with deterministic output across repeats. v3 measured
+median/P95/max 1.306/31.666/36.336 ms; v4 measured 26.597/805.532/817.334 ms.
+Ordinary-efficiency median was 3.918 ms, broad one-shanten 64.504 ms, ankan
+498.111 ms, daiminkan 716.209 ms, shouminkan 520.813 ms, and sanma kita 813.837 ms.
+Full replacement search is substantially more expensive; these measurements do
+not guarantee a universal latency bound. The corpus changed recommendations in
+`broad-one-shanten` and `river-furiten`, without establishing stronger play.
+
+Regressions now cover the direct tsumo-only branches, insufficient time, miss
+mass against an independently enumerated urn, coupled point weights, red-tile
+accounting, furiten, all-candidate precision, and enumeration-order invariance.
+The former strong-kokushi exact-discard assertion was a model-ranking assumption:
+the full search can favor a furiten thirteen-sided double-yakuman route. A new
+rule test verifies its zero ron/96000-point dealer tsumo values and the ordinary
+48000-point alternative; the strong-hand continuation assertion remains.
+
 The initial local smoke comparison on 2026-10-04 used source `59a30d5`, all 18
 cases, one warmup pass, and five measured passes (90 samples per version).
 Both identical source versions produced the same candidates and recommendations.
