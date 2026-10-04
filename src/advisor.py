@@ -20,7 +20,7 @@ from mahjong.meld import Meld
 from mahjong.shanten import Shanten
 
 
-MODEL = "public-information-actions-ev-v5 (未校准启发式)"
+MODEL = "public-information-actions-ev-v5-risk-rules (未校准启发式)"
 SEARCH_SECONDS = 2.
 _SEARCH = ContextVar("advisor_search", default=None)
 TILES = tuple(f"{n}{s}" for s in "mps" for n in range(1, 10)) + tuple(f"{n}z" for n in range(1, 8))
@@ -266,6 +266,47 @@ def _future_value(hand, state, counts, special):
     return estimated, (1.0 if known_yaku else .3)
 
 
+def _visible_yakuman_payment(state, enemy):
+    """Single-ron payment floor from public melds, never the winner's pot.
+
+    Meld order records when sets became public, including a pon later extended
+    to a kan. Missing source metadata leaves a half/full pao interval. Shared
+    liability's honba allocation is not specified by the snapshot, so retain
+    zero/all honba bounds rather than inventing a settlement.
+    """
+    melds = state["melds"][enemy]
+    if len(melds) < 3:
+        return None
+    groups = [(tile_index(m["tiles"][0]), m) for m in melds
+              if m["type"] in (1, 2, 3)]
+    cfg = _config(state, seat=enemy)
+    cfg.kyoutaku_number = cfg.tsumi_number = 0
+    lower, upper, shared, names = 0, 0, False, []
+    for name, indices, multiple in (("Daisangen", {31, 32, 33}, 1),
+                                     ("Daisuushii", {27, 28, 29, 30}, 2)):
+        relevant = [m for index, m in groups if index in indices]
+        if {index for index, _ in groups} >= indices:
+            names.append(name)
+            last = relevant[-1]
+            sources = {s for s in last.get("froms", [])
+                       if s in range(state["playerCount"]) and s != enemy}
+            payer = enemy if last["type"] == 3 else next(iter(sources)) if len(sources) == 1 else None
+            full = _points(13 * multiple, 0, cfg, state["playerCount"], yakuman=True)
+            split = payer not in (enemy, state["selfSeat"])
+            lower += full // 2 if split else full
+            upper += full // 2 if split and payer is not None else full
+            shared |= split
+    if len(melds) == 4 and all(m["type"] in (2, 3) for m in melds):
+        names.append("Suukantsu")  # No pao for four kans in the supported rules.
+        full = _points(13, 0, cfg, state["playerCount"], yakuman=True)
+        lower += full
+        upper += full
+    if not names:
+        return None
+    honba = (state["playerCount"] - 1) * 100 * (state.get("round") or {}).get("ben", 0)
+    return {"yaku": names, "lower": lower + (0 if shared else honba), "upper": upper + honba}
+
+
 def _opponents(state, remaining):
     opponents = []
     players, seat = state["playerCount"], state["selfSeat"]
@@ -292,10 +333,14 @@ def _opponents(state, remaining):
         han = (3 if riichi else max(1, yakuhai)) + sum(visible_counts[i] for i in dora)
         han += sum(t[0] == "0" for t in visible)
         han += state.get("north", [0] * 4)[enemy] * (1 + dora.count(30))
-        loss = _points(han, 40 if riichi or not open_melds else 30, cfg, players)
+        fu = 40 if riichi or not open_melds else 30
+        yakuman = _visible_yakuman_payment(state, enemy)
+        loss = yakuman["lower"] if yakuman else _points(han, fu, cfg, players)
+        red_loss = loss if yakuman else _points(han + 1, fu, cfg, players)
         opponents.append({"seat": enemy, "safe": safe, "tenpai": tenpai,
                           "loss": loss, "riichi": riichi, "dora": dora,
-                          "canKokushi": not melds})
+                          "redLoss": red_loss, "yakumanPayment": yakuman,
+                          "playerCount": players, "canKokushi": not melds})
     return opponents
 
 
@@ -306,11 +351,12 @@ def _danger(tile, remaining, opponents):
         if index in enemy["safe"]:
             chance = 0.
             reason = "现物"
-        elif index >= 27:
-            # No unseen honor blocks pair/triplet waits, but a closed hand can
-            # still win kokushi on a missing singleton honor.
+        elif index >= 27 or (enemy["playerCount"] == 3 and index in (0, 8) and remaining[index] == 0):
+            # Exhausted honors and sanma manzu terminals cannot complete a
+            # sequence, pair or triplet. Kokushi can still win on a missing
+            # singleton when the opponent has no melds. Keep other rates intact.
             chance = ((.001 if enemy["canKokushi"] else 0.), .025, .065, .10, .12)[remaining[index]] * enemy["tenpai"]
-            reason = "字牌剩余枚数"
+            reason = "字牌剩余枚数" if index >= 27 else "三麻幺九万剩余枚数"
         else:
             n = index % 9
             shape = .065 if n in (0, 8) else .10
@@ -329,9 +375,12 @@ def _danger(tile, remaining, opponents):
         if index in enemy["dora"] and chance:
             chance *= 1.2
         survival *= 1 - chance
-        expected_loss += chance * enemy["loss"]
+        loss = enemy["redLoss"] if tile[0] == "0" else enemy["loss"]
+        expected_loss += chance * loss
         details.append({"seat": enemy["seat"], "probability": round(chance, 4),
-                        "lossPoints": enemy["loss"], "reason": reason})
+                        "lossPoints": loss, "reason": reason})
+        if enemy["yakumanPayment"]:
+            details[-1]["yakumanPayment"] = enemy["yakumanPayment"]
     return 1 - survival, expected_loss, details
 
 

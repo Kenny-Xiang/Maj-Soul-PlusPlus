@@ -268,3 +268,54 @@ measured 1.308/28.108/29.386 ms. These are a small warmed sample on one machine,
 not a performance guarantee. A separate comparison against pre-fix commit
 `33afbb4` detected the changed `new-riichi-changed-waits` recommendation, confirming
 the report also captures a real historical behavior change.
+
+## Deterministic risk-rule boundaries (v5-risk-rules)
+
+An exhausted `1m` or `9m` in sanma cannot complete a sequence, pair, or triplet.
+It now has zero danger against an opponent with a meld, including a concealed
+kan. A meldless opponent retains the existing small missing-singleton kokushi
+estimate. The reproduced `1m` case changes from probability 0.008775 and loss
+8.775 to zero. Four-player terminals, other exhausted suited tiles, and all
+non-exhausted sanma-terminal rates keep their prior heuristic treatment. This
+is a legal-shape exclusion, not a new fitted danger table.
+
+Public melds now establish single-ron payment lower bounds for Daisangen,
+double Daisuushii, and Suukantsu, stacking the independently confirmed units.
+The repository's [rule reference](%E9%9B%80%E9%AD%82%E8%A7%84%E5%88%99_Agent%E5%8F%82%E8%80%83.md#63-%E5%8C%85%E7%89%8C%E8%B4%A3%E4%BB%BB%E6%94%AF%E4%BB%98)
+documents responsibility for the first two, not four kans. The last relevant
+meld and its public `froms` identify the responsible feeder; extending a pon to
+a kan preserves that original source/order in the decoder. A final concealed
+kan has no feeder. A known different responsible player halves only the liable
+yakuman component; our own responsibility pays it in full. Existing deposits
+are excluded. For the supplied nondealer Daisangen example the prior 3900
+estimate becomes 32000 if we are responsible, 16000 if another player is
+responsible, or a 16000–32000 interval when old snapshots lack the source.
+
+The `yakumanPayment` diagnostic retains the confirmed yaku and lower/upper
+bounds; the danger estimate uses its lower bound. For shared or unknown
+responsibility, the current snapshot/rule contract does not settle the honba
+allocation, so bounds include zero through the full honba instead of inventing
+an exact payer. Additional hidden yakuman, multi-ron honba priority, and our pao
+payments when another player deals in or the opponent self-draws remain outside
+this immediate-discard model. These are payment floors, not complete opponent
+hand valuations or a complete responsibility-payment simulator.
+
+Discarding a red five now adds one known han to the same ordinary opponent
+estimate through the existing scorer. It preserves the tile-family probability
+and naturally respects mangan and higher caps: the riichi probe changes from
+5200/5200 for normal/red to 5200/8000. Both true and counted yakuman remain
+unchanged by the extra red han. No unknown concealed bonuses or coefficients
+were added. Focused tests cover both sanma terminals, closed kokushi, four-player
+and ordinary-suit boundaries, payer uncertainty, dealer/sanma honba, source
+retention through added kan, compound yakuman, red caps, genbutsu, and input
+immutability.
+
+All 116 advisor, worker, and benchmark tests pass. The 19-state comparison with
+merged v5 `b658903` used one warmup and five measured passes (95 samples each).
+Baseline median/P95/max were 20.749/772.281/785.279 ms; this rule variant measured
+20.501/780.264/801.021 ms. No root recommendations changed in that existing
+corpus. The supplied counterexamples are separately asserted by the focused
+rule tests; the corpus is not a representative sample of these rare shapes.
+The full report is `build/advisor-risk-rules-comparison.json` (ignored).
+Timing is local regression evidence, not a universal latency bound or evidence
+of improved real-game returns.
