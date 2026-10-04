@@ -78,7 +78,7 @@ open 'dist/Maj-Soul++.app'
 
 运行日志、诊断文件及单实例锁位于 `~/Library/Application Support/Maj-Soul++/`。网页登录状态由系统 WebKit 保存在用户目录，不放入工程。重复启动会唤起已有游戏窗口。
 
-Git 跟踪源码、测试样本、文档、依赖清单及构建配置；`.gitignore` 排除 `.venv`、日志、证书、缓存、生成的监听脚本、`.app` 和打包产物。旧完整桌面备份保留在已安装 App 中，不复制进源码工程。仓库使用 `main` 分支，仅在本地保存提交，尚未配置远程仓库或上传代码。
+Git 跟踪源码、测试样本、文档、依赖清单及构建配置；`.gitignore` 排除 `.venv`、日志、证书、缓存、生成的监听脚本、`.app` 和打包产物。旧完整桌面备份保留在已安装 App 中，不复制进源码工程。仓库使用 `main` 分支，公开托管于 [Kenny-Xiang/Maj-Soul-PlusPlus](https://github.com/Kenny-Xiang/Maj-Soul-PlusPlus)。应用与工程的显示名称保持为 Maj-Soul++。
 
 ```sh
 git status
