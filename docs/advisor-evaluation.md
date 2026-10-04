@@ -319,3 +319,36 @@ rule tests; the corpus is not a representative sample of these rare shapes.
 The full report is `build/advisor-risk-rules-comparison.json` (ignored).
 Timing is local regression evidence, not a universal latency bound or evidence
 of improved real-game returns.
+
+## Cross-PR integration verification
+
+A local assembly of PR #14 (`f85faf1`), PR #11 (`e0907d8` plus `eee0f59`),
+PR #13 (`bb5045b`), and PR #12 (`087aec9`) was checked together. The assembly
+resolves only model-label and appended-document conflicts; its local source
+commit is `215f04c`. These PRs remain independent changes based on merged v5;
+this check does not merge them or replace their individual comparisons.
+
+The combined source passes 139 advisor/worker/benchmark tests, 31 JavaScript
+tests, and 6 formatter/logging tests. An additional conditional-draw probe
+confirms zero forced-deal-in risk for the last sanma `1m` and `9m` against an
+open opponent. Cached/uncached complete-output equivalence also passes with all
+model changes and the added twentieth fixture.
+
+The final 20-state comparison against `b658903` uses one warmup and five
+measured passes (100 samples per version). Baseline median/P95/max are
+22.985/697.071/805.561 ms; the assembly measures 25.713/609.752/709.473 ms.
+Every repeated output is deterministic. Only `river-furiten` and
+`new-riichi-changed-waits` change root recommendation. The report remains a
+regression/performance measurement, not evidence of stronger play or calibrated
+risk. Full local evidence is `build/advisor-batch-comparison.json` in the
+integration worktree.
+
+Both offline native WebKit checks remain **unverified in this session**. The
+replay test receives no script messages, and the overlay test returns
+`WKErrorDomain Code=5` for JavaScript evaluation. Sandbox-extension denials are
+also logged. Running the same two checks on an unchanged `b658903` source
+archive reproduces both failures. No permissions were expanded, no game login
+or live game connection was used, and these checks are not counted as passed.
+The ordinary Python/JavaScript checks above do not substitute for a native
+WebKit pass. Local diagnostics are in `build/native-tests.log`,
+`build/overlay-tests.log`, and their `*-baseline-tests.log` counterparts.
