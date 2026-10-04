@@ -3,7 +3,7 @@ from copy import deepcopy
 import unittest
 
 from advisor import (advise, unseen_counts, _action_choices,
-                     _apply_choice, _position, _riichi, _risk_weight, _draw_pool,
+                     _apply_choice, _position, _riichi, _draw_pool,
                      _danger, _opponents)
 from test_advisor import state, tiles
 
@@ -155,12 +155,11 @@ class RiichiAdviceTests(unittest.TestCase):
         hand.remove("1z")
         without_cost = _position(hand, committed, remaining, "1z")
         c = _riichi(s, choice, remaining)
-        self.assertLess(c["winProbability"], without_cost["winProbability"])
+        self.assertEqual(c["winProbability"], without_cost["winProbability"])
+        self.assertEqual(c["futureForcedDealInLoss"], without_cost["futureForcedDealInLoss"])
         expected_cost = 1000 * (1 - c["dealInProbability"] - c["winProbability"])
         self.assertAlmostEqual(c["expectedRiichiCost"], expected_cost, delta=.5)
-        expected_score = (without_cost["score"] - without_cost["scoreBreakdown"]["winIncome"] +
-                          c["scoreBreakdown"]["winIncome"] - expected_cost -
-                          _risk_weight(s) * c["futureForcedDealInLoss"])
+        expected_score = without_cost["score"] - expected_cost
         self.assertAlmostEqual(c["score"], expected_score, delta=1.5)
         self.assertEqual(s["riichiSticks"], 2)
 
