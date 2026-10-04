@@ -69,21 +69,30 @@ function action(bytes, obfuscated = true) {
   if (operationField && f.has(operationField)) {
     const op = fields(first(f, operationField));
     e.selfSeat = first(op, 1);
-    e.operations = (op.get(2) || []).map(b => first(fields(b), 1));
+    e.operationDetails = (op.get(2) || []).map(b => {
+      const detail = fields(b);
+      return {type: first(detail, 1), combination: strings(detail, 2)};
+    });
+    e.operations = e.operationDetails.map(op => op.type);
     e.canDiscard = e.operations.includes(1);
   }
+  const furitenField = {ActionDealTile: 7, ActionDiscardTile: 6, ActionChiPengGang: 7,
+    ActionAnGangAddGang: 7, ActionBaBei: 7}[name];
+  if (furitenField) e.furiten = Boolean(first(f, furitenField));
   if (['ActionDealTile','ActionChiPengGang','ActionLiuJu'].includes(name) && f.has(5)) {
     const l = fields(first(f, 5));
     e.liqiSuccess = {seat:first(l, 1), score:signed32(first(l, 2)), failed:Boolean(first(l, 4))};
+    if (l.has(3)) e.liqiSuccess.riichiSticks = first(l, 3);
   }
   if (name === 'ActionNewRound') {
     Object.assign(e, {hand: strings(f, 4), scores: integers(f, 6), chang: first(f, 1),
-      ju: first(f, 2), ben: first(f, 3), left: first(f, 13),
+      ju: first(f, 2), ben: first(f, 3), left: first(f, 13), riichiSticks: first(f, 8),
       doras: f.has(14) ? strings(f, 14) : strings(f, 5)});
   } else if (['ActionDealTile', 'ActionDiscardTile'].includes(name)) {
     Object.assign(e, {seat: first(f, 1), tile: str(f, 2)});
     if (name === 'ActionDealTile') Object.assign(e, {left: first(f, 3), doras: strings(f, 6)});
-    else Object.assign(e, {moqie: Boolean(first(f, 5)), riichi: Boolean(first(f, 3) || first(f, 9)), doras: strings(f, 8)});
+    else Object.assign(e, {moqie: Boolean(first(f, 5)), riichi: Boolean(first(f, 3) || first(f, 9)),
+      doubleRiichi: Boolean(first(f, 9)), doras: strings(f, 8)});
   } else if (name === 'ActionChiPengGang') {
     Object.assign(e, {seat: first(f, 1), type: first(f, 2), tiles: strings(f, 3), froms: integers(f, 4)});
   } else if (name === 'ActionAnGangAddGang') {
@@ -122,23 +131,48 @@ function restore(bytes) {
 
 function emptyState() {
   return {phase: 'waiting', selfSeat: null, hand: [], handComplete: false, historyComplete: false,
-    baseline: null, lastStep: null, lastDraw: null, left: null, doras: [], scores: [],
+    baseline: null, lastStep: null, lastDraw: null, lastAction: null, left: null, doras: [], scores: [],
     rivers: [[], [], [], []], melds: [[], [], [], []], north: [0, 0, 0, 0],
-    riichi: [null, null, null, null],
+    riichi: [null, null, null, null], riichiPending: [false, false, false, false],
+    doubleRiichi: [null, null, null, null], doubleRiichiPending: [false, false, false, false],
+    riichiStep: [null, null, null, null], riichiSticks: null, furiten: null,
+    canAct: false, canDiscard: false, noCallsYet: false, canDoubleRiichi: false,
+    operations: [], operationDetails: [], forbiddenDiscards: [],
     playerCount: 4, warning: '尚未取得开局或恢复基线', round: null};
 }
 const tileFamily = t => t?.replace(/^0/, '5');
+function setOperations(state, e) {
+  state.operations = [...(e.operations || [])];
+  state.operationDetails = (e.operationDetails || []).map(op => ({...op, combination: [...op.combination]}));
+  // The offered tile belongs to this exact action, never a previous river entry.
+  state.lastAction = e.name && state.phase === 'playing' && !e.unsupported ? {
+    name: e.name, seat: e.seat ?? (e.name === 'ActionNewRound' ? e.ju ?? null : null),
+    tile: e.tile ?? (e.name === 'ActionBaBei' ? '4z' : e.name === 'ActionNewRound' ? state.lastDraw : null),
+    type: e.type ?? null, step: e.step,
+  } : null;
+  // In type 1, combination lists forbidden kuikae discards, not legal candidates.
+  // See majsoulrpa screens/match/operation/_decode.py at the revision above.
+  state.forbiddenDiscards = state.operationDetails.filter(op => op.type === 1).flatMap(op => op.combination);
+  state.canAct = state.phase === 'playing' && state.handComplete && state.historyComplete &&
+    Number.isInteger(state.selfSeat) && state.selfSeat >= 0 && state.selfSeat < state.playerCount &&
+    e.selfSeat === state.selfSeat && state.operations.some(type => Number.isInteger(type) && type >= 1 && type <= 11);
+  state.canDiscard = state.canAct && state.operations.includes(1);
+  state.canDoubleRiichi = state.canAct && state.noCallsYet && state.rivers[state.selfSeat].length === 0;
+}
 function apply(state, e) {
   if (e.name === 'ActionNewRound') {
     if (state.phase === 'playing' && state.baseline === 'new_round' &&
         state.lastStep !== null && e.step <= state.lastStep &&
         ['chang', 'ju', 'ben'].every(key => state.round?.[key] === e[key])) return false;
-    const seat = e.selfSeat ?? state.selfSeat;
+    const seat = e.selfSeat ?? (e.hand.length === 14 ? e.ju : state.selfSeat);
     Object.assign(state, emptyState(), {phase: 'playing', selfSeat: seat, hand: [...e.hand],
       handComplete: e.hand.length > 0, historyComplete: true, baseline: 'new_round',
-      riichi: [false, false, false, false],
+      riichi: [false, false, false, false], doubleRiichi: [false, false, false, false],
+      riichiSticks: e.riichiSticks ?? 0, furiten: false, noCallsYet: true,
+      lastDraw: e.hand.length === 14 && seat === e.ju ? e.hand.at(-1) : null,
       warning: '', lastStep: e.step, left: e.left, doras: e.doras, scores: e.scores,
       playerCount: e.scores.length || 4, round: {chang: e.chang, ju: e.ju, ben: e.ben}});
+    setOperations(state, e);
     return true;
   }
   if (state.lastStep !== null && e.step <= state.lastStep) return false;
@@ -148,13 +182,27 @@ function apply(state, e) {
   }
   state.lastStep = e.step;
   state.phase = 'playing';
-  if (e.selfSeat !== undefined) state.selfSeat = e.selfSeat;
-  if (e.name === 'ActionDealTile' && e.tile) state.selfSeat = e.seat;
+  const localSeat = e.name === 'ActionDealTile' && e.tile ? e.seat : e.selfSeat;
+  if (localSeat !== undefined) {
+    if (state.selfSeat !== null && state.selfSeat !== localSeat) invalidate('本人座位与基线不一致，等待新基线');
+    else state.selfSeat = localSeat;
+  }
   if (e.doras?.length) state.doras = e.doras;
   if (e.scores?.length) state.scores = e.scores;
+  if (e.furiten !== undefined) state.furiten = e.furiten;
   if (e.liqiSuccess) {
-    state.riichi[e.liqiSuccess.seat] = !e.liqiSuccess.failed;
-    if (!e.liqiSuccess.failed) state.scores[e.liqiSuccess.seat] = e.liqiSuccess.score;
+    const confirmation = e.liqiSuccess, seat = confirmation.seat;
+    if (!Number.isInteger(seat) || seat < 0 || seat >= state.playerCount) throw new Error('立直座位编号无效');
+    if (!confirmation.failed) {
+      if (confirmation.riichiSticks !== undefined) state.riichiSticks = confirmation.riichiSticks;
+      else if (state.riichi[seat] !== true && state.riichiSticks !== null) state.riichiSticks++;
+      state.scores[seat] = confirmation.score;
+      state.riichiStep[seat] ??= e.step;
+      if (state.riichiPending[seat]) state.doubleRiichi[seat] = state.doubleRiichiPending[seat];
+    } else {state.riichiStep[seat] = null; state.doubleRiichi[seat] = false;}
+    state.riichi[seat] = !confirmation.failed;
+    state.riichiPending[seat] = false;
+    state.doubleRiichiPending[seat] = false;
   }
   function invalidate(reason) {
     state.handComplete = state.historyComplete = false;
@@ -167,7 +215,7 @@ function apply(state, e) {
     else state.hand.splice(index, 1);
   }
   if (e.seat !== undefined && (!Number.isInteger(e.seat) || e.seat < 0 || e.seat > 3)) throw new Error('座位编号无效');
-  if (e.unsupported) { invalidate(`未支持动作 ${e.name}，完整性待核对`); return true; }
+  if (e.unsupported) { invalidate(`未支持动作 ${e.name}，完整性待核对`); setOperations(state, {}); return true; }
   if (e.name === 'ActionDealTile') {
     state.left = e.left;
     if (e.tile) {
@@ -175,9 +223,15 @@ function apply(state, e) {
       if (state.handComplete) state.hand.push(e.tile);
     }
   } else if (e.name === 'ActionDiscardTile') {
-    state.rivers[e.seat].push({tile: e.tile, moqie: e.moqie, riichi: e.riichi, called: false});
+    state.rivers[e.seat].push({tile: e.tile, moqie: e.moqie, riichi: e.riichi, called: false, step: e.step});
+    if (e.riichi) {
+      state.riichiPending[e.seat] = true;
+      state.doubleRiichiPending[e.seat] = Boolean(e.doubleRiichi);
+      state.riichiStep[e.seat] = e.step;
+    }
     if (e.seat === state.selfSeat) { remove(e.tile); state.lastDraw = null; }
   } else if (e.name === 'ActionChiPengGang') {
+    state.noCallsYet = false;
     state.melds[e.seat].push({type: e.type, tiles: e.tiles, froms: e.froms});
     e.tiles.forEach((tile, index) => {
       const from = e.froms[index];
@@ -190,27 +244,37 @@ function apply(state, e) {
     });
     if (e.seat === state.selfSeat) state.lastDraw = null;
   } else if (e.name === 'ActionAnGangAddGang') {
+    state.noCallsYet = false;
     if (e.type === 2) {
       const meld = state.melds[e.seat].find(m => m.type === 1 && tileFamily(m.tiles[0]) === tileFamily(e.tile));
       if (meld) {meld.type = 2; meld.tiles.push(e.tile);}
       else invalidate('加杠缺少此前碰牌记录');
       if (e.seat === state.selfSeat) remove(e.tile);
     } else if (e.type === 3) {
-      state.melds[e.seat].push({type: 3, tiles: [e.tile, e.tile, e.tile, e.tile], froms: []});
+      const family = tileFamily(e.tile), ownKnown = e.seat === state.selfSeat && state.handComplete;
+      // Normal ranked play has one red five per suit; the action only names a family.
+      const tiles = ownKnown ? state.hand.filter(tile => tileFamily(tile) === family) :
+        family?.[0] === '5' ? [`0${family[1]}`, family, family, family] : [family, family, family, family];
+      state.melds[e.seat].push({type: 3, tiles, froms: [], redAssumed: !ownKnown && family?.[0] === '5'});
       if (e.seat === state.selfSeat) for (let i = 0; i < 4; i++) remove(e.tile, true);
     } else invalidate(`未知杠类型 ${e.type}`);
     if (e.seat === state.selfSeat) state.lastDraw = null;
   } else if (e.name === 'ActionBaBei') {
+    state.noCallsYet = false;
     state.north[e.seat]++; state.playerCount = 3;
     if (e.seat === state.selfSeat) { remove('4z'); state.lastDraw = null; }
   } else if (['ActionHule', 'ActionNoTile', 'ActionLiuJu'].includes(e.name)) {
     state.phase = e.matchEnd ? 'ended' : 'between_rounds';
+    state.riichiPending.forEach((pending, seat) => {if (pending && !state.riichi[seat]) state.riichiStep[seat] = null;});
+    state.riichiPending.fill(false);
+    state.doubleRiichiPending.fill(false);
   }
+  setOperations(state, e);
   return true;
 }
 
 function applyRestore(state, result) {
-  if (result.ended) {state.phase = 'ended'; return;}
+  if (result.ended) {state.phase = 'ended'; setOperations(state, {}); return;}
   const start = result.actions.findLastIndex(e => e.name === 'ActionNewRound');
   if (start >= 0) {
     Object.assign(state, emptyState());
@@ -219,6 +283,7 @@ function applyRestore(state, result) {
     state.baseline = 'restore_actions';
     state.warning = '已回放恢复动作；恢复响应边界待现场核对';
     state.historyComplete = false;
+    setOperations(state, {});
   } else if (result.snapshot) {
     const s = result.snapshot;
     Object.assign(state, emptyState(), {phase: 'playing', selfSeat: s.selfSeat,
@@ -232,6 +297,8 @@ function applyRestore(state, result) {
     });
   } else {
     state.phase = 'connected';
+    state.handComplete = state.historyComplete = false;
+    setOperations(state, {});
     state.warning = '恢复响应没有可独立使用的开局或快照';
   }
 }

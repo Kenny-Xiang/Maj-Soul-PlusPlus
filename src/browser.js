@@ -15,21 +15,30 @@ function snapshot() {
 }
 function publish(event) {
   const packet = {session, serial:++serial, time:new Date().toISOString(), ...event};
+  if (packet.kind === 'turn') window.__mjStatsOverlay?.expectAdvice?.(`${session}:${packet.serial}`);
   nativeBridge.postMessage(JSON.stringify(packet));
   connectedAt = Date.now();
 }
 function status(message) {publish({kind:'status', message, phase:state.phase});}
+function closeDecisionWindow() {
+  window.__mjStatsOverlay?.invalidateAdvice();
+  state.canAct = state.canDiscard = state.canDoubleRiichi = false; state.lastAction = null;
+  state.operations = []; state.operationDetails = []; state.forbiddenDiscards = [];
+}
 function fail(error) {
+  closeDecisionWindow();
   errors++; state.handComplete = state.historyComplete = false;
   state.warning = `解析失败：${error.message}，当前数据可能不完整`;
   publish({kind:'error', message:state.warning});
 }
 function updateStatistics(event) {
+  window.__mjStatsOverlay?.invalidateAdvice();
   turns++;
   publish({kind:'turn', trigger:event.name, actorSeat:event.seat, step:event.step, turnNumber:turns,
     statistics:{received, errors}, state:JSON.parse(JSON.stringify(state))});
 }
 function resetStatistics() {
+  window.__mjStatsOverlay?.invalidateAdvice();
   const alreadyReset = state.phase === 'ended' && state.lastStep === null && turns === 0;
   Object.assign(state, core.emptyState(), {phase:'ended', warning:''});
   received = errors = turns = 0;
@@ -89,6 +98,7 @@ function attach(socket) {
   };
   meta.close = () => {
     if ((activeSocket === meta.id || activeSocket === null) && state.phase !== 'ended') {
+      closeDecisionWindow();
       state.phase = 'disconnected';
       state.handComplete = state.historyComplete = false;
       state.warning = '牌局连接关闭，等待自动重新连接';
@@ -106,6 +116,9 @@ function attach(socket) {
       const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) :
         ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
       const env = bytes ? core.envelope(bytes) : null;
+      if (env?.kind === 2 && ['.lq.FastTest.inputOperation','.lq.FastTest.inputChiPengGang'].includes(env.name)) {
+        closeDecisionWindow();
+      }
       if (env?.kind === 2 && ['.lq.FastTest.syncGame','.lq.FastTest.enterGame'].includes(env.name)) {
         meta.pending.set(env.id, env.name);
         if (meta.pending.size > 256) meta.pending.delete(meta.pending.keys().next().value);
@@ -127,6 +140,7 @@ function detach(meta) {
 }
 function stop() {
   running = false; clearInterval(heartbeatTimer);
+  closeDecisionWindow();
   for (const meta of sockets.values()) detach(meta);
   if (window.WebSocket === wrappedConstructor) window.WebSocket = NativeSocket;
   state.phase = 'stopped'; console.log('[雀魂监听] 页面监听已停止');

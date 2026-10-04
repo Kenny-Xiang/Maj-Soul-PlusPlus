@@ -23,7 +23,11 @@ def overlay_update(event):
         packet = {"kind": "status", "phase": "ended", "reset": True,
                   "text": "对局已结束，统计已重置 · 等待下一场"}
     elif event["kind"] == "turn":
-        packet = {"kind": "turn", "text": format_turn(event)}
+        packet = {"kind": "turn", "text": format_turn(event),
+                  "adviceKey": f"{event['session']}:{event['serial']}",
+                  "advice": event.get("advice", {"status": "computing", "message": "正在评估当前牌局…"})}
+    elif event["kind"] == "advice":
+        packet = {"kind": "advice", "adviceKey": event["adviceKey"], "advice": event["advice"]}
     elif event["kind"] in ("status", "error"):
         phase = event.get("phase")
         labels = {"waiting": "等待对局 · 发牌及场上动作后自动更新", "connected": "已连接牌局 · 等待最新统计",
@@ -52,6 +56,7 @@ def main():
     import fcntl
     from Foundation import NSObject, NSURL, NSURLRequest, NSUUID, NSTimer
     from terminal_stats import TerminalLog
+    from advice_worker import AdviceWorker
 
     # A named persistent WebKit profile keeps this window's login separate from Safari.
     profile_id = "382523D9-074A-4A9B-8FA4-1BC45E1EDCE7"
@@ -85,6 +90,8 @@ def main():
     log.write("Maj-Soul++ · 开局发牌及每个场上动作后更新浮层")
     log.write("正在打开独立游戏窗口；采集器自动安装。首次请在新窗口登录。")
     log.write(f"文本记录：{log.text_path}\n结构化记录：{log.json_path}")
+    advisor = AdviceWorker()
+    advice_target = [None]
 
     class Delegate(NSObject):
         def userContentController_didReceiveScriptMessage_(self, controller, message):
@@ -94,6 +101,11 @@ def main():
             try:
                 event = json.loads(str(message.body()))
                 log.accept(event)
+                if event['kind'] == 'turn':
+                    advice_target[0] = message.webView()
+                    advisor.submit(f"{event['session']}:{event['serial']}", event['state'])
+                elif event['kind'] in ('status', 'error'):
+                    advisor.invalidate()
                 update = overlay_update(event)
                 if update:
                     message.webView().evaluateJavaScript_completionHandler_(update, None)
@@ -102,13 +114,16 @@ def main():
 
         def webView_didFailProvisionalNavigation_withError_(self, view, navigation, error):
             if error.code() != -999:
+                advisor.invalidate()
                 log.write(f"[页面加载失败] {error.localizedDescription()}")
 
         def webViewWebContentProcessDidTerminate_(self, view):
+            advisor.invalidate()
             log.write("[页面进程已退出] 监听中断，请关闭窗口后重新启动程序。")
 
         def windowWillClose_(self, notification):
             if notification.object() is window:
+                advisor.close()
                 log.write("游戏窗口已关闭，监测结束。")
                 app.terminate_(None)
 
@@ -174,19 +189,33 @@ def main():
     window, view = make_window(config, "Maj-Soul++")
     view.loadRequest_(NSURLRequest.requestWithURL_(NSURL.URLWithString_("https://game.maj-soul.com/1/")))
     app.activateIgnoringOtherApps_(True)
-    # Give Python a periodic callback so terminal signals also work while AppKit is idle.
-    timer = NSTimer.scheduledTimerWithTimeInterval_repeats_block_(0.5, True, lambda timer: None)
+    def deliver_advice(timer):
+        packet = advisor.take_result()
+        if packet and advice_target[0] is not None:
+            # WebKit calls stay on the UI thread; slow or superseded work never blocks it.
+            advice_target[0].evaluateJavaScript_completionHandler_(overlay_update(packet), None)
+            with log.json_path.open('a', encoding='utf-8') as file:
+                file.write(json.dumps(packet, ensure_ascii=False) + '\n')
+    timer = NSTimer.scheduledTimerWithTimeInterval_repeats_block_(0.05, True, deliver_advice)
     signal.signal(signal.SIGINT, lambda signum, frame: app.terminate_(None))
     signal.signal(signal.SIGTERM, lambda signum, frame: app.terminate_(None))
     app.run()
     timer.invalidate()
+    advisor.close()
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2 and sys.argv[1] in ("--verify-native", "--verify-overlay"):
+    if len(sys.argv) == 2 and sys.argv[1] in ("--verify-native", "--verify-overlay", "--verify-advisor"):
         # Exercise the packaged runtime offline, without touching the game profile.
         import runpy
         test_root = ROOT / "source/tests" if getattr(sys, "frozen", False) else ROOT.parent / "tests"
-        runpy.run_path(str(test_root / ("test_native.py" if sys.argv[1] == "--verify-native" else "test_overlay.py")), run_name="__main__")
+        if sys.argv[1] == '--verify-advisor':
+            import unittest
+            suite = unittest.defaultTestLoader.discover(str(test_root), pattern='test_advisor*.py')
+            result = unittest.TextTestRunner(verbosity=2).run(suite)
+            raise SystemExit(0 if result.wasSuccessful() else 1)
+        test_name = "test_native.py" if sys.argv[1] == '--verify-native' else "test_overlay.py"
+        sys.argv = [str(test_root / test_name)]
+        runpy.run_path(str(test_root / test_name), run_name="__main__")
     else:
         main()

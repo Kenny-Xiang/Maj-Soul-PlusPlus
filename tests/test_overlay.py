@@ -8,6 +8,7 @@ import AppKit
 import WebKit
 from Foundation import NSDate, NSRunLoop, NSURL
 from monitor import ROOT as SOURCE, overlay_update
+from terminal_stats import format_turn
 
 ROOT = Path(__file__).resolve().parent
 app = AppKit.NSApplication.sharedApplication()
@@ -36,6 +37,46 @@ def evaluate(source):
     return result[0][0]
 
 
+def packet(value):
+    evaluate('window.__mjStatsOverlay.update(' + json.dumps(value, ensure_ascii=False) + '); null;')
+
+
+def show_turn(key='preview:5', advice=None):
+    evaluate('window.__mjStatsOverlay.expectAdvice(' + json.dumps(key) + '); null;')
+    packet({'kind': 'turn', 'text': format_turn(event), 'adviceKey': key,
+            'advice': advice or {'status': 'computing', 'message': '正在计算行动建议…'}})
+
+
+def advisor_state():
+    return json.loads(evaluate('''JSON.stringify((()=>{
+      const a=document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.advice');
+      const panel=a.closest('.panel'),rect=panel.getBoundingClientRect();
+      return {hidden:a.hidden,text:a.textContent,best:a.querySelector('.best-tile')?.textContent || '',
+        images:a.querySelectorAll('img').length,
+        alternatives:[...a.querySelectorAll('.alternatives')].map(element=>element.textContent),
+        bottom:rect.bottom,fontSize:getComputedStyle(panel).fontSize,
+        clickTarget:document.elementFromPoint(30,40)?.id};
+    })())'''))
+
+
+recommendation = {
+    'status': 'ready', 'model': '公开信息启发式估计', 'elapsedMs': 43,
+    'candidates': [
+        {'tile': '7z', 'shanten': 2, 'ukeire': 38,
+         'improvingTiles': [{'tile': '7p', 'count': 4}, {'tile': '9s', 'count': 3}],
+         'winProbability': .268, 'expectedWinPoints': 5200,
+         'dealInProbability': .036, 'dealInPoints': 5200, 'expectedDealInLoss': 187,
+         'score': 1206, 'reasons': ['保留连续搭子与宝牌', '进张和放铳风险综合估计']},
+        {'tile': '6z', 'shanten': 2, 'ukeire': 36, 'score': 1160,
+         'dealInProbability': .044, 'expectedWinPoints': 5200},
+        {'tile': '1s', 'shanten': 2, 'ukeire': 30, 'score': 1020,
+         'dealInProbability': .055, 'expectedWinPoints': 3900},
+        {'tile': '3p', 'shanten': 3, 'ukeire': 46, 'score': 970},
+    ]
+}
+recommendation['best'] = recommendation['candidates'][0]
+
+
 deadline = time.time() + 10
 while view.isLoading() and time.time() < deadline:
     NSRunLoop.currentRunLoop().runUntilDate_(NSDate.dateWithTimeIntervalSinceNow_(0.05))
@@ -46,6 +87,7 @@ event['state']['rivers'] = [[{'tile': f'{i % 9 + 1}p'} for i in range(24)] for _
 event['state']['riichi'] = [True, True, False, False]
 event['state']['warning'] = '<img src="invalid"> 是文本，不应变成 HTML 元素'
 evaluate(overlay_update(event))
+show_turn(advice=recommendation)
 checks = []
 for width, height in [(1200, 760), (800, 600), (600, 400), (1200, 760)]:
     view.setFrameSize_(AppKit.NSMakeSize(width, height))
@@ -59,11 +101,15 @@ for width, height in [(1200, 760), (800, 600), (600, 400), (1200, 760)]:
         containsWarning:s.textContent.includes('<img src="invalid">'),
         rows:s.querySelectorAll('.line').length,
         gameRight:game.getBoundingClientRect().right,recordingLeft:recording.getBoundingClientRect().left,
+        recommendation:s.querySelector('.best-tile')?.textContent,
+        advisorBottom:s.querySelector('.advice').getBoundingClientRect().bottom,
+        fontSize:getComputedStyle(p).fontSize,
         gameText:game.textContent,recordingText:recording.textContent};
     })())'''))
     assert info['bottom'] <= height / 2, info
     assert info['top'] >= 0 and info['rows'] >= 16, info
     assert info['gameRight'] < info['recordingLeft'], info
+    assert info['recommendation'] == '打 中' and info['advisorBottom'] <= height / 2, info
     for label in ['最新动作：', '本机座位：', '剩余牌：', '本人手牌：', '宝牌指示：', '分数：',
                   '座位0 弃牌', '座位1（已立直） 弃牌', '座位3 弃牌', '副露：', '拔北：', '已知牌计数']:
         assert label in info['gameText'] and label not in info['recordingText'], (label, info)
@@ -73,27 +119,185 @@ for width, height in [(1200, 760), (800, 600), (600, 400), (1200, 760)]:
     assert info['clickTarget'] == 'underlay' and info['images'] == 0 and info['containsWarning'], info
     del info['gameText'], info['recordingText']
     checks.append(info)
+assert float(checks[0]['fontSize'].removesuffix('px')) >= 12, checks[0]
+assert '后续胡牌率（估计）' in advisor_state()['text']
+assert '本次放铳率（估计）' in advisor_state()['text']
+assert '本次预期损失（估计）' in advisor_state()['text']
+assert '放铳输点（估计）' in advisor_state()['text']
+assert '未校准' not in advisor_state()['text'] and '风险 4.4%' in advisor_state()['text']
+# Action identity preserves a riichi declaration and dama discard of the same tile.
+action_advice = json.loads(json.dumps(recommendation))
+riichi = dict(action_advice['best'], action='riichi', actionId='riichi:7z',
+              reasons=['立直增加预期打点；与默听比较后综合收益更高', '立直后不能自由改打防守牌'])
+dama = dict(action_advice['best'], action='discard', actionId='discard:7z')
+action_advice.update(best=riichi, candidates=[riichi, riichi.copy(), dama, dama.copy(),
+                                           action_advice['candidates'][1]])
+show_turn(advice=action_advice)
+info = advisor_state()
+assert info['best'] == '立直 · 打 中' and len(info['alternatives']) == 2, info
+assert info['alternatives'][0].startswith('备选 打 中'), info
+assert float(info['fontSize'].removesuffix('px')) >= 12 and info['bottom'] <= 380, info
+assert info['clickTarget'] == 'underlay', info
+assert '行动建议 · 记录状态' in evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.textContent")
+action_cases = [
+    ({'action': 'chi', 'consumed': ['5m', '3m'], 'calledTile': '4m', 'followupDiscard': '1z'},
+     '吃 3万4万5万 · 再打 东'),
+    ({'action': 'chi', 'consumed': ['0p', '6p'], 'calledTile': '4p', 'followupDiscard': '9m'},
+     '吃 4筒赤5筒6筒 · 再打 9万'),
+    ({'action': 'pon', 'consumed': ['5z', '5z'], 'calledTile': '5z', 'followupDiscard': '9m'},
+     '碰 白 · 再打 9万'),
+    ({'action': 'pon', 'consumed': ['5z', '5z'], 'calledTile': '5z'}, '碰 白'),
+    ({'action': 'daiminkan', 'tile': '5z', 'consumed': ['5z'] * 3, 'calledTile': '5z',
+      'replacementDraw': True, 'shanten': 1.4}, '大明杠 白'),
+    ({'action': 'ankan', 'tile': '5p', 'consumed': ['5p'] * 3 + ['0p'],
+      'replacementDraw': True, 'shanten': .4}, '暗杠 5筒'),
+    ({'action': 'shouminkan', 'tile': '0p', 'consumed': ['0p'],
+      'replacementDraw': True, 'shanten': 1}, '加杠 赤5筒'),
+    ({'action': 'kita', 'tile': '4z', 'consumed': ['4z'],
+      'replacementDraw': True, 'shanten': 1.6}, '拔北'),
+    ({'action': 'pass', 'tile': None, 'reasons': ['不鸣牌，保留门清与立直机会']}, '不鸣牌 / 跳过'),
+    ({'action': 'pass', 'tile': None, 'followupDiscard': '4z',
+      'reasons': ['跳过杠或拔北，按立直规则随后摸切']}, '跳过 · 随后摸切 北'),
+    ({'action': 'abort', 'tile': None, 'reasons': ['继续进攻收益低，建议九种九牌流局']}, '九种九牌流局'),
+]
+action_checks = []
+for fields, expected in action_cases:
+    candidate = dict(recommendation['best'], **fields, actionId=fields['action'])
+    if fields['action'] in ['chi', 'pon']:
+        candidates = [candidate, dict(dama, action='pass', actionId='pass', tile=None)]
+    else:
+        candidates = [candidate, riichi, dama]
+    show_turn(advice=dict(recommendation, best=candidate, candidates=candidates))
+    info = advisor_state()
+    assert info['best'] == expected and 'undefined' not in info['text'] and '打 —' not in info['text'], info
+    assert info['bottom'] <= 380 and float(info['fontSize'].removesuffix('px')) >= 12, info
+    assert info['clickTarget'] == 'underlay' and not info['images'], info
+    if fields.get('replacementDraw'):
+        assert f"补牌后预计 {fields['shanten']} 向听" in info['text'], info
+        assert '操作风险（估计）' in info['text'] and '操作预期损失（估计）' in info['text'], info
+        assert '再打' not in info['best'], info
+    if fields['action'] in ['chi', 'pon']:
+        assert info['alternatives'][0].startswith('备选 不鸣牌 / 跳过'), info
+        if fields.get('followupDiscard'):
+            assert '后续弃牌风险（估计）' in info['text'], info
+    if fields['action'] == 'abort':
+        assert '后续胡牌率' not in info['text'], info
+    if fields['action'] == 'pass' and not fields.get('followupDiscard'):
+        assert '保留门清与立直机会' in info['text'], info
+    action_checks.append({'action': fields['action'], 'text': info['best'], 'fontSize': info['fontSize']})
+    for width, height in [(800, 600), (600, 400), (1200, 760)]:
+        view.setFrameSize_(AppKit.NSMakeSize(width, height))
+        evaluate("dispatchEvent(new Event('resize')); null;")
+        resized = advisor_state()
+        assert resized['best'] == expected and resized['bottom'] <= height / 2, resized
+        assert resized['clickTarget'] == 'underlay', resized
+waiting_hand = dict(recommendation['best'], action='wait', actionId='wait', tile=None, shanten=1,
+                    reasons=['手牌变化已更新，等待摸牌或可执行操作'])
+show_turn(advice=dict(recommendation, status='analysis', best=waiting_hand, candidates=[waiting_hand]))
+info = advisor_state()
+assert info['best'] == '等待下一次行动' and '当前手牌评估' in info['text'], info
+assert '1 向听' in info['text'] and '后续胡牌率（估计）' in info['text'], info
+assert '本次放铳率' not in info['text'] and '本次预期损失' not in info['text'] and '放铳输点' not in info['text'], info
+assert not info['alternatives'] and info['bottom'] <= 380, info
+show_turn(advice=dict(action_advice, warnings=['暗杠 暂不推荐：操作组合信息缺失']))
+info = advisor_state()
+assert '仅比较已核实动作 · 暗杠 暂不推荐：操作组合信息缺失' in info['text'], info
+assert info['bottom'] <= 380 and float(info['fontSize'].removesuffix('px')) >= 12, info
+literal_advice = json.loads(json.dumps(recommendation))
+literal_advice['best']['tile'] = '<img src="invalid">'
+literal_advice['best']['reasons'] = ['<img src="invalid"> 必须按文本显示']
+show_turn(advice=literal_advice)
+assert not advisor_state()['images'] and '<img src="invalid">' in advisor_state()['best']
+empty_wait_advice = json.loads(json.dumps(recommendation))
+empty_wait_advice['best'].update({'shanten': 0, 'hasValidWait': False})
+show_turn(advice=empty_wait_advice)
+assert '形0向听·无有效听口' in advisor_state()['text'] and '听牌' not in advisor_state()['text']
+# A newer turn immediately removes the previous result, including delayed worker replies.
+show_turn(key='preview:6')
+assert not advisor_state()['best'] and '正在计算' in advisor_state()['text']
+packet({'kind': 'advice', 'adviceKey': 'preview:5', 'advice': recommendation})
+assert not advisor_state()['best']
+packet({'kind': 'advice', 'adviceKey': 'preview:6', 'advice': recommendation})
+assert advisor_state()['best'] == '打 中'
+# Browser invalidation precedes the native update; late replies must stay cleared.
+evaluate('window.__mjStatsOverlay.invalidateAdvice(); null;')
+packet({'kind': 'advice', 'adviceKey': 'preview:6', 'advice': recommendation})
+assert advisor_state()['hidden'] and not advisor_state()['best']
+# A delayed native turn packet must not re-arm advice after the user has acted.
+packet({'kind': 'turn', 'adviceKey': 'preview:6', 'text': format_turn(event), 'advice': recommendation})
+packet({'kind': 'advice', 'adviceKey': 'preview:6', 'advice': recommendation})
+assert advisor_state()['hidden'] and not advisor_state()['best']
+# The browser announces the next snapshot before native callbacks can arrive.
+evaluate("window.__mjStatsOverlay.expectAdvice('preview:7'); null;")
+packet({'kind': 'turn', 'adviceKey': 'preview:6', 'text': format_turn(event), 'advice': recommendation})
+assert advisor_state()['hidden'] and not advisor_state()['best']
+# An earlier native status clears the display without losing that newer expectation.
+packet({'kind': 'status', 'phase': 'playing', 'text': '已排队的牌局状态'})
+packet({'kind': 'turn', 'adviceKey': 'preview:7', 'text': format_turn(event),
+        'advice': {'status': 'computing', 'message': '正在计算行动建议…'}})
+assert not advisor_state()['hidden'] and '正在计算' in advisor_state()['text']
+packet({'kind': 'advice', 'adviceKey': 'preview:6', 'advice': recommendation})
+assert not advisor_state()['best']
+packet({'kind': 'advice', 'adviceKey': 'preview:7', 'advice': recommendation})
+assert advisor_state()['best'] == '打 中'
+show_turn(advice=recommendation)
 game_text = evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.game').textContent")
 for status in [{'kind': 'status', 'phase': 'disconnected'},
                {'kind': 'error', 'message': '解析失败：测试消息'}]:
     evaluate(overlay_update(status))
+    assert advisor_state()['hidden'] and not advisor_state()['best']
+    packet({'kind': 'advice', 'adviceKey': 'preview:5', 'advice': recommendation})
+    assert advisor_state()['hidden']
     assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.game').textContent") == game_text
     text = evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.recording .caption').textContent")
     assert '连接中断' in text if status['kind'] == 'status' else '解析失败' in text
+    show_turn(advice=recommendation)
 evaluate(overlay_update({'kind': 'status', 'phase': 'between_rounds'}))
+assert advisor_state()['hidden']
 assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.caption').textContent").startswith('小局结束')
 assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelectorAll('.line').length") >= 16
 evaluate(overlay_update({'kind': 'status', 'phase': 'ended', 'reset': True}))
 assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelectorAll('.line').length") == 0
 assert '统计已重置' in evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.caption').textContent")
+assert advisor_state()['hidden']
 evaluate(overlay_update({'kind': 'status', 'phase': 'playing'}))
 assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelectorAll('.line').length") == 0
+for phase in ['waiting', 'connected']:
+    show_turn(advice=recommendation)
+    evaluate(overlay_update({'kind': 'status', 'phase': phase}))
+    assert advisor_state()['hidden']
+for status in ['waiting', 'unavailable', 'win', 'computing']:
+    show_turn(advice=recommendation)
+    packet({'kind': 'advice', 'adviceKey': 'preview:5',
+            'advice': {'status': status, 'message': '状态说明 <img src="invalid">'}})
+    info = advisor_state()
+    assert not info['best'] and not info['images'] and '<img src="invalid">' in info['text'], info
 assert overlay_update({'kind': 'heartbeat'}) is None
-print(json.dumps({'overlay_checks': checks, 'round_transition': 'passed', 'heartbeat': 'silent'}, ensure_ascii=False), flush=True)
+print(json.dumps({'overlay_checks': checks, 'round_transition': 'passed',
+                  'action_checks': action_checks,
+                  'advice_versions': 'passed', 'advice_clearing': 'passed', 'heartbeat': 'silent'}, ensure_ascii=False), flush=True)
 
 if '--snapshot' in sys.argv:
-    event['state']['warning'] = '本地预览样本；实际游戏中在发牌及每个场上动作后更新。'
-    evaluate(overlay_update(event))
+    from advisor import advise
+    event = json.loads((ROOT / 'fixtures/turn.json').read_text())
+    # Real saved opening hand, with the discard operation available at the deal.
+    event['state'].update({'canDiscard': True, 'operations': [1], 'riichi': [False] * 4,
+                           'forbiddenDiscards': [], 'riichiSticks': 0, 'furiten': False})
+    event['state']['warning'] = '保存的开局手牌 · 建议由本地分析引擎现场计算。'
+    actual_advice = advise(event['state'])
+    assert actual_advice['status'] == 'ready', actual_advice
+    action_state = json.loads(json.dumps(event['state']))
+    action_state.update({
+        'hand': '1m 2m 3m 1p 2p 3p 1s 2s 3s 4s 5s 7z 7z 1z'.split(),
+        'playerCount': 4, 'scores': [25000] * 4, 'round': {'chang': 0, 'ju': 0, 'ben': 0},
+        'left': 48, 'lastDraw': '1z', 'doras': [], 'canAct': True, 'canDoubleRiichi': False,
+        'operations': [1, 7], 'operationDetails': [{'type': 1, 'combination': []},
+                                                 {'type': 7, 'combination': ['1z']}],
+        'warning': '离线听牌样本 · 立直与默听由本地分析引擎现场比较。',
+    })
+    actual_action_advice = advise(action_state)
+    assert actual_action_advice['status'] == 'ready' and actual_action_advice['best']['action'] == 'riichi', actual_action_advice
+    show_turn(advice=actual_advice)
     style = AppKit.NSWindowStyleMaskTitled | AppKit.NSWindowStyleMaskClosable | AppKit.NSWindowStyleMaskResizable
     window = AppKit.NSWindow.alloc().initWithContentRect_styleMask_backing_defer_(
         AppKit.NSMakeRect(0, 0, 1200, 760), style, AppKit.NSBackingStoreBuffered, False)
@@ -102,15 +306,19 @@ if '--snapshot' in sys.argv:
     window.setContentView_(view)
     window.center()
     window.orderBack_(None)
-    snapshots = []
-    view.takeSnapshotWithConfiguration_completionHandler_(None, lambda image, error: snapshots.append((image, error)))
-    deadline = time.time() + 10
-    while not snapshots and time.time() < deadline:
-        NSRunLoop.currentRunLoop().runUntilDate_(NSDate.dateWithTimeIntervalSinceNow_(0.05))
-    assert snapshots and not snapshots[0][1], snapshots
-    bitmap = AppKit.NSBitmapImageRep.imageRepWithData_(snapshots[0][0].TIFFRepresentation())
-    output = ROOT.parent / 'build/overlay-preview.png'
-    output.parent.mkdir(exist_ok=True)
-    assert bitmap.representationUsingType_properties_(AppKit.NSBitmapImageFileTypePNG, {}).writeToFile_atomically_(
-        str(output), True)
+    for filename, snapshot_state, advice in [('overlay-preview.png', event['state'], actual_advice),
+                                             ('action-advice-preview.png', action_state, actual_action_advice)]:
+        event['state'] = snapshot_state
+        show_turn(advice=advice)
+        snapshots = []
+        view.takeSnapshotWithConfiguration_completionHandler_(None, lambda image, error: snapshots.append((image, error)))
+        deadline = time.time() + 10
+        while not snapshots and time.time() < deadline:
+            NSRunLoop.currentRunLoop().runUntilDate_(NSDate.dateWithTimeIntervalSinceNow_(0.05))
+        assert snapshots and not snapshots[0][1], snapshots
+        bitmap = AppKit.NSBitmapImageRep.imageRepWithData_(snapshots[0][0].TIFFRepresentation())
+        output = ROOT.parent / 'build' / filename
+        output.parent.mkdir(exist_ok=True)
+        assert bitmap.representationUsingType_properties_(AppKit.NSBitmapImageFileTypePNG, {}).writeToFile_atomically_(
+            str(output), True)
     window.close()
