@@ -2,87 +2,51 @@
 
 [简体中文](README.md) | **English**
 
-A standalone macOS window for Mahjong Soul with live tile tracking, a translucent statistics overlay, and action recommendations based on your hand, public game information, and the operations offered by the server.
-
-The app uses the system WebKit engine to load the game, observes messages received by that window, and passes statistics to Python through a native message bridge. The overlay updates after the initial deal and every accepted table action, including other players' actions.
-
-Source repository: [Kenny-Xiang/Maj-Soul-PlusPlus](https://github.com/Kenny-Xiang/Maj-Soul-PlusPlus). The application interface and detailed reference documents are currently in Chinese.
+A macOS client for Mahjong Soul's Chinese server, built on system WebKit, with live game statistics, a translucent overlay, and action recommendations. The application interface is in Chinese.
 
 ## Features
 
-- **Fixed overlay columns:** game information on the left; recording status, diagnostics, and current action advice on the right. The overlay stays in the upper half of the window and lets mouse clicks pass through to the game.
-- **Live game statistics:** your hand and seat, round information, scores, remaining tile count, dora indicators, each player's discards and melds, extracted North tiles, and known tile counts.
-- **Confirmed riichi labels:** opponents' labels indicate confirmed normal or double riichi. A declaration alone is not treated as confirmation. Labels clear when a new round starts or the match ends.
-- **Action recommendations:** when you have a legal operation window and the required information is complete, compare server-offered discards, chi, pon, all three kan types, riichi, North extraction, a nine-terminals abortive draw, and pass. Chi and pon recommendations include the tiles to use and a legal follow-up discard. Available tsumo or ron operations take priority. Recommendations are displayed only; the app does not play moves for you.
-- **Hand analysis between actions:** hand changes trigger a new evaluation. Outside a legal operation window, the overlay shows current shanten, effective unseen tiles, and estimated hand value while waiting for an action; it does not present an immediately executable discard or its deal-in risk.
-- **Clear update boundaries:** duplicate actions do not produce duplicate updates. Statistics remain visible between rounds and clear at the end of a match; historical logs are retained.
-- **Local operation:** a dedicated WebKit login profile, one running game window, and text and JSONL logs stored in your user data directory.
+- **Game statistics:** your hand, round, scores, remaining tiles, dora indicators, each player's discards and melds, North extractions, and confirmed riichi status.
+- **Statistics overlay:** a responsive, two-column layout with click-through interaction, updated as table actions arrive.
+- **Action recommendations:** compares discards, calls, riichi, North extraction, a nine-terminals abortive draw, and pass using your hand, public information, and server-authorized operations. Available tsumo or ron takes priority. The app displays advice without executing moves.
+- **Hand analysis and logging:** shows shanten, effective unseen tiles, and estimated hand value between actions; saves text and JSONL logs locally.
 
-The advisor assumes standard three-player or four-player Mahjong Soul rules. Its probability estimates use an uncalibrated public-information model and are not measured win rates or a guarantee of optimal play. See the [action advisor documentation](docs/出牌建议.md) for the model, metrics, and limitations.
+## Quick start
 
-## Using the app
+Requires an **Apple Silicon Mac running macOS 14 or later**.
 
-Open `Maj-Soul++.app` and sign in inside its game window on first use. The app keeps its own WebKit website data and can reuse a valid login on later launches. Launching it again activates the existing window. Close the main window or quit the app to exit.
+If you already have `Maj-Soul++.app`, open it and sign in inside the game window. The app includes Python and its runtime dependencies and runs independently of the source checkout. Later launches can reuse a valid login; opening it again activates the existing window. See the [usage guide](docs/使用说明.md).
 
-A built app includes Python, its dependencies, and the application resources. It runs independently of the source checkout and does not require an external Python, Node.js, or Xcode installation. See the build instructions below to create the app from source.
-
-## Requirements for development
-
-- Apple Silicon Mac running macOS 14 or later.
-- An independently installed **Python 3.12**.
-- **Node.js 18 or later** for the JavaScript tests.
-
-Runtime dependencies are pinned in `requirements.txt`: PyObjC 11.1 and `mahjong` 2.0.0. Build dependencies are listed in `requirements-build.txt`, including PyInstaller 6.22.0.
-
-From the repository root, create an isolated environment and install the dependencies:
+Running from source requires **Python 3.12**. Tests also require **Node.js 18 or later**.
 
 ```sh
+git clone https://github.com/Kenny-Xiang/Maj-Soul-PlusPlus.git
+cd Maj-Soul-PlusPlus
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements-build.txt
-```
-
-## Run from source
-
-```sh
 .venv/bin/python src/monitor.py
 ```
 
-The collector is installed before the game page loads. No manual script injection is required.
+Dependencies are pinned in [requirements.txt](requirements.txt) and [requirements-build.txt](requirements-build.txt). The collector is installed before the page loads; no manual script injection is required.
 
-## Test
+## Test and build
 
-Run the complete test suite:
+Run these commands from the repository root after completing the setup above.
 
 ```sh
+# Run the complete test suite
 ./scripts/test.sh
-```
 
-The script runs JavaScript protocol and state checks, Python formatting and logging checks, advisor and background-worker tests, an isolated native WebKit replay, and overlay layout checks.
-
-The native WebKit and overlay checks require an active macOS graphical session. They use local fixtures and a nonpersistent WebKit data store without connecting to game servers or interacting with a live match.
-
-Compare advisor versions on fixed offline states with `scripts/advisor_compare.py`; see the [evaluation guide](docs/advisor-evaluation.md) for fixtures, score breakdowns, latency statistics, and validation limits.
-
-To save a local overlay preview:
-
-```sh
-PYTHONPATH=src .venv/bin/python tests/test_overlay.py --snapshot
-```
-
-The image is written to `build/overlay-preview.png`, which is ignored by Git.
-
-## Build a standalone app
-
-```sh
+# Build and open the standalone app
 ./scripts/build.sh
 open 'dist/Maj-Soul++.app'
 ```
 
-The output is `dist/Maj-Soul++.app`. PyInstaller uses `onedir` and `windowed` mode to package the Python runtime, dependencies, collector scripts, documentation, and source into a macOS app without a console window.
+Tests cover protocol and state handling, logging, the advisor, background tasks, native WebKit replay, and overlay layout. Native checks require an active macOS graphical session and use local fixtures without connecting to game servers. See the [offline evaluation guide](docs/advisor-evaluation.md) for advisor version comparisons.
 
-The build writes to the repository's `build/` and `dist/` directories. It does not replace an app already installed elsewhere. Update the source and rebuild rather than editing files inside a signed app bundle.
+The build produces `dist/Maj-Soul++.app` without replacing apps elsewhere. To update an installed app, rebuild and replace it; pushing source changes does not update the app automatically.
 
-Verify the packaged runtime with the offline entrypoints:
+Verify the packaged runtime:
 
 ```sh
 'dist/Maj-Soul++.app/Contents/MacOS/Maj-Soul++' --verify-native
@@ -90,70 +54,28 @@ Verify the packaged runtime with the offline entrypoints:
 'dist/Maj-Soul++.app/Contents/MacOS/Maj-Soul++' --verify-advisor
 ```
 
-## Repository layout
+## Data and limitations
 
-```text
-Maj-Soul-PlusPlus/
-├── src/
-│   ├── monitor.py             macOS window, native message bridge, and startup
-│   ├── terminal_stats.py      Statistics formatting and local logs; no console output
-│   ├── core.cjs               Protocol decoding and game state
-│   ├── browser.js             Passive collection, action updates, and match resets
-│   ├── overlay.js             Translucent overlay with click-through behavior
-│   ├── advisor.py             Rule calculations and legal action evaluation
-│   └── advice_worker.py       Background evaluation and stale-result invalidation
-├── tests/                     JavaScript, Python, and native WebKit tests
-│   └── fixtures/              Recorded replay fixtures
-├── docs/                      Usage guide, protocol analysis, and rules references
-├── README.md                  Chinese project guide (default)
-├── README.en.md               English project guide
-├── scripts/test.sh            Complete test suite
-├── scripts/build.sh           Standalone app build
-├── requirements.txt           Runtime dependencies
-├── requirements-build.txt     Build dependencies
-├── Maj-Soul++.spec            PyInstaller configuration
-└── .gitignore                 Excludes environments, runtime data, and build outputs
-```
+Runtime logs are stored in `~/Library/Application Support/Maj-Soul++/`: `logs/` contains text and JSONL records, and `launcher.log` contains diagnostics. WebKit login data is separate from other browsers. Runtime data is not written into the source checkout or app bundle.
 
-## Local data
+- **Information scope:** the app only uses messages received by its own window and does not read opponents' concealed hands. Known tile counts do not describe the exact remaining wall. Recovery after joining mid-round depends on server data.
+- **Advice validity:** analysis pauses without a trusted baseline, during unverified recovery, after disconnection, or at round end. State changes and submitted operations invalidate old recommendations.
+- **Model scope:** assumes standard three-player or four-player rules, excluding custom rules and event modes. Probabilities and hand values include estimates that have not been calibrated against real play; recommendations do not guarantee optimal decisions. Offline tests do not validate every live-game scenario.
 
-Runtime files are stored in:
+See the [advisor documentation](docs/出牌建议.md) for metric definitions, calculations, and model assumptions.
 
-```text
-~/Library/Application Support/Maj-Soul++/
-```
+## Documentation
 
-- `logs/`: text (`.txt`) and structured (`.jsonl`) records for each run.
-- `launcher.log`: startup and runtime diagnostics.
-- `monitor.lock`: the single-instance lock.
-
-WebKit stores login data in the user's profile, outside the repository. Statistics are written in the background, with displayed timestamps in Beijing time (UTC+8). Runtime data is not written back into the app bundle.
-
-## Information boundaries
-
-The collector only sees messages delivered to its own game window. A new-round deal can establish a complete baseline; joining mid-round depends on the recovery data supplied by the server. Missing steps, unknown actions, inconsistent updates, and unverified recovery boundaries are reported instead of being presented as complete history.
-
-The app does not infer opponents' concealed hands or reconstruct information that was never received. Known tile counts combine red and ordinary fives and avoid counting a called discard again as part of a meld. These counts are not the exact composition of the remaining live wall: unseen tiles can also be in opponents' hands or the dead wall.
-
-Analysis pauses when the required baseline is missing, recovery is unverified, the connection is lost, or the round has ended. New actions and submitted operations invalidate stale recommendations; server messages determine the next legal operation window. Custom room rules and event modes are outside the advisor's standard-rule assumptions.
-
-Action scores combine estimated hand value, winning chances, efficiency, and risk. Kan and North extraction use weighted estimates over unknown replacement draws, with estimated robbery risk and uncertainty about new kan dora; they do not name an unseen draw as a certain follow-up discard. The model compares the current action and necessary next draw or discard, without exhaustively simulating future action sequences, opponents' play, or final match placement.
-
-Offline replay verifies behavior against fixtures; it does not establish that every server recovery scenario or live-game edge case has been validated.
-
-## Contributing
-
-Make changes on a feature branch, run the relevant checks, and open a pull request targeting `main`. Use English commit messages, PR titles, and PR descriptions. Source changes and app builds are separate steps: pushing code to GitHub does not automatically update an installed app.
-
-Git tracks source, tests, fixtures, documentation, dependency lists, and build configuration. Virtual environments, runtime data, caches, generated app bundles, and build outputs are excluded by `.gitignore`.
-
-## Further documentation
-
-The detailed guides below are currently in Chinese:
+The following guides are in Chinese, except for the offline evaluation guide.
 
 - [Usage guide](docs/使用说明.md)
 - [Action advisor: metrics, model, and limitations](docs/出牌建议.md)
-- [Message collection and game-state completeness analysis](docs/监听方法与完整对局信息获取分析.md)
+- [Message collection and game-state completeness](docs/监听方法与完整对局信息获取分析.md)
 - [Mahjong Soul rules reference](docs/雀魂规则_Agent参考.md)
+- [Offline evaluation guide (English)](docs/advisor-evaluation.md)
 
-The license for the bundled `mahjong` dependency is included in [mahjong-LICENSE.txt](docs/mahjong-LICENSE.txt).
+The `mahjong` dependency license is included in [mahjong-LICENSE.txt](docs/mahjong-LICENSE.txt).
+
+## Contributing
+
+Source, tests, and documentation are in `src/`, `tests/`, and `docs/`. Work on a feature branch, run the relevant checks, and open a pull request targeting `main`. Use English commit messages, PR titles, and descriptions. Keep environments, logs, and build outputs out of Git.
