@@ -89,6 +89,18 @@ class PublicThreatTests(unittest.TestCase):
         s["rivers"][2] = [{"tile": "5p"}] * 3
         self.assertEqual(enemy_risk(s, "5p")[1][:2], (0., 0.))
 
+    def test_added_kan_eligibility_preserves_flush_route_mixture(self):
+        s = public_hand(["123p", "789p"], [0, 0])
+        remaining = unseen_counts(s)
+        enemy = _opponents(s, remaining)[:1]
+        for tile, confidence, points in (("5p", 1., 1250), ("0p", 1., 2475), ("5m", .75, 1000)):
+            with self.subTest(tile=tile):
+                danger = _danger(tile, remaining, enemy, chankan=True)
+                self.assertEqual(danger[2][0]["yakuConfidence"], confidence)
+                self.assertEqual(danger[2][0]["lossPoints"], points)
+                self.assertGreater(danger[0], 0)
+                self.assertAlmostEqual(danger[1], danger[0] * points)
+
     def test_concealed_kans_support_point_weighted_closed_flush_routes(self):
         for groups, weight, ordinary, normal, red in (
                 (["2222m", "6666m"], .25, 2300, 3725, 5375),

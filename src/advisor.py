@@ -400,7 +400,7 @@ def _opponents(state, remaining, *, after_current=False, passed_discard=None):
     return opponents
 
 
-def _ron_evidence(tile, enemy):
+def _ron_evidence(tile, enemy, *, chankan=False):
     """Conditional yaku/route weight and payment, separate from readiness.
 
     Unknown yaku keeps nonzero mass: hidden and event yaku are not enumerated.
@@ -411,7 +411,8 @@ def _ron_evidence(tile, enemy):
     counts = enemy["visibleCounts"]
     simple = four and index not in ORPHANS and all(i not in ORPHANS for i, n in enumerate(counts) if n)
     known_han = enemy["yakuhai"] + 2 * enemy["allTriplets"] + int(simple)
-    confidence = 1. if enemy["riichi"] or not enemy["openMeldCount"] or known_han else OPEN_YAKU_CONFIDENCE
+    # Added-kan robbery supplies eligibility; North extraction does not.
+    confidence = 1. if chankan or enemy["riichi"] or not enemy["openMeldCount"] or known_han else OPEN_YAKU_CONFIDENCE
     compatible = enemy["flushSuit"] is not None and (index >= 27 or index // 9 == enemy["flushSuit"])
     # With four honor groups, a suited tanki pair establishes honitsu's suit.
     compatible |= four and index < 27 and not any(counts[:27])
@@ -438,11 +439,11 @@ def _ron_evidence(tile, enemy):
     return factor, (ordinary * payment + flush * flush_payment) / factor
 
 
-def _danger(tile, remaining, opponents):
+def _danger(tile, remaining, opponents, *, chankan=False):
     index = tile_index(tile)
     survival, expected_loss, details = 1., 0., []
     for enemy in opponents:
-        factor, loss = _ron_evidence(tile, enemy)
+        factor, loss = _ron_evidence(tile, enemy, chankan=chankan)
         if index in enemy["safe"]:
             shape = 0.
             reason = "现物"
@@ -1143,7 +1144,7 @@ def _replacement(state, choice, remaining):
     mean = lambda field: sum(w * c[field] for w, c, _ in outcomes) / total
     opponents = _opponents(state, remaining)
     if action in ("shouminkan", "kita"):
-        rob, rob_loss, risks = _danger(choice["tile"], remaining, opponents)
+        rob, rob_loss, risks = _danger(choice["tile"], remaining, opponents, chankan=action == "shouminkan")
     elif action == "ankan":
         # Only kokushi may rob an ankan; north robbery permits other yaku.
         applicable = tile_index(choice["tile"]) in ORPHANS
