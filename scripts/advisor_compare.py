@@ -96,6 +96,8 @@ def evaluate(source, cases, warmups, repeats):
             if repeat == 0:
                 item["advice"] = advice
                 item["scoreComponents"] = score_components(advice)
+                item["nativeScoreBreakdowns"] = {c["actionId"]: c["scoreBreakdown"]
+                                                  for c in advice.get("candidates", []) if "scoreBreakdown" in c}
             elif ({k: v for k, v in advice.items() if k != "elapsedMs"} !=
                   {k: v for k, v in item["advice"].items() if k != "elapsedMs"}):
                 item["changedRepeats"].append({"repeat": repeat + 1, "advice": advice})
@@ -185,7 +187,8 @@ def build_report(repo, fixtures, baseline_ref, current_ref, selected, warmups, r
                        "timing": "perf_counter around advise only; excludes imports, copying, and process startup",
                        "cache": "fresh process per version; identical ordered full-suite warmup and measurement passes",
                        "p95": "nearest rank: sorted samples[ceil(0.95 * count) - 1]",
-                       "scoreComponents": "derived from rounded public fields; residual includes shape, tenpai, other adjustments, and rounding"},
+                       "scoreComponents": "derived from rounded public fields; residual includes shape, tenpai, other adjustments, and rounding",
+                       "nativeScoreBreakdowns": "signed original scoring terms and accumulated rounding, when emitted by the advisor; diagnostics, not terminal EV"},
             "fixtures": {"sha256": hashlib.sha256(Path(fixtures).read_bytes()).hexdigest(), "cases": cases},
             "baseline": baseline, "current": current, "changes": compare_cases(baseline, current)}
 

@@ -552,6 +552,17 @@ def _risk_weight(state):
     return weight
 
 
+def _record_score(candidate, **terms):
+    """Diagnose the existing score; never use this ledger to rank candidates.
+
+    The adjustment includes earlier rounding when scores are extended or
+    averaged, as well as the final rounding of this candidate.
+    """
+    terms = {key: value for key, value in terms.items() if key != "roundingAdjustment" and value}
+    terms["roundingAdjustment"] = candidate["score"] - fsum(terms.values())
+    candidate["scoreBreakdown"] = terms
+
+
 def _position(hand, state, remaining, discard=None):
     """Evaluate a 13-tile-equivalent position with a common score scale."""
     special = not state["melds"][state["selfSeat"]]
@@ -613,6 +624,9 @@ def _position(hand, state, remaining, discard=None):
               "score": round(score, 1), "reasons": reasons, "opponentRisks": detail,
               "valueMethod": "听牌逐张计分" if sh == 0 else "一向听逐分支计分" if sh == 1 else "未来牌型估值",
               "yakuConfidence": yaku_factor}
+    _record_score(result, winIncome=probability * value, currentDealInLoss=-loss,
+                  riskPreferenceAdjustment=-(_risk_weight(state) - 1) * loss,
+                  efficiencyReward=efficiency, lateTenpaiReward=tenpai_bonus)
     if branches is not None:
         result["lookahead"] = {"drawVariants": len(branches),
                                "readyDiscards": sum(len(b["options"]) for b in branches)}
@@ -822,12 +836,18 @@ def _riichi(state, choice, remaining):
         candidate.update(winProbability=0., expectedWinPoints=0,
                          score=-_risk_weight(state) * candidate["expectedDealInLoss"],
                          abortAfterRiichi=True, valueMethod="四家立直流局")
+        _record_score(candidate, currentDealInLoss=-candidate["expectedDealInLoss"],
+                      riskPreferenceAdjustment=-(_risk_weight(state) - 1) * candidate["expectedDealInLoss"])
         candidate["reasons"].append("第四家立直：宣言牌未被荣和则途中流局，无后续和牌机会或听牌料")
     deposit_loss = 1000 * max(0., 1 - candidate["dealInProbability"] - candidate["winProbability"])
     locked_loss = 0 if four_riichi else _locked_risk(next_, remaining, candidate)
     candidate["score"] = round(candidate["score"] - deposit_loss - _risk_weight(state) * locked_loss, 1)
     candidate.update(choice, riichiDeposit=1000, expectedRiichiCost=round(deposit_loss),
                      futureForcedDealInLoss=round(locked_loss), doubleRiichi=bool(state.get("canDoubleRiichi")))
+    terms = dict(candidate["scoreBreakdown"])
+    terms.update(riichiCost=-deposit_loss, futureForcedDealInLoss=-locked_loss)
+    terms["riskPreferenceAdjustment"] = terms.get("riskPreferenceAdjustment", 0) - (_risk_weight(state) - 1) * locked_loss
+    _record_score(candidate, **terms)
     candidate["reasons"].extend(["按两立直加役计分" if state.get("canDoubleRiichi") else "立直加役计分，与同张默听弃牌比较",
                                  "扣除未获胜时留在供托的 1000 点；未计一发与里宝牌",
                                  "四家立直后无后续摸切" if four_riichi else "立直后不能自由弃和，已折算后续强制摸切风险"])
@@ -879,6 +899,7 @@ def _replacement(state, choice, remaining):
             best = {"shanten": -1, "ukeire": 0, "winProbability": 1., "expectedWinPoints": winning["points"],
                     "dealInProbability": 0., "expectedDealInLoss": 0., "score": winning["points"] + 420,
                     "tile": None, "furiten": False}
+            _record_score(best, winIncome=winning["points"], efficiencyReward=420)
         else:
             drawn["replacementWin"] = False
             legal = _discards(drawn, tuple(unseen))
@@ -890,6 +911,8 @@ def _replacement(state, choice, remaining):
                 for candidate in legal:
                     candidate.update(winProbability=0., expectedWinPoints=0,
                                      score=-_risk_weight(state) * candidate["expectedDealInLoss"])
+                    _record_score(candidate, currentDealInLoss=-candidate["expectedDealInLoss"],
+                                  riskPreferenceAdjustment=-(_risk_weight(state) - 1) * candidate["expectedDealInLoss"])
             best = max(legal, key=lambda c: c["score"])
         outcomes.append((weight, best, draw))
     total = sum(w for w, _, _ in outcomes)
@@ -927,7 +950,7 @@ def _replacement(state, choice, remaining):
         reasons.append("抢北不限国士，按北牌危险度估计；不额外加入抢杠役" if action == "kita" else "抢杠风险单独估计，暗杠仅考虑国士例外")
     if abort_after_discard:
         reasons.append("第四杠涉及多家：仅计算补牌自摸与随后弃牌放铳，之后四杠散了，无听牌料")
-    return {**choice, "replacementDraw": True, "metricContext": "replacement", "shanten": round(sum(w * max(0, c["shanten"]) for w, c, _ in outcomes) / total, 2), "ukeire": round(mean("ukeire"), 1),
+    result = {**choice, "replacementDraw": True, "metricContext": "replacement", "shanten": round(sum(w * max(0, c["shanten"]) for w, c, _ in outcomes) / total, 2), "ukeire": round(mean("ukeire"), 1),
             "improvingTiles": [], "winningTiles": [], "hasValidWait": None, "furiten": all(c["furiten"] for _, c, _ in outcomes),
             "winProbability": round(probability, 4), "expectedWinPoints": round(point_value),
             "dealInProbability": round(danger, 4), "expectedDealInLoss": round(loss),
@@ -937,6 +960,15 @@ def _replacement(state, choice, remaining):
             "robKanProbability": round(rob, 4), "abortAfterDiscard": abort_after_discard, "replacementOutcomes": [
                 {"draw": draw, "count": weight, "followupDiscard": c["tile"], "shanten": c["shanten"],
                  "winProbability": c["winProbability"]} for weight, c, draw in outcomes]}
+    fields = dict.fromkeys(key for _, candidate, _ in outcomes for key in candidate["scoreBreakdown"]
+                           if key != "roundingAdjustment")
+    terms = {key: (1 - rob) * sum(w * c["scoreBreakdown"].get(key, 0) for w, c, _ in outcomes) / total
+             for key in fields}
+    terms["currentDealInLoss"] = terms.get("currentDealInLoss", 0) - rob_loss
+    terms["riskPreferenceAdjustment"] = terms.get("riskPreferenceAdjustment", 0) - (_risk_weight(state) - 1) * rob_loss
+    terms["newDoraPenalty"] = -uncertainty
+    _record_score(result, **terms)
+    return result
 
 
 def _advise(state):
@@ -1021,6 +1053,7 @@ def _advise(state):
                     if best["yakuConfidence"] < 1 or (best["shanten"] == 0 and
                             not any(w["ronPoints"] or w["tsumoPoints"] for w in best["winningTiles"])):
                         best["score"] = round(best["score"] - 500, 1)
+                        _record_score(best, **best["scoreBreakdown"], openNoYakuPenalty=-500)
                         best["reasons"].append("鸣牌破坏门清且缺少可确认役，另计无役路线代价")
                     best["reasons"].append("已比较鸣牌后的合法弃牌，排除同牌及筋食替")
                     candidates.append(best)
@@ -1034,6 +1067,7 @@ def _advise(state):
                                        "dealInProbability": 0., "expectedDealInLoss": 0, "dealInPoints": 0, "dealInLossIfHit": 0,
                                        "score": 0., "reasons": ["九种九牌结束本局，无本局点数收支；连庄及排名后续价值未建模"],
                                        "opponentRisks": [], "valueMethod": "本局零收支基线"})
+                    _record_score(candidates[-1])
             except (KeyError, IndexError, TypeError, ValueError) as exc:
                 warnings.append(f"{choice['action']} 暂不推荐：{exc}")
         if any(c["action"] == "abort" for c in candidates):
@@ -1049,6 +1083,14 @@ def _advise(state):
                 candidate["score"] = round(candidate["winProbability"] * candidate["expectedWinPoints"] -
                                            _risk_weight(state) * (candidate["expectedDealInLoss"] + candidate.get("futureForcedDealInLoss", 0)) -
                                            candidate.get("expectedRiichiCost", 0) - candidate.get("newDoraRiskPenalty", 0) - continuation_loss, 1)
+                _record_score(candidate, winIncome=candidate["winProbability"] * candidate["expectedWinPoints"],
+                              currentDealInLoss=-candidate["expectedDealInLoss"],
+                              futureForcedDealInLoss=-candidate.get("futureForcedDealInLoss", 0),
+                              riskPreferenceAdjustment=-(_risk_weight(state) - 1) *
+                              (candidate["expectedDealInLoss"] + candidate.get("futureForcedDealInLoss", 0)),
+                              riichiCost=-candidate.get("expectedRiichiCost", 0),
+                              newDoraPenalty=-candidate.get("newDoraRiskPenalty", 0),
+                              abortContinuationLoss=-continuation_loss)
                 candidate["reasons"].append("与九种九牌按本局点数比较，移除形状奖励；继续牌局的他家自摸损失仅作启发式折减")
         candidates.sort(key=lambda c: (-c["score"], c["shanten"] if c["shanten"] is not None else 99,
                                        -c["ukeire"], (c.get("tile") or "").startswith("0"), c["actionId"]))
