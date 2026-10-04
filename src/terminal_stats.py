@@ -51,8 +51,10 @@ def format_turn(event):
     actor = event.get('actorSeat')
     action = f"座位{actor} {action}" if actor is not None else action
     lines = ["\n" + "═" * 60,
-             f"{time}  {action} · 第 {event['turnNumber']} 次更新 · 动作 #{event['step']}",
-             f"状态：{PHASES.get(state['phase'], clean(state['phase']))}  本机座位：{seat}  剩余牌：{left}"]
+             f"{time} · 第 {event['turnNumber']} 次更新 · 动作 #{event['step']}",
+             f"最新动作：{action}",
+             f"状态：{PHASES.get(state['phase'], clean(state['phase']))}",
+             f"本机座位：{seat}  剩余牌：{left}"]
     if state.get("round"):
         r = state["round"]
         wind = "东南西北"[r["chang"]] if r["chang"] in range(4) else str(r["chang"])

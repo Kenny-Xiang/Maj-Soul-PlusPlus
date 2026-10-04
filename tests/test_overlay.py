@@ -52,15 +52,32 @@ for width, height in [(1200, 760), (800, 600), (600, 400), (1200, 760)]:
       dispatchEvent(new Event('resize'));
       const h=document.getElementById('mj-statistics-overlay'),s=h.shadowRoot;
       const p=s.querySelector('.panel'),r=p.getBoundingClientRect();
+      const game=s.querySelector('.game'),recording=s.querySelector('.recording');
       return {width:innerWidth,height:innerHeight,bottom:r.bottom,top:r.top,
         clickTarget:document.elementFromPoint(30,40)?.id,images:s.querySelectorAll('img').length,
         containsWarning:s.textContent.includes('<img src="invalid">'),
-        rows:s.querySelectorAll('.line').length,columns:getComputedStyle(s.querySelector('.columns')).columnCount};
+        rows:s.querySelectorAll('.line').length,
+        gameRight:game.getBoundingClientRect().right,recordingLeft:recording.getBoundingClientRect().left,
+        gameText:game.textContent,recordingText:recording.textContent};
     })())'''))
     assert info['bottom'] <= height / 2, info
-    assert info['top'] >= 0 and info['rows'] >= 16 and info['columns'] == '2', info
+    assert info['top'] >= 0 and info['rows'] >= 16, info
+    assert info['gameRight'] < info['recordingLeft'], info
+    for label in ['最新动作：', '本机座位：', '剩余牌：', '本人手牌：', '宝牌指示：', '分数：',
+                  '座位0 弃牌', '座位3 弃牌', '副露：', '拔北：', '已知牌计数']:
+        assert label in info['gameText'] and label not in info['recordingText'], (label, info)
+    for label in ['次更新', '动作 #', '状态：', '完整性：', '说明：', '触发：', '入站', '解析错误']:
+        assert label in info['recordingText'] and label not in info['gameText'], (label, info)
     assert info['clickTarget'] == 'underlay' and info['images'] == 0 and info['containsWarning'], info
+    del info['gameText'], info['recordingText']
     checks.append(info)
+game_text = evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.game').textContent")
+for status in [{'kind': 'status', 'phase': 'disconnected'},
+               {'kind': 'error', 'message': '解析失败：测试消息'}]:
+    evaluate(overlay_update(status))
+    assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.game').textContent") == game_text
+    text = evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.recording .caption').textContent")
+    assert '连接中断' in text if status['kind'] == 'status' else '解析失败' in text
 evaluate(overlay_update({'kind': 'status', 'phase': 'between_rounds'}))
 assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.caption').textContent").startswith('小局结束')
 assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelectorAll('.line').length") >= 16
