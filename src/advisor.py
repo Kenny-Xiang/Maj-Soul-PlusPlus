@@ -23,6 +23,7 @@ from mahjong.shanten import Shanten
 MODEL = "public-information-actions-ev-v5 (未校准启发式)"
 SEARCH_SECONDS = 2.
 _SEARCH = ContextVar("advisor_search", default=None)
+_HAND_VALUES = ContextVar("advisor_hand_values", default=None)
 TILES = tuple(f"{n}{s}" for s in "mps" for n in range(1, 10)) + tuple(f"{n}z" for n in range(1, 8))
 ORPHANS = (0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33)
 OPTIONS = OptionalRules(has_open_tanyao=True, has_aka_dora=True,
@@ -169,6 +170,30 @@ def _scoring_tiles(concealed, meld_data):
 
 
 def _hand_value(concealed, winning_tile, state, tsumo):
+    _check_search()
+    cache = _HAND_VALUES.get()
+    if cache is None:
+        return _score_hand(concealed, winning_tile, state, tsumo)
+    seat = state["selfSeat"]
+    round_ = state.get("round") or {}
+    # Preserve physical red identity and every input read by the scorer/config.
+    # These values change along riichi, call and replacement continuations.
+    key = (tuple(concealed), winning_tile, tsumo, seat, state["playerCount"],
+           tuple((m["type"], tuple(m["tiles"])) for m in state["melds"][seat]),
+           bool(state.get("replacementWin", False)),
+           bool(state.get("riichi", [False] * 4)[seat]),
+           bool(state.get("doubleRiichi", [False] * 4)[seat]),
+           round_.get("ju", 0), round_.get("chang", 0), round_.get("ben", 0),
+           state.get("riichiSticks", 0), state.get("north", [0] * 4)[seat],
+           tuple(state.get("doras", [])), tuple(vars(OPTIONS).items()))
+    if key not in cache:
+        cache[key] = _score_hand(concealed, winning_tile, state, tsumo)
+    value = cache[key]
+    # Keep each caller's result independent, including the only nested field.
+    return {**value, "yaku": value["yaku"].copy()} if "yaku" in value else value.copy()
+
+
+def _score_hand(concealed, winning_tile, state, tsumo):
     seat, players = state["selfSeat"], state["playerCount"]
     tiles, win, melds, implicit_red = _scoring_tiles(concealed + [winning_tile], state["melds"][seat])
     config = _config(state, tsumo)
@@ -1130,6 +1155,7 @@ def advise(state, cancelled=None):
     """Publish only a complete, uniformly evaluated decision within the budget."""
     started = time.monotonic()
     token = _SEARCH.set((started + SEARCH_SECONDS, cancelled))
+    values_token = _HAND_VALUES.set({})
     try:
         _check_search()
         result = _advise(state)
@@ -1139,4 +1165,5 @@ def advise(state, cancelled=None):
         return {"status": "unavailable", "message": str(error), "candidates": [],
                 "best": None, "model": MODEL, "elapsedMs": round((time.monotonic() - started) * 1000, 1)}
     finally:
+        _HAND_VALUES.reset(values_token)
         _SEARCH.reset(token)

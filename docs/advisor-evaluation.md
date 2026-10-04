@@ -268,3 +268,56 @@ measured 1.308/28.108/29.386 ms. These are a small warmed sample on one machine,
 not a performance guarantee. A separate comparison against pre-fix commit
 `33afbb4` detected the changed `new-riichi-changed-waits` recommendation, confirming
 the report also captures a real historical behavior change.
+
+## Decision-local exact scoring cache
+
+Repeated complete-hand scores now share a cache within one `advise` call. The
+key retains concealed/winning red identity, meld tiles and types, ron/tsumo,
+seat and player count, riichi/double riichi, replacement-win status, seat/round
+winds, honba, deposits, North extractions, dora indicators, and every configured
+optional scoring rule. It does not approximate or merge scoring inputs. Returned
+score dictionaries and yaku lists remain independent. The cache is released in
+`finally` on success, cancellation, budget expiry, or an unexpected exception;
+hits still check the cooperative search boundary. The model stays v5, and the
+two-second production budget and snapshot-key rejection remain intact.
+
+All 109 advisor/worker/benchmark tests passed, including full output equality
+between cached and uncached scoring for all 19 fixtures after removing only
+`elapsedMs`, individual scoring-key dependencies, cache lifetime, mutable-result
+isolation, cancellation, and budget checks. An independent source review found
+no blocking issue. No deep-copy or model changes are part of this optimization.
+
+The 2026-10-04 comparison against `b658903` measured these local latencies:
+
+| Protocol | Samples per version | Baseline median/P95/max (ms) | Cached median/P95/max (ms) |
+| --- | --- | --- | --- |
+| One excluded warmup pass, five measured passes | 95 | 21.209 / 812.027 / 836.572 | 20.904 / 644.154 / 660.915 |
+| Fresh interpreter for every case, three repetitions | 57 | 34.332 / 782.109 / 799.420 | 33.450 / 614.041 / 623.720 |
+
+Both series preserved every candidate field and recommendation, with consistent
+repeated outputs. The warm series used `scripts/advisor_compare.py --baseline
+b658903 --warmups 1 --repeats 5`; the cold series called its
+`run_version(source, [case], warmups=0, repeats=1)` in a fresh worker for every
+case and repetition. Imports and process startup remain outside measured time.
+Timing runs were serialized with the other development tests. Baseline ran
+before cached source in each series, so load and run order still limit causal
+latency claims; the smaller cold tail is not evidence that cold calls are
+intrinsically faster. These are samples from one machine, not a universal bound.
+
+A separate allocation probe warmed the whole corpus, then ran one measured pass
+with `tracemalloc.start(1)` and garbage collection before each case. Its diagnostic
+process alone extended the search deadline to 120 seconds to accommodate tracing;
+none of those instrumented times enters the latency table. Maximum per-decision
+traced Python allocation was 6.153 MiB at baseline and 11.932 MiB with caching,
+both on `sanma-kita`. This includes structural-cache allocations and scorer
+temporaries, not total process RSS. The scoring ContextVar was empty after every
+call. In that case 7908 scoring requests became 3996 actual scorer calls; the
+`ankan` fixture went from 4103 requests to 1599 scorer calls. These fixture counts
+are not the previously sampled, different concealed-kan hand and do not imply
+the same factor of end-to-end speedup.
+
+The ignored `build/scoring-cache-warm.json`, `build/scoring-cache-cold.json`, and
+`build/scoring-cache-memory-{baseline,current}.json` retain local samples and
+allocation evidence. The optimization trades temporary decision memory for fewer
+scorer calls; it establishes output equivalence on these regressions, not better
+win rates or calibrated probabilities.
