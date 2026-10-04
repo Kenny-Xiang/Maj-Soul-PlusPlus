@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import advisor
 from test_advisor import state, tiles
+from test_advisor_actions import offered
 
 
 def branches_for(snapshot, discard=None):
@@ -227,6 +228,94 @@ class OneShantenProbabilityTests(unittest.TestCase):
 
 
 class OneShantenRiskTests(unittest.TestCase):
+    def test_passed_evidence_keeps_the_opponent_riichi_timing_boundary(self):
+        s = offered("123m234p678s55z5p1z", 2, ["3p|4p"], "5p")
+        s["riichi"][1] = True
+        s["riichiStep"][1] = 20
+        s["rivers"][1] = [{"tile": "9p", "step": 20}]
+        s["rivers"][2] = [{"tile": "6p", "step": 10}, {"tile": "7p", "step": 30}]
+        before = deepcopy(s)
+        remaining = advisor.unseen_counts(s)
+        current = advisor._opponents(s, remaining)[0]
+        future = advisor._opponents(s, remaining, after_current=True)[0]
+        self.assertNotIn(advisor.tile_index("5p"), current["safe"])
+        self.assertIn(advisor.tile_index("5p"), future["safe"])
+        for enemy in (current, future):
+            self.assertNotIn(advisor.tile_index("6p"), enemy["safe"])
+            self.assertIn(advisor.tile_index("7p"), enemy["safe"])
+        self.assertEqual(s, before)
+        s["riichiStep"][1] = None
+        unknown_step = advisor._opponents(s, remaining, after_current=True)[0]
+        self.assertNotIn(advisor.tile_index("5p"), unknown_step["safe"])
+        self.assertNotIn(advisor.tile_index("7p"), unknown_step["safe"])
+
+    def test_passed_current_discard_matches_the_expanded_next_draw(self):
+        s = offered("123m234p678s55z5p1z", 2, ["3p|4p"], "5p")
+        s["riichi"][1] = True
+        s["riichiStep"][1] = 20
+        s["rivers"][1] = [{"tile": "9p", "step": 20}]
+        before = deepcopy(s)
+        branches, remaining = branches_for(s)
+        branch = next(b for b in branches if b["draw"] == "1z")
+
+        expanded = deepcopy(s)
+        expanded["hand"].append("1z")
+        expanded.update(lastDraw="1z", lastStep=41, left=47,
+                        canAct=True, canDiscard=True, operations=[1],
+                        operationDetails=[{"type": 1, "combination": []}], forbiddenDiscards=[],
+                        lastAction={"name": "ActionDealTile", "seat": 0, "tile": "1z", "step": 41})
+        unseen = advisor.unseen_counts(expanded)
+        self.assertEqual(unseen, branch["remaining"])
+        opponents = advisor._opponents(expanded, unseen)
+        events = advisor._opportunities(expanded, after_discard=True)
+        self.assertEqual(advisor._opportunities(s)[1:], events)
+        actual = advisor.advise(expanded)
+        self.assertEqual(actual["status"], "ready")
+        for option in branch["options"]:
+            with self.subTest(discard=option["discard"]):
+                danger, loss, _ = advisor._danger(option["discard"], unseen, opponents)
+                self.assertAlmostEqual(option["dealInProbability"], danger)
+                self.assertAlmostEqual(option["expectedDealInLoss"], loss)
+                outcome = advisor._ready_discard(
+                    {**branch, "options": [option]}, sum(unseen), opponents, events, expanded)
+                candidate = next(c for c in actual["candidates"] if c["tile"] == option["discard"])
+                self.assertEqual(outcome["score"], candidate["score"])
+                self.assertEqual(round(outcome["winProbability"], 4), candidate["winProbability"])
+                self.assertEqual(round(outcome["expectedWinPoints"]), candidate["expectedWinPoints"])
+        chosen = advisor._ready_discard(branch, sum(unseen), opponents, events, expanded)
+        self.assertEqual(chosen["discard"], actual["best"]["tile"])
+
+        # Current-window risk stays strict; only reaching the next draw proves passage.
+        current = advisor._danger("5p", remaining, advisor._opponents(s, remaining))
+        self.assertAlmostEqual(current[0], .1036)
+        self.assertAlmostEqual(current[1], 525.2)
+        self.assertEqual(s, before)
+
+    def test_passed_current_five_is_safe_only_for_previously_locked_opponents(self):
+        for offered_tile, held in (("5p", "5p"), ("0p", "5p"), ("5p", "0p")):
+            for locked in ((), (1,), (1, 2), (1, 2, 3)):
+                with self.subTest(offered=offered_tile, held=held, locked=locked):
+                    s = offered("123m234p678s55z" + held + "1z", 2, ["3p|4p"], offered_tile)
+                    for seat in locked:
+                        s["riichi"][seat] = True
+                        s["riichiStep"][seat] = 20
+                        s["rivers"][seat].insert(0, {"tile": "9p", "step": 20})
+                    before = deepcopy(s)
+                    branches, _ = branches_for(s)
+                    branch = next(b for b in branches if b["draw"] == "1z")
+                    option = option_for(branches, "1z", held)
+                    opponents = advisor._opponents(s, branch["remaining"])
+                    unlocked = [o for o in opponents if not o["riichi"]]
+                    danger, loss, _ = advisor._danger(held, branch["remaining"], unlocked)
+                    self.assertAlmostEqual(option["dealInProbability"], danger)
+                    self.assertAlmostEqual(option["expectedDealInLoss"], loss)
+                    if any(o["seat"] != 3 for o in unlocked):
+                        self.assertGreater(danger, 0)
+                        self.assertGreater(loss, 0)
+                    else:
+                        self.assertEqual((danger, loss), (0., 0.))
+                    self.assertEqual(s, before)
+
     def test_survived_root_discard_matches_expanded_window_without_waiving_root_risk(self):
         s = state()
         s["riichi"][1] = True

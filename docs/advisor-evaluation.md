@@ -513,3 +513,23 @@ or live game connection was used, and these checks are not counted as passed.
 The ordinary Python/JavaScript checks above do not substitute for a native
 WebKit pass. Local diagnostics are in `build/native-tests.log`,
 `build/overlay-tests.log`, and their `*-baseline-tests.log` counterparts.
+
+## Passed current-discard evidence in one-shanten continuations
+
+Reaching a future own draw proves that the current public discard and any
+modeled root discard have passed. One-shanten branches now supply that evidence
+to the shared opponent-risk builder. The current river event is safe only for
+opponents whose recorded riichi precedes it; an explicitly survived root discard
+is safe for already locked opponents. Red and ordinary fives share the same safe
+tile family. Non-riichi opponents retain their modeled risk. Current-window
+danger keeps the strict event boundary, and neither the snapshot nor its event
+clock is changed. No unknown intervening discard is invented.
+
+The `passed-current-discard` fixture skips seat 3's `5p` after seat 1's riichi.
+Its draw-`1z`, discard-`5p` continuation previously retained 10.36% deal-in risk
+and 525.2 expected payment; the explicitly expanded next-draw window gave 0.4%
+and 5.2. The additional 520 came from the already locked seat. The corrected
+branch also propagates the resulting suji evidence for its alternative `2p`
+discard. Regression checks compare all legal ready discards, chosen follow-up,
+probabilities and scores with the same unknown pool and remaining event suffix.
+This repairs state consistency and does not establish stronger play.
