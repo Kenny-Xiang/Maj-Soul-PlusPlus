@@ -11,22 +11,23 @@
     .panel { padding:12px 16px; border:1px solid rgba(210,230,255,.22); border-radius:12px;
       background:rgba(12,22,36,.64); color:#f4f7fc; box-shadow:0 4px 20px rgba(0,0,0,.18);
       font:13px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; }
-    .heading { display:flex; justify-content:space-between; gap:16px; margin-bottom:6px; font-weight:600; }
+    .heading, .columns { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); column-gap:28px; }
+    .heading { margin-bottom:6px; font-weight:600; }
     .label { color:#b9d9f9; white-space:nowrap; }
-    .caption { font-weight:400; color:#e0e8f0; text-align:right; }
-    .columns { column-count:2; column-gap:28px; column-rule:1px solid rgba(220,235,255,.12); }
+    .caption { font-weight:400; color:#e0e8f0; overflow-wrap:anywhere; padding-bottom:4px; }
+    .recording, .heading > :last-child { border-left:1px solid rgba(220,235,255,.12); padding-left:14px; }
     .line { white-space:pre-wrap; overflow-wrap:anywhere; break-inside:avoid; padding-bottom:2px; }
     .hand { color:#ffdfa0; font-weight:600; }
     .footnote { color:#c7d4e2; }
-    .empty .heading { margin-bottom:0; }
-    .empty .columns { display:none; }
-  </style><section class="panel empty" aria-label="最新牌局统计">
-    <div class="heading"><span class="label">Maj-Soul++ · 牌局统计</span><span class="caption">等待对局 · 发牌及场上动作后自动更新</span></div>
-    <div class="columns"></div></section>`;
+  </style><section class="panel" aria-label="最新牌局统计">
+    <div class="heading"><span class="label">Maj-Soul++ · 牌局统计</span><span class="label">记录状态</span></div>
+    <div class="columns"><div class="game"></div><div class="recording">
+      <div class="caption">等待对局 · 发牌及场上动作后自动更新</div><div class="details"></div>
+    </div></div></section>`;
   const panel = shadow.querySelector('.panel'), caption = shadow.querySelector('.caption');
-  const columns = shadow.querySelector('.columns');
+  const game = shadow.querySelector('.game'), details = shadow.querySelector('.details');
   function fit() {
-    // Balance the terminal lines into two columns, then fit the upper half of the view.
+    // Keep game and recording information in fixed columns within the upper half.
     panel.style.fontSize = '13px';
     panel.style.transform = '';
     const available = Math.max(40, innerHeight / 2 - 24);
@@ -47,17 +48,18 @@
     if (packet.kind === 'turn') {
       const lines = packet.text.split('\n').filter(line => line && !/^═+$/.test(line));
       caption.textContent = lines.shift() || '牌局已更新';
-      columns.replaceChildren(...lines.map(text => {
+      game.replaceChildren(); details.replaceChildren();
+      for (const text of lines) {
+        const recording = /^(状态|完整性|说明|触发)：/.test(text);
         const row = document.createElement('div');
-        row.className = 'line' + (/^本人/.test(text) ? ' hand' : /^(完整性|说明|触发)/.test(text) ? ' footnote' : '');
+        row.className = 'line' + (/^本人/.test(text) ? ' hand' : recording ? ' footnote' : '');
         row.textContent = text;
-        return row;
-      }));
-      panel.classList.remove('empty');
+        (recording ? details : game).appendChild(row);
+      }
     } else {
       caption.textContent = packet.text;
       if (packet.reset || ['waiting','connected','playing','ended'].includes(packet.phase)) {
-        columns.replaceChildren(); panel.classList.add('empty');
+        game.replaceChildren(); details.replaceChildren();
       }
     }
     mount();
