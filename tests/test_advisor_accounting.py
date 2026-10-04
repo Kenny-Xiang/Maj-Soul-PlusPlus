@@ -54,7 +54,7 @@ class ScoreAccountingTests(unittest.TestCase):
     def test_riichi_appends_raw_costs_without_overwriting_current_risk(self):
         s = own_action("123m123p123s45s77z1z", 7, ["1z"])
         locked_loss = 123.456789
-        with patch.object(advisor, "_locked_risk", return_value=locked_loss):
+        with patch.object(advisor, "_locked_risk", return_value=(.25, 4000., .1, locked_loss)):
             candidate = get_action(s, "riichi")
         terms = self.assert_ledger(candidate)
         self.assertEqual(terms["futureForcedDealInLoss"], -locked_loss)
@@ -112,6 +112,47 @@ class ScoreAccountingTests(unittest.TestCase):
                 self.assertAlmostEqual(terms.get("winIncome", 0),
                                        candidate["winProbability"] * candidate["expectedWinPoints"])
                 self.assertEqual(terms.get("currentDealInLoss", 0), -candidate["expectedDealInLoss"])
+
+    def test_abort_normalization_preserves_future_one_shanten_discard_loss(self):
+        s = own_action("119m19p19s123456z2p", 10, [])
+        advice = advisor.advise(s)
+        self.assertEqual(advice["status"], "ready")
+        continuations = [c for c in advice["candidates"] if c.get("futureDiscardDealInLoss", 0)]
+        self.assertTrue(continuations)
+        for candidate in continuations:
+            terms = self.assert_ledger(candidate)
+            self.assertEqual(terms["futureDiscardDealInLoss"], -candidate["futureDiscardDealInLoss"])
+            self.assertAlmostEqual(terms["riskPreferenceAdjustment"], -(advisor._risk_weight(s) - 1) *
+                                   (candidate["expectedDealInLoss"] + candidate["futureDiscardDealInLoss"]))
+
+    def test_replacement_conditions_future_discard_loss_on_robbery_survival_once(self):
+        s = own_action("123p123s789s45p77z4z", 11, [], players=3)
+        choice = advisor._action_choices(s)[0][0]
+        weight = advisor._risk_weight(s)
+
+        def followup(snapshot, remaining):
+            future = 100 if snapshot["lastDraw"] == "1z" else 300
+            candidate = {"tile": "1z", "shanten": 1, "ukeire": 4, "furiten": False,
+                         "winProbability": .2, "expectedWinPoints": 1000,
+                         "dealInProbability": .05, "expectedDealInLoss": 50,
+                         "futureDiscardDealInProbability": future / 1000,
+                         "futureDiscardDealInLoss": future,
+                         "score": round(200 - weight * (50 + future), 1)}
+            advisor._record_score(candidate, winIncome=200, currentDealInLoss=-50,
+                                  futureDiscardDealInLoss=-future,
+                                  riskPreferenceAdjustment=-(weight - 1) * (50 + future))
+            return [candidate]
+
+        with patch.object(advisor, "_draw_pool", return_value=[("1z", 2), ("2z", 1)]), patch.object(
+                advisor, "_discards", side_effect=followup), patch.object(
+                advisor, "_danger", return_value=(.2, 1600., [])):
+            candidate = advisor._replacement(s, choice, advisor.unseen_counts(s))
+        expected_loss = .8 * (2 * 100 + 300) / 3
+        self.assertEqual(candidate["futureDiscardDealInProbability"], round(.8 * (2 * .1 + .3) / 3, 4))
+        self.assertEqual(candidate["futureDiscardDealInLoss"], round(expected_loss))
+        terms = self.assert_ledger(candidate)
+        self.assertAlmostEqual(terms["futureDiscardDealInLoss"], -expected_loss)
+        self.assertAlmostEqual(terms["winIncome"], .8 * 200)
 
 
 if __name__ == "__main__":
