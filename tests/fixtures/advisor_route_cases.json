@@ -1,0 +1,3841 @@
+{
+  "schemaVersion": 1,
+  "description": "Minimal public decision snapshots. No hidden tiles, identity, session metadata, future outcomes, or full game log. Case IDs preserve source serials only for reproducible evidence mapping.",
+  "cases": [
+    {
+      "id": "route-1329-uncapped-early-three-shanten",
+      "tags": [
+        "recorded",
+        "three-player",
+        "efficiency",
+        "three-shanten",
+        "red-five"
+      ],
+      "notes": "A quiet second discard has 35 versus 44 structural improving tiles; a stage cap must not make them equal.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "9s",
+          "8p",
+          "6p",
+          "8s",
+          "7p",
+          "1z",
+          "3s",
+          "5p",
+          "5s",
+          "0p",
+          "2s",
+          "7p",
+          "6z",
+          "5z"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 10,
+        "lastDraw": "5z",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 1,
+          "tile": "5z",
+          "type": null,
+          "step": 10
+        },
+        "left": 49,
+        "doras": [
+          "6s"
+        ],
+        "scores": [
+          42700,
+          23800,
+          38500
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            },
+            {
+              "tile": "4p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 9
+            }
+          ],
+          [
+            {
+              "tile": "9m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 5
+            }
+          ],
+          [
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 7
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 1
+        }
+      }
+    },
+    {
+      "id": "route-297-same-shanten-shape-improvement",
+      "tags": [
+        "recorded",
+        "three-player",
+        "efficiency",
+        "two-shanten",
+        "red-five"
+      ],
+      "notes": "The weaker immediate ukeire route can improve shape on the next draw; direct improvements alone do not order two-draw progress.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "6z",
+          "5p",
+          "6p",
+          "0p",
+          "1s",
+          "1z",
+          "7z",
+          "8s",
+          "7p",
+          "9s",
+          "9p",
+          "2s",
+          "4p",
+          "8p"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 12,
+        "lastDraw": "8p",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 1,
+          "tile": "8p",
+          "type": null,
+          "step": 12
+        },
+        "left": 48,
+        "doras": [
+          "9p"
+        ],
+        "scores": [
+          52000,
+          25000,
+          28000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "9m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 11
+            }
+          ],
+          [
+            {
+              "tile": "9m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 7
+            }
+          ],
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 9
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 2
+        }
+      }
+    },
+    {
+      "id": "route-561-closed-retreat-loses-progress",
+      "tags": [
+        "recorded",
+        "three-player",
+        "efficiency",
+        "one-step-progress"
+      ],
+      "notes": "Retaining 3p gives concrete 345p and 567s improvements; compare actual reachable routes across shanten depths.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "8s",
+          "2p",
+          "5p",
+          "1z",
+          "7z",
+          "5z",
+          "2p",
+          "8s",
+          "5s",
+          "1s",
+          "1s",
+          "8s",
+          "7s",
+          "3p"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 21,
+        "lastDraw": "3p",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 1,
+          "tile": "3p",
+          "type": null,
+          "step": 21
+        },
+        "left": 45,
+        "doras": [
+          "7s"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 2
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 10
+            },
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 14
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 20
+            }
+          ],
+          [
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 4
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 16
+            }
+          ],
+          [
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 8
+            },
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 12
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 18
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2z",
+                "2z",
+                "2z"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            }
+          ],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        }
+      }
+    },
+    {
+      "id": "route-640-open-no-yaku-depth-boundary",
+      "tags": [
+        "recorded",
+        "three-player",
+        "no-yaku",
+        "late-wall",
+        "opponent-melds"
+      ],
+      "notes": "A formal one-shanten route lacks an immediate yaku wait; retreating to two shanten must not acquire an unrelated optimistic yaku prior.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "8s",
+          "1z",
+          "8s",
+          "5s",
+          "1s",
+          "1s",
+          "8s",
+          "7s",
+          "4s",
+          "6z",
+          "7s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 87,
+        "lastDraw": "7s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 1,
+          "tile": "7s",
+          "type": null,
+          "step": 87
+        },
+        "left": 14,
+        "doras": [
+          "7s"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 2
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 10
+            },
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 14
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 20
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 26
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 36
+            },
+            {
+              "tile": "2z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 44
+            },
+            {
+              "tile": "9p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 50
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 56
+            },
+            {
+              "tile": "4p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 62
+            },
+            {
+              "tile": "5p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 66
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 72
+            },
+            {
+              "tile": "8p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 80
+            },
+            {
+              "tile": "8p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 86
+            }
+          ],
+          [
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 4
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 16
+            },
+            {
+              "tile": "3p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 22
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 28
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 32
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 40
+            },
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 46
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 52
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 58
+            },
+            {
+              "tile": "1m",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 68
+            },
+            {
+              "tile": "7p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 74
+            },
+            {
+              "tile": "7p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 82
+            }
+          ],
+          [
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 8
+            },
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 12
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 18
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 24
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": true,
+              "step": 30
+            },
+            {
+              "tile": "7p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 34
+            },
+            {
+              "tile": "8p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 42
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 48
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 54
+            },
+            {
+              "tile": "5z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 60
+            },
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 64
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 70
+            },
+            {
+              "tile": "1p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 78
+            },
+            {
+              "tile": "2s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 84
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2p",
+                "2p",
+                "2p"
+              ],
+              "froms": [
+                1,
+                1,
+                2
+              ]
+            }
+          ],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2z",
+                "2z",
+                "2z"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "4p",
+                "4p",
+                "4p"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            }
+          ],
+          []
+        ],
+        "north": [
+          0,
+          1,
+          2,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        }
+      }
+    },
+    {
+      "id": "route-590-open-yakuhai-counterexample",
+      "tags": [
+        "recorded",
+        "three-player",
+        "no-yaku",
+        "yakuhai",
+        "two-shanten"
+      ],
+      "notes": "Honor retention has a concrete yakuhai route despite lower structural ukeire; a higher-ukeire honor discard is not a universal target.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "8s",
+          "5p",
+          "1z",
+          "8s",
+          "5s",
+          "1s",
+          "1s",
+          "8s",
+          "7s",
+          "4s",
+          "6z"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 45,
+        "lastDraw": "6z",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 1,
+          "tile": "6z",
+          "type": null,
+          "step": 45
+        },
+        "left": 34,
+        "doras": [
+          "7s"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 2
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 10
+            },
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 14
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 20
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 26
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 36
+            },
+            {
+              "tile": "2z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 44
+            }
+          ],
+          [
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 4
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 16
+            },
+            {
+              "tile": "3p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 22
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 28
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 32
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 40
+            }
+          ],
+          [
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 8
+            },
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 12
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 18
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 24
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": true,
+              "step": 30
+            },
+            {
+              "tile": "7p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 34
+            },
+            {
+              "tile": "8p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 42
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2p",
+                "2p",
+                "2p"
+              ],
+              "froms": [
+                1,
+                1,
+                2
+              ]
+            }
+          ],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2z",
+                "2z",
+                "2z"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            }
+          ],
+          []
+        ],
+        "north": [
+          0,
+          1,
+          1,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        }
+      }
+    },
+    {
+      "id": "route-572-first-pon-yaku-route",
+      "tags": [
+        "recorded",
+        "three-player",
+        "pon",
+        "no-yaku"
+      ],
+      "notes": "The first 2p pon improves ordinary structure without establishing a yaku; compare concrete open and closed continuation assumptions.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "8s",
+          "2p",
+          "5p",
+          "1z",
+          "7z",
+          "5z",
+          "2p",
+          "8s",
+          "5s",
+          "1s",
+          "1s",
+          "8s",
+          "7s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 30,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 2,
+          "tile": "2p",
+          "type": null,
+          "step": 30
+        },
+        "left": 41,
+        "doras": [
+          "7s"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 2
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 10
+            },
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 14
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 20
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 26
+            }
+          ],
+          [
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 4
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 16
+            },
+            {
+              "tile": "3p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 22
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 28
+            }
+          ],
+          [
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 8
+            },
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 12
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 18
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 24
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 30
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2z",
+                "2z",
+                "2z"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            }
+          ],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          3
+        ],
+        "operationDetails": [
+          {
+            "type": 3,
+            "combination": [
+              "2p|2p"
+            ]
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        }
+      }
+    },
+    {
+      "id": "route-658-second-pon-toitoi-route",
+      "tags": [
+        "recorded",
+        "three-player",
+        "pon",
+        "toitoi",
+        "late-wall"
+      ],
+      "notes": "Calling 7s permits a toitoi route when suited singles are discarded; the later actual discard is not a recommendation label.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "8s",
+          "1z",
+          "8s",
+          "5s",
+          "1s",
+          "1s",
+          "8s",
+          "7s",
+          "4s",
+          "7s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 102,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 2,
+          "tile": "7s",
+          "type": null,
+          "step": 102
+        },
+        "left": 8,
+        "doras": [
+          "7s"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 2
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 10
+            },
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 14
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 20
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 26
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 36
+            },
+            {
+              "tile": "2z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 44
+            },
+            {
+              "tile": "9p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 50
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 56
+            },
+            {
+              "tile": "4p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 62
+            },
+            {
+              "tile": "5p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 66
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 72
+            },
+            {
+              "tile": "8p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 80
+            },
+            {
+              "tile": "8p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 86
+            },
+            {
+              "tile": "9p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 92
+            },
+            {
+              "tile": "6p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 100
+            }
+          ],
+          [
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 4
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 16
+            },
+            {
+              "tile": "3p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 22
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 28
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 32
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 40
+            },
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 46
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 52
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 58
+            },
+            {
+              "tile": "1m",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 68
+            },
+            {
+              "tile": "7p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 74
+            },
+            {
+              "tile": "7p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 82
+            },
+            {
+              "tile": "6z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 88
+            },
+            {
+              "tile": "4p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 94
+            }
+          ],
+          [
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 8
+            },
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 12
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 18
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 24
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": true,
+              "step": 30
+            },
+            {
+              "tile": "7p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 34
+            },
+            {
+              "tile": "8p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 42
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 48
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 54
+            },
+            {
+              "tile": "5z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 60
+            },
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 64
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 70
+            },
+            {
+              "tile": "1p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 78
+            },
+            {
+              "tile": "2s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 84
+            },
+            {
+              "tile": "6z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 90
+            },
+            {
+              "tile": "2s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 98
+            },
+            {
+              "tile": "7s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 102
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2p",
+                "2p",
+                "2p"
+              ],
+              "froms": [
+                1,
+                1,
+                2
+              ]
+            }
+          ],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2z",
+                "2z",
+                "2z"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "4p",
+                "4p",
+                "4p"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "6p",
+                "6p",
+                "6p"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            }
+          ],
+          []
+        ],
+        "north": [
+          0,
+          1,
+          3,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          3
+        ],
+        "operationDetails": [
+          {
+            "type": 3,
+            "combination": [
+              "7s|7s"
+            ]
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        }
+      }
+    },
+    {
+      "id": "route-659-second-pon-followup-route",
+      "tags": [
+        "recorded",
+        "three-player",
+        "toitoi",
+        "late-wall",
+        "no-yaku"
+      ],
+      "notes": "After the 7s pon, retaining pairs can preserve toitoi while a formal 36s wait remains without yaku.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "8s",
+          "1z",
+          "8s",
+          "5s",
+          "1s",
+          "1s",
+          "8s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 103,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionChiPengGang",
+          "seat": 1,
+          "tile": null,
+          "type": 1,
+          "step": 103
+        },
+        "left": 8,
+        "doras": [
+          "7s"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 2
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 10
+            },
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 14
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 20
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 26
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 36
+            },
+            {
+              "tile": "2z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 44
+            },
+            {
+              "tile": "9p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 50
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 56
+            },
+            {
+              "tile": "4p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 62
+            },
+            {
+              "tile": "5p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 66
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 72
+            },
+            {
+              "tile": "8p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 80
+            },
+            {
+              "tile": "8p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 86
+            },
+            {
+              "tile": "9p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 92
+            },
+            {
+              "tile": "6p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 100
+            }
+          ],
+          [
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 4
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 16
+            },
+            {
+              "tile": "3p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 22
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 28
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 32
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 40
+            },
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 46
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 52
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 58
+            },
+            {
+              "tile": "1m",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 68
+            },
+            {
+              "tile": "7p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 74
+            },
+            {
+              "tile": "7p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 82
+            },
+            {
+              "tile": "6z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 88
+            },
+            {
+              "tile": "4p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 94
+            }
+          ],
+          [
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 8
+            },
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 12
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 18
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 24
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": true,
+              "step": 30
+            },
+            {
+              "tile": "7p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 34
+            },
+            {
+              "tile": "8p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 42
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 48
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 54
+            },
+            {
+              "tile": "5z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 60
+            },
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 64
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 70
+            },
+            {
+              "tile": "1p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 78
+            },
+            {
+              "tile": "2s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 84
+            },
+            {
+              "tile": "6z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 90
+            },
+            {
+              "tile": "2s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 98
+            },
+            {
+              "tile": "7s",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 102
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2p",
+                "2p",
+                "2p"
+              ],
+              "froms": [
+                1,
+                1,
+                2
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "7s",
+                "7s",
+                "7s"
+              ],
+              "froms": [
+                1,
+                1,
+                2
+              ]
+            }
+          ],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2z",
+                "2z",
+                "2z"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "4p",
+                "4p",
+                "4p"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "6p",
+                "6p",
+                "6p"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            }
+          ],
+          []
+        ],
+        "north": [
+          0,
+          1,
+          3,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": [
+              "7s"
+            ]
+          }
+        ],
+        "forbiddenDiscards": [
+          "7s"
+        ],
+        "playerCount": 3,
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        }
+      }
+    },
+    {
+      "id": "route-663-confirmed-toitoi-pon",
+      "tags": [
+        "recorded",
+        "three-player",
+        "pon",
+        "toitoi",
+        "late-wall"
+      ],
+      "notes": "A 1s pon creates a scored six-han toitoi wait; confirmed scoring must override the coarse open-yaku prior and avoid a false no-yaku penalty.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "8s",
+          "8s",
+          "5s",
+          "1s",
+          "1s",
+          "8s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 106,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 0,
+          "tile": "1s",
+          "type": null,
+          "step": 106
+        },
+        "left": 8,
+        "doras": [
+          "7s"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 2
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 10
+            },
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 14
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 20
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 26
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 36
+            },
+            {
+              "tile": "2z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 44
+            },
+            {
+              "tile": "9p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 50
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 56
+            },
+            {
+              "tile": "4p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 62
+            },
+            {
+              "tile": "5p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 66
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 72
+            },
+            {
+              "tile": "8p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 80
+            },
+            {
+              "tile": "8p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 86
+            },
+            {
+              "tile": "9p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 92
+            },
+            {
+              "tile": "6p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 100
+            },
+            {
+              "tile": "1s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 106
+            }
+          ],
+          [
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 4
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 16
+            },
+            {
+              "tile": "3p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 22
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 28
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 32
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 40
+            },
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 46
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 52
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 58
+            },
+            {
+              "tile": "1m",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 68
+            },
+            {
+              "tile": "7p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 74
+            },
+            {
+              "tile": "7p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 82
+            },
+            {
+              "tile": "6z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 88
+            },
+            {
+              "tile": "4p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 94
+            },
+            {
+              "tile": "1z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 104
+            }
+          ],
+          [
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 8
+            },
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 12
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 18
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 24
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": true,
+              "step": 30
+            },
+            {
+              "tile": "7p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 34
+            },
+            {
+              "tile": "8p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 42
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 48
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 54
+            },
+            {
+              "tile": "5z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 60
+            },
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 64
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 70
+            },
+            {
+              "tile": "1p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 78
+            },
+            {
+              "tile": "2s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 84
+            },
+            {
+              "tile": "6z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 90
+            },
+            {
+              "tile": "2s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 98
+            },
+            {
+              "tile": "7s",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 102
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "1z",
+                "1z",
+                "1z"
+              ],
+              "froms": [
+                0,
+                0,
+                1
+              ]
+            }
+          ],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2p",
+                "2p",
+                "2p"
+              ],
+              "froms": [
+                1,
+                1,
+                2
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "7s",
+                "7s",
+                "7s"
+              ],
+              "froms": [
+                1,
+                1,
+                2
+              ]
+            }
+          ],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2z",
+                "2z",
+                "2z"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "4p",
+                "4p",
+                "4p"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "6p",
+                "6p",
+                "6p"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            }
+          ],
+          []
+        ],
+        "north": [
+          0,
+          1,
+          3,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          3
+        ],
+        "operationDetails": [
+          {
+            "type": 3,
+            "combination": [
+              "1s|1s"
+            ]
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        }
+      }
+    },
+    {
+      "id": "route-664-confirmed-toitoi-followup",
+      "tags": [
+        "recorded",
+        "three-player",
+        "toitoi",
+        "late-wall"
+      ],
+      "notes": "The concrete post-pon 4s discard is paired with the preceding call case to check yaku and action-cost consistency.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "8s",
+          "8s",
+          "5s",
+          "8s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 107,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionChiPengGang",
+          "seat": 1,
+          "tile": null,
+          "type": 1,
+          "step": 107
+        },
+        "left": 8,
+        "doras": [
+          "7s"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 2
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 10
+            },
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 14
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 20
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 26
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 36
+            },
+            {
+              "tile": "2z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 44
+            },
+            {
+              "tile": "9p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 50
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 56
+            },
+            {
+              "tile": "4p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 62
+            },
+            {
+              "tile": "5p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 66
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 72
+            },
+            {
+              "tile": "8p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 80
+            },
+            {
+              "tile": "8p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 86
+            },
+            {
+              "tile": "9p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 92
+            },
+            {
+              "tile": "6p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 100
+            },
+            {
+              "tile": "1s",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 106
+            }
+          ],
+          [
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 4
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 16
+            },
+            {
+              "tile": "3p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 22
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 28
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 32
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 40
+            },
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 46
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 52
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 58
+            },
+            {
+              "tile": "1m",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 68
+            },
+            {
+              "tile": "7p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 74
+            },
+            {
+              "tile": "7p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 82
+            },
+            {
+              "tile": "6z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 88
+            },
+            {
+              "tile": "4p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 94
+            },
+            {
+              "tile": "1z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 104
+            }
+          ],
+          [
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 8
+            },
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 12
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 18
+            },
+            {
+              "tile": "3p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 24
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": true,
+              "step": 30
+            },
+            {
+              "tile": "7p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 34
+            },
+            {
+              "tile": "8p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 42
+            },
+            {
+              "tile": "2p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 48
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 54
+            },
+            {
+              "tile": "5z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 60
+            },
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 64
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 70
+            },
+            {
+              "tile": "1p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 78
+            },
+            {
+              "tile": "2s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 84
+            },
+            {
+              "tile": "6z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 90
+            },
+            {
+              "tile": "2s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 98
+            },
+            {
+              "tile": "7s",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 102
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "1z",
+                "1z",
+                "1z"
+              ],
+              "froms": [
+                0,
+                0,
+                1
+              ]
+            }
+          ],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2p",
+                "2p",
+                "2p"
+              ],
+              "froms": [
+                1,
+                1,
+                2
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "7s",
+                "7s",
+                "7s"
+              ],
+              "froms": [
+                1,
+                1,
+                2
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "1s",
+                "1s",
+                "1s"
+              ],
+              "froms": [
+                1,
+                1,
+                0
+              ]
+            }
+          ],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2z",
+                "2z",
+                "2z"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "4p",
+                "4p",
+                "4p"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "6p",
+                "6p",
+                "6p"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            }
+          ],
+          []
+        ],
+        "north": [
+          0,
+          1,
+          3,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": [
+              "1s"
+            ]
+          }
+        ],
+        "forbiddenDiscards": [
+          "1s"
+        ],
+        "playerCount": 3,
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        }
+      }
+    },
+    {
+      "id": "route-1007-early-riichi-genbutsu-counterexample",
+      "tags": [
+        "recorded",
+        "three-player",
+        "opponent-riichi",
+        "efficiency"
+      ],
+      "notes": "The early 7s discard is genbutsu to the newly declared dealer riichi; preserve valid defensive reasons to retain an isolated honor.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "7z",
+          "5p",
+          "9s",
+          "7s",
+          "7p",
+          "4p",
+          "7z",
+          "8p",
+          "1p",
+          "2p",
+          "7p",
+          "5s",
+          "3z",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 30,
+        "lastDraw": "4s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 1,
+          "tile": "4s",
+          "type": null,
+          "step": 30
+        },
+        "left": 39,
+        "doras": [
+          "1s"
+        ],
+        "scores": [
+          37000,
+          33000,
+          34000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "9m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 9
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 17
+            },
+            {
+              "tile": "6z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 23
+            },
+            {
+              "tile": "7s",
+              "moqie": false,
+              "riichi": true,
+              "called": false,
+              "step": 29
+            }
+          ],
+          [
+            {
+              "tile": "1z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 5
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 13
+            },
+            {
+              "tile": "1m",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 19
+            },
+            {
+              "tile": "5z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 25
+            }
+          ],
+          [
+            {
+              "tile": "9m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 7
+            },
+            {
+              "tile": "6z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 15
+            },
+            {
+              "tile": "1s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 21
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 27
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "riichi": [
+          true,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          29,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 1,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 1
+        }
+      }
+    }
+  ]
+}

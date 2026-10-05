@@ -39,8 +39,8 @@ def isolated_push(ready_choices, survival=1., miss_risk=0., miss_loss=0.):
         return ([(advisor.TILES[i], n, miss_risk, miss_loss)
                  for i, n in enumerate(remaining) if n], [], (miss_risk, miss_loss))
 
-    def no_fold(events, *args):
-        return [[advisor.Outcome(draw=1., draw_income=-1e9)] for _ in range(len(events) + 1)]
+    def no_fold(events, *args, **kwargs):
+        return [[advisor.Outcome(draw=1., draw_income=-1e9)] * 3 for _ in range(len(events) + 1)]
 
     def choices(branch, enemies, opportunities, snapshot):
         # These abstract urn proofs provide one ready option; shape is not
@@ -53,6 +53,7 @@ def isolated_push(ready_choices, survival=1., miss_risk=0., miss_loss=0.):
     with patch.object(advisor, "_policy_environment", return_value=(survival, (0., 0.), (0., 0.))), \
             patch.object(advisor, "_policy_risks", side_effect=risks), \
             patch.object(advisor, "fold_table", side_effect=no_fold), \
+            patch.object(advisor, "_fold_policy", side_effect=lambda *args, **kwargs: no_fold(args[4])), \
             patch.object(advisor, "_ready_choices", side_effect=choices):
         yield
 
@@ -187,7 +188,8 @@ class OneShantenProbabilityTests(unittest.TestCase):
                                  "expectedDealInLoss": 0., "waits": [{
                                      "tile": advisor.TILES[wait_index], "count": remaining[wait_index],
                                      "ronPoints": value, "tsumoPoints": value}]}]})
-        probability, value, _, _ = advisor._one_shanten_model(branches, sum(pool), self.opponents, (0, 1), state())
+        with isolated_push(advisor._ready_choices):
+            probability, value, _, _ = advisor._one_shanten_model(branches, sum(pool), self.opponents, (0, 1), state())
         weights = [b["count"] * b["options"][0]["waits"][0]["count"] for b in branches]
         expected = sum(w * b["options"][0]["waits"][0]["ronPoints"]
                        for w, b in zip(weights, branches)) / sum(weights)
@@ -196,7 +198,8 @@ class OneShantenProbabilityTests(unittest.TestCase):
         self.assertAlmostEqual(value, expected)
         for branch in branches:
             branch["options"][0]["waits"][0].update(ronPoints=12000, tsumoPoints=12000)
-        _, value, _, _ = advisor._one_shanten_model(branches, sum(pool), self.opponents, (0, 1), state())
+        with isolated_push(advisor._ready_choices):
+            _, value, _, _ = advisor._one_shanten_model(branches, sum(pool), self.opponents, (0, 1), state())
         self.assertAlmostEqual(value, 12000)
 
     def test_miss_mass_matches_without_replacement_first_arrivals(self):
@@ -240,7 +243,7 @@ class OneShantenProbabilityTests(unittest.TestCase):
         for first, second in zip(expected, actual):
             self.assertAlmostEqual(first, second)
 
-    def test_every_one_shanten_discard_uses_full_branch_precision(self):
+    def test_every_one_shanten_discard_uses_common_finite_depth_and_precision(self):
         s = state()
         result = advisor.advise(s)
         self.assertEqual(result["status"], "ready")
@@ -251,9 +254,14 @@ class OneShantenProbabilityTests(unittest.TestCase):
         events = advisor._opportunities(s, after_discard=True)
         for candidate in candidates:
             with self.subTest(discard=candidate["tile"]):
-                branches, _ = branches_for(s, candidate["tile"])
-                probability, value, _, _ = advisor._one_shanten_model(branches, sum(remaining), opponents, events, s)
+                hand = s["hand"].copy()
+                hand.remove(candidate["tile"])
+                future = advisor._opponents(s, remaining, after_current=True, passed_discard=candidate["tile"])
+                outcome, detail = advisor.finite_policy(hand, s, remaining, future, events, candidate["tile"])
+                probability, value, _, _ = outcome.metrics()
                 danger = advisor._danger(candidate["tile"], remaining, opponents)[0]
+                self.assertEqual(candidate["finiteLookahead"]["ownDrawDepth"], 1)
+                self.assertEqual(candidate["finiteLookahead"], detail)
                 self.assertEqual(candidate["winProbability"], round(probability * (1 - danger), 4))
                 self.assertEqual(candidate["expectedWinPoints"], round(value))
 
@@ -508,8 +516,8 @@ class OneShantenRiskTests(unittest.TestCase):
         s = state()
         hand = s["hand"].copy()
         hand.remove("1m")
-        with patch.object(advisor, "_one_shanten_outcome", return_value=advisor.Outcome(
-                win=.3, income=600., deal=.2, loss=1600., draw=.5)), patch.object(
+        with patch.object(advisor, "finite_policy", return_value=(advisor.Outcome(
+                win=.3, income=600., deal=.2, loss=1600., draw=.5), {})), patch.object(
                 advisor, "_danger", return_value=(.1, 500., [])):
             candidate = advisor._position(hand, s, advisor.unseen_counts(s), "1m")
         self.assertEqual(candidate["shanten"], 1)

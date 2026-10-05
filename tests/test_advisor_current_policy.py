@@ -2,9 +2,9 @@
 
 policyComparison stores numeric attack utility; fold utility is None when
 the current discard is not part of the minimum-current-loss defensive policy.
-Current fold is the documented pure-noten approximation: it forgoes wins and
-never claims an attack efficiency reward. These tests do not infer alternate
-outcomes from the logged 18000-point loss. Synthetic weak/strong states assert
+Current fold forgoes wins and never claims an attack efficiency reward;
+only unchanged structural tenpai may retain its draw fee. These tests do not
+infer alternate outcomes from the logged 18000-point loss. Synthetic weak/strong states assert
 policy properties only after their structural premises are verified below.
 """
 from copy import deepcopy
@@ -97,7 +97,8 @@ class CurrentPolicyTests(unittest.TestCase):
             self.assertEqual(terminal["selfWin"], 0)
             self.assertEqual(terms.get("winIncome", 0), 0)
             self.assertEqual(candidate["futureFoldProbability"], 0)
-            self.assertLessEqual(candidate["expectedDrawPayment"], 0)
+            if candidate["shanten"] != 0 or not candidate["hasValidWait"]:
+                self.assertLessEqual(candidate["expectedDrawPayment"], 0)
         if selected == "locked":
             self.assertEqual(candidate["futureFoldProbability"], 0)
 

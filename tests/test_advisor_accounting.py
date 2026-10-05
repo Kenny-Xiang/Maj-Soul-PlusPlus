@@ -187,7 +187,7 @@ class ScoreAccountingTests(unittest.TestCase):
         choice = advisor._action_choices(s)[0][0]
         weight = advisor._risk_weight(s)
 
-        def followup(snapshot, remaining):
+        def followup(snapshot, remaining, **kwargs):
             future = 100 if snapshot["lastDraw"] == "1z" else 300
             candidate = {"tile": "1z", "shanten": 1, "ukeire": 4, "furiten": False,
                          "winProbability": .2, "expectedWinPoints": 1000,

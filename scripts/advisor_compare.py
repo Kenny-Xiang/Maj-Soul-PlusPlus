@@ -76,35 +76,71 @@ def score_components(advice):
     return components
 
 
-def evaluate(source, cases, warmups, repeats):
+def diagnostic_fields(value):
+    """Preserve unrounded internal accounts as JSON, including Outcome tuples."""
+    if hasattr(value, "_asdict"):
+        return diagnostic_fields(value._asdict())
+    if isinstance(value, dict):
+        return {key: diagnostic_fields(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [diagnostic_fields(item) for item in value]
+    return value
+
+
+def evaluate(source, cases, warmups, repeats, include_internal=False):
     # The caller starts a fresh interpreter for each version. No project imports
     # occur before this explicit path is installed, even when PYTHONPATH is set.
     sys.path.insert(0, str(source))
     import advisor
+    if Path(advisor.__file__).resolve() != (source / "advisor.py").resolve():
+        raise ValueError("Advisor import does not match the isolated source snapshot")
 
+    captured = []
+    if include_internal:
+        explain = advisor._explain_tie
+
+        def capture(candidates):
+            explain(candidates)
+            # Retain references only inside the timer; copy/encode afterwards.
+            captured[:] = candidates
+
+        advisor._explain_tie = capture
+
+    warmup_timeouts = {case["id"]: 0 for case in cases}
     for _ in range(warmups):
         for case in cases:
-            advisor.advise(deepcopy(case["state"]))
+            advice = advisor.advise(deepcopy(case["state"]))
+            if advice["status"] == "unavailable" and "时间预算" in advice.get("message", ""):
+                warmup_timeouts[case["id"]] += 1
     results = {case["id"]: {"samplesMs": [], "advisorSamplesMs": [],
                             "changedRepeats": []} for case in cases}
     for repeat in range(repeats):
         for case in cases:
             snapshot = deepcopy(case["state"])
+            captured.clear()
             started = time.perf_counter()
             advice = advisor.advise(snapshot)
             elapsed = (time.perf_counter() - started) * 1000
-            if advice["status"] != case["expectedStatus"]:
+            timed_out = advice["status"] == "unavailable" and "时间预算" in advice.get("message", "")
+            if advice["status"] != case["expectedStatus"] and not timed_out:
                 raise ValueError(f"{case['id']}: expected {case['expectedStatus']}, got {advice}")
             if snapshot != case["state"]:
                 raise ValueError(f"{case['id']}: advisor mutated its input snapshot")
             item = results[case["id"]]
             item["samplesMs"].append(elapsed)
             item["advisorSamplesMs"].append(advice.get("elapsedMs"))
+            item.setdefault("timeoutCount", 0)
+            item["timeoutCount"] += int(timed_out)
             if repeat == 0:
                 item["advice"] = advice
                 item["scoreComponents"] = score_components(advice)
                 item["nativeScoreBreakdowns"] = {c["actionId"]: c["scoreBreakdown"]
                                                   for c in advice.get("candidates", []) if "scoreBreakdown" in c}
+                if include_internal:
+                    item["internalCandidates"] = {
+                        candidate["actionId"]: diagnostic_fields({key: value for key, value in candidate.items()
+                                                                   if key.startswith("_")})
+                        for candidate in captured} if not timed_out else {}
             elif ({k: v for k, v in advice.items() if k != "elapsedMs"} !=
                   {k: v for k, v in item["advice"].items() if k != "elapsedMs"}):
                 item["changedRepeats"].append({"repeat": repeat + 1, "advice": advice})
@@ -112,6 +148,9 @@ def evaluate(source, cases, warmups, repeats):
         item["latency"] = latency(item["samplesMs"])
         item["consistentAcrossRepeats"] = not item["changedRepeats"]
     return {"model": advisor.MODEL, "cases": results,
+            "warmupTimeoutCount": sum(warmup_timeouts.values()),
+            "warmupTimeouts": {key: count for key, count in warmup_timeouts.items() if count},
+            "timeoutCount": sum(item["timeoutCount"] for item in results.values()),
             "latency": latency([sample for item in results.values() for sample in item["samplesMs"]])}
 
 
@@ -144,10 +183,11 @@ def snapshot_source(repo, destination, ref=None):
                     "sourceSha256": source_hash(source), "sourceChanges": dirty}
 
 
-def run_version(source, cases, warmups, repeats):
+def run_version(source, cases, warmups, repeats, include_internal=False):
     completed = subprocess.run(
         [sys.executable, "-I", "-B", str(Path(__file__).resolve()), "--worker", str(source)],
-        input=json.dumps({"cases": cases, "warmups": warmups, "repeats": repeats}),
+        input=json.dumps({"cases": cases, "warmups": warmups, "repeats": repeats,
+                          "include_internal": include_internal}),
         text=True, capture_output=True, check=True)
     return json.loads(completed.stdout)
 
@@ -176,7 +216,7 @@ def compare_cases(baseline, current):
     return changes
 
 
-def build_report(repo, fixtures, baseline_ref, current_ref, selected, warmups, repeats):
+def build_report(repo, fixtures, baseline_ref, current_ref, selected, warmups, repeats, include_internal=False):
     cases = load_cases(fixtures, selected)
     with tempfile.TemporaryDirectory(prefix="advisor-comparison-") as temporary:
         directory = Path(temporary)
@@ -184,12 +224,13 @@ def build_report(repo, fixtures, baseline_ref, current_ref, selected, warmups, r
         # never reset, switched, imported directly, or written by this script.
         old_source, old_info = snapshot_source(repo, directory / "baseline", baseline_ref)
         new_source, new_info = snapshot_source(repo, directory / "current", current_ref)
-        baseline = {"source": old_info, **run_version(old_source, cases, warmups, repeats)}
-        current = {"source": new_info, **run_version(new_source, cases, warmups, repeats)}
+        baseline = {"source": old_info, **run_version(old_source, cases, warmups, repeats, include_internal)}
+        current = {"source": new_info, **run_version(new_source, cases, warmups, repeats, include_internal)}
     return {"schemaVersion": 1,
             "environment": {"python": sys.version, "platform": platform.platform(),
                             "mahjong": importlib.metadata.version("mahjong")},
             "method": {"warmupPasses": warmups, "measuredPasses": repeats,
+                       "internalCandidates": include_internal,
                        "caseOrder": [case["id"] for case in cases], "versionOrder": ["baseline", "current"],
                        "timing": "perf_counter around advise only; excludes imports, copying, and process startup",
                        "cache": "fresh process per version; identical ordered full-suite warmup and measurement passes",
@@ -209,6 +250,8 @@ def main():
     parser.add_argument("--warmups", type=int, default=1, help="Excluded full-suite warmup passes (default: 1)")
     parser.add_argument("--repeats", type=int, default=5, help="Measured full-suite passes (default: 5)")
     parser.add_argument("--output", type=Path, help="Write JSON report to this path instead of stdout")
+    parser.add_argument("--include-internal", action="store_true",
+                        help="Include unrounded private candidate accounts for offline diagnosis")
     parser.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.worker:
@@ -219,7 +262,7 @@ def main():
         parser.error("warmups must be nonnegative and repeats must be positive")
     try:
         report = build_report(ROOT, args.fixtures.resolve(), args.baseline, args.current_ref,
-                              args.case, args.warmups, args.repeats)
+                              args.case, args.warmups, args.repeats, args.include_internal)
     except (ValueError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Comparison failed: {exc}\n{getattr(exc, 'stderr', '') or ''}")
     payload = json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
@@ -228,6 +271,7 @@ def main():
         args.output.write_text(payload)
         print(json.dumps({"report": str(args.output.resolve()), "baseline": report["baseline"]["latency"],
                           "current": report["current"]["latency"],
+                          "timeouts": {version: report[version]["timeoutCount"] for version in ("baseline", "current")},
                           "changedRecommendations": [key for key, value in report["changes"].items()
                                                      if value["recommendationChanged"]]}, indent=2))
     else:

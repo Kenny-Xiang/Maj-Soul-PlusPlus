@@ -286,8 +286,8 @@ class ConfirmedRiichiTests(unittest.TestCase):
                 children = {}
                 original_discards = advisor._discards
 
-                def capture(snapshot, remaining):
-                    candidates = original_discards(snapshot, remaining)
+                def capture(snapshot, remaining, **kwargs):
+                    candidates = original_discards(snapshot, remaining, **kwargs)
                     self.assertEqual(len(candidates), 1)
                     children[snapshot["lastDraw"]] = candidates[0]
                     return candidates

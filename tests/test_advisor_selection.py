@@ -374,7 +374,7 @@ class StrategyMetadataTests(unittest.TestCase):
         choice = selection._action_choices(snapshot)[0][0]
         risk_weight = selection._risk_weight(snapshot)
 
-        def followup(drawn, remaining):
+        def followup(drawn, remaining, **kwargs):
             folding = drawn["lastDraw"] == "1z"
             win = 0. if folding else .2
             result = {"tile": "1z", "actionId": "discard:1z", "shanten": 1, "ukeire": 4,

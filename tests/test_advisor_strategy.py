@@ -102,6 +102,7 @@ class StrategyTests(unittest.TestCase):
         evaluate = advisor._advise
 
         def uncached(snapshot):
+            values = advisor._HAND_VALUES.set({})
             risk = advisor._POLICY_RISKS.set(None)
             tables = TABLES.set(None)
             try:
@@ -109,6 +110,7 @@ class StrategyTests(unittest.TestCase):
             finally:
                 TABLES.reset(tables)
                 advisor._POLICY_RISKS.reset(risk)
+                advisor._HAND_VALUES.reset(values)
 
         for ready in (False, True):
             s = state("123m123p123s45s77z1z")
@@ -117,8 +119,9 @@ class StrategyTests(unittest.TestCase):
             s["riichiStep"][1] = 20 if ready else None
             s["rivers"][1] = [{"tile": "9p", "step": 20}]
             cached = advisor.advise(s)
-            with patch.object(advisor, "_advise", side_effect=uncached):
-                fresh = advisor.advise(s)
+            # The uncached reference checks arithmetic, not the production
+            # deadline. The cached public call above must still finish in time.
+            fresh = uncached(s)
             for result in (cached, fresh):
                 self.assertEqual(result["status"], "ready")
                 result.pop("elapsedMs")
