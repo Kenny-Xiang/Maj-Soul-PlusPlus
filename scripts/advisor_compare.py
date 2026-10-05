@@ -62,12 +62,17 @@ def score_components(advice):
         followup = weight * candidate.get("futureDiscardDealInLoss", 0)
         deposit = candidate.get("expectedRiichiCost", 0)
         dora = candidate.get("newDoraRiskPenalty", 0)
+        tsumo = candidate.get("expectedOpponentTsumoLoss", 0)
+        liability = candidate.get("expectedOtherRonLiabilityLoss", 0)
+        draw = candidate.get("expectedDrawPayment", 0)
         components[candidate["actionId"]] = {
             "winIncome": income, "weightedCurrentDealInLoss": loss,
             "weightedFutureForcedDealInLoss": future, "riichiCost": deposit,
             "weightedFutureDiscardDealInLoss": followup,
             "newDoraRiskPenalty": dora,
-            "residual": candidate["score"] - income + loss + future + followup + deposit + dora}
+            "opponentTsumoLoss": tsumo, "otherRonLiabilityLoss": liability,
+            "exhaustiveDrawPayment": draw,
+            "residual": candidate["score"] - income + loss + future + followup + deposit + dora + tsumo + liability - draw}
     return components
 
 
@@ -189,8 +194,8 @@ def build_report(repo, fixtures, baseline_ref, current_ref, selected, warmups, r
                        "timing": "perf_counter around advise only; excludes imports, copying, and process startup",
                        "cache": "fresh process per version; identical ordered full-suite warmup and measurement passes",
                        "p95": "nearest rank: sorted samples[ceil(0.95 * count) - 1]",
-                       "scoreComponents": "derived from rounded public fields; residual includes shape, tenpai, other adjustments, and rounding",
-                       "nativeScoreBreakdowns": "signed original scoring terms and accumulated rounding, when emitted by the advisor; diagnostics, not terminal EV"},
+                       "scoreComponents": "derived from rounded public fields; residual includes shape, unexposed legacy terms, other adjustments, and rounding",
+                       "nativeScoreBreakdowns": "signed original scoring terms and accumulated rounding; v7 exposes mutually exclusive terminal payments separately from heuristic preferences"},
             "fixtures": {"sha256": hashlib.sha256(Path(fixtures).read_bytes()).hexdigest(), "cases": cases},
             "baseline": baseline, "current": current, "changes": compare_cases(baseline, current)}
 

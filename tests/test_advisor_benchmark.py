@@ -59,6 +59,7 @@ class AdvisorBenchmarkTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unknown case"):
             comparison.load_cases(comparison.FIXTURES, ["not-a-fixture"])
 
+    @unittest.skipIf(getattr(sys, "frozen", False), "requires a Python CLI subprocess, not the frozen App executable")
     def test_native_accounts_are_distinct_from_derived_residuals(self):
         cases = comparison.load_cases(comparison.FIXTURES, ["closed-tsumo-only-tenpai"])
         report = comparison.run_version(ROOT / "src", cases, warmups=0, repeats=1)
@@ -68,6 +69,7 @@ class AdvisorBenchmarkTests(unittest.TestCase):
             self.assertNotIn("residual", candidate["scoreBreakdown"])
             self.assertIn("residual", item["scoreComponents"][candidate["actionId"]])
 
+    @unittest.skipIf(getattr(sys, "frozen", False), "requires a Git checkout and Python CLI subprocesses")
     def test_same_ref_isolated_comparison_preserves_analysis_and_reports_provenance(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)

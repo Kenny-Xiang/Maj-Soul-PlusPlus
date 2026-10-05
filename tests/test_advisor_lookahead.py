@@ -1,5 +1,6 @@
 """Complete one-shanten branches preserve rules, time, and weighted value."""
 from copy import deepcopy
+from contextlib import contextmanager
 from itertools import permutations
 import unittest
 from unittest.mock import patch
@@ -25,6 +26,27 @@ def branches_for(snapshot, discard=None):
 def option_for(branches, draw, discard):
     branch = next(b for b in branches if b["draw"] == draw)
     return next(o for o in branch["options"] if o["discard"] == discard)
+
+
+@contextmanager
+def isolated_push(ready_choices, survival=1., miss_risk=0., miss_loss=0.):
+    """Isolate probability bookkeeping; separate policy tests cover retreat.
+
+    Force the supplied push strategy by making the artificial fold expensive.
+    Production's rational choice to fold must not mask an absorption error.
+    """
+    def risks(hand, state, remaining, opponents):
+        return ([(advisor.TILES[i], n, miss_risk, miss_loss)
+                 for i, n in enumerate(remaining) if n], [], (miss_risk, miss_loss))
+
+    def no_fold(events, *args):
+        return [[advisor.Outcome(draw=1., draw_income=-1e9)] for _ in range(len(events) + 1)]
+
+    with patch.object(advisor, "_policy_environment", return_value=(survival, (0., 0.), (0., 0.))), \
+            patch.object(advisor, "_policy_risks", side_effect=risks), \
+            patch.object(advisor, "fold_table", side_effect=no_fold), \
+            patch.object(advisor, "_ready_choices", side_effect=ready_choices):
+        yield
 
 
 class OneShantenBranchTests(unittest.TestCase):
@@ -178,13 +200,14 @@ class OneShantenProbabilityTests(unittest.TestCase):
                                   "waits": [{"tile": "1m", "count": 1,
                                              "ronPoints": 0, "tsumoPoints": 1000}]}]}]
 
-        def ready_win(*args, opportunities=(), own_seat=0, **kwargs):
-            return (1., 1000.) if own_seat in opportunities else (0., 0.)
+        def ready_win(branch, opponents, opportunities, snapshot):
+            table = [advisor.Outcome(win=1., income=1000.) if snapshot["selfSeat"] in opportunities[i:]
+                     else advisor.Outcome(draw=1.) for i in range(len(opportunities) + 1)]
+            return [(option, table) for option in branch["options"]]
 
         orders = list(permutations(range(4)))
         expected = sum(any(tile < 2 for tile in order[:2]) for order in orders) / len(orders)
-        with patch.object(advisor, "_event_survival", return_value=1.), patch.object(
-                advisor, "_win_model", side_effect=ready_win):
+        with isolated_push(ready_win):
             probability, value, _, _ = advisor._one_shanten_model(branches, 4, self.opponents, (0, 0, 0), state())
         self.assertAlmostEqual(probability, expected)
         self.assertAlmostEqual(value, 1000)
@@ -431,8 +454,12 @@ class OneShantenRiskTests(unittest.TestCase):
                               "waits": [{"tile": "1m", "count": 1, "ronPoints": 1000, "tsumoPoints": 1000}]}
                     branches = [{"draw": "1m", "count": 2, "remaining": (1,) + (0,) * 33,
                                  "options": [option]}]
-                    with patch.object(advisor, "_event_survival", return_value=1.), patch.object(
-                            advisor, "_win_model", return_value=(child_probability, 1000.)):
+                    def ready(branch, enemies, opportunities, snapshot):
+                        table = [advisor.Outcome(win=child_probability, income=child_probability * 1000.,
+                                                 draw=1 - child_probability)] * (len(opportunities) + 1)
+                        return [(o, table) for o in branch["options"]]
+
+                    with isolated_push(ready):
                         win, value, terminal, loss = advisor._one_shanten_model(
                             branches, 2, opponents, events, state())
                     self.assertAlmostEqual(win, (1 - danger) * child_probability)
@@ -441,29 +468,40 @@ class OneShantenRiskTests(unittest.TestCase):
                     self.assertAlmostEqual(loss, danger * 8000)
                     unresolved = (1 - danger) * (1 - child_probability)
                     self.assertAlmostEqual(win + terminal + unresolved, 1.)
-        self.assertEqual(advisor._one_shanten_model(branches, 2, opponents, (), state()), (0., 0., 0., 0.))
+        with isolated_push(ready):
+            self.assertEqual(advisor._one_shanten_model(branches, 2, opponents, (), state()), (0., 0., 0., 0.))
 
-    def test_competition_only_scales_arrival_and_risk_does_not_repeat_after_misses(self):
+    def test_competition_and_miss_risk_scale_arrival_and_ready_risk_is_paid_once(self):
         option = {"discard": "7z", "furiten": False, "dealInProbability": .25,
                   "expectedDealInLoss": 2000.,
                   "waits": [{"tile": "1m", "count": 1, "ronPoints": 0, "tsumoPoints": 1000}]}
         branches = [{"draw": "1m", "count": 1, "remaining": (0, 2) + (0,) * 32,
                      "options": [option]}]
-        with patch.object(advisor, "_event_survival", return_value=.8), patch.object(
-                advisor, "_win_model", return_value=(.5, 1000.)):
-            win, value, terminal, loss = advisor._one_shanten_model(branches, 3, [], (0, 0), state())
-        # First arrival is 1/3 * .8; after one miss it is 2/3 * .8 * 1/2 * .8.
-        arrival = .8 / 3 + .8 ** 2 / 3
-        self.assertAlmostEqual(win, arrival * .75 * .5)
-        self.assertAlmostEqual(value, 1000)
-        self.assertAlmostEqual(terminal, arrival * .25)
-        self.assertAlmostEqual(loss, arrival * 2000)
+        def ready(branch, enemies, opportunities, snapshot):
+            table = [advisor.Outcome(win=.5, income=500., draw=.5)] * (len(opportunities) + 1)
+            return [(o, table) for o in branch["options"]]
+
+        for miss_risk in (0., .1):
+            with self.subTest(miss_risk=miss_risk), isolated_push(
+                    ready, survival=.8, miss_risk=miss_risk, miss_loss=miss_risk * 4000):
+                outcome = advisor._one_shanten_outcome(branches, 3, [], (0, 0), state())
+            # Arrival at a discard precedes that event's residual competition.
+            # A prior miss must survive both its discard and competition first.
+            arrival = 1 / 3 + (2 / 3) * (1 - miss_risk) * .8 * (1 / 2)
+            miss_mass = 2 / 3 + (2 / 3) * (1 - miss_risk) * .8 * (1 / 2)
+            win, value, terminal, loss = outcome.metrics()
+            self.assertAlmostEqual(win, arrival * .75 * .8 * .5)
+            self.assertAlmostEqual(value, 1000)
+            self.assertAlmostEqual(terminal, arrival * .25 + miss_mass * miss_risk)
+            self.assertAlmostEqual(loss, arrival * 2000 + miss_mass * miss_risk * 4000)
+            self.assertAlmostEqual(outcome.win + outcome.deal + outcome.tsumo + outcome.other + outcome.draw, 1.)
 
     def test_root_discard_conditions_future_probability_and_charges_loss_once(self):
         s = state()
         hand = s["hand"].copy()
         hand.remove("1m")
-        with patch.object(advisor, "_one_shanten_model", return_value=(.3, 2000., .2, 1600.)), patch.object(
+        with patch.object(advisor, "_one_shanten_outcome", return_value=advisor.Outcome(
+                win=.3, income=600., deal=.2, loss=1600., draw=.5)), patch.object(
                 advisor, "_danger", return_value=(.1, 500., [])):
             candidate = advisor._position(hand, s, advisor.unseen_counts(s), "1m")
         self.assertEqual(candidate["shanten"], 1)
