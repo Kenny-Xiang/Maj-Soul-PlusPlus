@@ -76,8 +76,15 @@ def public_state(raw, step):
             "Complete own hand and public history are required")
     require(raw.get("canDiscard") is True, "Snapshot must be taken before an own discard")
     require(raw.get("lastStep") == step, "Decision step differs from public snapshot")
+    round_ = raw["round"]
+    require(isinstance(round_, dict) and all(type(round_.get(key)) is int for key in ("chang", "ju", "ben")),
+            "round.chang, round.ju and round.ben must be present integers")
+    players = raw["playerCount"]
+    require(type(players) is int and players in (3, 4), "Invalid player count")
+    require(0 <= round_["chang"] < 4 and 0 <= round_["ju"] < players and round_["ben"] >= 0,
+            "Invalid round wind, dealer or honba")
     result = {key: raw[key] for key in PUBLIC_FIELDS if key in raw}
-    result["round"] = {key: raw.get("round", {}).get(key, 0) for key in ("chang", "ju", "ben")}
+    result["round"] = {key: round_[key] for key in ("chang", "ju", "ben")}
     result["rivers"] = []
     for river in raw["rivers"]:
         projected = []

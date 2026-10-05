@@ -65,6 +65,61 @@ class CalibrationExtractionTests(unittest.TestCase):
         self.assertEqual(feature["tedashiCount"], 1)
         self.assertEqual(feature["river"][0]["step"], 39)
 
+    def test_round_payment_inputs_are_required_and_preserved(self):
+        raw = self.data["matches"][0]["decisions"][0]["publicState"]
+        raw["riichi"][1] = True
+        raw["round"] = {"chang": 1, "ju": 1, "ben": 3}
+        original = deepcopy(self.data)
+        rows = calibration.extract(self.data, self.directory)["rows"]
+        payment = next(row for row in rows if row["matchId"] == "match-0" and
+                       row["layer"] == "paymentGivenRon")
+        self.assertEqual(payment["prediction"], 8600)
+        self.assertEqual(self.data, original)
+        for missing in (None, "chang", "ju", "ben"):
+            with self.subTest(missing=missing):
+                changed = deepcopy(self.data)
+                round_ = changed["matches"][0]["decisions"][0]["publicState"]["round"]
+                if missing is None:
+                    round_.clear()
+                else:
+                    round_.pop(missing)
+                before = deepcopy(changed)
+                with self.assertRaisesRegex(ValueError, "round"):
+                    calibration.extract(changed, self.directory)
+                self.assertEqual(changed, before)
+
+    def test_round_requires_an_object_with_strict_integer_fields(self):
+        raw = self.data["matches"][0]["decisions"][0]["publicState"]
+        for value in (None, [], "0-0-0", 0):
+            with self.subTest(round=value):
+                with self.assertRaisesRegex(ValueError, "round"):
+                    calibration.public_state({**raw, "round": value}, 40)
+        for key in ("chang", "ju", "ben"):
+            for value in (True, False, 0.0, "0", None, [], {}):
+                with self.subTest(field=key, value=value):
+                    changed = deepcopy(raw)
+                    changed["round"][key] = value
+                    with self.assertRaisesRegex(ValueError, "round"):
+                        calibration.public_state(changed, 40)
+
+    def test_round_ranges_follow_player_count(self):
+        for players in (3, 4):
+            raw = state(players=players)
+            for key, value in (("chang", -1), ("chang", 4), ("ju", -1),
+                               ("ju", players), ("ben", -1)):
+                with self.subTest(players=players, field=key, value=value):
+                    changed = deepcopy(raw)
+                    changed["round"][key] = value
+                    with self.assertRaisesRegex(ValueError, "round"):
+                        calibration.public_state(changed, 40)
+            for round_ in ({"chang": 0, "ju": 0, "ben": 0},
+                           {"chang": 3, "ju": players - 1, "ben": 100}):
+                with self.subTest(players=players, round=round_):
+                    raw["round"] = round_
+                    public = calibration.public_state(raw, 40)
+                    self.assertEqual(public["round"], round_)
+                    self.assertIsNot(public["round"], round_)
+
     def test_hidden_and_future_result_fields_do_not_reach_predictor(self):
         class Spy:
             MODEL = "spy"
