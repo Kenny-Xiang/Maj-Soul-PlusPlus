@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import patch
 
 import advisor
+from advisor_policy import Outcome
 from test_advisor import state, tiles
 from test_advisor_actions import get_action, own_action
 
@@ -116,7 +117,9 @@ class LockedRiskTests(unittest.TestCase):
             expected = advisor._win_model(0, 2, 10, 2, opponents, self.candidate["winningTiles"],
                                           opportunities=events, own_seat=0)
         actual = self.outcomes(chance=0., loss=0., events=events, survival=.9)
-        self.assertEqual(actual[:2], expected)
+        self.assertAlmostEqual(actual[0], expected[0], places=14)
+        self.assertAlmostEqual(actual[1], expected[1], places=10)
+        self.assertAlmostEqual(actual[0] * actual[1], expected[0] * expected[1], places=10)
         self.assertEqual(actual[2:], (0., 0.))
 
     def test_common_horizon_includes_forced_draws_beyond_twelve(self):
@@ -133,17 +136,27 @@ class LockedRiskTests(unittest.TestCase):
         committed["riichi"][0] = True
         hand = s["hand"].copy()
         hand.remove("1z")
-        with patch.object(advisor, "_locked_risk", return_value=(.125, 7000., .2, 1520.)):
+        continuation = Outcome(win=.125, income=.125 * 7000, deal=.2, loss=1520,
+                               tsumo=.15, tsumo_loss=120, other=.225, other_loss=30,
+                               draw=.3, draw_income=450)
+        with patch.object(advisor, "_ready_policy", return_value=[continuation]), patch.object(
+                advisor, "_danger", return_value=(.2, 1600., [])):
             before = advisor._position(hand, committed, remaining, "1z")
             candidate = advisor._riichi(s, choice, remaining)
         terms = candidate["scoreBreakdown"]
-        self.assertEqual(candidate["winProbability"], .125)
+        self.assertEqual(candidate["winProbability"], .1)
         self.assertEqual(candidate["expectedWinPoints"], 7000)
-        self.assertEqual(candidate["futureForcedDealInProbability"], .2)
-        self.assertEqual(terms["winIncome"], .125 * 7000)
-        self.assertEqual(terms["futureForcedDealInLoss"], -1520)
+        self.assertEqual(candidate["futureForcedDealInProbability"], .16)
+        self.assertEqual(terms["winIncome"], .8 * .125 * 7000)
+        self.assertEqual(terms["currentDealInLoss"], -1600)
+        self.assertEqual(terms["futureForcedDealInLoss"], -.8 * 1520)
+        self.assertEqual(terms["opponentTsumoLoss"], -.8 * 120)
+        self.assertEqual(terms["otherRonLiabilityLoss"], -.8 * 30)
+        self.assertEqual(terms["exhaustiveDrawPayment"], .8 * 450)
+        self.assertAlmostEqual(sum(candidate["terminalProbabilities"].values()), 1., places=14)
+        self.assertEqual(candidate["expectedRiichiCost"], 700)
         expected = before["score"] - candidate["expectedRiichiCost"]
-        self.assertAlmostEqual(candidate["score"], expected, delta=.55)
+        self.assertAlmostEqual(candidate["score"], expected, places=10)
         self.assertEqual(s, original)
 
 

@@ -6,6 +6,143 @@ action. It measures reproducibility, rule regressions, recommendation changes,
 and local calculation time; it does not establish stronger play or calibrated
 win probabilities.
 
+## Current: policy and terminal ledger (v7, 2026-10-05)
+
+The current model is `public-information-actions-ev-v7-policy-terminals` and
+remains explicitly uncalibrated. The sections below this one are historical
+results, including their historical test counts; they do not describe the
+current future-risk or fixed-tenpai-bonus behavior. Detailed assumptions are
+in [the policy document](advisor-policy.md), [calibration data contract](advisor-calibration.md)
+and [explicit endgame input contract](advisor-endgame.md).
+
+The physical `5p` regression uses the reachable four-round/called-white history,
+including discard steps and moqie. Before the change it returned 0.02025 deal-in
+probability and 20.25 points of loss, despite no physical ron shape remaining.
+It now returns exactly zero for both. Sequence, pair, chiitoitsu, sanma,
+red-five, four-group tanki and kokushi exclusions are covered; ordinary suji
+or a single wall does not imply absolute safety.
+
+Dama and riichi now use the same bounded ready-policy ledger; only dama may
+fold. Folding consumes the original hand's finite stock, loses subsequent
+wins and tenpai fees, and still pays discard risk. One-shanten routes include
+ineffective draws, the actual ready discard and maintenance of ready hands.
+Two-shanten and beyond compare coarse paid progress with a complete greedy
+fold starting from a minimum-current-loss legal discard (including all ties).
+That fold sacrifices win income and efficiency, instead of justifying a risky
+probe with hypothetical future safety. Kokushi retains its missing-orphan/pair
+state model. This does not exhaust all later retreat/re-entry policies.
+Future public evidence, actual miss identities, re-entry after folding and
+newly acquired safety are not exhaustively expanded. Fold-stock risk is
+frozen and can conservatively miss safety established by a subsequent draw.
+
+Each candidate exposes mutually exclusive `terminalProbabilities`: self win,
+current plus future deal-in, opponent tsumo, other-player ron, ordinary draw,
+and known abortive draw when applicable. `futureFoldProbability` is diagnostic,
+not another ending. Self-payment on enemy tsumo and visible pao is separate
+from the winner's deposits. The old residual competition hazard is charged
+once and split 40%/60% between tsumo and other ron: these remain unfitted
+constants, and their per-event allocation is not constrained by the actor's
+actual draw opportunity. Unknown pao source and pao honba use disclosed payment
+lower bounds. Draw fees enumerate independent frozen opponent readiness with
+3000/2000-point four-/three-player pools, only on surviving ordinary draws.
+The old fixed `lateTenpaiReward` has been removed. Efficiency and rank risk
+preferences remain heuristics separate from monetary terminal outcomes.
+
+There is no sufficient labelled corpus for empirical calibration: the
+available recording has 60 frames/48 events (steps 63–110), no opening or
+terminal event, and 16 hidden tiles among 22 draws. The 49 fixtures do not have
+per-decision hidden-hand labels. `scripts/advisor_calibration.py` audits this
+limitation and provides public-only extraction and whole-match/time-separated
+train/validation/test evaluation for separately labelled readiness, conditional
+ron and payment. No coefficients were fitted or deployed from this corpus.
+`round.isFinal: true` enables bounded rank preferences only when supplied by a
+trusted caller; the live collector does not yet provide match-length metadata.
+
+### Reproduction and measured results
+
+The starting advisor baseline is `150dfd9`. During implementation another chat
+committed the pre-existing white-dragon concealed-kan change as `764b69b`;
+that commit's advisor is byte-identical to the baseline and its core changes
+were preserved. Comparisons use the explicit original ref, not a moving HEAD.
+
+```sh
+PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover -s tests -p 'test_advi*.py'
+.venv/bin/python scripts/advisor_calibration.py audit --output build/strategy-v7/calibration-audit.json
+# all-cases.json concatenates the three existing advisor fixture case arrays.
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/advisor_compare.py \
+  --baseline 150dfd9 --fixtures build/strategy-v7/all-cases.json \
+  --warmups 1 --repeats 5 --output build/strategy-v7/comparison.json
+```
+
+All **232 advisor/worker/benchmark tests passed**, including original one-second
+representative replacement and two-second cooperative budget checks. Node
+protocol tests passed 32/32 and Python formatting/logging tests 6/6. The full
+fixture suite checks input immutability, legality, terminal mass, red/sanma
+rules, score reconciliation, cache isolation and cancellation. The original
+baseline passed 176 advisor-related tests before edits. Frozen App verification
+skips only the two tests requiring a Git checkout/Python CLI subprocess;
+`unittest.mock` and `platform` are explicitly bundled for offline verification.
+
+The isolated comparison used 49 states, one warmup and five measured passes,
+245 samples per version. All states retained their expected availability and
+all repeated full outputs were deterministic (apart from elapsed time).
+
+| Source | Median ms | P95 ms | Maximum ms |
+|---|---:|---:|---:|
+| Original v6 (`150dfd9`) | 4.832 | 507.971 | 760.504 |
+| v7 working source | 9.412 | 723.153 | 1096.508 |
+
+The extra policy calculation has a measurable cost; the two-second limit was
+not raised. Decision-local public-price/risk/policy tables avoid repeated
+identical work. Fold-table compression was independently compared on 500
+random inputs/24,761 suffixes: maximum probability discrepancy 1.11e-15 and
+maximum payment discrepancy 2.91e-11 points. Across all fixed-state candidates,
+terminal mass differs from one by at most 2.45e-15. These checks establish
+accounting/reproducibility, not calibrated frequencies or stronger play.
+
+### Recommendation changes and controls
+
+Five states changed their recommendation or post-call discard. The advantage
+below compares both actions under v7; positive component deltas favor the new
+choice. Raw per-candidate ledgers are retained in `comparison.json`.
+
+| State | v6 → v7 | v7 score advantage | Main ledger differences (points) |
+|---|---|---:|---|
+| closed-tsumo-only-tenpai | discard 1s → 1z | 106.1 | draw transfer +105.2; win income −81.0; efficiency +68.1; future discard loss +12.8 |
+| new-riichi-changed-waits | discard 9m → riichi 7m | 194.6 | win income +867.1; deposit −580.4; draw transfer −88.1; future dama/forced risk changes separately |
+| chi-called-low-yakuhai | same chi, discard 2z → 5p | 77.0 | draw transfer +653.3; win income −416.7; future discard loss −62.7; efficiency −56.8 |
+| phase-one-own-draw | discard 7z → 7p | 0.1 | draw transfer +0.052, future discard loss +0.004; a near tie sensitive to rounding/approximations |
+| phase-two-own-draws | discard 7z → 2m | 10.2 | current discard loss −40.3; draw transfer +38.8; efficiency +12.0 |
+
+The coarse-fold regression was added after a reproducible intermediate
+model defect: forcing a remote hand to keep pushing could prefer a cheap
+immediate deal-in merely because it terminated an expensive projected future.
+The complete greedy-fold alternative restores the early-riichi control to
+safe 1s, and gets neither future win income nor an efficiency reward. Current
+root risk still absorbs future outcomes once; it is not erased or penalized
+a second time. Passed-tile evidence remains restricted to future survivors.
+
+| Requested control | v6 → v7 result | v7 accounting |
+|---|---|---|
+| early quiet | 4p / 98.2 → 4p / −530.2 | current loss 33.8; future loss 340.1; opponent tsumo 92.8; draw transfer −144.2; efficiency 136 |
+| early riichi | 1s / 96.1 → 1s / −2852.2 | current hit/loss 0; committed fold, future loss 2027.2; no win or efficiency income |
+| no own draw | 7z / −25.9 → 7z / −919.8 | hit 1.72%, loss 22.49; all candidate win/efficiency terms remain zero; draw transfer −889.3 |
+| late valuable tenpai | 1z / 2414.0 → 1z / 1342.5 | win 23.48%, current hit 8.38%; win income 1335.8; future loss 361.7; actual draw transfer +517.9 |
+
+The late valuable hand still accepts risk to preserve tenpai, but no longer
+gets the old unconditional 1017.9-point bonus. Negative early scores now also
+reflect projected future payments; the score scale is not comparable to v6
+as if only the action quality had changed.
+
+Native replay and overlay tests remain **unverified**, with the same baseline
+failures on both `150dfd9` and `764b69b`: empty replay packets after about 20 s,
+and `WKErrorDomain Code=5` with sandbox-extension denials. Current source
+reproduces those failures. No extra permissions or real game connections were
+used. Logs, bundle source hashes, build diagnostics and desktop-delivery checks
+are preserved under `build/strategy-v7/`; the bundle must be rebuilt and
+verified as a whole, because copying its reference source does not update the
+frozen runtime.
+
 ## Public opponent evidence (v6, uncalibrated)
 
 Opponent risk now exposes three separate quantities in `opponentRisks`:

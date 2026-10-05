@@ -13,7 +13,7 @@ for name in ('README.md', 'README.en.md', '.gitignore', 'requirements.txt', 'req
     datas.append((str(root / name), 'source'))
 
 a = Analysis([str(root / 'src/monitor.py')], pathex=[str(root / 'src')], datas=datas,
-             hiddenimports=['monitor', 'Foundation', 'AppKit', 'WebKit', 'unittest'],
+             hiddenimports=['monitor', 'Foundation', 'AppKit', 'WebKit', 'unittest', 'unittest.mock', 'platform'],
              hookspath=[], runtime_hooks=[], excludes=[], noarchive=False)
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='Maj-Soul++',

@@ -102,7 +102,9 @@ class PhaseRewardTests(unittest.TestCase):
         ratios = [c["scoreBreakdown"].get("efficiencyReward", 0) /
                   (70 * (6 - c["shanten"]) + 2 * c["ukeire"]) for c in advice["candidates"]]
         self.assertTrue(all(abs(r - ratios[0]) < 1e-12 for r in ratios))
-        self.assertLess(advice["best"]["expectedDealInLoss"], candidate["expectedDealInLoss"])
+        # Shared efficiency scaling remains, while actual future risk and
+        # draw settlement can now make this same discard competitive.
+        self.assertLessEqual(advice["best"]["expectedDealInLoss"], candidate["expectedDealInLoss"])
 
     def test_early_shape_space_remains_but_early_riichi_still_matters(self):
         s = quiet_state("147m147p147s12345z", 5)
@@ -138,7 +140,8 @@ class PhaseRewardTests(unittest.TestCase):
         self.assertGreaterEqual(sum(w["count"] for w in best["winningTiles"]), 4)
         self.assertGreater(best["winProbability"], 0)
         self.assertGreater(best["dealInProbability"], 0)
-        self.assertGreater(best["scoreBreakdown"].get("lateTenpaiReward", 0), 0)
+        self.assertGreater(best["scoreBreakdown"].get("exhaustiveDrawPayment", 0), 0)
+        self.assertNotIn("lateTenpaiReward", best["scoreBreakdown"])
 
 
 if __name__ == "__main__":
