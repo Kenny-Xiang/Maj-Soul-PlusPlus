@@ -253,9 +253,10 @@ function apply(state, e) {
     } else if (e.type === 3) {
       const family = tileFamily(e.tile), ownKnown = e.seat === state.selfSeat && state.handComplete;
       // Normal ranked play has one red five per suit; the action only names a family.
+      const redAssumed = !ownKnown && /^5[mps]$/.test(family);
       const tiles = ownKnown ? state.hand.filter(tile => tileFamily(tile) === family) :
-        family?.[0] === '5' ? [`0${family[1]}`, family, family, family] : [family, family, family, family];
-      state.melds[e.seat].push({type: 3, tiles, froms: [], redAssumed: !ownKnown && family?.[0] === '5'});
+        redAssumed ? [`0${family[1]}`, family, family, family] : [family, family, family, family];
+      state.melds[e.seat].push({type: 3, tiles, froms: [], redAssumed});
       if (e.seat === state.selfSeat) for (let i = 0; i < 4; i++) remove(e.tile, true);
     } else invalidate(`未知杠类型 ${e.type}`);
     if (e.seat === state.selfSeat) state.lastDraw = null;

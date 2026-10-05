@@ -120,6 +120,20 @@ analysis=await_advice('analysis')
 assert analysis['best']['action']=='wait',analysis
 assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.advice').dataset.status")=='analysis'
 
+# An opponent's white-dragon kan must not poison this or later advice with 0z.
+honor_kan_hand=['1m','2m','3m','1p','2p','3p','1s','2s','3s','4s','5s','7z','7z']
+start_hand(honor_kan_hand,[],3)
+await_advice('analysis')
+feed(action_frame('ActionAnGangAddGang',1,num(1,3)+num(2,3)+string(3,'5z')))
+await_advice('analysis')
+feed(action_frame('ActionDealTile',2,num(1,3)+num(3,59)))
+await_advice('analysis')
+feed(action_frame('ActionDiscardTile',3,num(1,3)+string(2,'9p')))
+await_advice('analysis')
+feed(action_frame('ActionDealTile',4,num(1,0)+string(2,'1z')+num(3,58)+blob(4,operation([(1,[])]))))
+after_honor_kan=await_advice('ready')
+assert after_honor_kan['best']['tile'] in honor_kan_hand+['1z'],after_honor_kan
+
 riichi_hand=['1m','2m','3m','4m','5m','6m','1p','2p','3p','4s','5s','7z','7z','1z']
 start_hand(riichi_hand,[(1,[]),(7,['1z'])],0)
 riichi=await_advice('ready')

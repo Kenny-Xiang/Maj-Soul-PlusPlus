@@ -310,6 +310,22 @@ test('closed kans preserve actual own red tiles and represent opponent red fives
   assert.equal(s.melds[1][0].redAssumed,true);
 });
 
+test('opponent honor kans preserve four identical tiles without assuming a red five', () => {
+  for (const tile of ['1z','2z','3z','4z','5z','6z','7z']) {
+    const s = core.emptyState();
+    core.apply(s,{name:'ActionNewRound',step:0,selfSeat:0,
+      hand:['1m','2m','3m','1p','2p','3p','1s','2s','3s','4s','5s','6s','9p'],
+      scores:[25000,25000,25000,25000],doras:[],left:60,chang:0,ju:3,ben:0});
+    const event = core.action(core.envelope(actionFrame('ActionAnGangAddGang',1,
+      [...num(1,3),...num(2,3),...str(3,tile)])).data);
+    core.apply(s,event);
+    assert.deepEqual(s.melds[3][0].tiles,[tile,tile,tile,tile],tile);
+    assert.equal(s.melds[3][0].redAssumed,false,tile);
+    assert.equal(s.handComplete,true);
+    assert.equal(s.historyComplete,true);
+  }
+});
+
 test('normal and double riichi are confirmed per player and reset on the next round', () => {
   for (const flag of [3, 9]) {
     const s = core.emptyState();
