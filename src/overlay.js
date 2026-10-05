@@ -136,7 +136,9 @@
       row(advice, 'advice-message', result.message || '等待可分析的手牌');
       return;
     }
-    row(advice, 'advice-title', result.status === 'analysis' ? '当前手牌评估' : '当前建议');
+    const strategy = { attack: '进攻', fold: '弃和', locked: '立直续打', replacement: '补牌后分别决策' }[best.currentStrategy];
+    const title = result.status === 'analysis' ? '当前手牌评估' : '当前建议';
+    row(advice, 'advice-title', strategy ? `${title} · ${strategy}` : title);
     const recommendation = row(advice, 'recommendation', '');
     row(recommendation, 'best-tile' + (best.action && best.action !== 'discard' ? ' best-action' : ''), actionName(best));
     if (best.action !== 'abort') {

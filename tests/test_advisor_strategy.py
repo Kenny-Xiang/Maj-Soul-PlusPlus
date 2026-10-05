@@ -12,14 +12,17 @@ from test_advisor_phase import quiet_state
 class StrategyTests(unittest.TestCase):
     def test_remote_hand_can_choose_real_fold_instead_of_cheap_early_deal_in(self):
         s = quiet_state("147m147p147s12345z", 5)
-        self.assertEqual(advisor.advise(s)["best"]["tile"], "4p")
+        quiet = advisor.advise(s)["best"]
         s["riichi"][1] = True
         s["scores"][1] -= 1000
         s["riichiSticks"] = 1
         c = advisor.advise(s)["best"]
         self.assertEqual(c["tile"], "1s")
+        self.assertEqual(c["currentStrategy"], "fold")
+        self.assertGreater(c["policyComparison"]["fold"], c["policyComparison"]["attack"])
+        self.assertLess(c["score"], quiet["score"])
         self.assertEqual(c["dealInProbability"], 0)
-        self.assertEqual(c["futureFoldProbability"], 1)
+        self.assertEqual(c["futureFoldProbability"], 0)
         self.assertEqual(c["winProbability"], 0)
         self.assertNotIn("efficiencyReward", c["scoreBreakdown"])
 
