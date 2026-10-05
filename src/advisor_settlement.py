@@ -27,7 +27,22 @@ def opponent_payments(state, enemy):
     own_cost = "main" if seat == state["round"]["ju"] else "additional"
     visible = enemy["yakumanPayment"]
     if not visible:
-        cost = ScoresCalculator.calculate_scores(enemy["han"], enemy["fu"], cfg)
+        closed = not enemy["openMeldCount"]
+        prior = 3 if enemy["riichi"] else max(1, enemy["yakuhai"])
+        known = (enemy["yakuhai"] + 2 * enemy["allTriplets"] + int(closed) +
+                 (2 if cfg.is_daburu_riichi else int(enemy["riichi"])))
+        # Four honor groups guarantee honitsu for any suited pair; an honor
+        # pair instead gives all-honors yakuman, so two han remain a floor.
+        if enemy["meldCount"] == 4 and not any(enemy["visibleCounts"][:27]):
+            known += 2
+        # The riichi prior already includes unknown yaku; only raise it to
+        # the public floor, retaining visible dora/red/North bonuses once.
+        han = max(prior, known) + enemy["han"] - prior
+        # publicFu contains group/tanki fu and the closed-ron bonus. Tsumo
+        # replaces that ten-fu bonus with two fu; the unknown pair adds none.
+        public_fu = enemy["publicFu"] - 10 * closed + 2
+        fu = max(30, (public_fu + 9) // 10 * 10)
+        cost = ScoresCalculator.calculate_scores(han, fu, cfg)
         return cost[own_cost] + cost[own_cost + "_bonus"], 0.
 
     cfg.tsumi_number = 0

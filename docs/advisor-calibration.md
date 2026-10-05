@@ -79,6 +79,8 @@ PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/advisor_calibration.py audit 
   `round` 的 `chang`、`ju`、`ben`、`doras`、`north`、`riichi`、
   `riichiPending`、`riichiStep`、`left` 必须按真实状态提供，
   `doubleRiichi` 可省略（默认无双立直）。
+  `round` 必须包含整数 `chang`（0–3）、`ju`（0 至 `playerCount − 1`）和
+  `ben`（非负）；不接受布尔值或缺失字段，也不会用零补齐。
 - 每条河牌需要 `tile`、`step`、布尔 `moqie`，被鸣走的牌还须正确设置 `called`。
   河牌严格按 step 排序。每个副露需要 `type`、`tiles`、形成或更新的 `step`，
   有来源信息时保留 `froms`。加杠用当前加杠更新 step。所有 step 不得超过决策步。
@@ -148,6 +150,6 @@ PYTHONPATH=src PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m unittest discover \
   -s tests -p 'test_advisor_calibration.py'
 ```
 
-10 项合成流程测试验证分母、输入不变、隐藏字段隔离、历史时序、完整标签、
+13 项合成流程测试验证分母、输入不变、隐藏字段隔离、局数类型与范围、历史时序、完整标签、
 重复场/步骤拒绝、三麻和赤牌身份、整场跨界排除、留出标签不参与拟合、
-已知解析指标与确定性边界。**这 10 项测试通过不等于实战概率被校准。**
+已知解析指标与确定性边界。**这 13 项测试通过不等于实战概率被校准。**

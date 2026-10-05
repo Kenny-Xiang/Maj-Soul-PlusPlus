@@ -36,8 +36,10 @@ class CallAdviceTests(unittest.TestCase):
         s = offered("55z123m456p23s99p1z", 3, ["5z|5z"], "5z")
         a = advise(s)
         self.assertEqual(a["best"]["action"], "pon")
-        self.assertEqual(a["best"]["followupDiscard"], "1z")
-        self.assertEqual(a["best"]["shanten"], 0)
+        # Dedicated tsumo payments make 2s's terminal score narrowly exceed
+        # the immediate-tenpai continuation after 1z.
+        self.assertEqual(a["best"]["followupDiscard"], "2s")
+        self.assertEqual(a["best"]["shanten"], 1)
         self.assertGreater(a["best"]["winProbability"], get_action(s, "pass")["winProbability"])
         self.assertGreater(a["best"]["expectedWinPoints"], 0)
 
