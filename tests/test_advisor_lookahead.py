@@ -42,10 +42,18 @@ def isolated_push(ready_choices, survival=1., miss_risk=0., miss_loss=0.):
     def no_fold(events, *args):
         return [[advisor.Outcome(draw=1., draw_income=-1e9)] for _ in range(len(events) + 1)]
 
+    def choices(branch, enemies, opportunities, snapshot):
+        # These abstract urn proofs provide one ready option; shape is not
+        # under test, but the mocked choice obeys the full policy contract.
+        return [({**option, "_foldTable": None,
+                  "_tieHand": tuple(option.get("hand", snapshot["hand"])),
+                  "_tieRemaining": branch["remaining"], "_tieSpecial": True}, table)
+                for option, table in ready_choices(branch, enemies, opportunities, snapshot)]
+
     with patch.object(advisor, "_policy_environment", return_value=(survival, (0., 0.), (0., 0.))), \
             patch.object(advisor, "_policy_risks", side_effect=risks), \
             patch.object(advisor, "fold_table", side_effect=no_fold), \
-            patch.object(advisor, "_ready_choices", side_effect=ready_choices):
+            patch.object(advisor, "_ready_choices", side_effect=choices):
         yield
 
 
@@ -513,8 +521,8 @@ class OneShantenRiskTests(unittest.TestCase):
         self.assertEqual(terms["futureDiscardDealInLoss"], -1440)
         self.assertAlmostEqual(terms["winIncome"], 540)
         self.assertAlmostEqual(terms["riskPreferenceAdjustment"], -(advisor._risk_weight(s) - 1) * 1940)
-        self.assertEqual(candidate["score"], round(540 - advisor._risk_weight(s) * 1940 +
-                                                  70 * 5 + 2 * candidate["ukeire"], 1))
+        self.assertEqual(candidate["score"], round(540 - advisor._risk_weight(s) * 1940, 1))
+        self.assertNotIn("efficiencyReward", terms)
 
 
 if __name__ == "__main__":

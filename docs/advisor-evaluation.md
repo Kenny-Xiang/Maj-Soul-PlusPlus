@@ -6,9 +6,190 @@ action. It measures reproducibility, rule regressions, recommendation changes,
 and local calculation time; it does not establish stronger play or calibrated
 win probabilities.
 
-## Current: policy and terminal ledger (v7, 2026-10-05)
+## Current: explicit current policy and semantic ties (v8, 2026-10-05)
 
-The current model is `public-information-actions-ev-v7-policy-terminals` and
+The current model is `public-information-actions-ev-v8-current-policy` and is
+still uncalibrated. This change builds on the completed v7 work in PR #21,
+commit `0415bd3441b08b3699e8ae19223786d5ae8db1ed`. Its source was checked against
+the frozen v7 snapshot before comparison; it is not compared with an older v6
+HEAD merely because the primary checkout was restored after PR creation.
+The v7 and earlier sections below retain their historical measurements.
+
+The primary score now contains terminal payments and applicable action costs,
+without an additive efficiency reward. `currentStrategy` distinguishes
+`attack`, `fold`, and already-riichi `locked` decisions. A current fold consumes
+held physical tiles, earns no self-win income and takes noten settlement on a
+surviving ordinary draw. It is offered at every shanten level, including when
+no held tile is risk-free. Its first discard must minimize current expected
+loss over all legal discards; this preserves v7's guard against justifying a
+dangerous probe using the safety information obtained only if it survives.
+Future changes of safety and re-entry are frozen within this approximation;
+each actual new snapshot is evaluated afresh.
+
+`futureFoldProbability` describes later retreat while currently continuing;
+it is zero when the current choice is already a fold. Replacement branches
+record their own current policy and contribute any branch fold to the root's
+future-fold diagnostic. A legal server-provided win still takes priority.
+Pure defensive calls do not pay the existing no-yaku attack penalty; that
+penalty is now applied before policy and post-call-discard selection.
+
+All action windows compare full-precision scores. Only floating-point ties
+(absolute tolerance `1e-9`, relative tolerance `1e-12`, fixed best anchors)
+proceed through expected adverse payments, current loss, usable physical
+safety stock, self-win probability, scored ron waits, reachable shape and
+effective count. Remaining ties compare the expected increase in effective
+tiles after a same-shanten exchange. Tile encoding is the final stability
+fallback. There is no blanket honor-discard rule or new push threshold.
+See [the policy document](advisor-policy.md) for the exact ordering and bounds.
+
+Coarse distant-hand valuation also separates tsumo and ron. An unidentified
+closed ron route cannot obtain income from menzen-tsumo yaku; its ron estimate
+is conservatively zero. Future shape changes may still establish a real yaku.
+Known projected yaku and sanma payments use the corresponding actor's score.
+This does not fully enumerate later discards or eliminate assumptions that
+projected yaku and dora can be retained.
+
+### Reproduction and measured results
+
+The 49 existing cases and eight recorded public snapshots form 57 states.
+The historical v6 outputs for the eight snapshots were also reproduced at
+`150dfd9`: all full outputs matched the original recording except elapsed time.
+The committed log fixtures contain complete public decision inputs and no
+assertion that the subsequently observed loss determines the best action.
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python -m unittest discover -s tests -p 'test_advi*.py'
+node --test tests/test.cjs
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python -m unittest discover -s tests -p test_python.py
+.venv/bin/python - <<'PY'
+import json
+from pathlib import Path
+output = Path('build/current-policy-v8')
+output.mkdir(parents=True, exist_ok=True)
+names = ('advisor_cases.json', 'advisor_threat_cases.json',
+         'advisor_phase_cases.json', 'advisor_policy_logged_cases.json')
+cases = [case for name in names for case in
+         json.loads((Path('tests/fixtures') / name).read_text())['cases']]
+(output / 'combined-cases.json').write_text(json.dumps({'schemaVersion': 1, 'cases': cases}))
+PY
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/advisor_compare.py \
+  --baseline 0415bd3441b08b3699e8ae19223786d5ae8db1ed \
+  --fixtures build/current-policy-v8/combined-cases.json \
+  --warmups 1 --repeats 5 --output build/current-policy-v8/comparison.json
+```
+
+All **285 advisor/worker/benchmark tests passed**, including the original
+one-second representative replacement test and unchanged two-second budget.
+Node protocol tests passed 32/32; Python formatting/logging tests passed 6/6.
+New checks cover raw/display ties, candidate-order and suit permutations,
+honor-pair/yakuhai/kokushi controls, defense without genbutsu, valuable attack,
+policy metadata, physical inventory, cancellation and isolated caches.
+Existing payment proofs were retained; tests formerly expecting an efficiency
+payment now check its exclusion from money and its secondary shape role.
+
+Each version ran in a fresh interpreter, with one full warmup and five
+measured passes: 285 samples per version. Every case retained its expected
+availability, all inputs were unchanged, and repeated full outputs were
+identical except elapsed time.
+
+| Source | Median ms | P95 ms | Maximum ms |
+|---|---:|---:|---:|
+| Frozen v7 / PR #21 (`0415bd3`) | 14.336 | 702.877 | 1092.705 |
+| v8 source | 41.417 | 758.158 | 1028.046 |
+
+The measured source SHA-256 values (the runner's whole-`src` digest) are
+`fdbf1ca454b995653c0bdee98599a77cda7c6f323fb16857d9a69526a1f77988` for v7 and
+`ed07ca86c60f0820c46f6a2f47a7f35991e7bc990dea7c646adc709fd520f939` for v8.
+These measurements include the additional policy/tie work; they are not a
+general speedup claim or a worst-case timing guarantee. Exact optimizations
+reuse scoring and structural results, skip impossible physical draws, and
+skip sorting losing nested groups. Identical DP ledgers require no further
+tile distinction. Equivalence and cache tests protect those shortcuts.
+
+Across 552 current candidates, terminal mass differs from one by at most
+`2.45e-15`, displayed score reconciliation differs by at most `4.55e-13`, and
+the final rounding adjustment is below 0.05 points. No candidate includes
+`efficiencyReward` in its monetary breakdown; 16 candidates select a current
+fold. These are accounting properties, not empirical probability calibration.
+
+### Recorded decisions and remaining limitations
+
+Eight of the 57 states changed the recommendation or post-call discard:
+`river-furiten`, `pon-yakuhai`, `phase-no-own-draw`, `phase-two-own-draws`,
+`phase-early-quiet`, and logged decisions 766, 798 and 1398. A yakuhai pon
+still wins but its follow-up changes from 1z to 2s; the complete terminal
+estimate values 2s at 1220.6 versus 1z at 1167.7, without forcing the lowest
+shanten by an additive reward. The weak quiet-hand control now selects a
+current fold, while the valuable live-tenpai control continues attacking.
+
+The advantage below compares both choices under v8, not scores across models.
+Small advantages are sensitive to the disclosed approximations.
+
+| State | v7 → v8 choice | v8 net advantage | Main reason |
+|---|---|---:|---|
+| river-furiten | 1z → 4s | 3.897 | expected draw transfer +44.34 offsets lower win income and higher future costs; it does not increase win chance |
+| pon-yakuhai | pon, then 1z → 2s | 52.87 | expanded post-call window prefers its complete terminal estimate; the aggregate report only stores the selected follow-up |
+| phase-no-own-draw | 7z → 7p | 0.068 | full-precision net values differ although both display -919.8; no future self-draw or self-win income |
+| phase-two-own-draws | 2m → 7p | 50.340 | current fold reduces current/future loss by 40.30/77.32, paying more noten cost |
+| phase-early-quiet | 4p → 1s | 85.353 | current fold reduces current/future loss by 33.80/59.55 and gives up its small attack income |
+| logged 766 | 3s → 6z | 0 | same-shanten shape improvement at a true monetary tie |
+| logged 798 | 2s → 6z | 0 | same-shanten shape improvement at a true monetary tie |
+| logged 1398 | 7s → 9s | 515.561 | attack earns 561.41 more win income and pays 540.09 less future loss, accepting 674.96 more current loss |
+
+| Recorded turn | Original v6 | Frozen v7 | v8 | Current v8 policy |
+|---|---|---|---|---|
+| 766 | 3s | 3s | 6z | attack |
+| 786 | 2p | 2p | 2p | attack |
+| 798 | 2s | 2s | 6z | attack |
+| 906 | 4p | 6z | 6z | attack |
+| 1358 | 5p | 5p | 5p | attack |
+| 1386 | 9p | 9p | 9p | attack |
+| 1398 | 7s | 7s | 9s | attack |
+| 1410 | 2p | 2p | 2p | attack |
+
+For 766 and 798 the compared candidates have equal modeled net outcomes;
+same-shanten improvement breaks the tie in favor of discarding 6z. In 786,
+the modeled safety and shape criteria still tie, so 2p remains a stable
+fallback and the explanation identifies the modeled equivalence. Valuable
+honor sets/pairs and actual kokushi routes are separate regression controls.
+
+The 906 recommendation was already corrected by v7 and is not claimed as a
+new v8 fix. Its two-shanten 4p continuation now earns 707.58 points of expected
+win income instead of v7's 1962.33, while still paying 539.39 points of future
+discard loss. Its v8 score is 174.23, below the one-shanten 6z route at 1740.49.
+
+For 1358, two-shanten 5p still narrowly leads one-shanten 9s:
+684.3227 versus 673.3774, only **10.9453 points**. Its win income is lower
+(1074.54 versus 1119.38); lower estimated future discard loss (545.13 versus
+647.33) helps offset that. The gap shrank from about 1241.5 in v7, but model
+error can easily exceed the remaining gap. Coarse future discard/dora
+retention and exact one-shanten waits still have different precision. This
+does not prove 5p is the stronger real choice or that lower shanten must win.
+
+**1410 still recommends attacking with 2p.** Its v8 score is -4597.0390,
+versus -4904.8593 for attacking with 1s and -5163.6998 for attacking with 9s.
+The eligible current-fold first discard is 9s, with fold score -6450.3047.
+The 2p path now earns 482.40 points of win income (6.89% displayed win chance,
+7000 conditional points), pays 1257.20 current and 2859.72 future discard
+loss, plus risk preference and other terminal payments. It receives no
+efficiency income. The pure-fold approximation can understate real defensive
+value by forgoing accidental wins and safe tenpai; coarse attack can overstate
+future shape/dora retention. No result here proves avoidance of the recorded
+18000-point loss or identifies a counterfactual winning discard.
+
+Native replay and overlay remain **unverified**: this source again produced
+empty replay packets and `WKErrorDomain Code=5` with sandbox-extension failures.
+Algorithm and Node passes are not a native UI pass. Local comparison inputs,
+raw candidate ledgers, source hashes and validation logs are retained under
+`build/current-policy-v8/` and are not committed. This work is delivered as a
+PR dependent on #21; the primary checkout stays clean. The installed Desktop
+App remains v7 until explicitly replaced; a source PR does not update that
+frozen runtime. Built-v8 runtime validation and delivery status are reported
+separately from source tests.
+
+## Historical: policy and terminal ledger (v7, 2026-10-05)
+
+The v7 model is `public-information-actions-ev-v7-policy-terminals` and
 remains explicitly uncalibrated. The sections below this one are historical
 results, including their historical test counts; they do not describe the
 current future-risk or fixed-tenpai-bonus behavior. Detailed assumptions are

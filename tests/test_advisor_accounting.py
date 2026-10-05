@@ -1,4 +1,4 @@
-"""Original score accounting preserves precision and action-specific resets."""
+"""Monetary score accounting preserves precision and action-specific resets."""
 import json
 from math import fsum, isfinite
 from pathlib import Path
@@ -17,11 +17,12 @@ class ScoreAccountingTests(unittest.TestCase):
         self.assertIn("roundingAdjustment", terms)
         self.assertTrue(all(isfinite(value) for value in terms.values()))
         self.assertAlmostEqual(fsum(terms.values()), candidate["score"], places=8)
-        # A single score rounds to 0.1; extensions and replacement means can
-        # carry one prior rounding too. A missing semantic term is not rounding.
-        self.assertLessEqual(abs(terms["roundingAdjustment"]), .101)
+        # Keep raw precision through extensions and replacement means; only
+        # the final display rounds to 0.1. Shape belongs to tie breaking.
+        self.assertLessEqual(abs(terms["roundingAdjustment"]), .05000001)
+        self.assertNotIn("efficiencyReward", terms)
         for key, value in terms.items():
-            if key in ("winIncome", "efficiencyReward"):
+            if key == "winIncome":
                 self.assertGreater(value, 0)
             elif key not in ("roundingAdjustment", "riskPreferenceAdjustment", "exhaustiveDrawPayment"):
                 self.assertLess(value, 0)
@@ -103,7 +104,9 @@ class ScoreAccountingTests(unittest.TestCase):
         self.assertEqual(terms["currentDealInLoss"], -987.654321)
         self.assertEqual(terms["opponentTsumoLoss"], -(1 - danger) * continuation.tsumo_loss)
         self.assertEqual(terms["exhaustiveDrawPayment"], (1 - danger) * continuation.draw_income)
-        self.assertEqual(terms["riichiCost"], -1000 * (1 - candidate["dealInProbability"] - candidate["winProbability"]))
+        self.assertEqual(terms["riichiCost"], -1000 * (1 - danger - (1 - danger) * continuation.win))
+        self.assertNotEqual(terms["riichiCost"],
+                            -1000 * (1 - candidate["dealInProbability"] - candidate["winProbability"]))
         self.assertAlmostEqual(terms["riskPreferenceAdjustment"],
                                (advisor._risk_weight(s) - 1) *
                                (terms["currentDealInLoss"] + terms["futureForcedDealInLoss"]))
@@ -122,9 +125,9 @@ class ScoreAccountingTests(unittest.TestCase):
         candidate = get_action(s, "chi")
         self.assertEqual(self.assert_ledger(candidate)["openNoYakuPenalty"], -500)
 
-    def test_four_kan_only_direct_replacement_wins_keep_shape_reward(self):
-        # A simple kan cannot be robbed for kokushi, making the physical draw
-        # weights independently sufficient to check the surviving +420 reward.
+    def test_four_kan_only_direct_replacement_wins_contribute_income(self):
+        # A simple kan cannot be robbed for kokushi, so physical draw weights
+        # independently determine the surviving win probability.
         s = own_action("2222m123p123s12s55z", 4, ["2m|2m|2m|2m"])
         s["melds"][1] = [{"type": 3, "tiles": tiles(t)} for t in ("7777m", "7777p", "9999p")]
         candidate = get_action(s, "ankan")
@@ -135,11 +138,13 @@ class ScoreAccountingTests(unittest.TestCase):
         winning = sum(o["count"] for o in outcomes if o["winProbability"] == 1)
         self.assertGreater(winning, 0)
         self.assertLess(winning, sum(o["count"] for o in outcomes))
-        self.assertAlmostEqual(terms["efficiencyReward"], 420 * winning / sum(o["count"] for o in outcomes))
+        self.assertEqual(candidate["winProbability"], round(winning / sum(o["count"] for o in outcomes), 4))
+        self.assertGreater(terms["winIncome"], 0)
+        self.assertNotIn("efficiencyReward", terms)
         self.assertNotIn("exhaustiveDrawPayment", terms)
         self.assertNotIn("newDoraPenalty", terms)
 
-    def test_abort_normalization_replaces_discard_and_replacement_accounts(self):
+    def test_abort_comparison_preserves_discard_and_replacement_accounts(self):
         s = own_action("19m19p19s124z245p67s", 10, [], players=3)
         s["operations"].append(11)
         s["operationDetails"].append({"type": 11, "combination": []})

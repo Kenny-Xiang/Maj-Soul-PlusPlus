@@ -4,7 +4,7 @@ import unittest
 
 from advisor import (advise, unseen_counts, _action_choices,
                      _apply_choice, _position, _riichi, _draw_pool,
-                     _danger, _opponents)
+                     _danger, _opponents, _discards, _rank_candidates)
 from test_advisor import state, tiles
 
 
@@ -36,8 +36,12 @@ class CallAdviceTests(unittest.TestCase):
         s = offered("55z123m456p23s99p1z", 3, ["5z|5z"], "5z")
         a = advise(s)
         self.assertEqual(a["best"]["action"], "pon")
-        self.assertEqual(a["best"]["followupDiscard"], "1z")
-        self.assertEqual(a["best"]["shanten"], 0)
+        # Follow-up uses the same terminal-value comparison as a real window;
+        # a shape reward must not force the discard with the lowest shanten.
+        after = _apply_choice(s, _action_choices(s)[0][0])
+        followup = _rank_candidates(_discards(after, unseen_counts(after)))[0]
+        self.assertEqual(a["best"]["followupDiscard"], followup["tile"])
+        self.assertEqual(a["best"]["score"], followup["score"])
         self.assertGreater(a["best"]["winProbability"], get_action(s, "pass")["winProbability"])
         self.assertGreater(a["best"]["expectedWinPoints"], 0)
 
@@ -482,7 +486,7 @@ class ActionBoundaryRuleTests(unittest.TestCase):
         self.assertEqual(forward["best"]["action"], "abort")
         kita = get_action(s, "kita")
         self.assertLess(kita["score"], 0)
-        self.assertIn("移除形状奖励", " ".join(kita["reasons"]))
+        self.assertIn("不计形状奖励", " ".join(kita["reasons"]))
         s["operations"].reverse()
         self.assertEqual([(c["actionId"], c["score"]) for c in advise(s)["candidates"]],
                          [(c["actionId"], c["score"]) for c in forward["candidates"]])
