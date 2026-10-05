@@ -1,5 +1,6 @@
 """One background calculation at a time; retain only the newest board snapshot."""
 from copy import deepcopy
+from functools import partial
 from threading import Condition, Thread
 
 
@@ -8,7 +9,7 @@ class AdviceWorker:
         self.cooperative = calculate is None
         if calculate is None:
             from advisor import advise
-            calculate = advise
+            calculate = partial(advise, ranked_limit=3)
         self.calculate = calculate
         self.condition = Condition()
         self.current_key = None

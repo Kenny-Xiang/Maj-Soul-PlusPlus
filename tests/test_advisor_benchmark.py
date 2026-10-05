@@ -24,6 +24,7 @@ class AdvisorBenchmarkTests(unittest.TestCase):
         cases = comparison.load_cases(comparison.FIXTURES)
         cases += comparison.load_cases(ROOT / "tests/fixtures/advisor_threat_cases.json")
         cases += comparison.load_cases(ROOT / "tests/fixtures/advisor_phase_cases.json")
+        cases += comparison.load_cases(ROOT / "tests/fixtures/advisor_performance_logged_cases.json")
         tags = {tag for case in cases for tag in case["tags"]}
         self.assertTrue({"efficiency", "no-yaku", "furiten", "riichi", "opponent-riichi",
                          "chi", "pon", "ankan", "daiminkan", "shouminkan", "kita", "three-player",
@@ -58,6 +59,26 @@ class AdvisorBenchmarkTests(unittest.TestCase):
         self.assertEqual([case["id"] for case in selected], ["closed-tsumo-only-one-shanten"])
         with self.assertRaisesRegex(ValueError, "Unknown case"):
             comparison.load_cases(comparison.FIXTURES, ["not-a-fixture"])
+
+    def test_comparison_checks_prefix_order_and_all_candidate_accounts(self):
+        first = {"actionId": "a", "score": 1}
+        second = {"actionId": "b", "score": 1}
+        third = {"actionId": "c", "score": 0}
+        fourth = {"actionId": "d", "score": 0}
+        advice = {"status": "ready", "best": first,
+                  "candidates": [first, second, third, fourth]}
+        baseline = {"cases": {"case": {"advice": advice}}}
+        current = deepcopy(baseline)
+        actual = current["cases"]["case"]["advice"]
+        actual["rankedCandidateCount"] = 2
+        actual["candidates"] = [first, second, fourth, third]
+        change = comparison.compare_cases(baseline, current)["case"]
+        self.assertFalse(change["rankedPrefixChanged"])
+        self.assertEqual(change["candidateChanges"], [])
+        actual["candidates"] = [second, first, fourth, {**third, "score": -1}]
+        change = comparison.compare_cases(baseline, current)["case"]
+        self.assertTrue(change["rankedPrefixChanged"])
+        self.assertEqual(change["candidateChanges"][0]["actionId"], "c")
 
     @unittest.skipIf(getattr(sys, "frozen", False), "requires a Python CLI subprocess, not the frozen App executable")
     def test_native_accounts_are_distinct_from_derived_residuals(self):
@@ -100,6 +121,7 @@ class AdvisorBenchmarkTests(unittest.TestCase):
         for change in report["changes"].values():
             self.assertFalse(change["statusChanged"])
             self.assertFalse(change["recommendationChanged"])
+            self.assertFalse(change["rankedPrefixChanged"])
             self.assertEqual(change["candidateChanges"], [])
 
 

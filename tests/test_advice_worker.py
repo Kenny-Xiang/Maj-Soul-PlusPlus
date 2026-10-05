@@ -25,7 +25,8 @@ class AdviceWorkerTests(unittest.TestCase):
         started, release = Event(), Event()
         visited, cancellation = [], []
 
-        def calculate(state, cancelled):
+        def calculate(state, cancelled, *, ranked_limit):
+            self.assertEqual(ranked_limit, 3)
             visited.append(state['step'])
             cancellation.append(cancelled())
             if state['step'] == 1:
@@ -64,7 +65,8 @@ class AdviceWorkerTests(unittest.TestCase):
                 started, release, finished = Event(), Event(), Event()
                 cancellation = []
 
-                def calculate(state, cancelled):
+                def calculate(state, cancelled, *, ranked_limit):
+                    self.assertEqual(ranked_limit, 3)
                     cancellation.append(cancelled())
                     started.set()
                     if not release.wait(3):

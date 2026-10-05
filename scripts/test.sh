@@ -1,7 +1,7 @@
 #!/bin/zsh
 set -euo pipefail
 cd "${0:A:h:h}"
-node --test tests/test.cjs
+node --test tests/test.cjs tests/test_overlay.cjs
 export PYTHONPATH="$PWD/src"
 .venv/bin/python -m unittest discover -s tests -p test_python.py -v
 .venv/bin/python -m unittest discover -s tests -p 'test_advi*.py' -v
