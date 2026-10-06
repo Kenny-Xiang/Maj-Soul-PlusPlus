@@ -506,6 +506,216 @@ test('restored actions recover confirmed riichi while an unverified snapshot lea
   assert.deepEqual(s.riichi, [null,null,null,null]);
 });
 
+test('restored replay resumes decisions only after the next continuous live action', () => {
+  const opening = {name:'ActionNewRound',step:0,selfSeat:0,
+    hand:['1m','2m','3m','1p','2p','3p','4p','5p','6p','7s','8s','9s','1z'],
+    scores:[25000,25000,25000,25000],doras:['1s'],left:69,chang:0,ju:1,ben:0};
+  const previous = {name:'ActionDealTile',step:1,seat:1,left:68};
+  const next = {name:'ActionDealTile',step:2,seat:0,tile:'1z',left:67,selfSeat:0,
+    operations:[1],operationDetails:[{type:1,combination:[]}]};
+  const state = core.emptyState();
+  // Response step is deliberately unrelated: only the next live action verifies the boundary.
+  core.applyRestore(state,{actions:[opening,previous],step:99});
+  assert.equal(state.handComplete,true);
+  assert.equal(state.historyComplete,false);
+  assert.equal(state.canAct,false);
+  assert.equal(core.apply(state,previous),false);
+  assert.equal(core.apply(state,opening),false);
+  assert.equal(state.historyComplete,false);
+  assert.equal(core.apply(state,next),true);
+  assert.equal(state.historyComplete,true);
+  assert.equal(state.canAct,true);
+  assert.equal(state.canDiscard,true);
+  assert.equal(state.warning,'');
+  const reference = core.emptyState();
+  for (const event of [opening,previous,next]) core.apply(reference,event);
+  assert.deepEqual({...state,baseline:reference.baseline},reference);
+});
+
+test('authenticated restore retains rank and inferred seat without reopening replayed operations', () => {
+  const auth = core.authGame(authResponse(),4000000007), state = core.emptyState();
+  Object.assign(state,{match:auth.match,selfSeat:auth.selfSeat});
+  const opening = {name:'ActionNewRound',step:0,
+    hand:['1p','1p','2p','3p','4p','5p','6p','7p','8p','9p','1s','1s','1z'],
+    scores:Array(4).fill(25000),doras:['1m'],left:69,chang:1,ju:3,ben:0};
+  const discard = {name:'ActionDiscardTile',step:1,seat:3,tile:'1p',selfSeat:2,
+    operations:[3],operationDetails:[{type:3,combination:['1p|1p']}]};
+  core.applyRestore(state,{actions:[opening,discard],step:2});
+  assert.deepEqual(state.match,auth.match);
+  assert.equal(state.selfSeat,2);
+  assert.equal(state.round.isFinal,true);
+  assert.equal(state.round.isExtension,false);
+  assert.equal(state.handComplete,true);
+  assert.equal(state.historyComplete,false);
+  assert.equal(state.canAct,false);
+  assert.deepEqual(state.operations,[]);
+  assert.equal(core.apply(state,opening),false);
+  assert.equal(core.apply(state,discard),false);
+  core.apply(state,{name:'ActionDealTile',step:2,seat:0,left:68});
+  assert.equal(state.historyComplete,true);
+  assert.equal(state.canAct,false);
+  assert.deepEqual(state.operations,[]);
+  core.apply(state,{...discard,step:3,seat:0});
+  assert.equal(state.canAct,true);
+  assert.equal(state.canDiscard,false);
+  assert.deepEqual(state.operations,[3]);
+  assert.deepEqual(state.match,auth.match);
+  assert.equal(state.round.isFinal,true);
+});
+
+test('restored player-count or seat conflicts clear authenticated rank context', () => {
+  const auth = core.authGame(authResponse(),4000000007);
+  for (const snapshot of [false,true]) for (const [seat,count] of [[1,4],[2,3]]) {
+    const state = core.emptyState();
+    Object.assign(state,{match:auth.match,selfSeat:auth.selfSeat});
+    const round = {selfSeat:seat,hand:['1p'],doras:[],left:40,chang:1,ju:count-1,ben:0};
+    const result = snapshot ? {actions:[],step:7,snapshot:{...round,
+      players:Array.from({length:count},()=>({score:25000,discards:[],melds:[]}))}} :
+      {actions:[{...round,name:'ActionNewRound',step:0,scores:Array(count).fill(25000)}]};
+    core.applyRestore(state,result);
+    assert.equal(state.match,null);
+    assert.equal(state.round.isFinal,undefined);
+    assert.equal(state.round.isExtension,undefined);
+    assert.equal(state.historyComplete,false);
+    assert.equal(state.canAct,false);
+  }
+});
+
+test('invalid restored replay or live continuation never enables decisions', async t => {
+  const opening = {name:'ActionNewRound',step:0,selfSeat:0,hand:['1p','2p','3p'],
+    scores:[35000,35000,35000],doras:[],left:50,chang:0,ju:1,ben:0};
+  const previous = {name:'ActionDealTile',step:1,seat:1,left:49};
+  const next = {name:'ActionDealTile',step:2,seat:0,tile:'1z',left:48,selfSeat:0,
+    operations:[1],operationDetails:[{type:1,combination:[]}]};
+  const cases = [
+    ['replay gap',[opening,{...previous,step:2}],{...next,step:3}],
+    ['replay duplicate',[opening,previous,previous],next],
+    ['replay out of order',[opening,previous,{name:'ActionDiscardTile',step:2,seat:1,tile:'4p'},previous],{...next,step:3}],
+    ['replay unsupported',[opening,{name:'ActionUnknown',step:1,unsupported:true}],next],
+    ['replay hand conflict',[opening,{name:'ActionDiscardTile',step:1,seat:0,tile:'9m'}],next],
+    ['live gap',[opening,previous],{...next,step:3}],
+    ['live unsupported',[opening,previous],{...next,name:'ActionUnknown',unsupported:true}],
+    ['live seat conflict',[opening,previous],{...next,seat:1,selfSeat:1}],
+  ];
+  for (const [name,actions,continuation] of cases) {
+    await t.test(name, () => {
+      const state = core.emptyState();
+      core.applyRestore(state,{actions,step:actions.at(-1).step});
+      core.apply(state,continuation);
+      assert.equal(state.historyComplete,false);
+      assert.equal(state.canAct,false);
+      assert.equal(state.canDiscard,false);
+    });
+  }
+  const snapshot = core.emptyState();
+  core.applyRestore(snapshot,{actions:[],step:1,snapshot:{selfSeat:0,hand:['1p','2p','3p'],
+    doras:[],left:49,chang:0,ju:1,ben:0,players:[{score:35000,discards:[],melds:[]}]}});
+  core.apply(snapshot,next);
+  assert.equal(snapshot.historyComplete,false);
+  assert.equal(snapshot.canAct,false);
+});
+
+test('reconnected socket restores advice with a fresh key after continuous live actions', async () => {
+  const posts = [], keys = [];
+  class Socket extends EventTarget {
+    constructor(url) {super(); this.url=url; this.readyState=1;}
+    send() {return 'sent';}
+  }
+  const window = {WebSocket:Socket, __mjStatsOverlay:{invalidateAdvice(){},expectAdvice(key){keys.push(key);}},
+    webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+    Uint8Array,ArrayBuffer,Blob,URL,setInterval:fn=>fn,clearInterval(){},console:{log(){}}});
+  const feed = async (socket,frame) => {
+    socket.dispatchEvent(new MessageEvent('message',{data:frame.buffer}));
+    await new Promise(setImmediate);
+  };
+  const authenticate = async (socket,id) => {
+    socket.send(rpcFrame(2,id,'.lq.FastTest.authGame',num(1,11)));
+    await feed(socket,rpcFrame(3,id,'',authResponse({modeId:24,mode:12,seats:[11,22,4000000007]})));
+    assert.equal(window.__mjMonitor.getSnapshot().state.match.modeId,24);
+  };
+  const opening = [...str(4,'1p'),...str(4,'2p'),...str(4,'3p'),...num(6,35000),...num(6,35000),
+    ...num(6,35000),...bytes(7,[...num(1,0),...bytes(2,num(1,1))]),...num(13,50)];
+  const old = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-old');
+  await authenticate(old,40);
+  await feed(old,actionFrame('ActionNewRound',0,opening));
+  assert.equal(posts.at(-1).state.canAct,true);
+  const originalKey = keys.at(-1);
+  old.dispatchEvent(new Event('close'));
+  assert.equal(window.__mjMonitor.getSnapshot().state.canAct,false);
+  assert.equal(window.__mjMonitor.getSnapshot().state.match,null);
+  const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-new');
+  assert.equal(window.__mjMonitor.getSnapshot().state.match,null);
+  await authenticate(game,41);
+  game.send(new Uint8Array([2,42,0,...str(1,'.lq.FastTest.syncGame'),...bytes(2,[])]));
+  const previous = [...num(1,1),...num(3,49)];
+  const raw = (name,step,data) => bytes(2,[...num(1,step),...str(2,name),...bytes(3,data)]);
+  await feed(game,new Uint8Array([3,42,0,...bytes(2,[...num(3,2),...bytes(4,[
+    ...raw('ActionNewRound',0,opening),...raw('ActionDealTile',1,previous)])])]));
+  assert.equal(posts.at(-1).state.handComplete,true);
+  assert.equal(posts.at(-1).state.historyComplete,false);
+  assert.equal(posts.at(-1).state.canAct,false);
+  assert.equal(posts.at(-1).state.match.modeId,24);
+  assert.equal(posts.at(-1).state.selfSeat,0);
+  assert.equal(posts.at(-1).state.round.isFinal,false);
+  assert.match(posts.at(-2).message,/syncGame.*等待连续实时动作确认恢复边界/);
+  const restoredKey = keys.at(-1), count = posts.length;
+  await feed(game,actionFrame('ActionDealTile',1,previous));
+  assert.equal(posts.length,count);
+  assert.equal(window.__mjMonitor.getSnapshot().state.historyComplete,false);
+  await feed(game,actionFrame('ActionDealTile',2,[...num(1,0),...str(2,'4p'),...num(3,48),
+    ...bytes(4,[...num(1,0),...bytes(2,num(1,1))])]));
+  const latest = posts.at(-1);
+  assert.equal(latest.state.historyComplete,true);
+  assert.equal(latest.state.canAct,true);
+  assert.equal(latest.state.canDiscard,true);
+  assert.equal(latest.state.warning,'');
+  assert.equal(latest.state.match.modeId,24);
+  assert.equal(keys.at(-1),`${latest.session}:${latest.serial}`);
+  assert.notEqual(keys.at(-1),originalKey);
+  assert.notEqual(keys.at(-1),restoredKey);
+  assert.equal(window.__mjMonitor.getSnapshot().errors,0);
+  window.__mjMonitor.uninstall();
+});
+
+test('replaced sockets cannot apply delayed frames or errors to the active connection', async t => {
+  for (const [closed,rejection] of [[true,false],[true,true],[false,false],[false,true]]) {
+    await t.test(`${closed ? 'closed' : 'open'} socket delayed ${rejection ? 'error' : 'action'}`, async () => {
+      let resume;
+      class DelayedBlob extends Blob {
+        arrayBuffer() {return new Promise((resolve,reject) => {
+          resume = () => rejection ? reject(new Error('old connection')) : super.arrayBuffer().then(resolve);
+        });}
+      }
+      class Socket extends EventTarget {
+        constructor(url) {super(); this.url=url; this.readyState=1;}
+        send() {}
+      }
+      const posts = [];
+      const window = {WebSocket:Socket,webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
+      vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+        Uint8Array,ArrayBuffer,Blob,URL,setInterval:fn=>fn,clearInterval(){},console:{log(){}}});
+      const old = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-old');
+      old.dispatchEvent(new MessageEvent('message',{data:new DelayedBlob([Buffer.from(frames[0].hex,'hex')])}));
+      await new Promise(setImmediate);
+      if (closed) old.dispatchEvent(new Event('close'));
+      const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-new');
+      game.send(rpcFrame(2,41,'.lq.FastTest.authGame',num(1,22)));
+      game.dispatchEvent(new MessageEvent('message',{data:rpcFrame(3,41,'',authResponse({
+        modeId:24,mode:12,seats:[11,22,4000000007]})).buffer}));
+      game.dispatchEvent(new MessageEvent('message',{data:Uint8Array.from(Buffer.from(frames.at(-1).hex,'hex')).buffer}));
+      await new Promise(setImmediate);
+      const before = window.__mjMonitor.getSnapshot(), count = posts.length;
+      assert.equal(before.state.match.modeId,24);
+      resume();
+      await new Promise(setImmediate);
+      assert.deepEqual(window.__mjMonitor.getSnapshot(),before);
+      assert.equal(posts.length,count);
+      window.__mjMonitor.uninstall();
+    });
+  }
+});
+
 test('collector requires the native bridge and leaves unsupported pages untouched', () => {
   class Socket {}
   const window = {WebSocket:Socket};
