@@ -151,4 +151,3 @@ def route_targets(counts, remaining, melds, value_honors):
                 target[honor] += 3
                 targets.append((f"yakuhai:{honor}", tuple(target)))
     return targets
-

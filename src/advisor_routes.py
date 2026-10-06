@@ -143,14 +143,14 @@ def _target_occupied(target):
 
 
 @lru_cache(maxsize=8192)
-def _target_triplet_win(target):
-    # Without any possible sequence this shape has a unique sets/pair
-    # decomposition. Self-drawing any triplet leaves every triplet concealed,
-    # with identical fu/yaku; the pair's tanki wait must stay separate.
+def _target_triplet_win(target, allow_sequences=False):
+    # A unique sets/pair decomposition shares every triplet's tsumo price.
+    # The caller may also establish that a complete triplet hand dominates
+    # sequence alternatives. The pair's tanki price must stay separate.
     if target.count(2) != 1 or any(n not in (0, 2, 3) for n in target):
         return None
-    if any(target[i] and target[i + 1] and target[i + 2]
-           for start in (0, 9, 18) for i in range(start, start + 7)):
+    if not allow_sequences and any(target[i] and target[i + 1] and target[i + 2]
+                                   for start in (0, 9, 18) for i in range(start, start + 7)):
         return None
     return next((i for i, n in enumerate(target) if n == 3), None)
 
@@ -210,7 +210,15 @@ def _target_payments(hand, state, remaining, target, deficits, *, red_pool=None,
         complete_variants.append((mass, complete))
     payments = {}
     scored = {}
-    triplet_win = _target_triplet_win(tuple(target))
+    fixed = state["melds"][state["selfSeat"]]
+    # Complete all-triplet tsumo hands retain a dominating triplet price:
+    # closed hands have suuankou; with one open group, toitoi + sanankou
+    # outweigh any three-sequence alternative. Two target triplets cannot
+    # form an alternative sequence decomposition. Keep CHI and nonstandard
+    # counted-yakuman limits on the original unique-decomposition rule.
+    allow_sequences = (target.count(3) + len(fixed) == 4 and all(m["type"] != 0 for m in fixed)
+                       and a.OPTIONS.kazoe_limit == a.HandConfig.KAZOE_LIMITED)
+    triplet_win = _target_triplet_win(tuple(target), allow_sequences)
     for winning, needed in enumerate(deficits):
         if not needed:
             continue
@@ -295,6 +303,12 @@ def _target_outcome(deficits, remaining, events, seat, payments, average,
     events = tuple(events)
     draws = min(pool, events.count(seat))
     cache = TABLES.get()
+    # Renamed families with the same quotas, stock and payments share the
+    # complete frozen ledger, not only its payment-independent distribution.
+    outcome_key = ('target-outcome', tuple(sorted((deficits[i], remaining[i], payments[i]) for i in order)),
+                   pool, events, seat, average, survival, opponent_payments, fees)
+    if cache is not None and outcome_key in cache:
+        return cache[outcome_key]
     key = ('target-distribution', profile, pool, draws)
     distribution = cache.get(key) if cache is not None else None
     if distribution is None:
@@ -320,10 +334,13 @@ def _target_outcome(deficits, remaining, events, seat, payments, average,
     draw = live * (1 - cdf[-1])
     draw_income = live * ((1 - cdf[-1] - ready) * fees[0] + ready * fees[1])
     ended = max(0., 1 - win - deal - draw)
-    return Outcome(win=win, income=income, deal=deal, loss=payment,
-                   tsumo=ended * .4, tsumo_loss=ended * .4 * opponent_payments[0],
-                   other=ended * .6, other_loss=ended * .6 * opponent_payments[1],
-                   draw=draw, draw_income=draw_income)
+    result = Outcome(win=win, income=income, deal=deal, loss=payment,
+                     tsumo=ended * .4, tsumo_loss=ended * .4 * opponent_payments[0],
+                     other=ended * .6, other_loss=ended * .6 * opponent_payments[1],
+                     draw=draw, draw_income=draw_income)
+    if cache is not None:
+        cache[outcome_key] = result
+    return result
 
 def target_policy(hand, state, remaining, opponents, events, discard=None, targets=None, *, average=None, counts=None,
                   red_pool=None, context=None, weight=None):

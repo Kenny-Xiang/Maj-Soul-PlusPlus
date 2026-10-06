@@ -159,6 +159,51 @@ class TargetReuseTests(unittest.TestCase):
         self.assertIsNone(routes._target_triplet_win(sequence_target))
         self.assertIsNone(routes._target_triplet_win(advisor.counts34(tiles("11m22m33p44p55s66s77z"))))
 
+    def test_full_triplet_tsumo_prices_include_pair_migration_and_shared_yakuman(self):
+        cases = [
+            ("111p222p333p44p", ((1, "777z"),), ()),
+            ("111p222p333p99p", ((1, "777z"),), ()),
+            ("777p888p999p11p", ((1, "111s"),), ()),
+            ("333p444p555p66p", ((2, "1111z"),), ("0p",)),
+            ("111p222p333p44p", ((3, "7777z"),), ()),
+            ("222s333s444s66s", ((1, "666z"),), ()),
+            ("111p222p333p444p55p", (), ("0p",)),
+            ("111p222p33p", ((1, "777z"), (1, "888s")), ()),
+        ]
+        token = advisor.TABLES.set(None)
+        self.addCleanup(advisor.TABLES.reset, token)
+        for hand, groups, reds in cases:
+            for players in (3, 4):
+                with self.subTest(hand=hand, groups=groups, players=players):
+                    snapshot = state("", players)
+                    snapshot["melds"][0] = [{"type": kind, "tiles": tiles(group)} for kind, group in groups]
+                    snapshot["doras"] = ["2p", "6z"]
+                    snapshot["replacementWin"] = True
+                    target = advisor.counts34(tiles(hand))
+                    args = list(reds), snapshot, target, target, target
+                    with patch.object(routes, "_target_triplet_win", return_value=None):
+                        expected = routes._target_payments(*args, red_pool=set())
+                    self.assertEqual(routes._target_payments(*args, red_pool=set()), expected)
+
+    def test_sequence_sharing_cache_keeps_chi_and_kazoe_rules_separate(self):
+        target = advisor.counts34(tiles("111p222p333p44p"))
+        self.assertIsNone(routes._target_triplet_win(target, False))
+        self.assertEqual(routes._target_triplet_win(target, True), advisor.tile_index("1p"))
+        self.assertIsNone(routes._target_triplet_win(target, False))
+        token = advisor.TABLES.set(None)
+        self.addCleanup(advisor.TABLES.reset, token)
+        for kind, group, calls in ((1, "777z", 2), (0, "789s", 4)):
+            snapshot = state("")
+            snapshot["melds"][0] = [{"type": kind, "tiles": tiles(group)}]
+            with patch.object(advisor, "_hand_value", wraps=advisor._hand_value) as value:
+                routes._target_payments([], snapshot, target, target, target, red_pool=set())
+            self.assertEqual(value.call_count, calls)
+        snapshot["melds"][0] = [{"type": 1, "tiles": tiles("777z")}]
+        with patch.object(advisor.OPTIONS, "kazoe_limit", advisor.HandConfig.KAZOE_SANBAIMAN), \
+                patch.object(advisor, "_hand_value", wraps=advisor._hand_value) as value:
+            routes._target_payments([], snapshot, target, target, target, red_pool=set())
+        self.assertEqual(value.call_count, 4)
+
     def test_enemy_event_runs_preserve_original_ledger_within_roundoff(self):
         # Frozen outputs from the per-event recursion, including an exhausted
         # urn. Exact counting changes only floating-point evaluation order.
@@ -214,6 +259,57 @@ class TargetReuseTests(unittest.TestCase):
             self.assertEqual(distributions.call_count, 1)
         self.assertEqual(first.win, second.win)
         self.assertEqual(second.income, first.income * 4)
+
+    def test_canonical_outcome_reuses_renamed_families_and_checks_cancellation(self):
+        events = (0, 1, 0, 2, 0, 1, 0)
+        first_args = (advisor.counts34(tiles("5p66z")), advisor.counts34(tiles("555p666z11s")),
+                      events, 0, {13: 1000., 32: 3000.}, (.02, 30.), .98,
+                      (1000., 500.), (-100., 300.))
+        second_args = (advisor.counts34(tiles("4m77z")), advisor.counts34(tiles("444m777z99s")),
+                       events, 0, {3: 1000., 33: 3000.}, (.02, 30.), .98,
+                       (1000., 500.), (-100., 300.))
+        first = routes._target_outcome(*first_args, lambda: None)
+        second = routes._target_outcome(*second_args, lambda: None)
+        self.assertIs(first, second)
+        for args in (first_args, second_args):
+            expected = reference_outcome(*args, lambda: None)
+            for actual, old in zip(second, expected):
+                self.assertLess(abs(actual - old), 1e-10)
+        before = advisor.TABLES.get().copy()
+
+        def cancelled():
+            raise advisor._SearchStopped("cancelled")
+
+        with self.assertRaises(advisor._SearchStopped):
+            routes._target_outcome(*second_args, cancelled)
+        self.assertEqual(advisor.TABLES.get(), before)
+
+    def test_canonical_outcome_separates_every_ledger_input(self):
+        deficits = advisor.counts34(tiles("5p66z"))
+        remaining = advisor.counts34(tiles("555p666z11s"))
+        base = (deficits, remaining, (0, 1, 0, 2, 0), 0, {13: 1000., 32: 3000.},
+                (.02, 30.), .98, (1000., 500.), (-100., 300.))
+        changes = [(0, advisor.counts34(tiles("55p66z"))),
+                   (1, advisor.counts34(tiles("55p666z111s"))),
+                   (1, advisor.counts34(tiles("555p666z111s"))),
+                   (2, (1, 0, 0, 2, 0)), (3, 1), (4, {13: 2000., 32: 3000.}),
+                   (5, (.04, 30.)), (5, (.02, 60.)), (6, .96),
+                   (7, (2000., 500.)), (7, (1000., 900.)),
+                   (8, (-300., 300.)), (8, (-100., 600.))]
+        original = routes._target_outcome(*base, lambda: None)
+        for index, value in changes:
+            changed = list(base)
+            changed[index] = value
+            with self.subTest(index=index, value=value):
+                token = advisor.TABLES.set(None)
+                try:
+                    expected = routes._target_outcome(*changed, lambda: None)
+                finally:
+                    advisor.TABLES.reset(token)
+                actual = routes._target_outcome(*changed, lambda: None)
+                self.assertEqual(actual, expected)
+                self.assertIsNot(actual, original)
+                self.assertIs(actual, routes._target_outcome(*changed, lambda: None))
 
     def test_combinatorial_collection_matches_recursive_urn_on_random_small_pools(self):
         rng = random.Random(66172)

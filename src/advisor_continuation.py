@@ -154,16 +154,16 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
         # A target is chosen after seeing this draw, so retaining two value
         # honors preserves both branches without summing overlapping wins.
         drawn_counts = a.counts34(drawn['hand'])
-        held_red = tuple(t for t in drawn['hand'] if t.startswith('0'))
+        priced_indices = tuple((t, a.tile_index(t)) for t in priced_discards)
+        held_red = tuple((t, a.tile_index(t)) for t in drawn['hand'] if t.startswith('0'))
         for name, target in targets:
             a._check_search()
-            surplus = [t for t in priced_discards if drawn_counts[a.tile_index(t)] > target[a.tile_index(t)]]
+            surplus = [t for t, index in priced_indices if drawn_counts[index] > target[index]]
             # Retained red identity determines the common target tail. Keep
             # each discard's current risk until comparing its full utility.
             choices = {}
             for tile in surplus:
-                retained_red = tuple(t for t in held_red if t != tile
-                                     and target[a.tile_index(t)])
+                retained_red = tuple(t for t, index in held_red if t != tile and target[index])
                 key = tuple(sorted(retained_red))
                 choices.setdefault(key, []).append(tile)
             for equivalent in choices.values():
