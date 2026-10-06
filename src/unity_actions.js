@@ -104,8 +104,8 @@
         check(!(state.forbiddenDiscards || []).some(tile => family(tile) === family(choice.tile)), '建议弃牌违反食替限制');
         check(!locked || choice.tile === state.lastDraw, '立直后只能摸切本次摸牌');
         if (action === 'riichi') {
-          check(!locked && detail.combination.some(tile => tile === choice.tile ||
-            /^0[mps]$/.test(tile) && family(tile) === choice.tile), '建议立直弃牌未经服务端许可');
+          check(!locked && detail.combination.some(tile => validTile(tile) &&
+            family(tile) === family(choice.tile)), '建议立直弃牌未经服务端许可');
         }
         put('tile', 3, choice.tile); put('moqie', 5, choice.tile === state.lastDraw);
       } else if (['chi','pon','daiminkan'].includes(action)) {

@@ -95,12 +95,21 @@ test('drawn duplicates use moqie and locked riichi never discards a different ph
 });
 
 test('riichi follows the offered physical/family declaration and requires a riichi discard echo', async () => {
-  const h = setup({hand:[...hand.slice(0,12),'0p','5p'],ops:[{type:1,combination:[]},{type:7,combination:['0p']}]});
-  const p = h.run({action:'riichi',tile:'5p'});
-  assert.equal(first(h,1),7); assert.equal(first(h,5),1);
-  await confirm(h,p,{name:'ActionDiscardTile',seat:0,tile:'5p',moqie:true,riichi:true});
-  const invalid = setup({hand:[...hand.slice(0,12),'0p','5p'],ops:[{type:1,combination:[]},{type:7,combination:['5p']}]});
-  assert.throws(() => invalid.run({action:'riichi',tile:'0p'}), /未经服务端/);
+  // Official MJPai.Distance ignores the red flag in both LiqiSelect and Action_LiQi.
+  for (const offered of ['0p','5p']) for (const tile of ['0p','5p']) {
+    const h = setup({hand:[...hand.slice(0,11),'4p','0p','5p'],
+      ops:[{type:1,combination:[]},{type:7,combination:[offered]}]});
+    for (const other of ['4p','5s']) assert.throws(() => h.run({action:'riichi',tile:other}), /未经服务端/);
+    const p = h.run({action:'riichi',tile});
+    assert.equal(first(h,1),7); assert.equal(first(h,5),Number(tile === '5p'));
+    assert.equal(decodeTile(h),tile);
+    await confirm(h,p,{name:'ActionDiscardTile',seat:0,tile,moqie:tile === '5p',riichi:true});
+  }
+  const onlyRed = setup({hand:[...hand.slice(0,12),'0p','1z'],
+    ops:[{type:1,combination:[]},{type:7,combination:['5p']}]});
+  const p = onlyRed.run({action:'riichi',tile:'0p'});
+  assert.equal(decodeTile(onlyRed),'0p');
+  await confirm(onlyRed,p,{name:'ActionDiscardTile',seat:0,tile:'0p',moqie:false,riichi:true});
 });
 
 test('chi and pon choose the exact red-five combination index and verify the called seat', async () => {

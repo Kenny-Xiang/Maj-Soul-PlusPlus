@@ -1701,12 +1701,11 @@ def _action_choices(state):
                     if kind == 7:
                         if len(consumed) != 1:
                             raise ValueError("立直弃牌不完整")
-                        allowed = consumed + (["5" + consumed[0][1]] if consumed[0][0] == "0" else [])
                         legal = _legal_discards(state)
-                        for tile in dict.fromkeys(allowed):
-                            if tile in legal:
-                                choices.append({"action": "riichi", "tile": tile, "consumed": [], "actionId": f"riichi:{tile}"})
-                        if not any(t in legal for t in allowed):
+                        allowed = [tile for tile in legal if tile_index(tile) == tile_index(consumed[0])]
+                        for tile in allowed:
+                            choices.append({"action": "riichi", "tile": tile, "consumed": [], "actionId": f"riichi:{tile}"})
+                        if not allowed:
                             raise ValueError("立直弃牌不在手中")
                         continue
                     if kind in (2, 3, 5):

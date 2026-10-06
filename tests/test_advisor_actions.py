@@ -174,7 +174,7 @@ class RiichiAdviceTests(unittest.TestCase):
         self.assertGreater(c["dealInProbability"], 0)
         self.assertLess(c["expectedRiichiCost"], round(1000 * (1 - c["winProbability"])))
 
-    def test_only_verified_server_riichi_discards_and_red_workaround(self):
+    def test_only_verified_server_riichi_discards_and_red_family(self):
         s = own_action("123m123p123s45s77z1z", 7, ["9m"])
         self.assertFalse(any(c["action"] == "riichi" for c in advise(s)["candidates"]))
         s = own_action("123m123p123s55p77z1z", 7, ["0p"])
@@ -183,7 +183,22 @@ class RiichiAdviceTests(unittest.TestCase):
         self.assertFalse(warnings)
         s["operationDetails"][0]["combination"] = ["5p"]
         s["hand"][9] = "0p"
-        self.assertEqual([c["tile"] for c in _action_choices(s)[0]], ["5p"])
+        self.assertEqual([c["tile"] for c in _action_choices(s)[0]], ["0p", "5p"])
+
+    def test_riichi_red_family_is_bidirectional_and_does_not_allow_adjacent_tiles(self):
+        # Official LiqiSelect and Action_LiQi compare MJPai.Distance, whose
+        # numValue includes suit/index but ignores the physical red-five flag.
+        for combination in ("0p", "5p"):
+            with self.subTest(combination=combination):
+                s = own_action("123m123p123s05p77z4p", 7, [combination])
+                choices, warnings = _action_choices(s)
+                self.assertFalse(warnings)
+                self.assertEqual({c["tile"] for c in choices}, {"0p", "5p"})
+        s = own_action("123m123p123s0p77z46p", 7, ["5p"])
+        self.assertEqual([c["tile"] for c in _action_choices(s)[0]], ["0p"])
+        self.assertEqual(get_action(s, "riichi")["tile"], "0p")
+        s["forbiddenDiscards"] = ["5p"]
+        self.assertEqual(_action_choices(s)[0], [])
 
     def test_no_riichi_without_points_or_from_open_hand(self):
         s = own_action("123m123p123s45s77z1z", 7, ["1z"])
