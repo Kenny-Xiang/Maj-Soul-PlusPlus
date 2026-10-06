@@ -59,6 +59,30 @@ test('normal overlay keeps action and decision metrics without recording diagnos
   assert.equal(root.querySelector('.game').textContent, '最新动作：摸牌本人手牌：中');
 });
 
+test('verified rank objective shows the actual room, format, rank and preference outside candidate reasons', () => {
+  const {show, root} = overlay();
+  const rankContext = {active:true,objective:'rank-points',preference:'protect',riskWeight:1.7,
+    profile:{roomName:'玉之间',rankName:'雀豪2星',playerCount:4,roundCount:2}};
+  for (const status of ['ready','analysis']) {
+    show({...result(candidate),status,rankContext});
+    assert.equal(root.querySelector('.rank-context').textContent,'排位上升 · 玉之间 · 四人南 · 雀豪2星 · 偏重保位');
+    assert.equal(root.querySelector('.reasons').textContent,'对各家均有现物或实体枚数安全依据');
+    assert.doesNotMatch(root.querySelector('.rank-context').textContent,/riskWeight|1\.7|权重/);
+  }
+  for (const [preference, label] of [['push','增加追分意愿'],['balanced','均衡攻守']]) {
+    show({...result(candidate),rankContext:{...rankContext,preference,
+      profile:{roomName:'王座间',rankName:'魂天Lv3',playerCount:3,roundCount:1}}});
+    assert.equal(root.querySelector('.rank-context').textContent,`排位上升 · 王座间 · 三人东 · 魂天Lv3 · ${label}`);
+  }
+  for (const unknown of [null, {}, {...rankContext,active:false}, {...rankContext,objective:'points'},
+    {...rankContext,preference:'unknown'}, {...rankContext,profile:null},
+    {...rankContext,profile:{...rankContext.profile,roundCount:0}}]) {
+    show({...result(candidate),rankContext:unknown});
+    assert.equal(root.querySelector('.rank-context'),undefined);
+    assert.equal(root.querySelector('.best-tile').textContent,'打 中');
+  }
+});
+
 test('furiten and no-yaku constraints outrank generic reasons and are never clipped', () => {
   const {show, root} = overlay();
   const best = {...candidate, furiten: true, reasons: [...candidate.reasons,

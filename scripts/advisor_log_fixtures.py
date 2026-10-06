@@ -24,9 +24,13 @@ def public_state(state):
     """Allowlist public engine inputs; discard identities and transport metadata."""
     result = {key: state[key] for key in PUBLIC_FIELDS if key in state}
     for key, fields in (("lastAction", ("name", "seat", "tile", "type", "step")),
-                        ("round", ("chang", "ju", "ben", "isFinal"))):
+                        ("round", ("chang", "ju", "ben", "isFinal", "isExtension"))):
         value = state.get(key)
         result[key] = {field: value[field] for field in fields if field in value} if value else value
+    if state.get("match"):
+        result["match"] = {field: state["match"][field] for field in
+                           ("source", "category", "modeId", "room", "levelId", "levelIds", "playerCount", "roundCount")
+                           if field in state["match"]}
     for key, fields in (("rivers", ("tile", "moqie", "riichi", "called", "step")),
                         ("melds", ("type", "tiles", "froms"))):
         result[key] = [[{field: value[field] for field in fields if field in value}

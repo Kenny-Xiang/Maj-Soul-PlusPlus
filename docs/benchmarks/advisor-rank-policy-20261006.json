@@ -1,0 +1,592 @@
+{
+  "schemaVersion": 1,
+  "environment": {
+    "python": "3.12.15 (main, Oct  3 2026, 00:54:33) [Clang 22.1.3 ]",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "mahjong": "2.0.0"
+  },
+  "method": {
+    "warmupPasses": 1,
+    "measuredPasses": 3,
+    "internalCandidates": false,
+    "currentRankedLimit": 3,
+    "baselineRankedLimit": null,
+    "caseOrder": [
+      "rank-opponent-riichi-defense-third-late",
+      "rank-opponent-riichi-defense-last-late",
+      "rank-opponent-riichi-defense-third-early",
+      "rank-opponent-riichi-defense-saint-third-late",
+      "rank-one-shanten-followup-risk-third-late",
+      "rank-one-shanten-followup-risk-last-late",
+      "rank-one-shanten-followup-risk-third-early",
+      "rank-one-shanten-followup-risk-saint-third-late",
+      "rank-closed-tsumo-only-tenpai-third-late",
+      "rank-closed-tsumo-only-tenpai-last-late",
+      "rank-closed-tsumo-only-tenpai-third-early",
+      "rank-closed-tsumo-only-tenpai-saint-third-late",
+      "rank-ordinary-efficiency",
+      "rank-sanma-kita"
+    ],
+    "versionOrder": [
+      "baseline",
+      "current"
+    ],
+    "timing": "perf_counter around advise only; excludes imports, copying, and process startup",
+    "cache": "fresh process per version; identical ordered full-suite warmup and measurement passes",
+    "p95": "nearest rank: sorted samples[ceil(0.95 * count) - 1]",
+    "scoreComponents": "derived from rounded public fields; residual includes shape, unexposed legacy terms, other adjustments, and rounding",
+    "nativeScoreBreakdowns": "signed original scoring terms and accumulated rounding; v7 exposes mutually exclusive terminal payments separately from heuristic preferences"
+  },
+  "fixturesSha256": "bc26d18f604adedee9c8b5ddc3f059c6456a441fed85bd8f9cb93b6ad4f7a503",
+  "versions": {
+    "baseline": {
+      "source": {
+        "ref": "HEAD",
+        "commit": "0d4ae9a315bd76d78eca41fe275d9f7717fa7629",
+        "sourceSha256": "28764e0a8a0589a4e5fb695d09ef623256e5f3bd8a2cc095416d50d7cbb9c4ef",
+        "sourceChanges": []
+      },
+      "model": "public-information-actions-ev-v9-finite-routes (未校准启发式)",
+      "warmupTimeoutCount": 0,
+      "warmupTimeouts": {},
+      "timeoutCount": 0,
+      "latency": {
+        "count": 42,
+        "medianMs": 1007.9907500039553,
+        "p95Ms": 1699.015167017933,
+        "maxMs": 1737.5935000018217
+      }
+    },
+    "current": {
+      "source": {
+        "ref": "working-tree",
+        "commit": "0d4ae9a315bd76d78eca41fe275d9f7717fa7629",
+        "sourceSha256": "f66c264ad51861076859830ef16f3d716433a1e6a7c834419c3c6c7add813d0a",
+        "sourceChanges": [
+          " M src/advisor.py",
+          " M src/browser.js",
+          " M src/core.cjs",
+          " M src/overlay.js",
+          "?? src/advisor_rank.py",
+          "?? src/advisor_rank_policy.py"
+        ]
+      },
+      "model": "public-information-actions-ev-v10-rank-preference (未校准启发式)",
+      "warmupTimeoutCount": 0,
+      "warmupTimeouts": {},
+      "timeoutCount": 0,
+      "latency": {
+        "count": 42,
+        "medianMs": 1023.5283125075512,
+        "p95Ms": 1685.027292027371,
+        "maxMs": 1806.5992499759886
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "rank-opponent-riichi-defense-third-late",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1434.1432910005096,
+          "p95Ms": 1476.8881250056438,
+          "maxMs": 1476.8881250056438
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1m",
+        "strategy": "fold",
+        "riskWeight": 1.15,
+        "score": -3634.8,
+        "dealInProbability": 0.0,
+        "expectedDealInLoss": 0
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1435.5500419915188,
+          "p95Ms": 1547.2851250087842,
+          "maxMs": 1547.2851250087842
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1m",
+        "strategy": "fold",
+        "riskWeight": 1.4225534416425638,
+        "score": -4119.1,
+        "dealInProbability": 0.0,
+        "expectedDealInLoss": 0
+      }
+    },
+    {
+      "id": "rank-opponent-riichi-defense-last-late",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1227.8865000116639,
+          "p95Ms": 1234.966957999859,
+          "maxMs": 1234.966957999859
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1m",
+        "strategy": "fold",
+        "riskWeight": 0.9999999999999999,
+        "score": -3368.2,
+        "dealInProbability": 0.0,
+        "expectedDealInLoss": 0
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1184.7515410045162,
+          "p95Ms": 1194.5116670103744,
+          "maxMs": 1194.5116670103744
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1m",
+        "strategy": "fold",
+        "riskWeight": 0.75,
+        "score": -2923.9,
+        "dealInProbability": 0.0,
+        "expectedDealInLoss": 0
+      }
+    },
+    {
+      "id": "rank-opponent-riichi-defense-third-early",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1208.4951249998994,
+          "p95Ms": 1239.8632499971427,
+          "maxMs": 1239.8632499971427
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1m",
+        "strategy": "fold",
+        "riskWeight": 1.15,
+        "score": -3415.3,
+        "dealInProbability": 0.0,
+        "expectedDealInLoss": 0
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1196.8571660108864,
+          "p95Ms": 1213.2024579914287,
+          "maxMs": 1213.2024579914287
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1m",
+        "strategy": "fold",
+        "riskWeight": 1.1692432945578803,
+        "score": -3444.8,
+        "dealInProbability": 0.0,
+        "expectedDealInLoss": 0
+      }
+    },
+    {
+      "id": "rank-opponent-riichi-defense-saint-third-late",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1216.4724589965772,
+          "p95Ms": 1235.7134579797275,
+          "maxMs": 1235.7134579797275
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1m",
+        "strategy": "fold",
+        "riskWeight": 1.15,
+        "score": -3634.8,
+        "dealInProbability": 0.0,
+        "expectedDealInLoss": 0
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1233.65974999615,
+          "p95Ms": 1249.7786250023637,
+          "maxMs": 1249.7786250023637
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1m",
+        "strategy": "fold",
+        "riskWeight": 1.5467301596104177,
+        "score": -4339.8,
+        "dealInProbability": 0.0,
+        "expectedDealInLoss": 0
+      }
+    },
+    {
+      "id": "rank-one-shanten-followup-risk-third-late",
+      "recommendationChanged": true,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1699.283124995418,
+          "p95Ms": 1737.5935000018217,
+          "maxMs": 1737.5935000018217
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:6m",
+        "strategy": "attack",
+        "riskWeight": 1.15,
+        "score": -1113.0,
+        "dealInProbability": 0.1072,
+        "expectedDealInLoss": 533
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1696.9655830180272,
+          "p95Ms": 1806.5992499759886,
+          "maxMs": 1806.5992499759886
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:3p",
+        "strategy": "attack",
+        "riskWeight": 1.4225534416425638,
+        "score": -1520.0,
+        "dealInProbability": 0.008,
+        "expectedDealInLoss": 13
+      }
+    },
+    {
+      "id": "rank-one-shanten-followup-risk-last-late",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1009.3832499987911,
+          "p95Ms": 1051.5122920041904,
+          "maxMs": 1051.5122920041904
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:6m",
+        "strategy": "attack",
+        "riskWeight": 0.9999999999999999,
+        "score": -874.1,
+        "dealInProbability": 0.1072,
+        "expectedDealInLoss": 533
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1039.2280830128584,
+          "p95Ms": 1072.8173749812413,
+          "maxMs": 1072.8173749812413
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:6m",
+        "strategy": "attack",
+        "riskWeight": 0.75,
+        "score": -476.0,
+        "dealInProbability": 0.1072,
+        "expectedDealInLoss": 533
+      }
+    },
+    {
+      "id": "rank-one-shanten-followup-risk-third-early",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1002.1692919835914,
+          "p95Ms": 1003.1342089932878,
+          "maxMs": 1003.1342089932878
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:6m",
+        "strategy": "attack",
+        "riskWeight": 1.15,
+        "score": -1010.0,
+        "dealInProbability": 0.1072,
+        "expectedDealInLoss": 530
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 998.1587500078604,
+          "p95Ms": 1026.670874998672,
+          "maxMs": 1026.670874998672
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:6m",
+        "strategy": "attack",
+        "riskWeight": 1.1692432945578803,
+        "score": -1040.4,
+        "dealInProbability": 0.1072,
+        "expectedDealInLoss": 530
+      }
+    },
+    {
+      "id": "rank-one-shanten-followup-risk-saint-third-late",
+      "recommendationChanged": true,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1006.5982500091195,
+          "p95Ms": 1011.9181250047404,
+          "maxMs": 1011.9181250047404
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:6m",
+        "strategy": "attack",
+        "riskWeight": 1.15,
+        "score": -1113.0,
+        "dealInProbability": 0.1072,
+        "expectedDealInLoss": 533
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1012.4291249958333,
+          "p95Ms": 1020.3857500164304,
+          "maxMs": 1020.3857500164304
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:3p",
+        "strategy": "attack",
+        "riskWeight": 1.5467301596104177,
+        "score": -1691.1,
+        "dealInProbability": 0.008,
+        "expectedDealInLoss": 13
+      }
+    },
+    {
+      "id": "rank-closed-tsumo-only-tenpai-third-late",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1197.3506669746712,
+          "p95Ms": 1247.9871670075227,
+          "maxMs": 1247.9871670075227
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1z",
+        "strategy": "attack",
+        "riskWeight": 1.15,
+        "score": 1217.4,
+        "dealInProbability": 0.012,
+        "expectedDealInLoss": 18
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 1224.2337499919813,
+          "p95Ms": 1321.6632090043277,
+          "maxMs": 1321.6632090043277
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1z",
+        "strategy": "attack",
+        "riskWeight": 1.4225534416425638,
+        "score": 1176.1,
+        "dealInProbability": 0.012,
+        "expectedDealInLoss": 18
+      }
+    },
+    {
+      "id": "rank-closed-tsumo-only-tenpai-last-late",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 374.9187500216067,
+          "p95Ms": 388.2453750120476,
+          "maxMs": 388.2453750120476
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1z",
+        "strategy": "attack",
+        "riskWeight": 0.9999999999999999,
+        "score": 1240.1,
+        "dealInProbability": 0.012,
+        "expectedDealInLoss": 18
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 399.53554098610766,
+          "p95Ms": 428.4707079932559,
+          "maxMs": 428.4707079932559
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1z",
+        "strategy": "attack",
+        "riskWeight": 0.75,
+        "score": 1278.0,
+        "dealInProbability": 0.012,
+        "expectedDealInLoss": 18
+      }
+    },
+    {
+      "id": "rank-closed-tsumo-only-tenpai-third-early",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 380.3269579948392,
+          "p95Ms": 416.4718329848256,
+          "maxMs": 416.4718329848256
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1z",
+        "strategy": "attack",
+        "riskWeight": 1.15,
+        "score": 1335.3,
+        "dealInProbability": 0.012,
+        "expectedDealInLoss": 16
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 378.4642079845071,
+          "p95Ms": 380.2260840020608,
+          "maxMs": 380.2260840020608
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1z",
+        "strategy": "attack",
+        "riskWeight": 1.1692432945578803,
+        "score": 1332.8,
+        "dealInProbability": 0.012,
+        "expectedDealInLoss": 16
+      }
+    },
+    {
+      "id": "rank-closed-tsumo-only-tenpai-saint-third-late",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 374.1662499960512,
+          "p95Ms": 394.30658298078924,
+          "maxMs": 394.30658298078924
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1z",
+        "strategy": "attack",
+        "riskWeight": 1.15,
+        "score": 1217.4,
+        "dealInProbability": 0.012,
+        "expectedDealInLoss": 18
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 399.2902919999324,
+          "p95Ms": 408.87949999887496,
+          "maxMs": 408.87949999887496
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:1z",
+        "strategy": "attack",
+        "riskWeight": 1.5467301596104177,
+        "score": 1157.3,
+        "dealInProbability": 0.012,
+        "expectedDealInLoss": 18
+      }
+    },
+    {
+      "id": "rank-ordinary-efficiency",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 392.53704200382344,
+          "p95Ms": 406.1970000038855,
+          "maxMs": 406.1970000038855
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:6z",
+        "strategy": "attack",
+        "riskWeight": 1.15,
+        "score": 2280.7,
+        "dealInProbability": 0.008,
+        "expectedDealInLoss": 21
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 391.76374999806285,
+          "p95Ms": 410.3501669887919,
+          "maxMs": 410.3501669887919
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "discard:6z",
+        "strategy": "attack",
+        "riskWeight": 1.0654272875320703,
+        "score": 2299.4,
+        "dealInProbability": 0.008,
+        "expectedDealInLoss": 21
+      }
+    },
+    {
+      "id": "rank-sanma-kita",
+      "recommendationChanged": false,
+      "baseline": {
+        "latency": {
+          "count": 3,
+          "medianMs": 422.13054100284353,
+          "p95Ms": 425.52154199802317,
+          "maxMs": 425.52154199802317
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "kita::4z",
+        "strategy": "replacement",
+        "riskWeight": 1.15,
+        "score": 1589.9,
+        "dealInProbability": 0.0143,
+        "expectedDealInLoss": 24
+      },
+      "current": {
+        "latency": {
+          "count": 3,
+          "medianMs": 413.28629199415445,
+          "p95Ms": 441.7169170046691,
+          "maxMs": 441.7169170046691
+        },
+        "timeouts": 0,
+        "consistentAcrossRepeats": true,
+        "actionId": "kita::4z",
+        "strategy": "replacement",
+        "riskWeight": 1.0654272875320703,
+        "score": 1598.3,
+        "dealInProbability": 0.0143,
+        "expectedDealInLoss": 24
+      }
+    }
+  ]
+}
