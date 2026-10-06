@@ -3,6 +3,7 @@
 Draft for the actor-specific projection API. No recorded discard is an oracle.
 """
 from copy import deepcopy
+from random import Random
 import unittest
 from unittest.mock import patch
 
@@ -51,11 +52,11 @@ class ProjectedValueTests(unittest.TestCase):
         self.assertEqual(self.projection(s), (1500, 1.))
         self.assertEqual(self.projection(s, tsumo=True), (1000, 1.))
 
-    def test_unknown_open_yaku_keeps_existing_prior_in_both_win_modes(self):
+    def test_unknown_open_yaku_requires_concrete_route_in_both_win_modes(self):
         s = state("459p78s12s55z1z", players=3)
         s["melds"][0] = [{"type": 0, "tiles": tiles("123p")}]
-        self.assertEqual(self.projection(s)[1], .3)
-        self.assertEqual(self.projection(s, tsumo=True)[1], .3)
+        self.assertEqual(self.projection(s)[1], 0.)
+        self.assertEqual(self.projection(s, tsumo=True)[1], 0.)
 
     def test_projected_seven_pairs_keeps_ron_eligibility(self):
         s = state("11p22p44p66s88s55z1z", players=3)
@@ -112,6 +113,51 @@ class ProjectedValueTests(unittest.TestCase):
             explicit = advisor._coarse_policy(s["hand"], s, remaining, [], (1, 0), 0, 6, 1000., 1., ron=(1000., 1.))
         self.assertEqual(legacy, explicit)
         self.assert_mass(legacy)
+
+    def test_compressed_coarse_ledger_matches_full_outcome_recurrence(self):
+        # Independently retain every ledger field through each transition;
+        # production reconstructs fixed opponent-ending accounts at the end.
+        random = Random(7301)
+        snapshot = state()
+        remaining = advisor.unseen_counts(snapshot)
+        unseen = sum(remaining)
+        for case in range(24):
+            sh = case % 4
+            ukeire = random.randint(6, 50)
+            events = tuple(random.randrange(4) for _ in range(random.randint(0, 16)))
+            risk, loss = random.random() * .2, random.random() * 1000
+            survival = .8 + random.random() * .2
+            payments, fees = (1500., 750.), (-1200., 1800.)
+            tsumo_value, ron_value = 4000., 7700.
+            tsumo_factor, ron_factor = float(case % 3 != 0), float(case % 5 != 0)
+            rates = [min(.9, (ukeire if k == 0 else
+                              max(6., min(16 * .60 ** (k - 1), ukeire * .60 ** k))) / unseen)
+                     for k in range(sh)] + [min(.8, 6. / unseen)]
+            stages = [advisor.Outcome(draw=1., draw_income=fees[int(k == sh)]) for k in range(sh + 1)]
+            for actor in reversed(events):
+                suffix = [advisor._policy_residual(value, survival, *payments) for value in stages]
+                stages = []
+                for k in range(sh + 1):
+                    if actor != snapshot["selfSeat"]:
+                        hit = min(.8, 6. / unseen * .45) * ron_factor if k == sh else 0.
+                        value = suffix[k].scale(1 - hit) + advisor.Outcome(win=hit, income=hit * ron_value)
+                    elif k == sh:
+                        hit = rates[k] * tsumo_factor
+                        value = advisor._policy_discard(suffix[k], risk, loss).scale(1 - hit)
+                        value += advisor.Outcome(win=hit, income=hit * tsumo_value)
+                    else:
+                        value = suffix[k + 1].scale(rates[k]) + suffix[k].scale(1 - rates[k])
+                        value = advisor._policy_discard(value, risk, loss)
+                    stages.append(value)
+            with self.subTest(case=case), patch.object(
+                    advisor, "_policy_risks", return_value=([], [], (risk, loss))), patch.object(
+                    advisor, "_policy_environment", return_value=(survival, payments, fees)):
+                actual = advisor._coarse_policy(snapshot["hand"], snapshot, remaining, [], events,
+                                                sh, ukeire, tsumo_value, tsumo_factor,
+                                                ron=(ron_value, ron_factor))
+                for expected, measured in zip(stages[0], actual):
+                    self.assertAlmostEqual(expected, measured, places=9)
+                self.assert_mass(actual)
 
     def test_kokushi_actor_specific_payment_does_not_change_probability_tree(self):
         s = state("119m19p19s123456z", players=3)

@@ -99,6 +99,30 @@ class RankedPrefixTests(unittest.TestCase):
         live.pop("elapsedMs")
         self.assertEqual(live, full)
 
+    def test_two_candidate_prefix_preserves_third_explanation_and_input_tail(self):
+        cases = json.loads((Path(__file__).parent / "fixtures/advisor_cases.json").read_text())["cases"]
+        snapshot = next(case["state"] for case in cases if case["id"] == "closed-tsumo-only-tenpai")
+        full = advisor.advise(snapshot)
+        self.assertTrue(any("与首选估值相差" in reason for reason in full["candidates"][2]["reasons"]))
+        rank = advisor._rank_candidates
+        input_ids = []
+
+        def capture(candidates, *args, **kwargs):
+            if not kwargs.get("best_only"):
+                input_ids[:] = [c["actionId"] for c in candidates]
+            return rank(candidates, *args, **kwargs)
+
+        with patch.object(advisor, "_rank_candidates", side_effect=capture):
+            limited = advisor.advise(snapshot, ranked_limit=2)
+        self.assertEqual(limited["rankedCandidateCount"], 2)
+        self.assertEqual(limited["best"], full["best"])
+        self.assertEqual(limited["candidates"][:2], full["candidates"][:2])
+        self.assertEqual({c["actionId"]: c for c in limited["candidates"]},
+                         {c["actionId"]: c for c in full["candidates"]})
+        prefix_ids = {c["actionId"] for c in limited["candidates"][:2]}
+        self.assertEqual([c["actionId"] for c in limited["candidates"][2:]],
+                         [key for key in input_ids if key not in prefix_ids])
+
     def test_prefix_cancellation_and_deadline_never_publish_partial_candidates(self):
         for interruption in ("cancelled", "deadline"):
             with self.subTest(interruption=interruption):

@@ -20,9 +20,11 @@ from mahjong.meld import Meld
 from mahjong.shanten import Shanten
 from advisor_policy import Outcome, TABLES, discard as _policy_discard, residual as _policy_residual, fold_table, ready_table
 from advisor_settlement import opponent_payments
+from advisor_continuation import finite_policy, leaf_policy
+from advisor_routes import target_policy
 
 
-MODEL = "public-information-actions-ev-v8-current-policy (未校准启发式)"
+MODEL = "public-information-actions-ev-v9-finite-routes (未校准启发式)"
 SEARCH_SECONDS = 2.
 # Public-evidence priors, not frequencies fitted to game records.
 OPEN_YAKU_CONFIDENCE = .6
@@ -53,8 +55,14 @@ def counts34(tiles):
 
 
 @lru_cache(maxsize=65536)
-def shanten(counts, special=True):
+def _structural_shanten(counts, special):
     return Shanten.calculate_shanten(counts, use_chiitoitsu=special, use_kokushi=special)
+
+
+def shanten(counts, special=True):
+    # Honor identities do not affect ordinary, seven-pairs or kokushi shape.
+    # Canonicalize only this structural cache, never yaku, waits or tile stock.
+    return _structural_shanten(counts[:27] + tuple(sorted(counts[27:])), special)
 
 
 def _dora_index(tile, players):
@@ -276,11 +284,33 @@ def _wait_values(hand, counts, remaining, state, discard, special):
 
 
 def _future_value(hand, state, counts, special, tsumo=False):
+    """Decision-local projection cache with physical reds and scoring context."""
+    _check_search()
+    cache = _HAND_VALUES.get()
+    if cache is None:
+        return _uncached_future_value(hand, state, counts, special, tsumo)
+    seat = state["selfSeat"]
+    round_ = state.get("round") or {}
+    key = ("future", tuple(sorted(hand)), counts, special, tsumo, seat, state["playerCount"],
+           tuple((m["type"], tuple(m["tiles"])) for m in state["melds"][seat]),
+           bool(state.get("replacementWin", False)),
+           bool(state.get("riichi", [False] * 4)[seat]),
+           bool(state.get("doubleRiichi", [False] * 4)[seat]),
+           round_.get("ju", 0), round_.get("chang", 0), round_.get("ben", 0),
+           state.get("riichiSticks", 0), state.get("north", [0] * 4)[seat],
+           tuple(state.get("doras", [])), tuple(vars(OPTIONS).items()))
+    if key not in cache:
+        cache[key] = _uncached_future_value(hand, state, counts, special, tsumo)
+    return cache[key]
+
+
+def _uncached_future_value(hand, state, counts, special, tsumo=False):
     """Conservative actor-specific projection, not a completed-hand score.
 
     Unknown closed ron routes receive no income; this does not claim later
     shape changes cannot create yaku. Existing projected sets, shape yaku
-    and dora are assumed retained. Open unknown yaku keeps its old prior.
+    and dora are assumed retained. Unknown open yaku receives no income;
+    concrete target policies price those possible future routes separately.
     """
     seat, players = state["selfSeat"], state["playerCount"]
     melds = state["melds"][seat]
@@ -302,7 +332,7 @@ def _future_value(hand, state, counts, special, tsumo=False):
     # An unidentified closed ron route is omitted conservatively; do not
     # turn a self-draw yaku or dora alone into projected ron eligibility.
     value_han += int(closed and tsumo)
-    yaku_factor = 1. if value_han else (0. if closed else .3)
+    yaku_factor = float(bool(value_han))
     doras = [_dora_index(t, players) for t in state.get("doras", [])]
     bonus = sum(full[i] for i in doras) + sum(t[0] == "0" for t in all_tiles)
     bonus += state.get("north", [0] * 4)[seat] * (1 + doras.count(30))
@@ -626,7 +656,7 @@ def _win_model(sh, ukeire, unseen, draws, opponents, waits, projected=None, yaku
     # A small absorbing Markov chain needs sh+1 effective draws. Later-stage
     # ukeire is projected; it is not held equal to the current wide ukeire.
     final_waits = projected if projected is not None else 6.
-    rates = [min(.9, (min(32, ukeire) if k == 0 else
+    rates = [min(.9, (ukeire if k == 0 else
                      max(final_waits, min(16 * .60 ** (k - 1), ukeire * .60 ** k))) / unseen)
              for k in range(sh)] + [min(.8, final_waits / unseen)]
     ron_rate = min(.8, final_waits / unseen * .45)
@@ -846,10 +876,74 @@ def _explain_tie(candidates):
         first["reasons"].insert(1, "净收益与已建模的安全、牌形指标相同，这些选择近似等价")
 
 
+def _explain_comparison(candidates):
+    if len(candidates) < 2:
+        return
+    best, alternate = candidates[:2]
+    gap = best.get("_rawScore", best["score"]) - alternate.get("_rawScore", alternate["score"])
+    if _same_metric(gap, 0.):
+        return
+    first, second = best.get("scoreBreakdown", {}), alternate.get("scoreBreakdown", {})
+    def delta(keys):
+        return sum(first.get(k, 0.) - second.get(k, 0.) for k in keys)
+    drivers = {"efficiency": delta(("winIncome",)),
+               "defense": delta(("currentDealInLoss", "futureDiscardDealInLoss", "futureForcedDealInLoss",
+                                  "riskPreferenceAdjustment", "opponentTsumoLoss", "otherRonLiabilityLoss")),
+               "draw": delta(("exhaustiveDrawPayment",)),
+               "actionCost": delta(("openNoYakuPenalty", "riichiCost", "newDoraPenalty"))}
+    primary = max(drivers, key=drivers.get)
+    labels = {"efficiency": "牌效及有役路线带来的估计和牌收入", "defense": "避险带来的预计付款减少",
+              "draw": "保听与流局收支", "actionCost": "动作代价"}
+    best["decisionBasis"] = {"primary": primary, "scoreGap": gap, "componentAdvantages": drivers,
+                             "approximate": True}
+    best["reasons"].insert(1, f"相对下一备选，主要优势为{labels[primary]}；估值领先 {gap:.1f} 点")
+    if gap < 100:
+        best["reasons"].insert(2, "与备选仅小幅领先，远期估计误差可能改变次序")
+    for candidate in candidates[1:3]:
+        difference = best.get("_rawScore", best["score"]) - candidate.get("_rawScore", candidate["score"])
+        candidate["reasons"].append(f"与首选估值相差 {difference:.1f} 点；保留为近似模型下的备选")
+
+
+def _defense_inputs(hand, state, remaining, opponents, risks=None):
+    """Held stock after each survived discard, plus initially safe new draws.
+
+    Passing a tile only fixes its safety against locked riichi opponents.
+    Other opponents retain their risk, and no unknown future river is assumed.
+    """
+    _check_search()
+    rows, stock, average = _policy_risks(hand, state, remaining, opponents) if risks is None else risks
+    safe_draws = (sum(count for _, count, risk, _ in rows if risk == 0.), sum(count for _, count, _, _ in rows))
+    if not any(o["riichi"] for o in opponents):
+        return stock, average, safe_draws
+    cache = _POLICY_RISKS.get()
+    key = ("defense-stock", tuple(sorted(hand)), tuple(remaining),
+           tuple((o["seat"], o["riichi"], tuple(sorted(o["safe"])), o["tenpai"]) for o in opponents))
+    if cache is not None and key in cache:
+        return cache[key], average, safe_draws
+    held, future, stock = Counter(hand), opponents, []
+    while held:
+        _check_search()
+        choices = [(_danger(tile, remaining, future)[:2], tile) for tile in held]
+        (risk, loss), tile = min(choices, key=lambda item: (item[0][1], item[0][0], item[1]))
+        stock.append((risk, loss))
+        held[tile] -= 1
+        if not held[tile]:
+            del held[tile]
+        future = [{**o, "safe": o["safe"] | {tile_index(tile)}} if o["riichi"] else o for o in future]
+    if cache is not None:
+        cache[key] = stock
+    return stock, average, safe_draws
+
+
 def _fold_policy(hand, state, remaining, opponents, events, risks=None):
-    _, stock, average = _policy_risks(hand, state, remaining, opponents) if risks is None else risks
+    stock, average, safe_draws = _defense_inputs(hand, state, remaining, opponents, risks)
     survival, payments, fees = _policy_environment(state, opponents)
-    return fold_table(events, state["selfSeat"], stock, average, survival, payments, fees[0], _check_search)
+    melds = state["melds"][state["selfSeat"]]
+    counts, special = counts34(hand), not melds
+    ready = shanten(counts, special) == 0 and bool(_structural_waits(
+        counts, special, state["playerCount"], counts34([tile for meld in melds for tile in meld["tiles"]])))
+    return fold_table(events, state["selfSeat"], stock, average, survival, payments, fees[0], _check_search,
+                      safe_draws=safe_draws, tenpai_fee=fees[1] if ready else None, deplete_prefix=True)
 
 
 def _select_current_policy(attack, folded, danger, loss, state, locked=False, attack_penalty=0.):
@@ -954,14 +1048,12 @@ def _one_shanten_outcome(branches, unseen, opponents, opportunities, state, *, h
     future = _opponents(state, remaining, after_current=True, passed_discard=first.get("rootDiscard"))
     rows, stock, average = _policy_risks(hand, state, remaining, future)
     survival, payments, fees = _policy_environment(state, future)
-    folded = fold_table(opportunities, state["selfSeat"], stock, average,
-                        survival, payments, fees[0], _check_search)
+    folded = _fold_policy(hand, state, remaining, future, opportunities, (rows, stock, average))
     effective = sum(b["count"] for b in branches)
     families = {tile_index(b["draw"]) for b in branches}
     misses = [(n, r, l) for t, n, r, l in rows if tile_index(t) not in families]
     miss_total = sum(n for n, _, _ in misses)
-    miss_risk = (sum(n * r for n, r, _ in misses) / miss_total if miss_total else 0.,
-                 sum(n * l for n, _, l in misses) / miss_total if miss_total else 0.)
+    draw_risks = {tile: risk for tile, _, risk, _ in rows}
     choices = [(b, _ready_choices(b, future, opportunities, state))
                for b in sorted(branches, key=lambda b: b["draw"])]
     own_before, count = [], 0
@@ -977,11 +1069,14 @@ def _one_shanten_outcome(branches, unseen, opponents, opportunities, state, *, h
             result = nxt
             continue
         pool = max(effective, unseen - own_before[i], 1)
-        fold = folded[i][0]._replace(fold=1.)
-        attack = _policy_discard(nxt, *miss_risk)
-        miss = fold if fold.utility(weight) > attack.utility(weight) else attack
-        result = miss.scale(max(0., 1 - effective / pool))
+        result = Outcome()
+        for n, risk, loss in misses:
+            fold = folded[i][2 if risk == 0. else 1]._replace(fold=1.)
+            attack = _policy_discard(nxt, risk, loss)
+            miss = fold if fold.utility(weight) > attack.utility(weight) else attack
+            result += miss.scale(n / miss_total * max(0., 1 - effective / pool))
         for branch, options in choices:
+            fold = folded[i][2 if draw_risks[branch["draw"]] == 0. else 1]._replace(fold=1.)
             outcomes = [_ready_result(o, _policy_residual(t[i + 1], survival, *payments), state,
                                       _policy_residual(o["_foldTable"][i + 1][0], survival, *payments)
                                       if o["_foldTable"] else None, count - own_before[i] - 1)
@@ -1286,8 +1381,12 @@ def _ready_policy(hand, state, remaining, opponents, events, waits, locked=False
     survival, payments, fees = _policy_environment(state, opponents)
     if not waits:
         fees = (fees[0], fees[0])
+    defense_stock, safe_draws = None, None
+    if not locked:
+        defense_stock, _, safe_draws = _defense_inputs(hand, state, remaining, opponents, (rows, stock, average))
     result = ready_table(events, state["selfSeat"], (hit, income), draws, stock, average,
-                         survival, payments, fees, _risk_weight(state), locked, _check_search)
+                         survival, payments, fees, _risk_weight(state), locked, _check_search,
+                         defense_stock=defense_stock, safe_draws=safe_draws)
     if cache is not None:
         cache[key] = result
     return result
@@ -1301,7 +1400,7 @@ def _coarse_policy(hand, state, remaining, opponents, events, sh, ukeire, value,
     """
     _check_search()
     ron_value, ron_factor = (value, yaku_factor) if ron is None else ron
-    _, _, average = _policy_risks(hand, state, remaining, opponents)
+    _, _, average = _policy_risks((), state, remaining, opponents)
     unseen = max(1, sum(remaining))
     survival, payments, fees = _policy_environment(state, opponents)
     cache = TABLES.get()
@@ -1311,29 +1410,39 @@ def _coarse_policy(hand, state, remaining, opponents, events, sh, ukeire, value,
            ron_value, ron_factor, average, unseen, survival, payments, fees)
     if cache is not None and key in cache:
         return cache[key]
-    rates = [min(.9, (min(32, ukeire) if k == 0 else
+    rates = [min(.9, (ukeire if k == 0 else
                      max(6., min(16 * .60 ** (k - 1), ukeire * .60 ** k))) / unseen)
              for k in range(sh)] + [min(.8, 6. / unseen)]
-    stages = [Outcome(draw=1., draw_income=fees[int(k == sh)]) for k in range(sh + 1)]
+    # Only six quantities vary independently here. Residual opponent endings
+    # have fixed payment and 40/60 attribution; reconstruct them once at the
+    # end instead of allocating eleven-field ledgers for every stage/event.
+    stages = [(0., 0., 0., 0., 1., fees[int(k == sh)]) for k in range(sh + 1)]
+    risk, loss = average
     for actor in reversed(events):
         _check_search()
-        suffix = [_policy_residual(o, survival, *payments) for o in stages]
         nxt = []
         for k in range(sh + 1):
             if actor != state["selfSeat"]:
                 hit = min(.8, 6. / unseen * .45) * ron_factor if k == sh else 0.
-                nxt.append(suffix[k].scale(1 - hit) + Outcome(win=hit, income=hit * ron_value))
-            elif k == sh:
-                hit = rates[k] * yaku_factor
-                nxt.append(_policy_discard(suffix[k], *average).scale(1 - hit) +
-                           Outcome(win=hit, income=hit * value))
+                base, live = stages[k], (1 - hit) * survival
+                nxt.append((hit + live * base[0], hit * ron_value + live * base[1],
+                            live * base[2], live * base[3], live * base[4], live * base[5]))
             else:
-                continuation = suffix[k + 1].scale(rates[k]) + suffix[k].scale(1 - rates[k])
-                nxt.append(_policy_discard(continuation, *average))
+                hit = rates[k] * yaku_factor if k == sh else 0.
+                base = stages[k] if k == sh else tuple(
+                    (1 - rates[k]) * x + rates[k] * y for x, y in zip(stages[k], stages[k + 1]))
+                live = (1 - hit) * (1 - risk) * survival
+                nxt.append((hit + live * base[0], hit * value + live * base[1],
+                            (1 - hit) * risk + live * base[2], (1 - hit) * loss + live * base[3],
+                            live * base[4], live * base[5]))
         stages = nxt
+    win, income, deal, loss, draw, draw_income = stages[0]
+    ended = max(0., 1 - win - deal - draw)
+    outcome = Outcome(win, income, deal, loss, ended * .4, ended * .4 * payments[0],
+                   ended * .6, ended * .6 * payments[1], draw, draw_income)
     if cache is not None:
-        cache[key] = stages[0]
-    return stages[0]
+        cache[key] = outcome
+    return outcome
 
 
 def _shape_preference(sh, ukeire, state, own_draws):
@@ -1357,7 +1466,7 @@ def _record_score(candidate, **terms):
     candidate["scoreBreakdown"] = terms
 
 
-def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, open_call=False):
+def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, open_call=False, lookahead_depth=1):
     """Evaluate a 13-tile-equivalent position with a common score scale."""
     special = not state["melds"][state["selfSeat"]]
     counts = counts34(hand)
@@ -1370,34 +1479,46 @@ def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, op
     danger, loss, detail = _danger(discard, remaining, opponents) if discard is not None else (0., 0., [])
     waits, furiten = _wait_values(hand, counts, remaining, state, discard, special) if sh == 0 else (None, False)
     value, yaku_factor = _future_value(hand, state, counts, special, tsumo=True)
-    kokushi_route = special and sh == 2 and Shanten.calculate_shanten_for_kokushi_hand(counts) == sh
-    branches = None
+    kokushi_route = special and 0 < sh <= 2 and Shanten.calculate_shanten_for_kokushi_hand(counts) == sh
+    frontier = None
     locked = bool(state.get("riichi", [False] * 4)[state["selfSeat"]])
     future_opponents = _opponents(state, remaining, after_current=True, passed_discard=discard)
     risks = _policy_risks(hand, state, remaining, future_opponents)
     if locked or sh == 0:
         continuation = _ready_policy(hand, state, remaining, future_opponents,
                                      opportunities, waits or [], locked, risks=risks)[0]
-    elif sh == 1:
+        if sh == 0:
+            yaku_factor = float(any(w["ronPoints"] or w["tsumoPoints"] for w in waits))
+    elif kokushi_route and sh == 1:
         branches = _one_shanten_branches(hand, counts, improvements, remaining, state, discard, special)
         continuation = _one_shanten_outcome(branches, unseen, opponents, opportunities, state,
                                            hand=hand, remaining=remaining, discard=discard)
-        yaku_factor = float(any(w["ronPoints"] or w["tsumoPoints"]
-                               for b in branches for o in b["options"] for w in o["waits"]))
     elif kokushi_route:
         continuation = _kokushi_outcome(counts, remaining, future_opponents, state,
                                         discard, opportunities,
                                         _future_value(hand, state, counts, special)[0], tsumo_value=value)
     else:
         projected_ron = _future_value(hand, state, counts, special)
-        continuation = _coarse_policy(hand, state, remaining, future_opponents,
-                                      opportunities, sh, ukeire, value, yaku_factor, ron=projected_ron)
+        if lookahead_depth:
+            continuation, frontier = finite_policy(hand, state, remaining, future_opponents,
+                                                    opportunities, discard)
+        else:
+            continuation = leaf_policy(hand, state, remaining, future_opponents, opportunities, discard)
+    target_detail = frontier.get("yakuRoutes") if frontier else None
+    if not lookahead_depth and sh > 0 and not locked and any(m["type"] != 3 for m in state["melds"][state["selfSeat"]]):
+        routed, target_detail = target_policy(hand, state, remaining, future_opponents, opportunities, discard)
+        if routed is not None and routed.utility(_risk_weight(state)) > continuation.utility(_risk_weight(state)):
+            continuation = routed
+            target_detail["chosen"] = True
+        else:
+            target_detail["chosen"] = False
+    if sh > 0:
+        yaku_factor = max(yaku_factor, float(continuation.win > 0))
     can_fold = not locked and (discard is None or
                (fold_eligibility if fold_eligibility is not None else
                 _current_fold_eligibility(state, remaining, opponents))[discard])
     folded = _fold_policy(hand, state, remaining, future_opponents, opportunities, risks)[0][0] if can_fold else None
-    attack_penalty = 500. if open_call and (yaku_factor < 1 or sh == 0 and
-                     not any(w["ronPoints"] or w["tsumoPoints"] for w in waits)) else 0.
+    attack_penalty = 500. if open_call and yaku_factor < 1 else 0.
     continuation, outcome, strategy, comparison = _select_current_policy(
         continuation, folded, danger, loss, state, locked, attack_penalty)
     future_danger = continuation.deal * (1 - danger)
@@ -1417,9 +1538,10 @@ def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, op
     if discard and discard[0] == "0":
         reasons.append("打出赤宝牌，打点下降")
     if yaku_factor != 1 and sh:
-        reasons.append("一向听前瞻未找到有役等待" if sh == 1 else "副露后役尚未确定，和牌前景已折减")
+        reasons.append("当前尚未确认役，仅计可具体落实的作役路线")
     if kokushi_route:
-        reasons.append("国士路线按缺少幺九及雀头估计推进")
+        reasons.append("国士一向听逐分支计分，区分普通与十三面等待" if sh == 1 else
+                       "国士路线按缺少幺九及雀头估计推进")
     elif sh >= 2 and not locked and projected_ron[1] == 0:
         reasons.append("远期牌型尚未确认荣和役，保守只估自摸；后续改良可重新评估")
     efficiency = _shape_preference(sh, ukeire, state, draws)
@@ -1434,8 +1556,8 @@ def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, op
               "expectedDealInLoss": round(loss), "dealInPoints": round(loss / danger) if danger else 0,
               "dealInLossIfHit": round(loss / danger) if danger else 0,
               "score": round(score, 1), "reasons": reasons, "opponentRisks": detail,
-              "valueMethod": "听牌逐张计分" if sh == 0 else "一向听逐分支计分" if sh == 1 else "未来牌型估值",
-              "yakuConfidence": yaku_factor}
+              "valueMethod": "听牌逐张计分" if sh == 0 else "等深摸打与有役路线估计",
+              "yakuConfidence": yaku_factor, "finiteLookahead": frontier, "yakuRoutes": target_detail}
     _record_score(result, winIncome=probability * value, currentDealInLoss=-loss,
                   futureDiscardDealInLoss=-future_loss if not locked else 0,
                   futureForcedDealInLoss=-future_loss if locked else 0,
@@ -1444,12 +1566,12 @@ def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, op
                   otherRonLiabilityLoss=-outcome.other_loss, exhaustiveDrawPayment=outcome.draw_income,
                   openNoYakuPenalty=-attack_penalty if strategy != "fold" else 0.)
     if attack_penalty and strategy != "fold":
-        reasons.append("鸣牌破坏门清且缺少可确认役，另计无役路线代价")
+        reasons.append("本次鸣牌后的路线缺少可确认役，另计无役路线代价")
     result.update(currentStrategy=strategy, policyComparison=comparison, _outcome=outcome,
                   _currentDanger=danger, _currentLoss=loss, _tieDraws=draws)
     _, stock, _ = risks
     result.update(_selection_metadata(hand, remaining, special, outcome, loss, stock, waits, efficiency, ukeire, locked))
-    reasons.insert(0, {"fold": "当前弃和：先选预计损失最小的合法牌；此防守路线不计和牌或听牌收益",
+    reasons.insert(0, {"fold": "当前弃和：先选预计损失最小的合法牌；仅实际安全保听分支计听牌料，弃和不计和牌收入",
                        "attack": "当前进攻：与弃和路线按同一终局净收益比较；新窗口重新评估",
                        "locked": "当前已立直：按合法强制续打评估"}[strategy])
     result.update(terminalProbabilities={"selfWin": outcome.win, "dealIn": outcome.deal,
@@ -1466,14 +1588,17 @@ def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, op
     else:
         result.update(futureDiscardDealInProbability=round(future_danger, 4),
                       futureDiscardDealInLoss=round(future_loss))
-    if branches is not None:
-        result["lookahead"] = {"drawVariants": len(branches),
-                               "readyDiscards": sum(len(b["options"]) for b in branches)}
-        reasons.append("枚举有效进张及听牌弃牌；无效摸牌与维持听牌均计风险，转守同时放弃后续和牌收益")
+    if frontier is not None:
+        result["lookahead"] = frontier
+        reasons.append("等深枚举未见摸牌及全部弃牌，同向听改良进入后续收入；更远阶段仍为近似")
     elif sh >= 2:
-        reasons.append("二向听以上按近似进攻路线计未来弃牌损失，进张、等待与打点仍为估计")
+        reasons.append("后续进张与付款按同一近似口径评估，未假定免费立直或未来鸣牌")
+    if target_detail and target_detail["chosen"]:
+        route_name = target_detail["selected"]["route"]
+        reasons.append(("进攻备选作役路线：" if strategy == "fold" else "作役路线：") + ("对对和" if route_name == "toitoi" else "役牌刻子") +
+                       "；按具体缺牌及完成牌型计分，仅估自摸，未把不同路线概率相加")
     if sh == 0 and not locked:
-        reasons.append("逐次比较继续保听与用手中牌转守；转守放弃和牌及听牌料，不保留免费收益")
+        reasons.append("安全摸切可保听；拆手转守同时放弃后续和牌与听牌料")
     reasons.append("终局互斥核算他家自摸及流局收支；终局概率和他家听牌仍未校准")
     return result
 
@@ -1489,14 +1614,14 @@ def _legal_discards(state):
     return legal
 
 
-def _discards(state, remaining, *, open_call=False):
+def _discards(state, remaining, *, open_call=False, lookahead_depth=1):
     candidates = []
     eligible = _current_fold_eligibility(state, remaining, _opponents(state, remaining))
     for tile in _legal_discards(state):
         _check_search()
         hand = state["hand"].copy()
         hand.remove(tile)
-        candidates.append(_position(hand, state, remaining, tile, fold_eligibility=eligible, open_call=open_call))
+        candidates.append(_position(hand, state, remaining, tile, fold_eligibility=eligible, open_call=open_call, lookahead_depth=lookahead_depth))
     return candidates
 
 
@@ -1756,7 +1881,7 @@ def _replacement(state, choice, remaining):
             _record_score(best, winIncome=winning["points"])
         else:
             drawn["replacementWin"] = False
-            legal = _discards(drawn, tuple(unseen))
+            legal = _discards(drawn, tuple(unseen), lookahead_depth=0)
             if not legal:
                 raise ValueError("补牌后没有合法弃牌")
             if abort_after_discard:
@@ -1948,9 +2073,14 @@ def _advise(state, *, ranked_limit=None):
                 if candidate["action"] == "abort":
                     continue
                 candidate["reasons"].append("与九种九牌按同一本局终局账目比较，不计形状奖励，保留自摸损失和流局收支")
-        ranked = _rank_candidates(candidates, limit=ranked_limit)
+        # Comparison reasons annotate both alternatives, even when the caller
+        # requests only two ranked candidates in the published prefix.
+        ranked = _rank_candidates(candidates, limit=None if ranked_limit is None else max(3, ranked_limit))
         _explain_tie(ranked)
+        _explain_comparison(ranked)
         if ranked_limit is not None:
+            # Keep the list identity for offline diagnostic capture.
+            del ranked[ranked_limit:]
             ranked_ids = {id(candidate) for candidate in ranked}
             ranked.extend(candidate for candidate in candidates if id(candidate) not in ranked_ids)
         candidates = ranked
@@ -1990,7 +2120,7 @@ def advise(state, cancelled=None, *, ranked_limit=None):
     Default to full ordering for offline analysis. A ranked_limit of at least
     two orders only that exact prefix, retaining every other fully evaluated
     candidate in input order. rankedCandidateCount marks the ordered prefix;
-    the first two still support the same best-candidate comparison reasons.
+    internally rank at least three to preserve every comparison explanation.
     """
     if ranked_limit is not None and (type(ranked_limit) is not int or ranked_limit < 2):
         raise ValueError("ranked_limit must be None or an integer of at least two")

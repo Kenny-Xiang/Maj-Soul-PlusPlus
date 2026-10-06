@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from advisor import advise, unseen_counts
 
@@ -17,6 +18,10 @@ SCRIPT = ROOT / "scripts/advisor_compare.py"
 spec = importlib.util.spec_from_file_location("advisor_compare", SCRIPT)
 comparison = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(comparison)
+spec = importlib.util.spec_from_file_location("advisor_log_fixtures", ROOT / "scripts/advisor_log_fixtures.py")
+log_export = importlib.util.module_from_spec(spec)
+with patch.dict(sys.modules, {"advisor_compare": comparison}):
+    spec.loader.exec_module(log_export)
 
 
 class AdvisorBenchmarkTests(unittest.TestCase):
@@ -60,6 +65,51 @@ class AdvisorBenchmarkTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Unknown case"):
             comparison.load_cases(comparison.FIXTURES, ["not-a-fixture"])
 
+    def test_route_snapshots_contain_only_public_engine_inputs(self):
+        cases = comparison.load_cases(ROOT / "tests/fixtures/advisor_route_cases.json")
+        self.assertEqual(len(cases), 11)
+        for case in cases:
+            with self.subTest(case=case["id"]):
+                self.assertEqual(log_export.public_state(case["state"]), case["state"])
+                self.assertGreaterEqual(min(unseen_counts(case["state"])), 0)
+
+    def test_log_export_selects_current_windows_and_removes_private_metadata(self):
+        snapshot = deepcopy(comparison.load_cases(comparison.FIXTURES)[0]["state"])
+        snapshot.update(canAct=True, canDiscard=True, operations=[1], playerNames=["private-name"], token="secret")
+        snapshot["lastAction"] = {"name": "ActionDealTile", "seat": 0, "tile": "1p", "token": "secret"}
+        snapshot["rivers"][0].append({"tile": "1z", "step": 1, "accountId": "private"})
+        rows = []
+        for serial, action in enumerate(("discard", "kita"), 1):
+            rows.extend([{"kind": "turn", "session": "private-session", "serial": serial, "state": snapshot},
+                         {"kind": "advice", "adviceKey": f"private-session:{serial}",
+                          "advice": {"status": "ready", "best": {"action": action}}}])
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "log.jsonl"
+            path.write_text("\n".join(json.dumps(row) for row in rows))
+            ordinary = log_export.log_cases(path)
+            all_windows = log_export.log_cases(path, all_discard_windows=True)
+        self.assertEqual(len(ordinary), 1)
+        self.assertEqual(len(all_windows), 2)
+        self.assertNotIn("private", json.dumps(all_windows))
+        self.assertNotIn("secret", json.dumps(all_windows))
+
+    @unittest.skipIf(getattr(sys, "frozen", False), "requires a Python CLI subprocess")
+    def test_budget_timeouts_are_reported_instead_of_hiding_failed_windows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)
+            (source / "advisor.py").write_text(
+                "MODEL = 'timeout-fixture'\n"
+                "def advise(state):\n"
+                "    return {'status': 'unavailable', 'message': '前瞻计算超过时间预算', "
+                "'candidates': [], 'best': None}\n")
+            result = comparison.run_version(source, [{"id": "timeout", "state": {}, "expectedStatus": "ready"}],
+                                            warmups=1, repeats=2)
+        self.assertEqual(result["timeoutCount"], 2)
+        self.assertEqual(result["warmupTimeoutCount"], 1)
+        self.assertEqual(result["warmupTimeouts"], {"timeout": 1})
+        self.assertEqual(result["cases"]["timeout"]["timeoutCount"], 2)
+        self.assertEqual(result["latency"]["count"], 2)
+
     def test_comparison_checks_prefix_order_and_all_candidate_accounts(self):
         first = {"actionId": "a", "score": 1}
         second = {"actionId": "b", "score": 1}
@@ -83,12 +133,36 @@ class AdvisorBenchmarkTests(unittest.TestCase):
     @unittest.skipIf(getattr(sys, "frozen", False), "requires a Python CLI subprocess, not the frozen App executable")
     def test_native_accounts_are_distinct_from_derived_residuals(self):
         cases = comparison.load_cases(comparison.FIXTURES, ["closed-tsumo-only-tenpai"])
-        report = comparison.run_version(ROOT / "src", cases, warmups=0, repeats=1)
+        report = comparison.run_version(ROOT / "src", cases, warmups=0, repeats=1, include_internal=True)
         item = report["cases"][cases[0]["id"]]
         for candidate in item["advice"]["candidates"]:
             self.assertEqual(item["nativeScoreBreakdowns"][candidate["actionId"]], candidate["scoreBreakdown"])
             self.assertNotIn("residual", candidate["scoreBreakdown"])
             self.assertIn("residual", item["scoreComponents"][candidate["actionId"]])
+            internal = item["internalCandidates"][candidate["actionId"]]
+            self.assertIn("_rawScore", internal)
+            self.assertAlmostEqual(internal["_outcome"]["win"], candidate["terminalProbabilities"]["selfWin"])
+
+    @unittest.skipIf(getattr(sys, "frozen", False), "requires a Python CLI subprocess")
+    def test_ranked_prefix_keeps_internal_accounts_for_unranked_tail(self):
+        cases = comparison.load_cases(comparison.FIXTURES, ["closed-tsumo-only-tenpai"])
+        full = comparison.run_version(ROOT / "src", cases, warmups=0, repeats=1, include_internal=True)
+        for limit in (2, 3):
+            with self.subTest(limit=limit):
+                report = comparison.run_version(ROOT / "src", cases, warmups=0, repeats=1,
+                                                include_internal=True, ranked_limit=limit)
+                item = report["cases"][cases[0]["id"]]
+                candidates = item["advice"]["candidates"]
+                self.assertEqual(item["advice"]["rankedCandidateCount"], limit)
+                self.assertGreater(len(candidates), limit)
+                self.assertEqual(set(item["internalCandidates"]), {c["actionId"] for c in candidates})
+                self.assertEqual(item["internalCandidates"], full["cases"][cases[0]["id"]]["internalCandidates"])
+                changes = comparison.compare_cases(full, report)[cases[0]["id"]]
+                self.assertFalse(changes["rankedPrefixChanged"])
+                self.assertEqual(changes["candidateChanges"], [])
+                for candidate in candidates:
+                    account = item["internalCandidates"][candidate["actionId"]]
+                    self.assertAlmostEqual(account["_outcome"]["win"], candidate["terminalProbabilities"]["selfWin"])
 
     @unittest.skipIf(getattr(sys, "frozen", False), "requires a Git checkout and Python CLI subprocesses")
     def test_same_ref_isolated_comparison_preserves_analysis_and_reports_provenance(self):

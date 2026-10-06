@@ -4,11 +4,13 @@ The comparison runner evaluates identical public snapshots against two advisor
 source versions. It never opens the game, connects to game servers, or submits an
 action. It measures reproducibility, rule regressions, recommendation changes,
 and local calculation time; it does not establish stronger play or calibrated
-win probabilities.
+win probabilities. The latest v9 method and results appear in the final section;
+earlier sections retain their historical comparison context.
 
-## Current: exact live ranking and decision-local reuse (2026-10-05)
+## Historical: exact live ranking and decision-local reuse (v8, 2026-10-05)
 
-The policy remains v8. Relative to baseline `69c693f250ba13eeded39ae2b0780b4b8b0dd66d`,
+The following measurements used v8; its ranking and cache optimizations are
+also retained in v9. Relative to baseline `69c693f250ba13eeded39ae2b0780b4b8b0dd66d`,
 the live worker requests an exact three-candidate ranked prefix, while every
 legal candidate still receives the complete policy evaluation and terminal
 ledger. Fixed-anchor epsilon groups crossing the cutoff are resolved in full;
@@ -79,11 +81,13 @@ the v8 section below, then:
 
 ```sh
 .venv/bin/python scripts/advisor_compare.py \
-  --baseline 69c693f250ba13eeded39ae2b0780b4b8b0dd66d --ranked-limit 3 \
+  --baseline 69c693f250ba13eeded39ae2b0780b4b8b0dd66d \
+  --current-ref d40aa460f3b1854d9b0402317d78b969ffb15ad3 --ranked-limit 3 \
   --fixtures build/current-policy-v8/combined-cases.json \
   --warmups 1 --repeats 3 --output build/prefix-fixed.json
 .venv/bin/python scripts/advisor_compare.py \
-  --baseline 69c693f250ba13eeded39ae2b0780b4b8b0dd66d --ranked-limit 3 \
+  --baseline 69c693f250ba13eeded39ae2b0780b4b8b0dd66d \
+  --current-ref d40aa460f3b1854d9b0402317d78b969ffb15ad3 --ranked-limit 3 \
   --fixtures tests/fixtures/advisor_performance_logged_cases.json \
   --warmups 1 --repeats 3 --output build/prefix-slow.json
 ```
@@ -132,9 +136,9 @@ the native protocol test received no packets before its deadline. Browser
 checks do not establish native rendering, fullscreen or live-game background
 behavior. The running application and primary checkout were not updated.
 
-## Explicit current policy and semantic ties (v8, 2026-10-05)
+## Historical: explicit current policy and semantic ties (v8, 2026-10-05)
 
-The current model is `public-information-actions-ev-v8-current-policy` and is
+The v8 model is `public-information-actions-ev-v8-current-policy` and is
 still uncalibrated. This change builds on the completed v7 work in PR #21,
 commit `0415bd3441b08b3699e8ae19223786d5ae8db1ed`. Its source was checked against
 the frozen v7 snapshot before comparison; it is not compared with an older v6
@@ -1209,3 +1213,244 @@ haitei/houtei/chankan event yaku; repeated terminal loss in nine-terminals abort
 comparisons; multi-ron honba allocation; a complete terminal net-EV ledger;
 without-replacement winning draws; same-shanten red-tile exchanges; two-shanten
 search; and a complete terminal-outcome dataset. None is implemented here.
+
+## Current: finite continuation and concrete yaku routes (v9, 2026-10-05)
+
+The model is `public-information-actions-ev-v9-finite-routes`. The comparison
+baseline is v8 at `69c693f250ba13eeded39ae2b0780b4b8b0dd66d`. Earlier sections
+retain their historical measurements and limitations; the method in this
+section describes v9. Final integrated measurements are recorded below only
+after the implementation and required checks have stabilized.
+
+### What is evaluated
+
+`advisor_continuation.py` gives ordinary non-ready candidates a common explicit
+own-draw/discard frontier. It samples each physically available draw, including
+red fives, and compares every resulting discard. A draw that preserves shanten
+can now improve the continuation's monetary estimate, instead of influencing
+only a tie-break. The first draw depletes the public unseen pool. Structural
+ukeire is no longer capped at 32. Immediate ready positions still use scored
+waits; the farther ordinary tail remains an approximation with projected
+progress, future waits, retained value and frozen public risk. This is one
+explicit draw followed by a tail, not an exact two-draw game simulation.
+
+Replacement actions spend that same explicit unknown draw on the replacement
+tile. Their resulting discard candidates use the common leaf contract rather
+than receiving an additional ordinary-draw search depth. All root actions must
+finish before a result is published. Cancellation and the cooperative two-second
+budget still discard an incomplete decision rather than expose a partial rank.
+
+`advisor_routes.py` supplies physically feasible completed-hand targets for
+open yakuhai and toitoi routes. The targets retain fixed melds, require missing
+copies to exist in the unseen pool, and score the completed shape with real
+dora and physically available red-five alternatives. The search retains nearest
+targets per value honor or pair, not every possible winning hand. After the
+explicit draw, the policy can select a suitable target and a paid surplus
+discard. It does not add the probabilities of overlapping target routes.
+
+Each selected target uses a without-replacement collection model for its own
+missing tiles. Non-winning draws pay future discard risk; competing opponent
+endings and exhaustive-draw settlement remain in the same mutually exclusive
+ledger. These target routes claim tsumo only, avoiding speculative ron income
+when intermediate discards and resulting furiten are not tracked. Ordinary
+closed projections also do not receive free future riichi. Riichi remains an
+explicit server-offered action with its deposit and forced-discard costs.
+The unidentified open-yaku 0.3 income prior has been removed. Concrete scored
+waits determine ready-hand yaku status, including a call that completes a valid
+toitoi wait; such a call no longer inherits a false 500-point no-yaku penalty.
+
+Kokushi keeps its explicit missing-orphans/pair progression rather than borrowing
+ordinary-hand progress. Root one-shanten kokushi retains exact improving branches
+and scored waits, including the thirteen-sided double-yakuman distinction;
+two-shanten and farther frontier leaves retain projected payments. A dominant
+seven-pairs leaf compares actual targets with
+seven distinct pairs; four copies cannot supply two pairs. The bounded seven-pairs
+target set retains held pairs and pairs existing singletons, omitting routes that
+would collect two copies of an absent family. These special-hand models do not
+establish complete optimal search across every possible route.
+
+### Defensive continuation and explanations
+
+The current defensive first discard must still minimize current expected loss.
+After a held tile survives, later held copies become safe against already-locked
+riichi opponents; other opponents keep their own risk. The defense also tracks
+the initially known safe/unsafe class of future draws without replacement.
+Drawing and discarding a safe tile preserves held stock. It does not invent a
+future opponent discard or add safe tiles beyond the physical pool. A suffix
+entered after unspecified previous misses depletes safe supply conservatively.
+
+A defensive hand that is already structurally ready can retain exhaustive-draw
+tenpai income only on branches that never spend its held stock. Spending stock
+forfeits that income. The defense still claims zero self-win income and does
+not combine attack receipts with a cost-free retreat. Conditional post-draw
+entries distinguish a known safe draw from a known unsafe one, so turning down
+an unsafe draw cannot grant a second chance to sample a safe tile in that turn.
+
+Candidate diagnostics distinguish structural ukeire, finite-draw improvement,
+concrete yaku routes, current/future risk, strategy choice and the signed terminal
+ledger. Recommendation reasons identify the principal modeled advantage over
+the next candidate and flag small advantages. These explanations describe the
+model comparison; a positive score gap is not proof of a stronger real discard.
+
+### Fixtures and reproducible comparison
+
+The repository adds eleven targeted public snapshots in
+`tests/fixtures/advisor_route_cases.json`: 1329, 297, 561, 640, 590, 572,
+658, 659, 663, 664 and 1007. They retain the decision inputs needed to reproduce
+the calculation, without player identities, transport credentials, session
+metadata, hidden hands, complete logs or later outcomes. In particular, 590
+checks the real value of an honor route despite lower structural ukeire, and
+1007 checks a valid early genbutsu discard. They prevent an unconditional
+honor-discard rule from masquerading as the requested correction.
+
+The 57 existing fixtures plus these eleven form a shareable 68-case corpus.
+The separately frozen local log contains 142 windows whose recorded v8 best
+action is an ordinary discard. Its full set of executable discard windows has
+156 entries, including nine recorded kita choices and five riichi choices.
+The 142-window selection depends only on the contemporaneous advice, never on
+the later hand result. Complete local log exports remain outside Git.
+
+```sh
+.venv/bin/python scripts/advisor_log_fixtures.py \
+  --fixtures tests/fixtures/advisor_cases.json \
+  --fixtures tests/fixtures/advisor_threat_cases.json \
+  --fixtures tests/fixtures/advisor_phase_cases.json \
+  --fixtures tests/fixtures/advisor_policy_logged_cases.json \
+  --fixtures tests/fixtures/advisor_route_cases.json \
+  --output /tmp/maj-soul-v9-public-cases.json
+.venv/bin/python scripts/advisor_compare.py \
+  --baseline 69c693f250ba13eeded39ae2b0780b4b8b0dd66d \
+  --fixtures /tmp/maj-soul-v9-public-cases.json \
+  --warmups 1 --repeats 3 --include-internal \
+  --output /tmp/maj-soul-v9-public-comparison.json
+```
+
+Use the existing Python environment if its executable is outside `.venv`.
+To add the local log, pass `--log /path/to/frozen.jsonl` to the exporter with
+the same five fixture arguments; that creates the 210-case comparison corpus.
+Add `--all-discard-windows` to include the fourteen optional-action windows as
+well. The exporter allowlists nested public fields and does not copy arbitrary
+log metadata into fixtures.
+
+The runner snapshots both source trees before execution, checks the imported
+advisor path, and runs each version in an isolated `-I -B` interpreter. Reports
+record source hashes, environment, every root candidate, native signed accounts,
+derived rounded-field residuals, repeat consistency and individual latency
+samples. `--include-internal` also records first-pass unrounded candidate fields,
+including the named `Outcome` account. It is an offline diagnostic option, not
+a change to the application output. Measured budget expiries count as timeouts
+and remain in latency statistics; unexpected non-timeout availability failures
+still stop the comparison. Warmup passes are excluded from reported timings.
+
+### Integrated results and remaining limits
+
+The final serial comparison used Python 3.12.15, `mahjong` 2.0.0 and
+macOS 27.0.1 arm64. Each version received one complete warmup pass and three
+measured passes over the same 210-case corpus. Both versions had **zero measured
+timeouts in 630 calls**, zero warmup timeouts in 210 calls, no unexpected status
+changes, and identical repeated outputs after excluding elapsed time.
+
+| Corpus | Calls per version | v8 median / P95 / max (ms) | v9 median / P95 / max (ms) |
+| --- | ---: | ---: | ---: |
+| All 210 cases | 630 | 44.86 / 322.78 / 1104.94 | 513.33 / 1198.12 / 1823.07 |
+| 142 recorded discard windows | 426 | 54.68 / 269.89 / 441.34 | 527.76 / 1049.90 / 1313.91 |
+| 57 existing fixtures | 171 | 43.36 / 787.19 / 1104.94 | 409.71 / 1765.72 / 1823.07 |
+| 11 targeted snapshots | 33 | 16.00 / 458.85 / 458.97 | 395.44 / 1291.43 / 1316.88 |
+
+The richer search is substantially slower. These measurements establish that
+this corpus completed within the unchanged two-second budget on this host;
+they do not guarantee every future live state will finish in time. An expired
+or cancelled search still publishes no partial candidate ordering.
+
+The fourteen additional executable discard windows whose recorded recommendation
+was kita or riichi also completed one warmup and three measured passes with
+zero timeouts, stable output and no ledger violations. Their 42 measured calls
+have median / P95 / maximum 351.98 / 1148.94 / 1166.46 ms in v8 and
+727.43 / 1194.09 / 1240.77 ms in v9. One recommendation changes, at serial 581,
+from kita `4z` to discard `5z`. These supplement the 142 ordinary-discard windows
+above.
+
+Three fresh-process first calls were also measured for each heavy public case,
+without warmup and excluding interpreter/module startup. All nine completed
+with unchanged budget and the same source fingerprint:
+
+| Case | Cold median / maximum (ms) | Timeouts |
+| --- | ---: | ---: |
+| `pon-red-choices` | 1702.76 / 1713.94 | 0/3 |
+| `daiminkan` | 861.40 / 861.82 | 0/3 |
+| `shouminkan-red` | 1848.66 / 1854.09 | 0/3 |
+
+The heaviest observed cold case leaves limited headroom below two seconds.
+
+Source SHA-256 fingerprints, computed over the isolated `src` trees:
+
+- v8: `3bcf214a2efa35b80ab662b2f09478048d9ad1467162915b8508cc4a23398f27`
+- v9: `a79af7dd8a86d215311d5aa91aa475252aa603df53ee441221e93f8797123378`
+- Local 210-case corpus: `ae336196e3c6b4a06deaa2742558b8d455e365c326ad9867e98f15c673babf99`
+
+Every version's first measured pass retains 2,184 root candidates and 201
+replacement children. The 2,379 candidates carrying a terminal `Outcome` ledger
+pass the independent probability
+and account checks; six existing abort-action candidates use their separate
+accounting contract. The largest v9 terminal-mass error is `2.6e-15`, signed
+display-account error `4.6e-13`, and internal account error `1.9e-12`.
+The score's explicit rounding adjustment stays within 0.05 points. No candidate
+is selected using rounded display fields.
+
+There are 38 changed recommendations in the 142 recorded discard windows,
+eight in the existing fixtures and five in the targeted snapshots. The latter
+sets overlap some recorded situations and are not independent evidence.
+Recorded-window current strategies change from 130 attack / 12 fold to
+125 attack / 17 fold. These are descriptive counts, not a target fold rate or
+evidence that a changed recommendation improves actual results.
+
+| Recorded serial | v8 recommendation | v9 recommendation | Checked interpretation |
+| --- | --- | --- | --- |
+| 1329 | discard `7p` | discard `1z` | 44 versus 35 effective unseen tiles no longer share a 32-tile cap; continuation income reflects the preserved shape. |
+| 297 | discard `5p` | discard `1z` | The selected candidate has 16 rather than 17 immediate effective tiles; actual same-shanten first-draw improvements affect its continuation. |
+| 561 | discard `3p` | discard `1z` | Keeping the two-shanten route beats retreating to three shanten under the common continuation. |
+| 640 | discard `7s` | discard `1z` | The old `7s` line received 313.494 points of win income from unidentified open yaku. Its v9 chosen policy receives zero; structural draw settlement remains legal. |
+| 590 | discard `5p` | discard `5p` | Two retained value honors support separate draw-conditioned yakuhai targets. Lower ukeire is not automatically worse. |
+| 572 | pon `2p`, discard `7z` | pass | The first call no longer obtains the unidentified-yaku prior; its explicit tsumo-only route competes with the closed pass. |
+| 658 / 659 | pon `7s`, discard `5s` / discard `5s` | unchanged | Call and subsequent discard both evaluate to 62.441 points with the same underlying terms. |
+| 663 / 664 | pon `1s`, discard `4s` / discard `4s` | unchanged | Both now evaluate to 2694.112 points; the false call-only 500-point no-yaku penalty is gone. |
+| 1007 | discard `7s`, attack | discard `7s`, fold | `7s` is genbutsu against seat 0's riichi, while seat 2 still contributes 0.0112 current ron probability. |
+
+The 590 comparison is deliberately close: discarding `5p` has ukeire 33 and
+explicit target win income 36.116, versus ukeire 45 and income 18.058 after
+discarding `1z`. Its score advantage is only 2.222 points (49.797 versus 47.575),
+and is displayed as a small modeled advantage. For 640 the selected `1z` line
+scores -421.388 versus -582.654 for `7s`; both chosen policies have zero win
+income, and the difference comes from risk and structural draw settlement.
+This is not a proof that discarding a particular honor is globally optimal.
+
+The complete private comparison and candidate-account exports remain local.
+The eleven committed snapshots, source fingerprints and reproduction commands
+allow the public regression cases to be independently replayed.
+
+The final source passes **352 advisor/worker/benchmark tests** in 195.687 seconds,
+32 Node protocol tests and six Python formatting/logging tests. The integrated
+script completes these checks before reaching the environment-limited native
+test. New regressions cover the logged route boundaries, concrete target urns,
+safe-draw defense and conditional retreat, actual special-hand requirements,
+cache equivalence and cancellation, root kokushi thirteen-sided payment, and
+surplus-discard selection using surviving continuation value. The uncached
+arithmetic reference runs directly outside the public deadline; the cached
+public calculation must still finish under the unchanged production budget.
+`git diff --check` passes.
+
+Native WebKit and overlay checks were attempted separately: the native test
+received no protocol packets before its assertion, while the overlay encountered
+`WKErrorDomain Code=5`; both emitted denied sandbox-extension diagnostics.
+Native UI remains unverified and is not counted as passing validation.
+
+The finite frontier and concrete targets correct specific approximation
+discontinuities, but the remaining ordinary progress/wait/value projection,
+frozen discard hazards, opponent ending model and target pruning still affect
+candidate order. Only our modeled draws deplete these pools; the search does
+not reconstruct the actual wall or opponents' concealed hands. Unknown future
+calls, future riichi, full re-entry after folding and general ron-eligible target
+continuations are not enumerated. Measured fold rates are descriptive rather
+than an acceptance target. Regression checks and offline score changes do not
+establish calibrated probabilities, higher long-run win rates or avoidance of
+the recorded deal-in.
