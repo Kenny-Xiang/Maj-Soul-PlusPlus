@@ -50,8 +50,10 @@ const result = best => ({status: 'ready', best, candidates: [best]});
 test('normal overlay keeps action and decision metrics without recording diagnostics', () => {
   const {show, root} = overlay(); show(result(candidate));
   const advice = root.querySelector('.advice').textContent;
-  for (const text of ['打 中', '进攻', '听牌', '有效未见 4 张', '本次放铳率（估计）', '3.6%', '胡牌得点（估计）', '5,200']) assert.ok(advice.includes(text), text);
-  for (const text of ['后续胡牌率', '攻守评分', '预期损失', '放铳输点', '当前进攻：', '有效未见牌']) assert.ok(!advice.includes(text), text);
+  for (const text of ['打 中', '进攻', '听牌', '有效未见 4 张', '本次放铳率（估计）', '3.6%',
+    '后续胡牌率（估计）', '30.0%', '胡牌得点（估计）', '5,200', '放铳输点（估计）',
+    '5,000', '本次预期损失（估计）', '180']) assert.ok(advice.includes(text), text);
+  for (const text of ['攻守评分', '当前进攻：', '有效未见牌']) assert.ok(!advice.includes(text), text);
   assert.equal(root.querySelector('.caption').hidden, true);
   assert.equal(root.querySelector('.details').textContent, '');
   assert.equal(root.querySelector('.game').textContent, '最新动作：摸牌本人手牌：中');
@@ -94,23 +96,30 @@ test('furiten and no-yaku constraints outrank generic reasons and are never clip
   assert.match(root.querySelector('.advice-warning').textContent, /振听/);
 });
 
-test('risk labels describe the action being evaluated and omit risk for a pure pass or hand analysis', () => {
+test('risk and loss labels describe the action and disappear for pure pass or hand analysis', () => {
   const {show, root} = overlay();
-  for (const [fields, label, action] of [
-    [{action: 'pon', calledTile: '5z', followupDiscard: '1z'}, '后续弃牌风险（估计）', '碰 白 · 再打 东'],
-    [{action: 'kita', replacementDraw: true, shanten: 1.6}, '操作风险（估计）', '拔北'],
-    [{action: 'pass', followupDiscard: '4z'}, '后续弃牌风险（估计）', '跳过 · 随后摸切 北']
+  for (const [fields, label, loss, action] of [
+    [{action: 'chi', calledTile: '4m', consumed: ['3m', '5m'], followupDiscard: '1z'},
+      '后续弃牌风险（估计）', '后续弃牌预期损失（估计）', '吃 3万4万5万 · 再打 东'],
+    [{action: 'pon', calledTile: '5z', followupDiscard: '1z'},
+      '后续弃牌风险（估计）', '后续弃牌预期损失（估计）', '碰 白 · 再打 东'],
+    [{action: 'kita', replacementDraw: true, shanten: 1.6}, '操作风险（估计）', '操作预期损失（估计）', '拔北'],
+    [{action: 'pass', followupDiscard: '4z'}, '后续弃牌风险（估计）', '后续弃牌预期损失（估计）', '跳过 · 随后摸切 北']
   ]) {
     show(result({...candidate, ...fields}));
     assert.ok(root.querySelector('.metrics').textContent.includes(label));
+    assert.ok(root.querySelector('.metrics').textContent.includes(loss));
+    assert.ok(root.querySelector('.metrics').textContent.includes('放铳输点（估计）'));
     assert.equal(root.querySelector('.best-tile').textContent, action);
   }
   for (const action of ['pass', 'wait', 'abort']) {
     show(result({...candidate, action}));
-    assert.doesNotMatch(root.querySelector('.advice').textContent, /放铳率|弃牌风险|操作风险/);
+    assert.doesNotMatch(root.querySelector('.advice').textContent, /放铳率|弃牌风险|操作风险|预期损失|放铳输点/);
+    if (action === 'abort') assert.equal(root.querySelector('.metrics'), undefined);
   }
   show({...result(candidate), status: 'analysis'});
-  assert.doesNotMatch(root.querySelector('.advice').textContent, /放铳率/);
+  assert.doesNotMatch(root.querySelector('.advice').textContent, /放铳率|预期损失|放铳输点/);
+  assert.match(root.querySelector('.metrics').textContent, /后续胡牌率（估计）/);
 });
 
 test('fourth riichi keeps the abort constraint and removes the obsolete forced-play explanation', () => {
@@ -123,23 +132,91 @@ test('fourth riichi keeps the abort constraint and removes the obsolete forced-p
   assert.match(root.querySelector('.advice-warning').textContent, /第四家立直.*途中流局/);
   assert.match(root.querySelector('.advice-title').textContent, /四家立直流局/);
   assert.doesNotMatch(root.querySelector('.advice').textContent, /共用存活概率|不能自由弃和|立直续打/);
+  assert.equal(root.querySelector('.progress'), undefined);
 });
 
-test('only one unique alternative is shown, retaining riichi versus dama identity', () => {
+test('at most two unique alternatives are shown, retaining riichi versus dama identity', () => {
   const {show, root} = overlay();
   const best = {...candidate, action: 'riichi', actionId: 'riichi:7z'};
-  const candidates = [best, {...best}, candidate, {...candidate, tile: '6z', actionId: 'discard:6z'}];
+  const candidates = [best, {...best}, candidate, {...candidate},
+    {...candidate, tile: '6z', actionId: 'discard:6z'}, {...candidate, tile: '1z', actionId: 'discard:1z'}];
   const advice = {...result(best), candidates};
   const before = JSON.stringify(advice); show(advice);
   const alternatives = root.querySelector('.advice').querySelectorAll('.alternatives');
-  assert.equal(alternatives.length, 1);
-  assert.equal(alternatives[0].textContent, '备选 打 中');
+  assert.equal(alternatives.length, 2);
+  assert.equal(alternatives[0].querySelector('.alternative-action').textContent, '打 中');
+  assert.equal(alternatives[1].querySelector('.alternative-action').textContent, '打 发');
+  assert.deepEqual(root.querySelector('.comparison-head').children.map(element => element.textContent),
+    ['行动', '向听 / 未见', '风险估计', '打点估计']);
   assert.equal(JSON.stringify(advice), before, 'display must not truncate or mutate candidate accounting');
   show({...result(candidate), candidates: [candidate, {...candidate, tile: '6z', actionId: 'discard:6z', ukeire: 2, dealInProbability: .044}]});
-  assert.equal(root.querySelector('.alternatives').textContent, '备选 打 发 · 有效未见少 2 张 · 本次放铳率 4.4%（估计）');
+  assert.deepEqual(root.querySelector('.alternatives').children.map(element => element.textContent),
+    ['打 发', '听牌 / 2张', '4.4%', '5,200']);
   const replacement = {...candidate, action: 'kita', replacementDraw: true, ukeire: 4.3};
   show({...result(replacement), candidates: [replacement, {...replacement, action: 'ankan', actionId: 'ankan:7z', ukeire: 4, dealInProbability: .0361}]});
-  assert.equal(root.querySelector('.alternatives').textContent, '备选 暗杠 中 · 有效未见少 0.3 张');
+  assert.deepEqual(root.querySelector('.alternatives').children.map(element => element.textContent),
+    ['暗杠 中', '预计 0 向听 / 4张', '操作 3.6%', '5,200']);
+  show({...result(replacement), candidates: [replacement, {...replacement, action: 'ankan', actionId: 'ankan:7z', ukeire: 4.3}]});
+  assert.match(root.querySelector('.alternatives').children[1].textContent, /4\.3张/);
+});
+
+test('alternatives cannot promote unranked tail candidates after deduplication', () => {
+  const {show, root} = overlay();
+  const best = {...candidate, action: 'riichi', actionId: 'riichi:7z'};
+  const tail = {...candidate, tile: '6z', actionId: 'discard:6z'};
+  for (const [rankedCandidateCount, expected] of [[0, []], [1, []], [2, []], [3, ['打 中']]]) {
+    show({...result(best), candidates: [best, {...best}, candidate, tail], rankedCandidateCount});
+    assert.deepEqual(root.querySelectorAll('.alternative-action').map(element => element.textContent), expected);
+  }
+});
+
+test('alternative columns preserve action risk scope and omit inapplicable metrics', () => {
+  const {show, root} = overlay();
+  for (const [fields, expectedRisk] of [
+    [{action: 'pon', calledTile: '5z', followupDiscard: '1z'}, '后续 3.6%'],
+    [{action: 'pass'}, '—'], [{action: 'abort'}, '—']
+  ]) {
+    const alternative = {...candidate, ...fields, actionId: fields.action};
+    show({...result(candidate), candidates: [candidate, alternative]});
+    const cells = root.querySelector('.alternatives').children.map(element => element.textContent);
+    assert.equal(cells.length, 4);
+    assert.equal(root.querySelector('.alternative-risk').textContent, expectedRisk);
+    if (fields.action === 'abort') assert.deepEqual(cells.slice(1), ['—', '—', '—']);
+  }
+  show({...result(candidate), status: 'analysis', candidates: [candidate, {...candidate, tile: '6z', actionId: 'discard:6z'}]});
+  assert.equal(root.querySelector('.alternative-risk').textContent, '—');
+});
+
+test('lower advice area lists effective draws and each wait constraint without changing the input', () => {
+  const {show, root} = overlay();
+  const best = {...candidate, shanten: 2, ukeire: 7,
+    improvingTiles: [{tile: '0p', count: 4}, {tile: '9s', count: 3}]};
+  const advice = result(best), before = JSON.stringify(advice);
+  show(advice);
+  const progress = root.querySelector('.advice').querySelector('.progress');
+  assert.match(progress.textContent, /有效进张/);
+  assert.deepEqual(progress.querySelectorAll('.tile-chip').map(element => element.textContent), ['赤5筒 × 4', '9索 × 3']);
+  assert.equal(JSON.stringify(advice), before);
+  const waits = {...candidate, winningTiles: [
+    {tile: '3s', count: 3, ronPoints: 3900, tsumoPoints: 4000},
+    {tile: '6s', count: 0, ronPoints: 3900, tsumoPoints: 4000},
+    {tile: '1z', count: 2, ronPoints: 0, tsumoPoints: 2000},
+    {tile: '2z', count: 1, ronPoints: 0, tsumoPoints: 0}
+  ]};
+  show(result(waits));
+  assert.match(root.querySelector('.progress').textContent, /听口/);
+  const chips = root.querySelectorAll('.tile-chip').map(element => element.textContent);
+  assert.match(chips[0], /3索.*×\s*3/);
+  assert.match(chips[1], /6索.*×\s*0/);
+  assert.match(root.querySelector('.progress').textContent, /张数为未见牌/);
+  assert.match(chips[2], /东.*×\s*2.*仅自摸/);
+  assert.match(chips[3], /南.*×\s*1.*无役/);
+  for (const fields of [{replacementDraw: true, action: 'kita'}, {abortAfterRiichi: true, action: 'riichi'}, {action: 'abort'}]) {
+    show(result({...waits, ...fields}));
+    assert.equal(root.querySelectorAll('.tile-chip').length, 0);
+    if (fields.replacementDraw) assert.match(root.querySelector('.progress').textContent, /补牌后再确定进张/);
+    else assert.equal(root.querySelector('.progress'), undefined);
+  }
 });
 
 test('incomplete history, missing hand, parser errors and every unverified action remain prominent', () => {
@@ -157,19 +234,26 @@ test('incomplete history, missing hand, parser errors and every unverified actio
   assert.equal(root.querySelector('.advice').hidden, true);
 });
 
-test('literal text and stale advice protections survive simplified rendering', () => {
+test('literal text and stale protections apply to progress and expanded advice metrics', () => {
   const {show, root, api} = overlay();
-  const best = {...candidate, tile: '<img src="invalid">', reasons: ['<img src="invalid">']};
+  const best = {...candidate, tile: '<img src="invalid">', shanten: 1,
+    improvingTiles: [{tile: '<img src="invalid">', count: 2}], reasons: ['<img src="invalid">']};
   show(result(best));
   assert.equal(root.querySelector('.best-tile').textContent, '打 <img src="invalid">');
   assert.equal(root.querySelector('.reasons').textContent, '<img src="invalid">');
+  assert.match(root.querySelector('.tile-chip').textContent, /<img src="invalid">/);
   api.expectAdvice('test:2');
+  assert.equal(root.querySelector('.metrics'), undefined);
+  assert.equal(root.querySelector('.progress'), undefined);
   api.update({kind: 'advice', adviceKey: 'test:1', advice: result(candidate)});
   assert.equal(root.querySelector('.advice').hidden, true);
-  api.update({kind: 'turn', adviceKey: 'test:2', text: normalText, advice: result(candidate)});
+  api.update({kind: 'turn', adviceKey: 'test:2', text: normalText, advice: result(best)});
   assert.equal(root.querySelector('.advice').hidden, false);
+  assert.equal(root.querySelectorAll('.tile-chip').length, 1);
   api.invalidateAdvice();
   api.update({kind: 'turn', adviceKey: 'test:2', text: normalText, advice: result(candidate)});
   assert.equal(root.querySelector('.advice').hidden, true);
+  assert.equal(root.querySelector('.metrics'), undefined);
+  assert.equal(root.querySelector('.progress'), undefined);
   assert.match(source, /pointer-events:none/);
 });

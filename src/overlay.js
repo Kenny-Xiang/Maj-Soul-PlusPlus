@@ -8,42 +8,56 @@
   shadow.innerHTML = `<style>
     :host { color-scheme:dark; }
     * { box-sizing:border-box; pointer-events:none; }
-    .panel { padding:12px 16px; border:1px solid rgba(210,230,255,.22); border-radius:12px;
+    .panel { padding:10px 14px; border:1px solid rgba(210,230,255,.22); border-radius:12px;
       background:rgba(12,22,36,.64); color:#f4f7fc; box-shadow:0 4px 20px rgba(0,0,0,.18);
       font:13px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; }
     .heading, .columns { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); column-gap:28px; }
-    .heading { margin-bottom:6px; font-weight:600; }
+    .heading { margin-bottom:4px; font-weight:600; }
     .label { color:#b9d9f9; white-space:nowrap; }
     .caption { font-weight:400; color:#e0e8f0; overflow-wrap:anywhere; padding-bottom:4px; }
     .recording, .heading > :last-child { border-left:1px solid rgba(220,235,255,.12); padding-left:14px; }
     .line { white-space:pre-wrap; overflow-wrap:anywhere; break-inside:avoid; padding-bottom:2px; }
     .hand { color:#ffdfa0; font-weight:600; }
-    .advice { margin:0 0 9px; padding-bottom:9px; border-bottom:1px solid rgba(220,235,255,.18); }
+    .advice { margin:0 0 4px; }
     .advice-title { color:#aee6d1; font-weight:600; }
     .advice-message { color:#c7d4e2; }
-    .advice-warning { color:#ffe1a4; font-weight:600; line-height:1.35; overflow-wrap:anywhere; margin:4px 0; }
+    .advice-warning { color:#ffe1a4; font-weight:600; line-height:1.35; overflow-wrap:anywhere; margin:3px 0; }
     .recommendation { display:flex; align-items:baseline; flex-wrap:wrap; gap:5px 12px; }
     .best-tile { color:#ffe1a4; font-size:1.8em; font-weight:700; line-height:1.3; }
     .best-action { font-size:1.45em; }
     .efficiency { color:#c7e7ff; }
-    .metrics { display:flex; flex-wrap:wrap; gap:2px 14px; margin:4px 0; }
-    .metrics > div { white-space:nowrap; }
-    .metric-label { display:inline; color:#bacbd9; }
-    .metric-value { display:inline; color:#f4f7fc; font-weight:600; margin-left:4px; }
+    .metrics { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:3px; margin:4px 0; }
+    .metrics > div { grid-column:span 2; padding:2px 5px; border-radius:5px; background:rgba(185,217,249,.07); line-height:1.25; }
+    .metrics > div:nth-last-child(-n+2) { grid-column:span 3; }
+    .metric-label { color:#bacbd9; font-size:.8em; overflow-wrap:anywhere; }
+    .metric-value { color:#f4f7fc; font-size:1.15em; font-weight:600; font-variant-numeric:tabular-nums; }
+    .metrics > div:nth-last-child(-n+2) .metric-label, .metrics > div:nth-last-child(-n+2) .metric-value { display:inline; }
+    .metrics > div:nth-last-child(-n+2) .metric-value { margin-left:4px; }
     .alternatives, .reasons { color:#d0dfec; overflow-wrap:anywhere; }
-    .alternatives { line-height:1.35; }
-    .reasons { margin-top:3px; }
+    .alternatives, .comparison-head { display:grid; grid-template-columns:1.2fr 1.3fr 1fr .8fr; gap:5px; align-items:baseline; }
+    .alternatives { line-height:1.3; padding:1px 0; font-variant-numeric:tabular-nums; }
+    .alternatives > :last-child, .comparison-head > :last-child { text-align:right; }
+    .comparison-head { color:#bacbd9; font-size:.8em; }
+    .alternative-action { color:#ffdfa0; }
+    .reasons { margin-top:3px; line-height:1.3; }
+    .progress, .comparison { margin-top:4px; padding-top:4px; border-top:1px solid rgba(220,235,255,.14); }
+    .section-title { color:#b9d9f9; font-weight:600; margin-bottom:2px; line-height:1.2; }
+    .progress-heading { display:flex; flex-wrap:wrap; align-items:baseline; gap:0 8px; }
+    .progress-heading .progress-note { margin:0 0 3px; }
+    .tile-list { display:flex; flex-wrap:wrap; gap:3px 5px; }
+    .tile-chip { padding:0 5px; border:1px solid rgba(185,217,249,.18); border-radius:4px; color:#e3edf8; }
+    .progress-note { color:#bacbd9; font-size:.85em; margin-top:3px; }
     @media (max-width:850px) {
       .heading, .columns { grid-template-columns:minmax(0,3fr) minmax(0,2fr); column-gap:16px; }
       .panel { padding:9px 12px; }
       .recording, .heading > :last-child { padding-left:10px; }
+      .metrics { grid-template-columns:repeat(2,minmax(0,1fr)); gap:3px; margin:5px 0; }
+      .metrics > div, .metrics > div:nth-last-child(-n+2) { grid-column:span 1; }
     }
     @media (max-width:650px) {
-      .metrics { display:block; }
-      .metrics > div { display:inline; margin-right:8px; }
-      .metrics .metric-label, .metrics .metric-value { display:inline; }
-      .metrics .metric-value::before { content:' '; }
-      .alternatives { display:none; }
+      .metrics .metric-value { font-size:1.1em; }
+      .progress, .comparison { margin-top:4px; padding-top:4px; }
+      .tile-list { gap:2px; }
     }
   </style><section class="panel" aria-label="最新牌局统计">
     <div class="heading"><span class="label">Maj-Soul++ · 牌局统计</span><span class="label">行动建议</span></div>
@@ -74,6 +88,9 @@
   }
   function percent(value) {
     return Number.isFinite(value) ? `${(Math.max(0, Math.min(1, value)) * 100).toFixed(1)}%` : '—';
+  }
+  function tileCount(value) {
+    return Number.isFinite(value) ? value.toLocaleString('zh-CN', {maximumFractionDigits:1}) : '—';
   }
   function shantenLabel(candidate) {
     if (candidate.replacementDraw) return (Number.isFinite(candidate.shanten)
@@ -109,7 +126,7 @@
       candidate.consumed, candidate.calledTile, candidate.followupDiscard]);
   }
   function efficiencyLabel(candidate) {
-    return `${candidate.replacementDraw ? '补牌后预计 ' : ''}${shantenLabel(candidate)} · 有效未见 ${number(candidate.ukeire, ' 张')}`;
+    return `${candidate.replacementDraw ? '补牌后预计 ' : ''}${shantenLabel(candidate)} · 有效未见 ${tileCount(candidate.ukeire)} 张`;
   }
   function riskLabel(candidate) {
     if (candidate.replacementDraw) return '操作风险';
@@ -127,20 +144,38 @@
     return {warnings: reasons.filter(important),
       context: reasons.filter(reason => !important(reason) && !generic.test(reason)).slice(0, 1)};
   }
-  function alternativeLabel(candidate, best) {
-    const differences = [];
-    if (candidate.action !== 'abort') {
-      if (candidate.shanten !== best.shanten || candidate.replacementDraw !== best.replacementDraw) {
-        differences.push(`${candidate.replacementDraw ? '补牌后预计 ' : ''}${shantenLabel(candidate)}`);
-      } else if (Number.isFinite(candidate.ukeire) && Number.isFinite(best.ukeire) && candidate.ukeire !== best.ukeire) {
-        differences.push(`有效未见${candidate.ukeire > best.ukeire ? '多' : '少'} ${Math.abs(candidate.ukeire - best.ukeire).toLocaleString('zh-CN', {maximumFractionDigits:1})} 张`);
-      }
-      if (riskLabel(candidate) && (percent(candidate.dealInProbability) !== percent(best.dealInProbability) || riskLabel(candidate) !== riskLabel(best))) {
-        differences.push(`${riskLabel(candidate)} ${percent(candidate.dealInProbability)}（估计）`);
-      }
-      if (candidate.expectedWinPoints !== best.expectedWinPoints) differences.push(`打点 ${number(candidate.expectedWinPoints)}（估计）`);
+  function renderAlternative(parent, candidate, analysis) {
+    const alternative = row(parent, 'alternatives', '');
+    row(alternative, 'alternative-action', actionName(candidate));
+    const abort = candidate.action === 'abort';
+    row(alternative, '', abort ? '—' : `${candidate.replacementDraw ? '预计 ' : ''}${shantenLabel(candidate)} / ${tileCount(candidate.ukeire)}张`);
+    const context = candidate.replacementDraw ? '操作 ' : candidate.followupDiscard ? '后续 ' : '';
+    row(alternative, 'alternative-risk', !analysis && riskLabel(candidate) ? context + percent(candidate.dealInProbability) : '—');
+    row(alternative, '', abort ? '—' : number(candidate.expectedWinPoints));
+  }
+  function renderProgress(best) {
+    if (best.action === 'abort' || best.abortAfterRiichi) return;
+    const progress = row(advice, 'progress', '');
+    const ready = best.shanten === 0 && !best.replacementDraw;
+    const heading = row(progress, 'progress-heading', '');
+    row(heading, 'section-title', ready ? '听口明细' : '有效进张明细');
+    if (best.replacementDraw) {
+      row(progress, 'progress-note', '补牌后再确定进张，当前数值为各补牌分支的加权估计');
+      return;
     }
-    return [`备选 ${actionName(candidate)}`, ...differences.slice(0, 2)].join(' · ');
+    const tiles = ready ? best.winningTiles : best.improvingTiles;
+    if (!tiles?.length) {
+      row(progress, 'progress-note', tiles
+        ? (ready ? '没有实体上合法的听口' : '暂无可降低向听的未见进张') : '暂无进张明细');
+      return;
+    }
+    row(heading, 'progress-note', '张数为未见牌，含他家手牌与王牌');
+    const list = row(progress, 'tile-list', '');
+    for (const tile of tiles) {
+      const constraint = !ready ? '' : !tile.ronPoints && !tile.tsumoPoints ? ' · 无役'
+        : !tile.ronPoints ? ' · 仅自摸' : !tile.tsumoPoints ? ' · 仅荣和' : '';
+      row(list, 'tile-chip', `${tileName(tile.tile)} × ${number(tile.count)}${constraint}`);
+    }
   }
   function clearAdvice() {
     adviceKey = null;
@@ -186,8 +221,14 @@
     if (best.action !== 'abort') {
       row(recommendation, 'efficiency', efficiencyLabel(best));
       const metrics = row(advice, 'metrics', '');
-      const metricValues = [['胡牌得点（估计）', number(best.expectedWinPoints)]];
-      if (result.status !== 'analysis' && riskLabel(best)) metricValues.unshift([`${riskLabel(best)}（估计）`, percent(best.dealInProbability)]);
+      const metricValues = [['后续胡牌率（估计）', percent(best.winProbability)],
+        ['胡牌得点（估计）', number(best.expectedWinPoints)]];
+      if (result.status !== 'analysis' && riskLabel(best)) {
+        const context = best.replacementDraw ? '操作' : best.followupDiscard ? '后续弃牌' : '本次';
+        metricValues.unshift([`${riskLabel(best)}（估计）`, percent(best.dealInProbability)],
+          [`${best.replacementDraw ? '操作' : ''}放铳输点（估计）`, number(best.dealInPoints)],
+          [`${context}预期损失（估计）`, number(best.expectedDealInLoss)]);
+      }
       for (const [label, value] of metricValues) {
         const metric = row(metrics, '', '');
         row(metric, 'metric-label', label);
@@ -195,14 +236,23 @@
       }
     }
     const seen = new Set([actionKey(best)]);
-    const alternatives = (result.candidates || []).filter(candidate => {
+    const ranked = Number.isInteger(result.rankedCandidateCount)
+      ? (result.candidates || []).slice(0, Math.max(0, result.rankedCandidateCount)) : (result.candidates || []);
+    const alternatives = ranked.filter(candidate => {
       const key = actionKey(candidate);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
-    }).slice(0, 1);
+    }).slice(0, 2);
     if (reasons.context.length) row(advice, 'reasons', reasons.context.join('；'));
-    for (const candidate of alternatives) row(advice, 'alternatives', alternativeLabel(candidate, best));
+    renderProgress(best);
+    if (alternatives.length) {
+      const comparison = row(advice, 'comparison', '');
+      row(comparison, 'section-title', '备选对比');
+      const heading = row(comparison, 'comparison-head', '');
+      for (const label of ['行动', '向听 / 未见', '风险估计', '打点估计']) row(heading, '', label);
+      for (const candidate of alternatives) renderAlternative(comparison, candidate, result.status === 'analysis');
+    }
   }
   function fit() {
     // Keep game and recording information in fixed columns within the upper half.
