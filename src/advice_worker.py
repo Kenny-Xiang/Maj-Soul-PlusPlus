@@ -1,7 +1,7 @@
 """One background calculation at a time; retain only the newest board snapshot."""
 from copy import deepcopy
 from functools import partial
-from threading import Condition, Thread
+from threading import Condition, Event, Thread
 
 
 class AdviceWorker:
@@ -12,6 +12,7 @@ class AdviceWorker:
             calculate = partial(advise, ranked_limit=3)
         self.calculate = calculate
         self.condition = Condition()
+        self.cancel_event = Event()
         self.current_key = None
         self.pending = None
         self.completed = None
@@ -21,6 +22,7 @@ class AdviceWorker:
 
     def submit(self, key, state):
         with self.condition:
+            self.cancel_event.set()
             self.current_key = key
             self.pending = (key, deepcopy(state))
             self.completed = None
@@ -28,6 +30,7 @@ class AdviceWorker:
 
     def invalidate(self):
         with self.condition:
+            self.cancel_event.set()
             self.current_key = None
             self.pending = self.completed = None
 
@@ -38,14 +41,11 @@ class AdviceWorker:
 
     def close(self):
         with self.condition:
+            self.cancel_event.set()
             self.closed = True
             self.current_key = None
             self.pending = self.completed = None
             self.condition.notify()
-
-    def _cancelled(self, key):
-        with self.condition:
-            return self.closed or key != self.current_key
 
     def _run(self):
         while True:
@@ -55,15 +55,16 @@ class AdviceWorker:
                     return
                 key, state = self.pending
                 self.pending = None
+                cancelled = self.cancel_event = Event()
             try:
                 if self.cooperative:
-                    result = self.calculate(state, cancelled=lambda: self._cancelled(key))
+                    result = self.calculate(state, cancelled=cancelled.is_set)
                 else:
                     result = self.calculate(state)
             except Exception as error:
                 result = {"status": "unavailable", "message": "评估失败，等待下一次牌局更新",
                           "error": f"{type(error).__name__}: {error}"}
             with self.condition:
-                if not self.closed and key == self.current_key:
+                if not self.closed and key == self.current_key and not cancelled.is_set():
                     self.completed = {"kind": "advice", "adviceKey": key, "advice": result}
                     self.condition.notify_all()

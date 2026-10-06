@@ -284,7 +284,7 @@ def _target_distribution(profile, pool, draws):
 
 def _target_outcome(deficits, remaining, events, seat, payments, average,
                     survival, opponent_payments, fees, check):
-    """Fixed-target collection distribution, then the unchanged event ledger."""
+    """Collect a target with at least one missing tile, then apply event hazards."""
     from advisor_policy import Outcome, TABLES
 
     check()
@@ -326,7 +326,7 @@ def _target_outcome(deficits, remaining, events, seat, payments, average,
                    draw=draw, draw_income=draw_income)
 
 def target_policy(hand, state, remaining, opponents, events, discard=None, targets=None, *, average=None, counts=None,
-                  red_pool=None, context=None):
+                  red_pool=None, context=None, weight=None):
     """Best fixed concrete yaku route, or None if none can reach ready.
 
     Useful and missed own draws deplete one physical unseen urn without
@@ -351,6 +351,7 @@ def target_policy(hand, state, remaining, opponents, events, discard=None, targe
     events = tuple(events)
     pool = sum(remaining)
     cache = a.TABLES.get()
+    weight = a._risk_weight(state) if weight is None else weight
     best = None
     evaluated = []
     seen = set()
@@ -376,8 +377,7 @@ def target_policy(hand, state, remaining, opponents, events, discard=None, targe
             context = _scoring_context(state)
         payment_key = _target_payment_key(hand, remaining, target, deficits, red_pool, context)
         # Surplus-family identities cannot change a fixed target's payments
-        # or urn. Keep the needed families in tile order: no new symmetry or
-        # floating-point accumulation order is introduced by this reuse.
+        # or urn. Keep the needed families in tile order for the cache key.
         key = ("target-policy", payment_key,
                tuple((deficits[i], remaining[i]) for i in payment_key[2]),
                pool, events, average, survival, opponent_payments, fees)
@@ -395,7 +395,7 @@ def target_policy(hand, state, remaining, opponents, events, discard=None, targe
             continue
         row = {"route": name, "missingTiles": missing, "target": list(target),
                "winProbability": outcome.win, "winIncome": outcome.income,
-               "score": outcome.utility(a._risk_weight(state))}
+               "score": outcome.utility(weight)}
         evaluated.append(row)
         if best is None or row["score"] > best[0]:
             best = row["score"], outcome, row

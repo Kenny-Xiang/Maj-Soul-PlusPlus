@@ -9,6 +9,7 @@ wall tiles. The engine never sends game actions; riichi is considered only when 
 from collections import Counter
 from contextvars import ContextVar
 from copy import deepcopy
+from functools import lru_cache
 from math import fsum, isclose
 import time
 
@@ -185,11 +186,11 @@ def _scoring_tiles(concealed, meld_data):
             choices = [base + 1, base + 2, base + 3, base]
         else:
             choices = range(base, base + 4)
-        result = next((i for i in choices if i not in used), None)
-        if result is None:
-            raise ValueError("手牌与副露重复使用同一实体牌")
-        used.add(result)
-        return result
+        for result in choices:
+            if result not in used:
+                used.add(result)
+                return result
+        raise ValueError("手牌与副露重复使用同一实体牌")
 
     # Allocate explicit red fives first so normal fives cannot occupy them.
     all_groups = [concealed] + [m["tiles"] for m in meld_data]
@@ -218,9 +219,9 @@ def _hand_value(concealed, winning_tile, state, tsumo):
         return _score_hand(concealed, winning_tile, state, tsumo)
     seat = state["selfSeat"]
     round_ = state.get("round") or {}
-    # Preserve physical red identity and every input read by the scorer/config.
-    # These values change along riichi, call and replacement continuations.
-    key = (tuple(sorted(concealed)), winning_tile, tsumo, seat, state["playerCount"],
+    # Preserve the completed hand's physical reds. Mahjong 2.0.0 uses only the
+    # winning family for waits/fu/yaku, so held and winning red fives can swap.
+    key = (tuple(sorted(concealed + [winning_tile])), tile_index(winning_tile), tsumo, seat, state["playerCount"],
            tuple((m["type"], tuple(m["tiles"])) for m in state["melds"][seat]),
            bool(state.get("replacementWin", False)),
            bool(state.get("riichi", [False] * 4)[seat]),
@@ -235,14 +236,9 @@ def _hand_value(concealed, winning_tile, state, tsumo):
     return {**value, "yaku": value["yaku"].copy()} if "yaku" in value else value.copy()
 
 
-def _score_hand(concealed, winning_tile, state, tsumo):
-    seat, players = state["selfSeat"], state["playerCount"]
-    tiles, win, melds, implicit_red = _scoring_tiles(concealed + [winning_tile], state["melds"][seat])
-    config = _evaluation_config(state, tsumo)
-    nuki = state.get("north", [0] * 4)[seat]
-    dora = [_dora_index(t, players) for t in state.get("doras", [])]
-    extra = nuki * (1 + dora.count(30)) - implicit_red
-
+@lru_cache(maxsize=128)
+def _game_scores(players, extra):
+    # The class is stateless: every calculation still supplies its own config.
     class GameScores(ScoresCalculator):
         @staticmethod
         def calculate_scores(han, fu, config, is_yakuman=False):
@@ -253,11 +249,21 @@ def _score_hand(concealed, winning_tile, state, tsumo):
                                     if config.is_tsumo else 100 * config.tsumi_number)
             return result
 
+    return GameScores
+
+
+def _score_hand(concealed, winning_tile, state, tsumo):
+    seat, players = state["selfSeat"], state["playerCount"]
+    tiles, win, melds, implicit_red = _scoring_tiles(concealed + [winning_tile], state["melds"][seat])
+    config = _evaluation_config(state, tsumo)
+    nuki = state.get("north", [0] * 4)[seat]
+    dora = [_dora_index(t, players) for t in state.get("doras", [])]
+    extra = nuki * (1 + dora.count(30)) - implicit_red
     indicators = [(7 if players == 3 and tile_index(t) == 0 else tile_index(t)) * 4
                   for t in state.get("doras", [])]
     value = HandCalculator.estimate_hand_value(tiles, win, melds=melds,
                                                dora_indicators=indicators, config=config,
-                                               scores_calculator_factory=GameScores)
+                                               scores_calculator_factory=_game_scores(players, extra))
     if value.error:
         return {"points": 0, "error": value.error}
     yakuman = any(y.is_yakuman for y in value.yaku)

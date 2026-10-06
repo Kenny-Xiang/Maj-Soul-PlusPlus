@@ -21,6 +21,69 @@ def eventually(predicate):
 
 
 class AdviceWorkerTests(unittest.TestCase):
+    def test_cancellation_callback_does_not_acquire_worker_condition(self):
+        started, release, checked = Event(), Event(), Event()
+        cancellation = []
+
+        def calculate(state, cancelled, *, ranked_limit):
+            started.set()
+            if not release.wait(3):
+                raise TimeoutError('test did not release calculation')
+            cancellation.append(cancelled())
+            checked.set()
+            return {'status': 'ready'}
+
+        with patch('advisor.advise', side_effect=calculate):
+            worker = AdviceWorker()
+            try:
+                worker.submit('old', {})
+                self.assertTrue(started.wait(3))
+                with worker.condition:
+                    worker.invalidate()
+                    release.set()
+                    self.assertTrue(checked.wait(3))
+                    self.assertEqual(cancellation, [True])
+            finally:
+                worker.close()
+                release.set()
+                worker.thread.join(3)
+            self.assertFalse(worker.thread.is_alive())
+            self.assertIsNone(worker.take_result())
+
+    def test_resubmitting_same_key_cancels_and_drops_the_previous_calculation(self):
+        old_started, old_release, new_started, new_release = Event(), Event(), Event(), Event()
+        cancellation = []
+
+        def calculate(state, cancelled, *, ranked_limit):
+            started, release = (old_started, old_release) if state['step'] == 1 else (new_started, new_release)
+            started.set()
+            if not release.wait(3):
+                raise TimeoutError('test did not release calculation')
+            cancellation.append(cancelled())
+            return {'status': 'ready', 'step': state['step']}
+
+        with patch('advisor.advise', side_effect=calculate):
+            worker = AdviceWorker()
+            try:
+                worker.submit('same', {'step': 1})
+                self.assertTrue(old_started.wait(3))
+                worker.submit('same', {'step': 2})
+                old_release.set()
+                self.assertTrue(new_started.wait(3))
+                self.assertEqual(cancellation, [True])
+                self.assertIsNone(worker.take_result())
+                new_release.set()
+                result = eventually(worker.take_result)
+                self.assertEqual(result['adviceKey'], 'same')
+                self.assertEqual(result['advice'], {'status': 'ready', 'step': 2})
+                self.assertEqual(cancellation, [True, False])
+            finally:
+                worker.close()
+                old_release.set()
+                new_release.set()
+                worker.thread.join(3)
+            self.assertFalse(worker.thread.is_alive())
+
     def test_default_calculation_cancels_superseded_work_and_keeps_latest_snapshot(self):
         started, release = Event(), Event()
         visited, cancellation = [], []

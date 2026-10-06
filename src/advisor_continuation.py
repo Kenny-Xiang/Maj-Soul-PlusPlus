@@ -171,7 +171,7 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
                 nxt_hand, nxt_counts, sh, ukeire = discard_states[tile]
                 continuation, metadata = target_policy(nxt_hand, drawn, unseen, opponents, suffix,
                                                        tile, [(name, target)], average=target_average, counts=nxt_counts,
-                                                       red_pool=red_pool, context=context)
+                                                       red_pool=red_pool, context=context, weight=weight)
                 if continuation is None:
                     continue
                 continuation = a._policy_residual(continuation, survival, *payments)
