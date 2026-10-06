@@ -1,9 +1,11 @@
 # Build from the repository root using scripts/build.sh.
 from pathlib import Path
+from PyInstaller.utils.hooks import copy_metadata
 
 root = Path(SPECPATH)
 datas = [(str(root / 'src' / name), '.') for name in
          ('core.cjs', 'browser.js', 'overlay.js', 'game_actions.js', 'lobby.js', 'autoplay.js')]
+datas += copy_metadata('mahjong')
 datas += [(str(root / 'docs'), 'docs')]
 datas += [(str(root / name), '.') for name in ('README.md', 'README.en.md')]
 for folder in ('src', 'tests', 'docs', 'scripts'):
