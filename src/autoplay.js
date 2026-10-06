@@ -4,6 +4,7 @@
   let enabled = false, playerCount = 4, phase = 'idle', message = '待机';
   let current = null, pending = null, submitted = null, executing = false, stopped = false, cancelling = null;
   let lastStatus = '';
+  let lastLogState = '';
   let clientLoadingSince = null;
   const now = () => performance.now();
   const delay = () => 1000 + Math.random() * 4000;
@@ -13,6 +14,10 @@
     if (signature !== lastStatus) {
       lastStatus = signature;
       window.__mjStatsOverlay?.updateAutomation?.(value);
+    }
+    const logState = JSON.stringify([enabled, playerCount, phase]);
+    if (logState !== lastLogState) {
+      lastLogState = logState; window.__mjMonitor?.reportAutomation?.(value);
     }
   }
   function getStatus() { return {enabled, playerCount, phase, message}; }
@@ -46,6 +51,9 @@
     }
     if (enabled) return;
     if (cancelling !== null) { status('waiting', '正在取消上一轮匹配，请稍后开启'); return; }
+    if (window.__mjUnityTransport?.isUnity() && window.__mjUnityActions?.snapshot().pending) {
+      status('waiting', '等待上次操作确认，请稍后开启'); return;
+    }
     enabled = true; pending = null; submitted = null; clientLoadingSince = null;
     if (current && !current.sent) current.target = now() + delay();
     status('waiting', '已开启 · 检查当前对局');
@@ -125,6 +133,9 @@
       const lobby = window.__mjLobby?.snapshot(playerCount);
       if (!lobby) { pause('已暂停：大厅控制器未就绪'); return; }
       if (lobby.phase === 'blocked') { pause(lobby.message || '已暂停：当前界面不支持自动操作'); return; }
+      if (window.__mjUnityTransport?.isUnity() && window.__mjUnityActions?.snapshot().pending) {
+        status('submitted', '等待服务器回应及牌局动作确认'); return;
+      }
       if (lobby.clientLoading) {
         clientLoadingSince ??= now();
         if (now() - clientLoadingSince >= 90000) {
@@ -152,7 +163,7 @@
         status('waiting', '对局中 · 等待合法操作窗口');
         return;
       }
-      const client = window.__mjGameActions?.snapshot(turn.state);
+      const client = window.__mjUnityActions?.snapshot(turn.state);
       if (!client?.available) { pause('已暂停：游戏操作接口不可用'); return; }
       if (client.blocked) { pause(`已暂停：${client.reason}`); return; }
       if (!client.canAct) {
@@ -173,7 +184,7 @@
       const wait = Math.min(turn.target - now(), client.remainingMs - 350);
       if (wait > 0) { status('delaying', `按建议操作 · ${(wait / 1000).toFixed(1)} 秒`); return; }
       turn.sent = true;
-      run(turn.key, () => window.__mjGameActions.execute(turn.advice, turn.state), '已提交建议操作');
+      run(turn.key, () => window.__mjUnityActions.execute(turn.advice, turn.state), '已提交建议操作');
     } catch (error) { pause(`已暂停：${error.message}`); }
   }
   function manual(event) {

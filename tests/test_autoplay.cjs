@@ -16,7 +16,7 @@ function setup() {
     __mjLobby:{snapshot:()=>lobby,
       start:(count,key)=>{starts.push({count,key}); return {ok:true};},
       cancel:()=>{cancels++;return {ok:true};}, finish:key=>{finishes.push(key);return {ok:true};}},
-    __mjGameActions:{snapshot:()=>client, execute:(advice,state)=>{
+    __mjUnityActions:{snapshot:()=>client, execute:(advice,state)=>{
       actions.push({advice,state}); window.__mjAutoplay.onInput(); return Promise.resolve({});
     }},
   };
@@ -130,7 +130,7 @@ test('mode change affects next queue and does not interrupt the current game', (
 });
 
 test('client rejection and asynchronous request failures pause without retry', async () => {
-  const s=setup();s.window.__mjGameActions.execute=()=>Promise.reject(new Error('server rejected'));
+  const s=setup();s.window.__mjUnityActions.execute=()=>Promise.reject(new Error('server rejected'));
   s.turn();s.advice();s.api.setEnabled(true);s.advance(3000);await new Promise(setImmediate);
   assert.equal(s.api.getStatus().enabled,false);assert.match(s.api.getStatus().message,/server rejected/);
   const x=setup();Object.assign(x.lobby,{phase:'lobby',actionKey:'queue'});
@@ -175,4 +175,26 @@ test('stop detaches timers and input handlers and cannot be re-enabled', () => {
   const s=setup();s.turn();s.advice();s.api.setEnabled(true);s.api.stop();s.advance(10000);
   assert.equal(s.actions.length,0);assert.equal(s.listeners.size,0);s.api.setEnabled(true);
   assert.equal(s.api.getStatus().enabled,false);
+});
+
+test('unidentified startup waits are bounded without timing out login or matching', () => {
+  const s = setup(); Object.assign(s.lobby, {phase:'loading', clientLoading:true});
+  s.api.setEnabled(true); s.advance(60000); s.api.setPlayerCount(3); s.advance(29999);
+  assert.equal(s.api.getStatus().enabled,true); s.advance(1);
+  assert.equal(s.api.getStatus().enabled,false); assert.match(s.api.getStatus().message,/90 秒/);
+  s.api.setEnabled(true); s.advance(89999); assert.equal(s.api.getStatus().enabled,true);
+  Object.assign(s.lobby, {phase:'login', clientLoading:false}); s.advance(180000);
+  assert.equal(s.api.getStatus().enabled,true);
+  s.lobby.phase = 'matching'; s.advance(180000); assert.equal(s.api.getStatus().enabled,true);
+  assert.equal(s.starts.length,0);
+});
+
+test('Unity result confirmation gates settlement and prevents re-enabling an unresolved action', () => {
+  const s = setup(); s.window.__mjUnityTransport = {isUnity:() => true};
+  Object.assign(s.lobby, {phase:'settlement', actionKey:'round:1'});
+  s.api.setEnabled(true); s.client.pending = true; s.advance(5000);
+  assert.equal(s.finishes.length,0);
+  s.api.setEnabled(false); s.api.setEnabled(true); assert.equal(s.api.getStatus().enabled,false);
+  s.client.pending = false; s.api.setEnabled(true); s.advance(3000);
+  assert.deepEqual(s.finishes,['round:1']);
 });

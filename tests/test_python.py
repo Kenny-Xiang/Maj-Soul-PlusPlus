@@ -51,6 +51,15 @@ class OutputTests(unittest.TestCase):
             self.assertEqual(out.getvalue(), "")
             self.assertFalse(log.json_path.exists())
 
+    def test_automation_reason_is_logged_without_invalidating_the_advisor(self):
+        event = {'session':'test', 'serial':1, 'kind':'automation',
+                 'phase':'paused', 'enabled':False, 'message':'等待服务器确认超时'}
+        with tempfile.TemporaryDirectory() as folder:
+            log = TerminalLog(folder)
+            log.accept(event)
+            self.assertIn('[自动打牌] 等待服务器确认超时', log.text_path.read_text())
+            self.assertIsNone(overlay_update(event))
+
     def test_riichi_marker_follows_other_players_names(self):
         for players in (3, 4):
             with self.subTest(players=players):

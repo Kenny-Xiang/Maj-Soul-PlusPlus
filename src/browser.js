@@ -16,6 +16,8 @@ function snapshot() {
 function publish(event) {
   const packet = {session, serial:++serial, time:new Date().toISOString(), ...event};
   if (packet.kind === 'turn') window.__mjStatsOverlay?.expectAdvice?.(`${session}:${packet.serial}`);
+  window.__mjUnityActions?.onEvent(packet);
+  window.__mjUnityLobby?.onEvent?.(packet);
   window.__mjAutoplay?.onEvent(packet);
   nativeBridge.postMessage(JSON.stringify(packet));
   connectedAt = Date.now();
@@ -25,6 +27,7 @@ function closeDecisionWindow() {
   window.__mjStatsOverlay?.invalidateAdvice();
   state.canAct = state.canDiscard = state.canDoubleRiichi = false; state.lastAction = null;
   state.operations = []; state.operationDetails = []; state.forbiddenDiscards = [];
+  state.operationTiming = null;
 }
 function fail(error) {
   closeDecisionWindow();
@@ -38,7 +41,7 @@ function updateStatistics(event) {
   window.__mjStatsOverlay?.invalidateAdvice();
   turns++;
   publish({kind:'turn', trigger:event.name, actorSeat:event.seat, step:event.step, turnNumber:turns,
-    statistics:{received, errors}, state:JSON.parse(JSON.stringify(state))});
+    action:event, statistics:{received, errors}, state:JSON.parse(JSON.stringify(state))});
 }
 function resetStatistics() {
   window.__mjStatsOverlay?.invalidateAdvice();
@@ -56,7 +59,7 @@ function resetForConnection(meta) {
   activeSocket = meta.id;
   Object.assign(state, core.emptyState(), {phase:'connected'});
 }
-function receivedFrame(meta, bytes) {
+function receivedFrame(meta, bytes, receivedAt) {
   if (activeSocket !== null && meta.id < activeSocket) return;
   received++;
   const env = core.envelope(bytes);
@@ -64,6 +67,7 @@ function receivedFrame(meta, bytes) {
   if (env.kind === 1 && env.name === '.lq.ActionPrototype') {
     resetForConnection(meta);
     const event = core.action(env.data), previousPhase = state.phase;
+    if (event.operationTiming) event.operationTiming.receivedAt = receivedAt;
     if (state.phase === 'ended' && state.lastStep === null &&
         ['ActionHule','ActionNoTile','ActionLiuJu'].includes(event.name)) {received = 0; return;}
     if (!core.apply(state, event)) return;
@@ -100,13 +104,14 @@ function attach(socket) {
   const meta = {socket, id:++sequence, pending:new Map(), queue:Promise.resolve()};
   sockets.set(socket, meta);
   meta.message = event => {
+    const receivedAt = performance.now();
     meta.queue = meta.queue.then(async () => {
       if (!running || !sockets.has(socket)) return;
       const data = event.data;
       const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) :
         data instanceof Blob ? new Uint8Array(await data.arrayBuffer()) :
         ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
-      if (running && sockets.has(socket) && bytes) receivedFrame(meta, bytes);
+      if (running && sockets.has(socket) && bytes) receivedFrame(meta, bytes, receivedAt);
     }).catch(error => {
       if (running && sockets.has(socket) && (activeSocket === null || meta.id >= activeSocket)) fail(error);
     });
@@ -188,6 +193,7 @@ wrappedConstructor = new Proxy(NativeSocket, {construct(target, args, newTarget)
 }});
 window.WebSocket = wrappedConstructor;
 window.__mjMonitor = {version:'3.0.0', getSnapshot:snapshot, stop,
+  reportAutomation:value => Promise.resolve().then(() => {if (running) publish({kind:'automation', ...value});}),
   uninstall:() => {stop(); delete window.__mjMonitor;}};
 heartbeatTimer = setInterval(() => {
   publish({kind:'heartbeat', phase:state.phase, received, turns});

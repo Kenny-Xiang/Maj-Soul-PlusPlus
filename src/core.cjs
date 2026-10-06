@@ -75,6 +75,7 @@ function action(bytes, obfuscated = true) {
     });
     e.operations = e.operationDetails.map(op => op.type);
     e.canDiscard = e.operations.includes(1);
+    e.operationTiming = {timeFixed:first(op, 5), timeAdd:first(op, 4)};
   }
   const furitenField = {ActionDealTile: 7, ActionDiscardTile: 6, ActionChiPengGang: 7,
     ActionAnGangAddGang: 7, ActionBaBei: 7}[name];
@@ -98,9 +99,10 @@ function action(bytes, obfuscated = true) {
   } else if (name === 'ActionAnGangAddGang') {
     Object.assign(e, {seat: first(f, 1), type: first(f, 2), tile: str(f, 3), doras: strings(f, 6)});
   } else if (name === 'ActionBaBei') Object.assign(e, {seat: first(f, 1), moqie: Boolean(first(f, 9)), doras: strings(f, 6)});
-  else if (name === 'ActionHule') Object.assign(e, {matchEnd: f.has(6), scores: integers(f, 5)});
+  else if (name === 'ActionHule') Object.assign(e, {matchEnd: f.has(6), scores: integers(f, 5),
+    hules:(f.get(1) || []).map(bytes => {const h = fields(bytes); return {seat:first(h, 4), zimo:Boolean(first(h, 5))};})});
   else if (name === 'ActionNoTile') e.matchEnd = Boolean(first(f, 4));
-  else if (name === 'ActionLiuJu') e.matchEnd = f.has(2);
+  else if (name === 'ActionLiuJu') Object.assign(e, {matchEnd:f.has(2), type:first(f, 1), seat:first(f, 3)});
   else if (name !== 'ActionMJStart') e.unsupported = true;
   return e;
 }
@@ -187,13 +189,14 @@ function emptyState() {
     doubleRiichi: [null, null, null, null], doubleRiichiPending: [false, false, false, false],
     riichiStep: [null, null, null, null], riichiSticks: null, furiten: null,
     canAct: false, canDiscard: false, noCallsYet: false, canDoubleRiichi: false,
-    operations: [], operationDetails: [], forbiddenDiscards: [],
+    operations: [], operationDetails: [], operationTiming: null, forbiddenDiscards: [],
     playerCount: 4, warning: '尚未取得开局或恢复基线', round: null, match: null};
 }
 const tileFamily = t => t?.replace(/^0/, '5');
 function setOperations(state, e) {
   state.operations = [...(e.operations || [])];
   state.operationDetails = (e.operationDetails || []).map(op => ({...op, combination: [...op.combination]}));
+  state.operationTiming = Number.isFinite(e.operationTiming?.receivedAt) ? {...e.operationTiming} : null;
   // The offered tile belongs to this exact action, never a previous river entry.
   state.lastAction = e.name && state.phase === 'playing' && !e.unsupported ? {
     name: e.name, seat: e.seat ?? (e.name === 'ActionNewRound' ? e.ju ?? null : null),

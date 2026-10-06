@@ -13,8 +13,9 @@ DATA = Path.home() / "Library/Application Support/Maj-Soul++"
 def collector_source():
     core = (ROOT / "core.cjs").read_text(encoding="utf-8")
     browser = (ROOT / "browser.js").read_text(encoding="utf-8")
+    transport = (ROOT / "unity_transport.js").read_text(encoding="utf-8")
     return ("(function(){'use strict';const core=(()=>{const module={exports:{}};\n"
-            + core + "\nreturn module.exports;})();\n" + browser + "\n})();")
+            + core + "\nreturn module.exports;})();\n" + transport + "\n" + browser + "\n})();")
 
 
 def overlay_update(event):
@@ -190,7 +191,7 @@ def main():
     controller.addUserScript_(WebKit.WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly_(
         (ROOT / "overlay.js").read_text(encoding="utf-8"), WebKit.WKUserScriptInjectionTimeAtDocumentStart, True))
     controller.addUserScript_(script)
-    for name in ('game_actions.js', 'lobby.js', 'autoplay.js'):
+    for name in ('unity_actions.js', 'unity_lobby.js', 'autoplay.js'):
         controller.addUserScript_(WebKit.WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly_(
             (ROOT / name).read_text(encoding='utf-8'), WebKit.WKUserScriptInjectionTimeAtDocumentStart, True))
     window, view = make_window(config, "Maj-Soul++")

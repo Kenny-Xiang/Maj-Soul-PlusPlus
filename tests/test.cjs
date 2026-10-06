@@ -34,6 +34,26 @@ const authResponse = ({category=2, modeId=12, mode=2, seats=[11,22,4000000007,44
 const rpcFrame = (kind, id, name, data) => new Uint8Array([kind,id & 255,id >> 8,
   ...str(1,name), ...bytes(2,data)]);
 
+test('recorded operation timers keep their wire millisecond units and replay does not create a deadline', () => {
+  const event = decoded.find(e => e.name === 'ActionDealTile' && e.step === 66);
+  assert.deepEqual(event.operationTiming,{timeFixed:5000,timeAdd:20000});
+  const state = core.emptyState();
+  core.apply(state,{name:'ActionNewRound',step:0,selfSeat:0,hand:['1p'],scores:[25000,25000,25000,25000],
+    chang:0,ju:0,ben:0,operationDetails:[{type:1,combination:[]}],operations:[1],
+    operationTiming:event.operationTiming});
+  assert.equal(state.operationTiming,null);
+  core.apply(state,{...event,step:1,operationTiming:{...event.operationTiming,receivedAt:123}});
+  assert.equal(state.operationTiming.receivedAt,123);
+});
+
+test('winning and abortive-draw echoes preserve the exact seat and result type', () => {
+  const decode = frame => core.action(core.envelope(frame).data);
+  const win = decode(actionFrame('ActionHule',8,bytes(1,[...num(4,2),...num(5,1)])));
+  assert.deepEqual(win.hules,[{seat:2,zimo:true}]);
+  const draw = decode(actionFrame('ActionLiuJu',9,[...num(1,1),...num(3,2)]));
+  assert.equal(draw.type,1); assert.equal(draw.seat,2);
+});
+
 test('authGame resolves own seat by account id, reads the correct rank and omits private fields', () => {
   const account = 4000000007;
   assert.equal(core.authAccount(new Uint8Array([...num(1,account), ...str(2,'private-token'),
@@ -623,7 +643,7 @@ test('reconnected socket restores advice with a fresh key after continuous live 
   }
   const window = {WebSocket:Socket, __mjStatsOverlay:{invalidateAdvice(){},expectAdvice(key){keys.push(key);}},
     webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,performance,
     Uint8Array,ArrayBuffer,Blob,URL,setInterval:fn=>fn,clearInterval(){},console:{log(){}}});
   const feed = async (socket,frame) => {
     socket.dispatchEvent(new MessageEvent('message',{data:frame.buffer}));
@@ -693,7 +713,7 @@ test('replaced sockets cannot apply delayed frames or errors to the active conne
       }
       const posts = [];
       const window = {WebSocket:Socket,webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-      vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+      vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,performance,
         Uint8Array,ArrayBuffer,Blob,URL,setInterval:fn=>fn,clearInterval(){},console:{log(){}}});
       const old = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-old');
       old.dispatchEvent(new MessageEvent('message',{data:new DelayedBlob([Buffer.from(frames[0].hex,'hex')])}));
@@ -739,7 +759,7 @@ test('collector sends authoritative windows and manual operation invalidation to
   const window = {WebSocket:Socket, __mjAutoplay:{onEvent:e=>events.push(e),
     onInput:()=>inputs.push(true),stop:()=>{stopped=true;}},
     webkit:{messageHandlers:{mjStatistics:{postMessage(){}}}}};
-  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,performance,
     Uint8Array,ArrayBuffer,Blob,URL,setInterval:()=>0,clearInterval(){},console:{log(){}}});
   const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
   const opening = actionFrame('ActionNewRound',0,[...num(2,0),
@@ -767,7 +787,7 @@ test('native listener preserves socket sends and fully detaches on uninstall', a
     send(...args) {sent.push({socket:this,args}); return 'original-result';}
   }
   const window = {WebSocket:Socket, webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder,performance, Uint8Array, ArrayBuffer, Blob, URL,
     setInterval:fn=>{timers.add(fn);return fn;}, clearInterval:fn=>timers.delete(fn), console:{log(){}}};
   vm.runInNewContext(collectorCode, sandbox);
   const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
@@ -801,7 +821,7 @@ test('browser correlates authGame separately from restore and clears stale rank 
   }
   const window = {WebSocket:Socket,__mjStatsOverlay:{invalidateAdvice(){invalidations++;}},
     webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,performance,
     Uint8Array,ArrayBuffer,Blob,URL,setInterval:()=>0,clearInterval(){},console:{log(){}}});
   const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
   const receive = async (socket, data) => {
@@ -879,7 +899,7 @@ test('sending a decision clears stale advice immediately and preserves the origi
   }
   const window = {WebSocket:Socket, __mjStatsOverlay:{invalidateAdvice(){invalidations++;}},
     webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder,performance, Uint8Array, ArrayBuffer, Blob, URL,
     setInterval:fn=>fn, clearInterval(){}, console:{log(){}}};
   vm.runInNewContext(collectorCode,sandbox);
   const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
@@ -923,7 +943,7 @@ test('parse errors, disconnection and stopping all close an active decision wind
     }
     const window = {WebSocket:Socket, __mjStatsOverlay:{invalidateAdvice(){}},
       webkit:{messageHandlers:{mjStatistics:{postMessage(){}}}}};
-    const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+    const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder,performance, Uint8Array, ArrayBuffer, Blob, URL,
       setInterval:fn=>fn, clearInterval(){}, console:{log(){}}};
     vm.runInNewContext(collectorCode,sandbox);
     const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
@@ -954,7 +974,7 @@ test('native bridge publishes every action and one initial deal without requirin
     send(data) {sent.push(data); return 'ok';}
   }
   const window = {WebSocket:Socket, webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder,performance, Uint8Array, ArrayBuffer, Blob, URL,
     setInterval:fn=>{timers.add(fn);return fn;}, clearInterval:fn=>timers.delete(fn), console:{log(){}}};
   const code = collectorCode;
   const installed = vm.runInNewContext(code, sandbox);
@@ -1015,7 +1035,7 @@ test('whole-match end resets all live statistics once and next match starts at u
         send(data) {sent.push(data);}
       }
       const window = {WebSocket:Socket, webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-      const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+      const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder,performance, Uint8Array, ArrayBuffer, Blob, URL,
         setInterval:fn=>{timers.add(fn);return fn;}, clearInterval:fn=>timers.delete(fn), console:{log(){}}};
       vm.runInNewContext(collectorCode,sandbox);
       const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
