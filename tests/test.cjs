@@ -34,6 +34,32 @@ const authResponse = ({category=2, modeId=12, mode=2, seats=[11,22,4000000007,44
 const rpcFrame = (kind, id, name, data) => new Uint8Array([kind,id & 255,id >> 8,
   ...str(1,name), ...bytes(2,data)]);
 
+test('the initial match-start notification waits for the first round without creating an incomplete playing state', () => {
+  const state = core.emptyState(); state.phase = 'connected'; state.selfSeat = 0;
+  core.applyRestore(state, core.restore(new Uint8Array()));
+  const start = core.action(core.envelope(actionFrame('ActionMJStart',0)).data);
+  assert.equal(core.apply(state,start),true);
+  assert.equal(state.phase,'connected'); assert.equal(state.lastStep,0);
+  assert.equal(state.baseline,null); assert.equal(state.canAct,false);
+  assert.equal(state.handComplete,false); assert.equal(state.historyComplete,false);
+  assert.equal(core.apply(state,start),false, 'a duplicate start must not restart initialization');
+  core.apply(state,{name:'ActionNewRound',step:1,selfSeat:0,
+    hand:['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','7z','1z'],
+    scores:[25000,25000,25000,25000],chang:0,ju:0,ben:0,doras:['1p'],
+    operations:[1],operationDetails:[{type:1,combination:[]}]});
+  assert.equal(state.phase,'playing'); assert.equal(state.canAct,true);
+  assert.equal(state.baseline,'new_round'); assert.equal(state.historyComplete,true);
+});
+
+test('match-start cannot conceal an existing invalid baseline or missing prior actions', () => {
+  for (const changes of [{baseline:'snapshot_unverified'}, {lastStep:3}]) {
+    const state = Object.assign(core.emptyState(),changes);
+    core.apply(state,{name:'ActionMJStart',step:4});
+    assert.equal(state.phase,'playing'); assert.equal(state.handComplete,false);
+    assert.equal(state.historyComplete,false); assert.equal(state.canAct,false);
+  }
+});
+
 test('recorded operation timers keep their wire millisecond units and replay does not create a deadline', () => {
   const event = decoded.find(e => e.name === 'ActionDealTile' && e.step === 66);
   assert.deepEqual(event.operationTiming,{timeFixed:5000,timeAdd:20000});

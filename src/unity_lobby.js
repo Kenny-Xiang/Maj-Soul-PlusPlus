@@ -187,8 +187,10 @@
       if (owned && clock() - owned.at > 180000) return result('blocked', '匹配等待超过 3 分钟，正在取消本次队列');
       return result('matching', owned?.submitting ? '正在提交匹配' : '正在匹配', {modeId:owned?.modeId});
     }
-    if (endedAt !== null && clock() - endedAt < 45000)
-      return result('settlement', '等待结算动画完成并返回大厅');
+    if (endedAt !== null && clock() - endedAt < 45000) {
+      const remainingMs = 45000 - (clock() - endedAt);
+      return result('settlement', `结算等待 · ${Math.ceil(remainingMs / 1000)} 秒后准备下一场`, {remainingMs});
+    }
     if (busy) return result('loading', '正在刷新段位与金币');
     if (refreshNeeded || !account)
       return result('lobby', '准备刷新段位与金币', {action:'refresh', actionKey:`refresh:${identity}:${generation}`});

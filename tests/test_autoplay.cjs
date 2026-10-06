@@ -36,6 +36,37 @@ function setup() {
     advance(ms){time+=ms;tick?.();},tick(){tick?.();},get cancels(){return cancels;}};
 }
 
+for (const arrivalMs of [500,2000,8000,29000]) test(`initial round arriving after ${arrivalMs}ms resumes from its event, not a fixed five-second delay`, () => {
+  const s=setup(); s.api.setEnabled(true);
+  assert.match(s.api.getStatus().message,/等待开局牌局信息/);
+  s.turn(1,{phase:'connected',baseline:null,handComplete:false,historyComplete:false,canAct:false});
+  s.advice(1,{status:'unavailable',message:'尚未取得基线'}); s.advance(arrivalMs);
+  assert.equal(s.api.getStatus().enabled,true); assert.equal(s.actions.length,0);
+  s.turn(2); s.advice(2); s.advance(2999); assert.equal(s.actions.length,0);
+  s.advance(1); assert.equal(s.actions.length,1); assert.equal(s.api.getStatus().enabled,true);
+});
+
+test('initial round wait expires after 30 seconds, and repeated connected statuses do not extend it', () => {
+  const s=setup(); s.api.setEnabled(true); s.advance(15000);
+  s.turn(1,{phase:'connected',baseline:null,handComplete:false,historyComplete:false,canAct:false});
+  s.api.onEvent({kind:'status',phase:'connected'}); s.advance(14999);
+  assert.equal(s.api.getStatus().enabled,true); s.advance(1);
+  assert.equal(s.api.getStatus().enabled,false); assert.match(s.api.getStatus().message,/30 秒/);
+  s.turn(2); s.advice(2); s.advance(5000);
+  assert.equal(s.api.getStatus().enabled,false); assert.equal(s.actions.length,0);
+});
+
+test('initial waiting never suppresses an incomplete playing state or manual takeover', () => {
+  for (const stop of [s=>s.turn(2,{handComplete:false,historyComplete:false,baseline:'new_round'}),
+    s=>s.turn(2,{handComplete:false,historyComplete:false,baseline:'snapshot_unverified'}),
+    s=>s.listeners.get('pointerdown')({isTrusted:true,composedPath:()=>[]})]) {
+    const s=setup(); s.api.setEnabled(true); s.advance(1000); stop(s);
+    assert.equal(s.api.getStatus().enabled,false);
+    s.turn(3); s.advice(3); s.advance(5000);
+    assert.equal(s.api.getStatus().enabled,false); assert.equal(s.actions.length,0);
+  }
+});
+
 test('default off and four players; enabling observes a window then submits exactly once', () => {
   const s=setup(); s.turn();s.advice();s.advance(10000);
   assert.equal(s.actions.length,0);assert.equal(s.api.getStatus().playerCount,4);

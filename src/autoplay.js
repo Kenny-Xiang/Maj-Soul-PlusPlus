@@ -5,7 +5,7 @@
   let current = null, pending = null, submitted = null, executing = false, stopped = false, cancelling = null;
   let lastStatus = '';
   let lastLogState = '';
-  let clientLoadingSince = null;
+  let clientLoadingSince = null, initialRoundSince = null;
   const now = () => performance.now();
   const delay = () => 1000 + Math.random() * 4000;
   function status(nextPhase, nextMessage) {
@@ -36,7 +36,7 @@
   }
   function pause(reason) {
     const wasEnabled = enabled;
-    enabled = false; pending = null; clientLoadingSince = null;
+    enabled = false; pending = null; clientLoadingSince = initialRoundSince = null;
     status('paused', reason);
     if (wasEnabled) cancelMatch();
   }
@@ -44,7 +44,7 @@
     if (stopped) return;
     if (!value) {
       const wasEnabled = enabled;
-      enabled = false; pending = null; clientLoadingSince = null;
+      enabled = false; pending = null; clientLoadingSince = initialRoundSince = null;
       status('idle', '已关闭 · 手动操作');
       if (wasEnabled) cancelMatch();
       return;
@@ -54,7 +54,7 @@
     if (window.__mjUnityTransport?.isUnity() && window.__mjUnityActions?.snapshot().pending) {
       status('waiting', '等待上次操作确认，请稍后开启'); return;
     }
-    enabled = true; pending = null; submitted = null; clientLoadingSince = null;
+    enabled = true; pending = null; submitted = null; clientLoadingSince = initialRoundSince = null;
     if (current && !current.sent) current.target = now() + delay();
     status('waiting', '已开启 · 检查当前对局');
     tick();
@@ -132,6 +132,7 @@
     try {
       const lobby = window.__mjLobby?.snapshot(playerCount);
       if (!lobby) { pause('已暂停：大厅控制器未就绪'); return; }
+      if (lobby.phase !== 'playing') initialRoundSince = null;
       if (lobby.phase === 'blocked') { pause(lobby.message || '已暂停：当前界面不支持自动操作'); return; }
       if (window.__mjUnityTransport?.isUnity() && window.__mjUnityActions?.snapshot().pending) {
         status('submitted', '等待服务器回应及牌局动作确认'); return;
@@ -149,7 +150,7 @@
         return;
       }
       if (lobby.phase === 'settlement') {
-        if (!lobby.actionKey) { pending = null; status('waiting', lobby.message || '等待结算动画'); return; }
+        if (!lobby.actionKey) { pending = null; status('settlement', lobby.message || '等待结算动画'); return; }
         schedule(lobby.actionKey, () => window.__mjLobby.finish(lobby.actionKey), lobby.message || '继续对局');
         return;
       }
@@ -159,7 +160,15 @@
         return;
       }
       const turn = current;
-      if (!turn || !turn.state.canAct || turn.sent) {
+      if (!turn || turn.state.phase === 'connected' && turn.state.baseline === null) {
+        initialRoundSince ??= now();
+        if (now() - initialRoundSince >= 30000)
+          pause('已暂停：30 秒内未收到完整开局信息，请检查游戏连接');
+        else status('waiting', '正在进入对局 · 等待开局牌局信息');
+        return;
+      }
+      initialRoundSince = null;
+      if (!turn.state.canAct || turn.sent) {
         status('waiting', '对局中 · 等待合法操作窗口');
         return;
       }

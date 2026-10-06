@@ -213,6 +213,13 @@ function setOperations(state, e) {
   state.canDoubleRiichi = state.canAct && state.noCallsYet && state.rivers[state.selfSeat].length === 0;
 }
 function apply(state, e) {
+  // Unity announces the match before dealing. This notification has no hand
+  // baseline; only ActionNewRound can make the initial game state playable.
+  if (e.name === 'ActionMJStart' && e.step === 0 && state.lastStep === null && state.baseline === null) {
+    state.phase = 'connected'; state.lastStep = e.step;
+    setOperations(state, {});
+    return true;
+  }
   if (e.name === 'ActionNewRound') {
     if (state.phase === 'playing' && ['new_round','restore_actions'].includes(state.baseline) &&
         state.lastStep !== null && e.step <= state.lastStep &&

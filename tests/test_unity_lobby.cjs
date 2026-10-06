@@ -352,3 +352,51 @@ test('a requested cancellation resumes after same-account reconnect without engi
   assert.equal(h.calls.at(-1).method,'.lq.Lobby.cancelUnifiedMatch');
   assert.equal(h.calls.length,3);
 });
+
+test('whole-game settlement exposes a countdown and offers the next match refresh at 45 seconds',async()=>{
+  const h=harness(); await h.refresh();
+  h.emit('.lq.NotifyGameEndResult');
+  const initial=h.api.snapshot(3);
+  assert.equal(initial.phase,'settlement');
+  assert.equal(initial.remainingMs,45000);
+  assert.equal(initial.message,'结算等待 · 45 秒后准备下一场');
+  assert.equal(initial.actionKey,undefined);
+  h.advance(26000);
+  const later=h.api.snapshot(3);
+  assert.equal(later.remainingMs,19000);
+  assert.equal(later.message,'结算等待 · 19 秒后准备下一场');
+  h.advance(14000);
+  const nearEnd=h.api.snapshot(3);
+  assert.equal(nearEnd.remainingMs,5000);
+  assert.equal(nearEnd.message,'结算等待 · 5 秒后准备下一场');
+  assert.equal(h.calls.length,1,'countdown polling must not send a refresh or match request');
+  h.advance(4999);
+  assert.equal(h.api.snapshot(3).phase,'settlement');
+  assert.equal(h.api.snapshot(3).actionKey,undefined);
+  h.advance(1);
+  const ready=h.api.snapshot(3);
+  assert.equal(ready.phase,'lobby');
+  assert.equal(ready.action,'refresh');
+  assert.ok(ready.actionKey,'the controller can now schedule a fresh eligibility check');
+});
+
+test('disabling and rechecking automation or duplicate end notifications do not restart settlement waiting',async()=>{
+  const h=harness(); await h.refresh();
+  h.api.onEvent({kind:'status',phase:'ended'});
+  h.advance(26000);
+  // The controller calls cancel when disabled and snapshot again when enabled.
+  assert.equal(h.api.cancel().ok,true);
+  assert.equal(h.api.snapshot().remainingMs,19000);
+  h.api.onEvent({kind:'status',phase:'ended'});
+  h.emit('.lq.NotifyGameEndResult');
+  assert.equal(h.api.snapshot().remainingMs,19000);
+  h.advance(14000);
+  assert.equal(h.api.cancel().ok,true);
+  h.api.onEvent({kind:'status',phase:'ended'});
+  assert.equal(h.api.snapshot().remainingMs,5000);
+  h.advance(5000);
+  const next=h.api.snapshot();
+  assert.equal(next.phase,'lobby');
+  assert.equal(next.action,'refresh');
+  assert.equal(h.calls.length,1,'cancel/re-enable must neither match early nor restart the wait');
+});
