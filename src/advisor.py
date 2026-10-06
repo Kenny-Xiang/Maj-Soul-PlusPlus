@@ -9,7 +9,6 @@ wall tiles. The engine never sends game actions; riichi is considered only when 
 from collections import Counter
 from contextvars import ContextVar
 from copy import deepcopy
-from functools import lru_cache
 from math import fsum, isclose
 import time
 
@@ -23,6 +22,7 @@ from advisor_settlement import opponent_payments
 from advisor_continuation import finite_policy, leaf_policy
 from advisor_routes import target_policy
 from advisor_rank_policy import ranked_context
+from advisor_shanten import structural_shanten as _structural_shanten
 
 
 MODEL = "public-information-actions-ev-v10-rank-preference (未校准启发式)"
@@ -34,12 +34,17 @@ _SEARCH = ContextVar("advisor_search", default=None)
 _HAND_VALUES = ContextVar("advisor_hand_values", default=None)
 _POLICY_RISKS = ContextVar("advisor_policy_risks", default=None)
 TILES = tuple(f"{n}{s}" for s in "mps" for n in range(1, 10)) + tuple(f"{n}z" for n in range(1, 8))
+_TILE_INDICES = {tile: i for i, tile in enumerate(TILES)} | {"0m": 4, "0p": 13, "0s": 22}
 ORPHANS = (0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33)
 OPTIONS = OptionalRules(has_open_tanyao=True, has_aka_dora=True,
                         has_double_yakuman=True, kiriage=False)
 
 
 def tile_index(tile):
+    try:
+        return _TILE_INDICES[tile]
+    except (KeyError, TypeError):
+        pass
     if not isinstance(tile, str) or len(tile) != 2 or tile[1] not in "mpsz":
         raise ValueError("牌编码无效")
     n = 5 if tile[0] == "0" and tile[1] != "z" else int(tile[0])
@@ -53,11 +58,6 @@ def counts34(tiles):
     for tile in tiles:
         counts[tile_index(tile)] += 1
     return tuple(counts)
-
-
-@lru_cache(maxsize=65536)
-def _structural_shanten(counts, special):
-    return Shanten.calculate_shanten(counts, use_chiitoitsu=special, use_kokushi=special)
 
 
 def shanten(counts, special=True):
@@ -143,6 +143,26 @@ def _config(state, tsumo=False, seat=None):
                       tsumi_number=round_.get("ben", 0), options=OPTIONS)
 
 
+def _evaluation_config(state, tsumo=False):
+    """Actor-only reuse; mutable opponent pricing still gets fresh configs."""
+    cache = _HAND_VALUES.get()
+    if cache is None:
+        return _config(state, tsumo)
+    seat = state["selfSeat"]
+    round_ = state.get("round") or {}
+    key = ("config", tsumo, seat, state["playerCount"],
+           bool(state.get("replacementWin", False)),
+           bool(state.get("riichi", [False] * 4)[seat]),
+           bool(state.get("doubleRiichi", [False] * 4)[seat]),
+           round_.get("ju", 0), round_.get("chang", 0), round_.get("ben", 0),
+           state.get("riichiSticks", 0), tuple(vars(OPTIONS).items()))
+    if key not in cache:
+        cache[key] = _config(state, tsumo)
+    # Mahjong 2.0.0 rewrites mutable bonus-yaku fields before using them.
+    # Scoring consumes the result into scalars/names before the next call.
+    return cache[key]
+
+
 def _points(han, fu, config, players, yakuman=False):
     cost = ScoresCalculator.calculate_scores(han, fu, config, yakuman)
     # Standard sanma tsumo-loss: remove the missing player's payment. Honba
@@ -218,7 +238,7 @@ def _hand_value(concealed, winning_tile, state, tsumo):
 def _score_hand(concealed, winning_tile, state, tsumo):
     seat, players = state["selfSeat"], state["playerCount"]
     tiles, win, melds, implicit_red = _scoring_tiles(concealed + [winning_tile], state["melds"][seat])
-    config = _config(state, tsumo)
+    config = _evaluation_config(state, tsumo)
     nuki = state.get("north", [0] * 4)[seat]
     dora = [_dora_index(t, players) for t in state.get("doras", [])]
     extra = nuki * (1 + dora.count(30)) - implicit_red
@@ -318,7 +338,7 @@ def _uncached_future_value(hand, state, counts, special, tsumo=False):
     closed = all(m["type"] == 3 for m in melds)
     all_tiles = hand + [t for m in melds for t in m["tiles"]]
     full = counts34(all_tiles)
-    cfg = _config(state, tsumo=tsumo)
+    cfg = _evaluation_config(state, tsumo=tsumo)
     if special and Shanten.calculate_shanten_for_kokushi_hand(counts) == shanten(counts, special) <= 2:
         return _points(13, 0, cfg, players, yakuman=True), 1.
     value_han = sum(full[i] >= 3 for i in (31, 32, 33, cfg.player_wind, cfg.round_wind))
@@ -546,8 +566,15 @@ def _danger(tile, remaining, opponents, *, chankan=False):
         relevant.update(ORPHANS)  # A missing kokushi tile depends on every orphan.
     # Ordinary shapes inspect at most two neighbours; four-group tanki also
     # uses total unknown mass. Far-away non-orphans cannot change this risk.
+    n = index % 9
+    # Only this tile's genbutsu and suji evidence affects its risk. Other
+    # hypothetical passed discards must not invalidate the same calculation.
     key = ("danger", tile, tuple(remaining[j] for j in sorted(relevant)), sum(remaining), chankan,
-           tuple((o["seat"], tuple(sorted(o["safe"])), o["tenpai"]) for o in opponents))
+           tuple((o["seat"], index in o["safe"], index < 27 and (
+               (n < 3 and index + 3 in o["safe"]) or
+               (n > 5 and index - 3 in o["safe"]) or
+               (3 <= n <= 5 and index - 3 in o["safe"] and index + 3 in o["safe"])),
+               o["tenpai"]) for o in opponents))
     if key not in cache:
         cache[key] = _uncached_danger(tile, remaining, opponents, chankan=chankan)
     return cache[key]

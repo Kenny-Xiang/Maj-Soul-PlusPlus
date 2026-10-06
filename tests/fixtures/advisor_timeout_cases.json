@@ -1,0 +1,427 @@
+{
+  "schemaVersion": 1,
+  "logSelection": {
+    "sha256": "9fe006554f685805c44bcd82c5f95a91613fa0adca13c7b0e784a10164509341",
+    "filter": "advice unavailable/cancelled with time-budget/cancellation message"
+  },
+  "cases": [
+    {
+      "id": "live-timeout-serial-578",
+      "tags": [
+        "daiminkan",
+        "inference-timeout",
+        "performance-regression",
+        "pon",
+        "recorded",
+        "three-player"
+      ],
+      "notes": "Current local public-state timeout replay; no outcome labels.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "7z",
+          "5z",
+          "8p",
+          "1z",
+          "6p",
+          "9p",
+          "9p",
+          "9p",
+          "1p",
+          "5p",
+          "2p",
+          "4p",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 23,
+        "lastDraw": null,
+        "left": 44,
+        "doras": [
+          "8s"
+        ],
+        "scores": [
+          36000,
+          38000,
+          29000
+        ],
+        "north": [
+          1,
+          1,
+          1,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 2,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          3,
+          5
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 2,
+          "tile": "9p",
+          "type": null,
+          "step": 23
+        },
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 1
+        },
+        "rivers": [
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 7
+            },
+            {
+              "tile": "2z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 15
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 19
+            }
+          ],
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 11
+            },
+            {
+              "tile": "7s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 21
+            }
+          ],
+          [
+            {
+              "tile": "8p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            },
+            {
+              "tile": "9s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 13
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 17
+            },
+            {
+              "tile": "9p",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 23
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "2z",
+                "2z",
+                "2z"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            }
+          ],
+          []
+        ],
+        "operationDetails": [
+          {
+            "type": 3,
+            "combination": [
+              "9p|9p"
+            ]
+          },
+          {
+            "type": 5,
+            "combination": [
+              "9p|9p|9p"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "live-timeout-serial-1017",
+      "tags": [
+        "daiminkan",
+        "inference-timeout",
+        "performance-regression",
+        "pon",
+        "recorded",
+        "three-player"
+      ],
+      "notes": "Current local public-state timeout replay; no outcome labels.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "5s",
+          "6s",
+          "6p",
+          "6s",
+          "5p",
+          "9p",
+          "0s",
+          "1z",
+          "7p",
+          "7s",
+          "1s",
+          "5s",
+          "2s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 19,
+        "lastDraw": null,
+        "left": 45,
+        "doras": [
+          "1p"
+        ],
+        "scores": [
+          23900,
+          45900,
+          35200
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [
+          3,
+          5
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 1,
+          "tile": "5s",
+          "type": null,
+          "step": 19
+        },
+        "round": {
+          "chang": 0,
+          "ju": 1,
+          "ben": 1
+        },
+        "rivers": [
+          [
+            {
+              "tile": "1m",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 5
+            },
+            {
+              "tile": "9m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 11
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 17
+            }
+          ],
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            },
+            {
+              "tile": "1s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 7
+            },
+            {
+              "tile": "3s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 13
+            },
+            {
+              "tile": "5s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 19
+            }
+          ],
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            },
+            {
+              "tile": "6s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 9
+            },
+            {
+              "tile": "8s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 15
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "operationDetails": [
+          {
+            "type": 3,
+            "combination": [
+              "0s|5s",
+              "5s|5s"
+            ]
+          },
+          {
+            "type": 5,
+            "combination": [
+              "0s|5s|5s"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
