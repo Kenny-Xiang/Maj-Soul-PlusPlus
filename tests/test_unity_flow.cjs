@@ -7,7 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const core = require('../src/core.cjs');
 const read = name => fs.readFileSync(path.join(__dirname, '../src', name), 'utf8');
-async function setup(players = 4, early = false) {
+async function setup(players = 4, early = false, roundCount = 1) {
   let time = 0, timerId = 0;
   const timers = new Map(), intervals = new Map(), packets = [], statuses = [];
   class Socket extends EventTarget {
@@ -68,15 +68,19 @@ async function setup(players = 4, early = false) {
   const lobby = connect();
   lobby.send(frame(2, 1, '.lq.Lobby.login', encode([[11, 'current-native-client-version']])));
   await reply(lobby, encode([[2,11], [3,account()]]));
-  const api = window.__mjAutoplay; api.setPlayerCount(players);
+  const api = window.__mjAutoplay; api.setPlayerCount(players); api.setRoundCount(roundCount);
   return {window, api, lobby, packets, statuses, advance, feed, frame, reply, replyAccount, action, connect, encode, first, fields, str, account,
     last(socket) {return core.envelope(socket.sent.at(-1));},
     advice(best) {const packet = packets.findLast(p => p.kind === 'turn');
       api.onAdvice({adviceKey:`${packet.session}:${packet.serial}`, advice:{status:'ready',best}});}};
 }
 
-for (const players of [4, 3]) test(`Unity ${players}-player flow matches, discards, confirms a round and rematches without Laya globals`, async () => {
-  const h = await setup(players), {encode:e, first, fields, str} = h;
+for (const players of [4, 3]) for (const roundCount of [1, 2]) for (const switchQueued of [false, true])
+  test(`Unity ${players}-player ${roundCount === 1 ? 'East' : 'South'} flow matches, discards, confirms a round and rematches ${switchQueued ? 'in the other wind after changing a submitted queue' : 'in the same wind'} without Laya globals`, async () => {
+  const h = await setup(players, false, roundCount), {encode:e, first, fields, str} = h;
+  const mode = (players === 4 ? 7 : 20) + roundCount;
+  const nextRoundCount = switchQueued ? 3 - roundCount : roundCount;
+  const nextMode = (players === 4 ? 7 : 20) + nextRoundCount;
   assert.equal(h.window.GameMgr, undefined);
   assert.equal(h.api.getStatus().enabled, false);
   h.api.setEnabled(true); await h.advance(3000);
@@ -86,15 +90,26 @@ for (const players of [4, 3]) test(`Unity ${players}-player flow matches, discar
   await h.advance(100); await h.advance(3000);
   const match = h.last(h.lobby);
   assert.equal(match.name, '.lq.Lobby.startUnifiedMatch');
-  assert.equal(str(fields(match.data),1), players === 4 ? '1:8' : '1:21');
+  assert.equal(str(fields(match.data),1), `1:${mode}`);
   assert.equal(str(fields(match.data),2), 'current-native-client-version');
+  if (switchQueued) {
+    const submittedCount = h.lobby.sent.length;
+    h.api.setRoundCount(nextRoundCount);
+    await h.advance(3000);
+    assert.equal(h.api.getStatus().enabled,true);
+    assert.equal(h.api.getStatus().roundCount,nextRoundCount);
+    assert.equal(h.lobby.sent.length,submittedCount, 'changing wind cannot cancel or add a queue before its ACK');
+    const queued = h.window.__mjLobby.snapshot(players,nextRoundCount);
+    assert.equal(queued.phase,'matching');
+    assert.equal(queued.modeId,mode, 'the submitted queue retains its original mode');
+  }
   await h.reply(h.lobby);
-  await h.feed(h.lobby, h.frame(1,0,'.lq.NotifyMatchGameStart',e([[3,'public-test-match'],[4,players === 4 ? 8 : 21]])));
+  await h.feed(h.lobby, h.frame(1,0,'.lq.NotifyMatchGameStart',e([[3,'public-test-match'],[4,mode]])));
   assert.equal(core.envelope(h.lobby.seen.at(-1)).name, '.lq.NotifyMatchGameStart');
   const game = h.connect(true), seats = [11,22,33,44].slice(0,players);
   game.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11]])));
   const auth = e([...seats.map(id => [2,e([[1,id],[5,e([[1,10301]])],[7,e([[1,20301]])]])]),
-    ...seats.map(id => [3,id]), [5,e([[1,2],[2,e([[1,players === 4 ? 1 : 11]])],[3,e([[2,players === 4 ? 8 : 21]])]])]]);
+    ...seats.map(id => [3,id]), [5,e([[1,2],[2,e([[1,(players === 4 ? 0 : 10) + roundCount]])],[3,e([[2,mode]])]])]]);
   await h.reply(game,auth);
   game.send(h.frame(2,3,'.lq.FastTest.enterGame'));
   await h.reply(game);
@@ -111,6 +126,7 @@ for (const players of [4, 3]) test(`Unity ${players}-player flow matches, discar
     ...seats.map(() => [6,players === 4 ? 25000 : 35000]), [7,e([[1,0],[2,e([[1,1]])],[4,20000],[5,5000]])],
     [13,players === 4 ? 69 : 54],[14,'1p']]);
   const state = h.window.__mjMonitor.getSnapshot().state;
+  assert.equal(state.match.roundCount,roundCount);
   assert.equal(state.canAct,true); assert.equal(state.operationTiming.timeFixed,5000);
   assert.equal(h.window.__mjUnityActions.snapshot(state).canAct,true);
   h.advice({action:'discard',tile:'1z'});
@@ -142,9 +158,11 @@ for (const players of [4, 3]) test(`Unity ${players}-player flow matches, discar
   await h.replyAccount();
   await h.advance(100); await h.advance(3000);
   assert.equal(h.last(h.lobby).name,'.lq.Lobby.startUnifiedMatch');
+  assert.equal(str(fields(h.last(h.lobby).data),1),`1:${nextMode}`);
   await h.reply(h.lobby);
   h.api.setEnabled(false);
   assert.equal(h.last(h.lobby).name,'.lq.Lobby.cancelUnifiedMatch');
+  assert.equal(str(fields(h.last(h.lobby).data),1),`1:${nextMode}`);
   await h.reply(h.lobby); await h.advance(100);
   assert.equal(h.api.getStatus().enabled,false);
   assert.ok(h.packets.every((packet, index) => !index || packet.serial > h.packets[index - 1].serial),
@@ -183,6 +201,44 @@ for (const fault of ['step gap','unverified snapshot','invalid first deal'])
     await h.action(game,'ActionNewRound',4,deal(hand));
     assert.equal(h.api.getStatus().enabled,false, 'a later valid deal cannot override a safety pause');
   });
+
+test('re-enabling after reconnect rejects replayed operations and resumes only from a fresh live window', async () => {
+  const h=await setup(),e=h.encode,seats=[11,22,33,44];
+  const auth=e([...seats.map(id=>[2,e([[1,id],[5,e([[1,10301]])]])]),
+    ...seats.map(id=>[3,id]),[5,e([[1,2],[2,e([[1,1]])],[3,e([[2,8]])]])]]);
+  const hand=['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','7z','1z'];
+  const operation=e([[1,0],[2,e([[1,1]])],[4,20000],[5,5000]]);
+  const opening=[[1,0],[2,0],[3,0],...hand.map(tile=>[4,tile]),
+    ...seats.map(()=>[6,25000]),[7,operation],[13,69],[14,'1p']];
+  const old=h.connect(true);old.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11]])));
+  await h.reply(old,auth);await h.action(old,'ActionNewRound',0,opening);
+  const previous=h.packets.findLast(p=>p.kind==='turn');
+  h.api.setEnabled(true);h.advice({action:'discard',tile:'1z'});
+  old.readyState=3;old.dispatchEvent(new Event('close'));
+  assert.equal(h.api.getStatus().enabled,false);
+  const game=h.connect(true);game.send(h.frame(2,3,'.lq.FastTest.authGame',e([[1,11]])));
+  await h.reply(game,auth);game.send(h.frame(2,4,'.lq.FastTest.syncGame'));
+  await h.reply(game,e([[3,1],[4,e([[2,e([[1,0],[2,'ActionNewRound'],[3,e(opening)]])]])]]));
+  const restored=h.window.__mjMonitor.getSnapshot().state;
+  assert.equal(restored.baseline,'restore_actions');assert.equal(restored.handComplete,true);
+  assert.equal(restored.historyComplete,false);assert.equal(restored.operationTiming,null);
+  h.api.setEnabled(true);
+  assert.equal(h.api.getStatus().enabled,false);assert.match(h.api.getStatus().message,/基线不完整/);
+  h.api.onAdvice({adviceKey:`${previous.session}:${previous.serial}`,
+    advice:{status:'ready',best:{action:'discard',tile:'1z'}}});
+  await h.advance(5000);assert.equal(game.sent.length,2);
+  await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z']]);
+  await h.action(game,'ActionDealTile',2,[[1,0],[2,'2z'],[3,68],[4,operation]]);
+  assert.equal(h.window.__mjMonitor.getSnapshot().state.canAct,true);
+  assert.equal(h.api.getStatus().enabled,false);
+  h.api.setEnabled(true);h.advice({action:'discard',tile:'2z'});
+  await h.advance(h.api.getStatus().timing.targetMs);
+  assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
+  assert.equal(h.str(h.fields(h.last(game).data),3),'2z');
+  await h.reply(game);await h.action(game,'ActionDiscardTile',3,[[1,0],[2,'2z'],[5,1]]);
+  assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+  assert.equal(h.api.getStatus().enabled,true);
+});
 
 test('reopening during settlement preserves the countdown and automatically queues the next match after it expires', async () => {
   const h=await setup(3), game=h.connect(true);

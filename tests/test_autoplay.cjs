@@ -14,7 +14,7 @@ function setup(random = () => .5) {
   const window = {
     __mjStatsOverlay:{updateAutomation:s=>statuses.push(s)},
     __mjLobby:{snapshot:()=>lobby,
-      start:(count,key)=>{starts.push({count,key}); return {ok:true};},
+      start:(count,key,roundCount)=>{starts.push({count,key,roundCount}); return {ok:true};},
       cancel:()=>{cancels++;return {ok:true};}, finish:key=>{finishes.push(key);return {ok:true};}},
     __mjUnityActions:{snapshot:()=>client, execute:(advice,state)=>{
       actions.push({advice,state,at:time}); window.__mjAutoplay.onInput(); return Promise.resolve({});
@@ -91,9 +91,26 @@ test('initial waiting never suppresses an incomplete playing state or manual tak
   }
 });
 
-test('default off and four players; enabling observes a window then submits exactly once', () => {
+test('enabling after an incomplete reconnect pauses until a fresh complete state arrives', () => {
+  for (const incomplete of [{baseline:'restore_actions',handComplete:true,historyComplete:false},
+    {baseline:'snapshot_unverified',handComplete:false,historyComplete:false}]) {
+    const s=setup();s.turn(1,{...incomplete,canAct:false,canDiscard:false,operationTiming:null});
+    s.advice(1,{status:'unavailable',message:'正在恢复牌局'});
+    s.api.setEnabled(true);
+    assert.equal(s.api.getStatus().enabled,false);
+    assert.match(s.api.getStatus().message,/基线不完整/);
+    s.advance(5000);assert.equal(s.actions.length,0);
+    s.turn(2,{operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});s.advice(2);
+    s.advance(5000);assert.equal(s.actions.length,0);
+    s.api.setEnabled(true);s.finishAction();
+    assert.equal(s.api.getStatus().enabled,true);
+  }
+});
+
+test('default off, four players and East; enabling observes a window then submits exactly once', () => {
   const s=setup(); s.turn();s.advice();s.advance(10000);
   assert.equal(s.actions.length,0);assert.equal(s.api.getStatus().playerCount,4);
+  assert.equal(s.api.getStatus().roundCount,1);
   s.api.setEnabled(true);assert.equal(s.actions.length,0);
   s.finishAction();assert.equal(s.api.getStatus().enabled,true);
   s.advice();s.advance(50000);assert.equal(s.actions.length,1);
@@ -183,6 +200,38 @@ test('mode change affects next queue and does not interrupt the current game', (
   assert.equal(s.actions.length,1);assert.equal(s.api.getStatus().playerCount,3);
   Object.assign(s.lobby,{phase:'lobby',actionKey:'next:3'});s.tick();s.advance(3000);
   assert.equal(s.starts[0].count,3);s.api.setPlayerCount(7);assert.equal(s.api.getStatus().playerCount,3);
+});
+
+test('South selection preserves the current decision and is passed to the next queue', () => {
+  const s=setup();s.turn();s.advice();s.api.setEnabled(true);
+  const target=s.api.getStatus().timing.targetMs;
+  s.advance(100);s.api.setRoundCount(2);
+  for (const invalid of [0,3,'1',null]) s.api.setRoundCount(invalid);
+  assert.equal(s.api.getStatus().roundCount,2);
+  assert.equal(s.api.getStatus().timing.targetMs,target);
+  s.advance(target-101);assert.equal(s.actions.length,0);
+  s.advance(1);assert.equal(s.actions.length,1);
+  let preference;
+  s.window.__mjLobby.snapshot=(players,roundCount)=>{
+    preference={players,roundCount};return {phase:'lobby',actionKey:`next:${players}:${roundCount}`};
+  };
+  s.tick();s.advance(3000);
+  assert.deepEqual(preference,{players:4,roundCount:2});
+  assert.deepEqual(s.starts,[{count:4,key:'next:4:2',roundCount:2}]);
+});
+
+test('changing match length invalidates the queued start and records the new preference', () => {
+  const s=setup(),logs=[];
+  s.window.__mjMonitor={reportAutomation:value=>logs.push(value)};
+  s.window.__mjLobby.snapshot=(players,roundCount)=>({phase:'lobby',actionKey:`next:${players}:${roundCount}`});
+  s.api.setEnabled(true);s.advance(1000);s.api.setRoundCount(2);
+  s.advance(200);assert.equal(s.starts.length,0);
+  s.advance(1199);assert.equal(s.starts.length,0);
+  s.advance(1);assert.deepEqual(s.starts,[{count:4,key:'next:4:2',roundCount:2}]);
+  assert.ok(logs.some(value=>value.roundCount===2));
+  s.api.setEnabled(false);s.api.setRoundCount(1);
+  assert.equal(s.api.getStatus().roundCount,1);
+  s.advance(5000);assert.equal(s.starts.length,1);
 });
 
 test('client rejection and asynchronous request failures pause without retry', async () => {

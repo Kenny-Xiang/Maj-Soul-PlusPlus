@@ -75,7 +75,10 @@
       <span class="automation-mode-label">对局模式</span>
       <button type="button" class="automation-four" aria-pressed="true">四麻</button>
       <button type="button" class="automation-three" aria-pressed="false">三麻</button>
-      <span class="automation-next">下场生效 · 东风</span>
+      <span class="automation-mode-label">对局长度</span>
+      <button type="button" class="automation-east" aria-pressed="true">东风</button>
+      <button type="button" class="automation-south" aria-pressed="false">南风</button>
+      <span class="automation-next">下场生效</span>
       <span class="automation-status" role="status" aria-live="polite">待机</span>
     </div>
     <div class="heading"><span class="label">Maj-Soul++ · 牌局统计</span><span class="label">行动建议</span></div>
@@ -88,6 +91,7 @@
   const advice = shadow.querySelector('.advice');
   const automationToggle = shadow.querySelector('.automation-toggle');
   const automationFour = shadow.querySelector('.automation-four'), automationThree = shadow.querySelector('.automation-three');
+  const automationEast = shadow.querySelector('.automation-east'), automationSouth = shadow.querySelector('.automation-south');
   const automationStatus = shadow.querySelector('.automation-status');
   let automationEnabled = false;
   let adviceKey = null, expectedAdviceKey = null;
@@ -98,6 +102,8 @@
     automationToggle.textContent = `自动打牌：${automationEnabled ? '开启' : '关闭'}`;
     automationFour.setAttribute('aria-pressed', String(status.playerCount !== 3));
     automationThree.setAttribute('aria-pressed', String(status.playerCount === 3));
+    automationEast.setAttribute('aria-pressed', String(status.roundCount !== 2));
+    automationSouth.setAttribute('aria-pressed', String(status.roundCount === 2));
     automationStatus.dataset.phase = status.phase || 'idle';
     automationStatus.textContent = status.message || (automationEnabled ? '等待行动' : '待机');
     fit();
@@ -116,6 +122,8 @@
   automationToggle.addEventListener('click', () => changeAutomation('setEnabled', !automationEnabled));
   automationFour.addEventListener('click', () => changeAutomation('setPlayerCount', 4));
   automationThree.addEventListener('click', () => changeAutomation('setPlayerCount', 3));
+  automationEast.addEventListener('click', () => changeAutomation('setRoundCount', 1));
+  automationSouth.addEventListener('click', () => changeAutomation('setRoundCount', 2));
   function row(parent, className, text) {
     const element = document.createElement('div');
     element.className = className;

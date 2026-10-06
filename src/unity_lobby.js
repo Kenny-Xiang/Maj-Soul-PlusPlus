@@ -1,17 +1,20 @@
 // Unity uses Liqi on the client's authenticated sockets, not Laya UI globals.
-// Schema: /1/v0.11.243.w/res/proto/liqi.json. Candidate ranked East rooms below
+// Schema: /1/v0.11.243.w/res/proto/liqi.json. Candidate ranked East/South rooms below
 // were decoded from /1/v0.11.252.w/res/config/lqc.lqbin on 2026-10-06,
 // SHA256 a5959513fa31d3b5297d2dda400c86c0eacbdb4adad461b583439d7f673c9086.
 // The server remains authoritative for availability. Unity rematch/automatic
 // settlement evidence: Sunalamye/Naki @ 4e927649, AUDIT.md:180 and AutoRematchEngine.
 (() => {
   if (location.hostname !== 'game.maj-soul.com' || window.__mjUnityLobby) return;
+  // Per room: four-player IDs [East, South], three-player IDs [East, South],
+  // four-player rank bounds, gold floors [East, South]. All gold ceilings are -1
+  // (unlimited), and all these ordinary ranked modes use match_group=1.
   const rooms = [
-    [1, '铜之间', 2, 17, 10101, 10203, 0],
-    [2, '银之间', 5, 19, 10201, 10303, 2500],
-    [3, '金之间', 8, 21, 10301, 10403, 5000],
-    [4, '玉之间', 11, 23, 10401, 10503, 10000],
-    [6, '王座间', 15, 25, 10501, 10720, 10000],
+    [1, '铜之间', [2, 3], [17, 18], 10101, 10203, [0, 0]],
+    [2, '银之间', [5, 6], [19, 20], 10201, 10303, [2500, 3500]],
+    [3, '金之间', [8, 9], [21, 22], 10301, 10403, [5000, 7000]],
+    [4, '玉之间', [11, 12], [23, 24], 10401, 10503, [10000, 14000]],
+    [6, '王座间', [15, 16], [25, 26], 10501, 10720, [10000, 14000]],
   ];
   const versions = new Map();
   let transport, identity = '', lastAccountId = null, generation = 0, account = null, refreshNeeded = true;
@@ -169,7 +172,7 @@
     } catch (error) {problem = `大厅协议解析失败：${error.message}`;}
   }
 
-  function snapshot(playerCount = 4) {
+  function snapshot(playerCount = 4, roundCount = 1) {
     const live = sync();
     if (!transport?.isUnity?.() || !protocol()) return result('loading', '等待 Unity 游戏客户端加载', {clientLoading:true});
     if (!live.connected) return result('login', '等待大厅连接，请先在游戏窗口登录');
@@ -192,13 +195,15 @@
       return result('settlement', `结算等待 · ${Math.ceil(remainingMs / 1000)} 秒后准备下一场`, {remainingMs});
     }
     if (busy) return result('loading', '正在刷新段位与金币');
+    if (![1, 2].includes(roundCount)) return result('blocked', '无法识别场次，请选择东风或南风');
     if (refreshNeeded || !account)
-      return result('lobby', '准备刷新段位与金币', {action:'refresh', actionKey:`refresh:${identity}:${generation}`});
+      return result('lobby', '准备刷新段位与金币', {action:'refresh', actionKey:`refresh:${identity}:${generation}:${roundCount}`});
     if (account.roomId) return result('blocked', '请先退出当前房间并返回大厅');
     if (account.frozen) return result('blocked', '账号当前无法匹配，请检查游戏提示');
     const rank = playerCount === 3 ? account.level3 : account.level;
     const offset = playerCount === 3 ? 10000 : 0;
     const mode = playerCount === 3 ? '三麻' : '四麻';
+    const wind = roundCount === 2 ? '南风' : '东风';
     if (!Number.isInteger(rank) || rank === 0)
       return result('blocked', `未取得${mode}段位，请重新登录后开启`);
     const rankedRooms = [3, 4].includes(playerCount) ?
@@ -206,19 +211,19 @@
     if (!rankedRooms.length)
       return result('blocked', `无法识别${mode}段位（${rank}），请重新登录后开启`);
     if (!Number.isInteger(account.gold)) return result('blocked', '未取得金币信息，请重新登录后开启');
-    const room = rankedRooms.filter(row => account.gold >= row[6]).at(-1);
-    if (!room) return result('blocked', `金币不足：当前 ${account.gold}，${mode}当前段位的东风场最低需要 ${rankedRooms[0][6]}`);
+    const room = rankedRooms.filter(row => account.gold >= row[6][roundCount - 1]).at(-1);
+    if (!room) return result('blocked', `金币不足：当前 ${account.gold}，${mode}当前段位的${wind}场最低需要 ${rankedRooms[0][6][roundCount - 1]}`);
     const version = versions.get(live.lobbySessionId);
     if (!version) return result('blocked', '尚未取得当前客户端版本，请重新登录后开启');
-    const modeId = room[playerCount === 3 ? 3 : 2];
-    return result('lobby', `准备匹配${room[1]} · ${playerCount === 3 ? '三麻' : '四麻'}东风`, {
-      action:'match', actionKey:`match:${identity}:${generation}:${playerCount}:${modeId}:${rank}:${account.gold}`,
+    const modeId = room[playerCount === 3 ? 3 : 2][roundCount - 1];
+    return result('lobby', `准备匹配${room[1]} · ${mode}${wind}`, {
+      action:'match', actionKey:`match:${identity}:${generation}:${playerCount}:${roundCount}:${modeId}:${rank}:${account.gold}`,
       modeId, sid:`1:${modeId}`, version, roomName:room[1],
     });
   }
 
-  async function start(playerCount, actionKey) {
-    const state = snapshot(playerCount), binding = identity, version = generation;
+  async function start(playerCount, actionKey, roundCount = 1) {
+    const state = snapshot(playerCount, roundCount), binding = identity, version = generation;
     if (state.phase !== 'lobby' || !actionKey || state.actionKey !== actionKey)
       return {ok:false, reason:'大厅状态已经变化，取消本次操作'};
     const {encode, first} = protocol();

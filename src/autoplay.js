@@ -1,7 +1,7 @@
 // Own the user's automation intent; adapters perform one verified client action.
 (() => {
   if (location.hostname !== 'game.maj-soul.com' || window.__mjAutoplay) return;
-  let enabled = false, playerCount = 4, phase = 'idle', message = '待机';
+  let enabled = false, playerCount = 4, roundCount = 1, phase = 'idle', message = '待机';
   let current = null, pending = null, submitted = null, executing = false, stopped = false, cancelling = null;
   let lastStatus = '';
   let lastLogState = '';
@@ -76,14 +76,14 @@
       lastStatus = signature;
       window.__mjStatsOverlay?.updateAutomation?.(value);
     }
-    const logState = JSON.stringify([enabled, playerCount, phase]);
+    const logState = JSON.stringify([enabled, playerCount, roundCount, phase]);
     if (logState !== lastLogState) {
       lastLogState = logState; window.__mjMonitor?.reportAutomation?.(value);
     }
   }
   function getStatus() {
     const timing = current?.timing;
-    return {enabled, playerCount, phase, message, ...(timing ? {timing:{...timing,
+    return {enabled, playerCount, roundCount, phase, message, ...(timing ? {timing:{...timing,
       elapsedMs:Math.max(0, (current.sentAt ?? now()) - current.startedAt)}} : {})};
   }
   function cancelMatch() {
@@ -131,6 +131,12 @@
     // An existing queue belongs to its selected mode; the next queue uses this preference.
     pending = null;
     status(phase, '模式已更新 · 下一场生效');
+  }
+  function setRoundCount(value) {
+    if (![1, 2].includes(value) || value === roundCount) return;
+    roundCount = value;
+    pending = null;
+    status(phase, '场次已更新 · 下一场生效');
   }
   function onEvent(event) {
     if (stopped || !['turn', 'status', 'error'].includes(event.kind)) return;
@@ -211,7 +217,7 @@
     }
     if (!enabled) return;
     try {
-      const lobby = window.__mjLobby?.snapshot(playerCount);
+      const lobby = window.__mjLobby?.snapshot(playerCount, roundCount);
       if (!lobby) { pause('已暂停：大厅控制器未就绪'); return; }
       if (lobby.phase !== 'playing') initialRoundSince = null;
       if (lobby.phase === 'blocked') { pause(lobby.message || '已暂停：当前界面不支持自动操作'); return; }
@@ -227,7 +233,7 @@
       } else clientLoadingSince = null;
       if (lobby.phase === 'lobby') {
         if (!lobby.actionKey) { pending = null; status('waiting', lobby.message || '等待大厅就绪'); return; }
-        schedule(lobby.actionKey, () => window.__mjLobby.start(playerCount, lobby.actionKey), lobby.message || '准备匹配');
+        schedule(lobby.actionKey, () => window.__mjLobby.start(playerCount, lobby.actionKey, roundCount), lobby.message || '准备匹配');
         return;
       }
       if (lobby.phase === 'settlement') {
@@ -249,6 +255,9 @@
         return;
       }
       initialRoundSince = null;
+      if (turn.state.phase === 'playing' && (!turn.state.handComplete || !turn.state.historyComplete)) {
+        pause('已暂停：牌局基线不完整，需恢复后重新开启'); return;
+      }
       if (!turn.state.canAct || turn.sent) {
         status('waiting', '对局中 · 等待合法操作窗口');
         return;
@@ -290,7 +299,7 @@
   const timer = setInterval(tick, 100);
   addEventListener('pointerdown', manual, true);
   addEventListener('keydown', manual, true);
-  window.__mjAutoplay = {getStatus, setEnabled, setPlayerCount, onEvent, onAdvice, onInput,
+  window.__mjAutoplay = {getStatus, setEnabled, setPlayerCount, setRoundCount, onEvent, onAdvice, onInput,
     stop() {
       setEnabled(false); stopped = true; clearInterval(timer);
       removeEventListener('pointerdown', manual, true); removeEventListener('keydown', manual, true);

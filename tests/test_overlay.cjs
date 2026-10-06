@@ -57,10 +57,11 @@ const candidate = {action: 'discard', actionId: 'discard:7z', tile: '7z', shante
     '对各家均有现物或实体枚数安全依据']};
 const result = best => ({status: 'ready', best, candidates: [best]});
 
-test('automation starts off in four-player mode and missing controller cannot enable it', () => {
+test('automation starts off in four-player east mode and missing controller cannot change it', () => {
   const {root} = overlay();
   const toggle = root.querySelector('.automation-toggle'), four = root.querySelector('.automation-four');
   const three = root.querySelector('.automation-three');
+  const east = root.querySelector('.automation-east'), south = root.querySelector('.automation-south');
   assert.equal(toggle.tagName, 'BUTTON');
   assert.equal(toggle.getAttribute('type'), 'button');
   assert.equal(toggle.getAttribute('role'), 'switch');
@@ -68,11 +69,19 @@ test('automation starts off in four-player mode and missing controller cannot en
   assert.equal(toggle.textContent, '自动打牌：关闭');
   assert.equal(four.getAttribute('aria-pressed'), 'true');
   assert.equal(three.getAttribute('aria-pressed'), 'false');
+  assert.equal(east.getAttribute('aria-pressed'), 'true');
+  assert.equal(south.getAttribute('aria-pressed'), 'false');
+  for (const button of [four, three, east, south]) {
+    assert.equal(button.tagName, 'BUTTON');
+    assert.equal(button.getAttribute('type'), 'button');
+  }
   assert.match(root.querySelector('.automation-next').textContent, /下场生效/);
-  toggle.click(); three.click();
+  toggle.click(); three.click(); south.click();
   assert.equal(toggle.getAttribute('aria-checked'), 'false');
   assert.equal(four.getAttribute('aria-pressed'), 'true');
   assert.equal(three.getAttribute('aria-pressed'), 'false');
+  assert.equal(east.getAttribute('aria-pressed'), 'true');
+  assert.equal(south.getAttribute('aria-pressed'), 'false');
   assert.equal(root.querySelector('.automation-status').textContent, '自动打牌暂不可用');
   assert.match(source, /\.automation button\s*\{\s*pointer-events:auto/);
   assert.match(source, /\*\s*\{[^}]*pointer-events:none/);
@@ -81,36 +90,62 @@ test('automation starts off in four-player mode and missing controller cannot en
 
 test('automation buttons dispatch to a late controller and render only its accepted state', () => {
   const {root, window, api} = overlay(), calls = [];
-  let status = {enabled:false, playerCount:4, phase:'idle', message:'待机'};
+  let status = {enabled:false, playerCount:4, roundCount:1, phase:'idle', message:'待机'};
   window.__mjAutoplay = {
     setEnabled(enabled) { calls.push(['enabled', enabled]); status = {...status, enabled, message:enabled ? '等待匹配' : '已停止'}; },
     setPlayerCount(playerCount) { calls.push(['players', playerCount]); status = {...status, playerCount}; },
+    setRoundCount(roundCount) { calls.push(['rounds', roundCount]); status = {...status, roundCount}; },
     getStatus() { return status; }
   };
   const toggle = root.querySelector('.automation-toggle'), four = root.querySelector('.automation-four');
   const three = root.querySelector('.automation-three');
-  toggle.click(); three.click(); four.click(); toggle.click();
-  assert.deepEqual(calls, [['enabled',true], ['players',3], ['players',4], ['enabled',false]]);
+  const east = root.querySelector('.automation-east'), south = root.querySelector('.automation-south');
+  toggle.click(); three.click(); south.click();
+  assert.equal(east.getAttribute('aria-pressed'), 'false');
+  assert.equal(south.getAttribute('aria-pressed'), 'true');
+  four.click(); east.click(); toggle.click();
+  assert.deepEqual(calls, [['enabled',true], ['players',3], ['rounds',2], ['players',4], ['rounds',1], ['enabled',false]]);
+  assert.equal(east.getAttribute('aria-pressed'), 'true');
+  assert.equal(south.getAttribute('aria-pressed'), 'false');
   assert.equal(toggle.getAttribute('aria-checked'), 'false');
   assert.equal(root.querySelector('.automation-status').textContent, '已停止');
-  api.updateAutomation({enabled:true, playerCount:3, phase:'paused', message:'<img src="invalid"> 连接中断'});
+  api.updateAutomation({enabled:true, playerCount:3, roundCount:2, phase:'paused', message:'<img src="invalid"> 连接中断'});
   assert.equal(toggle.getAttribute('aria-checked'), 'true');
   assert.equal(toggle.textContent, '自动打牌：开启');
   assert.equal(three.getAttribute('aria-pressed'), 'true');
   assert.equal(four.getAttribute('aria-pressed'), 'false');
+  assert.equal(south.getAttribute('aria-pressed'), 'true');
+  assert.equal(east.getAttribute('aria-pressed'), 'false');
   assert.equal(root.querySelector('.automation-status').textContent, '<img src="invalid"> 连接中断');
   assert.equal(root.querySelector('.automation-status').dataset.phase, 'paused');
   assert.equal(root.querySelector('.automation-status').getAttribute('aria-live'), 'polite');
   window.__mjAutoplay.setEnabled = enabled => calls.push(['rejected', enabled]);
   toggle.click();
   assert.equal(toggle.getAttribute('aria-checked'), 'false', 'accepted controller state overrides optimistic UI changes');
+  window.__mjAutoplay.setRoundCount = roundCount => calls.push(['rejected-rounds', roundCount]);
+  south.click();
+  assert.equal(east.getAttribute('aria-pressed'), 'true', 'a rejected length change retains the accepted controller state');
+  assert.equal(south.getAttribute('aria-pressed'), 'false');
 });
 
 test('automation restores an installed controller status without enabling it implicitly', () => {
-  const {root} = overlay({getStatus: () => ({enabled:false, playerCount:3, phase:'idle', message:'等待登录'})});
+  const {root} = overlay({getStatus: () => ({enabled:false, playerCount:3, roundCount:2, phase:'idle', message:'等待登录'})});
   assert.equal(root.querySelector('.automation-toggle').getAttribute('aria-checked'), 'false');
   assert.equal(root.querySelector('.automation-three').getAttribute('aria-pressed'), 'true');
+  assert.equal(root.querySelector('.automation-south').getAttribute('aria-pressed'), 'true');
+  assert.equal(root.querySelector('.automation-east').getAttribute('aria-pressed'), 'false');
   assert.equal(root.querySelector('.automation-status').textContent, '等待登录');
+});
+
+test('missing roundCount stays east and a controller without its setter cannot select south', () => {
+  const {root} = overlay({getStatus: () => ({enabled:false, playerCount:4, phase:'idle'})});
+  root.querySelector('.automation-south').click();
+  assert.equal(root.querySelector('.automation-east').getAttribute('aria-pressed'), 'true');
+  assert.equal(root.querySelector('.automation-south').getAttribute('aria-pressed'), 'false');
+  assert.equal(root.querySelector('.automation-status').textContent, '自动打牌暂不可用');
+  const restarted = overlay().root;
+  assert.equal(restarted.querySelector('.automation-east').getAttribute('aria-pressed'), 'true');
+  assert.equal(restarted.querySelector('.automation-south').getAttribute('aria-pressed'), 'false');
 });
 
 test('normal overlay keeps action and decision metrics without recording diagnostics', () => {

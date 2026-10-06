@@ -400,3 +400,85 @@ test('disabling and rechecking automation or duplicate end notifications do not 
   assert.equal(next.action,'refresh');
   assert.equal(h.calls.length,1,'cancel/re-enable must neither match early nor restart the wait');
 });
+
+for (const [players, rounds, modeId, label] of [
+  [4,1,8,'四麻东风'], [4,2,9,'四麻南风'], [3,1,21,'三麻东风'], [3,2,22,'三麻南风'],
+]) test(`ranked ${label} uses its official match mode in the request`,async()=>{
+  const h=harness(); await h.refresh(account(42,10301,7000,20301));
+  const s=h.api.snapshot(players,rounds);
+  assert.equal(s.modeId,modeId); assert.equal(s.roomName,'金之间');
+  assert.equal(s.message,`准备匹配金之间 · ${label}`);
+  const started=h.api.start(players,s.actionKey,rounds);
+  assert.equal(h.calls.at(-1).method,'.lq.Lobby.startUnifiedMatch');
+  assert.equal(str(core.fields(h.calls.at(-1).payload),1),`1:${modeId}`);
+  h.calls.at(-1).resolve({payload:encode([])}); assert.equal((await started).ok,true);
+});
+
+test('omitting round count retains East defaults for both player counts',async()=>{
+  const h=harness(); await h.refresh(account(42,10301,7000,20301));
+  for (const players of [3,4]) {
+    assert.equal(h.api.snapshot(players).actionKey,h.api.snapshot(players,1).actionKey);
+    assert.match(h.api.snapshot(players).message,/东风$/);
+  }
+});
+
+test('South gold thresholds select the highest affordable eligible room, independently of East',async()=>{
+  // Thresholds are the official desktop.matchmode values, not East-mode limits.
+  for (const [rank, gold, east4, south4, east3, south3] of [
+    [10101,0,2,3,17,18],
+    [10201,3499,5,3,19,18], [10201,3500,5,6,19,20],
+    [10301,6999,8,6,21,20], [10301,7000,8,9,21,22],
+    [10401,13999,11,9,23,22], [10401,14000,11,12,23,24],
+    [10501,14000,15,16,25,26],
+  ]) {
+    const h=harness(); await h.refresh(account(42,rank,gold,rank+10000));
+    assert.equal(h.api.snapshot(4,1).modeId,east4,`four East rank=${rank} gold=${gold}`);
+    assert.equal(h.api.snapshot(4,2).modeId,south4,`four South rank=${rank} gold=${gold}`);
+    assert.equal(h.api.snapshot(3,1).modeId,east3,`three East rank=${rank} gold=${gold}`);
+    assert.equal(h.api.snapshot(3,2).modeId,south3,`three South rank=${rank} gold=${gold}`);
+  }
+});
+
+test('South reports its own minimum when no lower room is eligible; ordinary rooms have no gold ceiling',async()=>{
+  const h=harness(); await h.refresh(account(42,10501,13999,20501));
+  for (const players of [3,4]) {
+    const s=h.api.snapshot(players,2);
+    assert.equal(s.phase,'blocked'); assert.equal(s.actionKey,undefined);
+    assert.match(s.message,/南风场最低需要 14000/);
+    assert.equal(h.api.snapshot(players,1).phase,'lobby');
+  }
+  const g=harness(); await g.refresh(account(42,10101,0xffffffff,20101));
+  assert.equal(g.api.snapshot(4,2).modeId,3);
+  assert.equal(g.api.snapshot(3,2).modeId,18);
+});
+
+test('changing East/South invalidates a pending match or refresh key before any request is sent',async()=>{
+  const h=harness(), refreshKey=h.api.snapshot(4,1).actionKey;
+  assert.equal((await h.api.start(4,refreshKey,2)).ok,false);
+  assert.equal(h.calls.length,0);
+  await h.refresh(account(42,10301,7000,20301));
+  for (const players of [3,4]) {
+    const east=h.api.snapshot(players,1),south=h.api.snapshot(players,2);
+    assert.notEqual(east.actionKey,south.actionKey);
+    assert.equal((await h.api.start(players,east.actionKey,2)).ok,false);
+    assert.equal((await h.api.start(players,south.actionKey,1)).ok,false);
+  }
+  assert.equal(h.calls.length,1,'only the completed account refresh should have been sent');
+});
+
+test('a selection change cannot add a second queue and cancellation still targets the original wind',async()=>{
+  const h=harness(); await h.refresh(account(42,10301,7000,20301));
+  const east=h.api.snapshot(3,1),south=h.api.snapshot(3,2);
+  const started=h.api.start(3,east.actionKey,1);
+  assert.equal(h.api.snapshot(3,2).phase,'matching');
+  assert.equal((await h.api.start(3,south.actionKey,2)).ok,false);
+  h.calls.at(-1).resolve({payload:encode([])}); await started;
+  assert.equal(h.api.snapshot(3,2).phase,'matching');
+  assert.equal((await h.api.start(3,south.actionKey,2)).ok,false);
+  assert.equal(h.calls.length,2);
+  h.api.cancel();
+  assert.equal(h.calls.at(-1).method,'.lq.Lobby.cancelUnifiedMatch');
+  assert.equal(str(core.fields(h.calls.at(-1).payload),1),'1:21');
+  h.calls.at(-1).resolve({payload:encode([])}); await flush();
+  assert.equal(h.api.snapshot(3,2).modeId,22);
+});
