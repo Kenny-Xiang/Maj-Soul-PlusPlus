@@ -729,6 +729,37 @@ test('collector requires the native bridge and leaves unsupported pages untouche
   assert.equal(unrelated.reason, 'not game page');
 });
 
+test('collector sends authoritative windows and manual operation invalidation to automation', async () => {
+  const events = [], inputs = [], sent = [];
+  let stopped = false;
+  class Socket extends EventTarget {
+    constructor(url) {super();this.url=url;this.readyState=1;}
+    send(data) {sent.push(data);}
+  }
+  const window = {WebSocket:Socket, __mjAutoplay:{onEvent:e=>events.push(e),
+    onInput:()=>inputs.push(true),stop:()=>{stopped=true;}},
+    webkit:{messageHandlers:{mjStatistics:{postMessage(){}}}}};
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+    Uint8Array,ArrayBuffer,Blob,URL,setInterval:()=>0,clearInterval(){},console:{log(){}}});
+  const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
+  const opening = actionFrame('ActionNewRound',0,[...num(2,0),
+    ...Array(14).fill('1p').flatMap(tile=>str(4,tile)),
+    ...Array(4).fill(25000).flatMap(score=>num(6,score)),
+    ...bytes(7,[...num(1,0),...bytes(2,num(1,1))])]);
+  game.dispatchEvent(new MessageEvent('message',{data:opening.buffer}));
+  await new Promise(setImmediate);
+  const turn = events.find(e=>e.kind==='turn');
+  assert.equal(turn.state.canAct,true);assert.equal(turn.state.lastStep,0);
+  assert.ok(turn.session);assert.ok(Number.isInteger(turn.serial));
+  const request=rpcFrame(2,1,'.lq.FastTest.inputOperation',[]);game.send(request);
+  assert.equal(inputs.length,1);assert.equal(sent[0],request);
+  assert.equal(window.__mjMonitor.getSnapshot().state.canAct,false);
+  assert.equal(turn.state.canAct,true); // The published window is an immutable snapshot.
+  game.dispatchEvent(new Event('close'));
+  assert.equal(events.at(-1).phase,'disconnected');
+  window.__mjMonitor.stop();assert.equal(stopped,true);
+});
+
 test('native listener preserves socket sends and fully detaches on uninstall', async () => {
   const posts = [], sent = [], timers = new Set();
   class Socket extends EventTarget {

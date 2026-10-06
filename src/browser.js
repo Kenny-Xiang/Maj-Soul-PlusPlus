@@ -16,6 +16,7 @@ function snapshot() {
 function publish(event) {
   const packet = {session, serial:++serial, time:new Date().toISOString(), ...event};
   if (packet.kind === 'turn') window.__mjStatsOverlay?.expectAdvice?.(`${session}:${packet.serial}`);
+  window.__mjAutoplay?.onEvent(packet);
   nativeBridge.postMessage(JSON.stringify(packet));
   connectedAt = Date.now();
 }
@@ -140,6 +141,7 @@ function attach(socket) {
       const env = bytes ? core.envelope(bytes) : null;
       if (env?.kind === 2) meta.pending.delete(env.id);
       if (env?.kind === 2 && ['.lq.FastTest.inputOperation','.lq.FastTest.inputChiPengGang'].includes(env.name)) {
+        window.__mjAutoplay?.onInput();
         closeDecisionWindow();
       }
       if (env?.kind === 2 && (activeSocket === null || meta.id >= activeSocket) &&
@@ -171,6 +173,7 @@ function detach(meta) {
   }
 }
 function stop() {
+  window.__mjAutoplay?.stop();
   running = false; clearInterval(heartbeatTimer);
   closeDecisionWindow();
   core.setMatch(state, null);

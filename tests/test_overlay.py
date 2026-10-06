@@ -1,4 +1,4 @@
-"""Offline WebKit check of overlay layout, literal text and click-through behavior."""
+"""Offline WebKit check of overlay layout, automation controls and click-through behavior."""
 import json
 from pathlib import Path
 import sys
@@ -51,6 +51,7 @@ def advisor_state():
     return json.loads(evaluate('''JSON.stringify((()=>{
       const a=document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.advice');
       const panel=a.closest('.panel'),rect=panel.getBoundingClientRect();
+      const game=panel.querySelector('.game').getBoundingClientRect();
       return {hidden:a.hidden,text:a.textContent,best:a.querySelector('.best-tile')?.textContent || '',
         images:a.querySelectorAll('img').length,
         alternatives:[...a.querySelectorAll('.alternatives')].map(element=>element.textContent),
@@ -60,7 +61,7 @@ def advisor_state():
         chips:[...a.querySelectorAll('.tile-chip')].map(element=>element.textContent),
         metricCount:a.querySelectorAll('.metric-value').length,
         bottom:rect.bottom,fontSize:getComputedStyle(panel).fontSize,
-        clickTarget:document.elementFromPoint(30,40)?.id};
+        clickTarget:document.elementFromPoint(game.left+3,game.top+3)?.id};
     })())'''))
 
 
@@ -85,6 +86,46 @@ recommendation['best'] = recommendation['candidates'][0]
 deadline = time.time() + 10
 while view.isLoading() and time.time() < deadline:
     NSRunLoop.currentRunLoop().runUntilDate_(NSDate.dateWithTimeIntervalSinceNow_(0.05))
+# Only the native buttons consume input. The controller can be installed after the overlay.
+automation = json.loads(evaluate('''JSON.stringify((()=>{
+  const host=document.getElementById('mj-statistics-overlay'),root=host.shadowRoot;
+  const toggle=root.querySelector('.automation-toggle'),four=root.querySelector('.automation-four');
+  const three=root.querySelector('.automation-three'),status=root.querySelector('.automation-status');
+  const defaults={enabled:toggle.getAttribute('aria-checked'),four:four.getAttribute('aria-pressed'),
+    three:three.getAttribute('aria-pressed')};
+  toggle.click();
+  const unavailable={enabled:toggle.getAttribute('aria-checked'),text:status.textContent};
+  let state={enabled:false,playerCount:4,phase:'idle',message:'待机'},calls=[];
+  window.__mjAutoplay={
+    setEnabled(enabled){calls.push(['enabled',enabled]);state={...state,enabled,message:enabled?'等待匹配':'已停止'};},
+    setPlayerCount(playerCount){calls.push(['players',playerCount]);state={...state,playerCount};},
+    getStatus(){return state;}
+  };
+  toggle.click();three.click();
+  const active={enabled:toggle.getAttribute('aria-checked'),three:three.getAttribute('aria-pressed')};
+  const controls=[toggle,four,three].map(button=>{
+    button.focus();const rect=button.getBoundingClientRect();
+    return {tag:button.tagName,tabIndex:button.tabIndex,focused:root.activeElement===button,
+      pointerEvents:getComputedStyle(button).pointerEvents,
+      hit:root.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2)===button};
+  });
+  const rect=status.getBoundingClientRect();
+  const statusTarget=document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2)?.id;
+  window.__mjStatsOverlay.updateAutomation({...state,phase:'paused',message:'<img src="invalid"> 连接中断'});
+  const literal={text:status.textContent,images:root.querySelectorAll('img').length};
+  four.click();toggle.click();
+  three.blur();
+  return {defaults,unavailable,active,controls,statusTarget,literal,calls,
+    stopped:toggle.getAttribute('aria-checked')};
+})())'''))
+assert automation['defaults'] == {'enabled': 'false', 'four': 'true', 'three': 'false'}, automation
+assert automation['unavailable'] == {'enabled': 'false', 'text': '自动打牌暂不可用'}, automation
+assert automation['active'] == {'enabled': 'true', 'three': 'true'}, automation
+assert automation['calls'] == [['enabled', True], ['players', 3], ['players', 4], ['enabled', False]], automation
+assert automation['stopped'] == 'false' and automation['statusTarget'] == 'underlay', automation
+assert automation['literal'] == {'text': '<img src="invalid"> 连接中断', 'images': 0}, automation
+for control in automation['controls']:
+    assert control == {'tag': 'BUTTON', 'tabIndex': 0, 'focused': True, 'pointerEvents': 'auto', 'hit': True}, control
 event = json.loads((ROOT / 'fixtures/turn.json').read_text())
 # A full four-player river/meld layout exercises the largest normal output.
 event['state']['playerCount'] = 4
@@ -101,8 +142,9 @@ for width, height in [(1200, 760), (800, 600), (600, 400), (1200, 760)]:
       const h=document.getElementById('mj-statistics-overlay'),s=h.shadowRoot;
       const p=s.querySelector('.panel'),r=p.getBoundingClientRect();
       const game=s.querySelector('.game'),recording=s.querySelector('.recording');
+      const gameRect=game.getBoundingClientRect();
       return {width:innerWidth,height:innerHeight,bottom:r.bottom,top:r.top,
-        clickTarget:document.elementFromPoint(30,40)?.id,images:s.querySelectorAll('img').length,
+        clickTarget:document.elementFromPoint(gameRect.left+3,gameRect.top+3)?.id,images:s.querySelectorAll('img').length,
         containsWarning:s.textContent.includes('<img src="invalid">'),
         rows:s.querySelectorAll('.line').length,
         gameRight:game.getBoundingClientRect().right,recordingLeft:recording.getBoundingClientRect().left,

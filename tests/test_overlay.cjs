@@ -7,7 +7,14 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../src/overlay.js'), 'utf8');
 
 class Element {
-  constructor() { this.children = []; this.style = {}; this.dataset = {}; this.className = ''; this.hidden = false; this.text = ''; }
+  constructor() {
+    this.children = []; this.style = {}; this.dataset = {}; this.className = ''; this.hidden = false; this.text = '';
+    this.attributes = {}; this.listeners = {};
+  }
+  setAttribute(name, value) { this.attributes[name] = value; if (name === 'class') this.className = value; }
+  getAttribute(name) { return this.attributes[name]; }
+  addEventListener(type, listener) { (this.listeners[type] ||= []).push(listener); }
+  click() { for (const listener of this.listeners.click || []) listener(); }
   appendChild(child) { this.children.push(child); return child; }
   replaceChildren() { this.children = []; this.text = ''; }
   set textContent(text) { this.replaceChildren(); this.text = text; }
@@ -24,18 +31,21 @@ class Element {
   set innerHTML(html) {
     // Only overlay's static template is parsed; dynamic values must use textContent.
     this.replaceChildren();
-    for (const match of html.matchAll(/<(?:div|section)[^>]*class="([^"]+)"[^>]*>/g)) {
-      const element = new Element(); element.className = match[1]; this.appendChild(element);
+    for (const match of html.matchAll(/<(div|section|span|button)\b([^>]*)>/g)) {
+      const element = new Element(); element.tagName = match[1].toUpperCase();
+      for (const attribute of match[2].matchAll(/([\w-]+)="([^"]*)"/g)) element.setAttribute(attribute[1], attribute[2]);
+      element.textContent = html.slice(match.index + match[0].length).split('<')[0].trim();
+      this.appendChild(element);
     }
   }
 }
 
-function overlay() {
-  const body = new Element(), context = {window: {}, location: {hostname: 'game.maj-soul.com'}, innerHeight: 760,
+function overlay(autoplay) {
+  const body = new Element(), context = {window: {__mjAutoplay: autoplay}, location: {hostname: 'game.maj-soul.com'}, innerHeight: 760,
     document: {body, readyState: 'complete', createElement: () => new Element(), addEventListener() {}}, addEventListener() {}};
   vm.runInNewContext(source, context);
   const root = body.children[0].shadowRoot, api = context.window.__mjStatsOverlay;
-  return {api, root, show(advice, text = normalText, key = 'test:1') {
+  return {api, root, window: context.window, show(advice, text = normalText, key = 'test:1') {
     api.expectAdvice(key); api.update({kind: 'turn', adviceKey: key, text, advice});
   }};
 }
@@ -46,6 +56,62 @@ const candidate = {action: 'discard', actionId: 'discard:7z', tile: '7z', shante
     '当前进攻：与弃和路线按同一终局净收益比较；新窗口重新评估', '听牌；有效未见牌 4 张',
     '对各家均有现物或实体枚数安全依据']};
 const result = best => ({status: 'ready', best, candidates: [best]});
+
+test('automation starts off in four-player mode and missing controller cannot enable it', () => {
+  const {root} = overlay();
+  const toggle = root.querySelector('.automation-toggle'), four = root.querySelector('.automation-four');
+  const three = root.querySelector('.automation-three');
+  assert.equal(toggle.tagName, 'BUTTON');
+  assert.equal(toggle.getAttribute('type'), 'button');
+  assert.equal(toggle.getAttribute('role'), 'switch');
+  assert.equal(toggle.getAttribute('aria-checked'), 'false');
+  assert.equal(toggle.textContent, '自动打牌：关闭');
+  assert.equal(four.getAttribute('aria-pressed'), 'true');
+  assert.equal(three.getAttribute('aria-pressed'), 'false');
+  assert.match(root.querySelector('.automation-next').textContent, /下场生效/);
+  toggle.click(); three.click();
+  assert.equal(toggle.getAttribute('aria-checked'), 'false');
+  assert.equal(four.getAttribute('aria-pressed'), 'true');
+  assert.equal(three.getAttribute('aria-pressed'), 'false');
+  assert.equal(root.querySelector('.automation-status').textContent, '自动打牌暂不可用');
+  assert.match(source, /\.automation button\s*\{\s*pointer-events:auto/);
+  assert.match(source, /\*\s*\{[^}]*pointer-events:none/);
+  assert.match(source, /button:focus-visible/);
+});
+
+test('automation buttons dispatch to a late controller and render only its accepted state', () => {
+  const {root, window, api} = overlay(), calls = [];
+  let status = {enabled:false, playerCount:4, phase:'idle', message:'待机'};
+  window.__mjAutoplay = {
+    setEnabled(enabled) { calls.push(['enabled', enabled]); status = {...status, enabled, message:enabled ? '等待匹配' : '已停止'}; },
+    setPlayerCount(playerCount) { calls.push(['players', playerCount]); status = {...status, playerCount}; },
+    getStatus() { return status; }
+  };
+  const toggle = root.querySelector('.automation-toggle'), four = root.querySelector('.automation-four');
+  const three = root.querySelector('.automation-three');
+  toggle.click(); three.click(); four.click(); toggle.click();
+  assert.deepEqual(calls, [['enabled',true], ['players',3], ['players',4], ['enabled',false]]);
+  assert.equal(toggle.getAttribute('aria-checked'), 'false');
+  assert.equal(root.querySelector('.automation-status').textContent, '已停止');
+  api.updateAutomation({enabled:true, playerCount:3, phase:'paused', message:'<img src="invalid"> 连接中断'});
+  assert.equal(toggle.getAttribute('aria-checked'), 'true');
+  assert.equal(toggle.textContent, '自动打牌：开启');
+  assert.equal(three.getAttribute('aria-pressed'), 'true');
+  assert.equal(four.getAttribute('aria-pressed'), 'false');
+  assert.equal(root.querySelector('.automation-status').textContent, '<img src="invalid"> 连接中断');
+  assert.equal(root.querySelector('.automation-status').dataset.phase, 'paused');
+  assert.equal(root.querySelector('.automation-status').getAttribute('aria-live'), 'polite');
+  window.__mjAutoplay.setEnabled = enabled => calls.push(['rejected', enabled]);
+  toggle.click();
+  assert.equal(toggle.getAttribute('aria-checked'), 'false', 'accepted controller state overrides optimistic UI changes');
+});
+
+test('automation restores an installed controller status without enabling it implicitly', () => {
+  const {root} = overlay({getStatus: () => ({enabled:false, playerCount:3, phase:'idle', message:'等待登录'})});
+  assert.equal(root.querySelector('.automation-toggle').getAttribute('aria-checked'), 'false');
+  assert.equal(root.querySelector('.automation-three').getAttribute('aria-pressed'), 'true');
+  assert.equal(root.querySelector('.automation-status').textContent, '等待登录');
+});
 
 test('normal overlay keeps action and decision metrics without recording diagnostics', () => {
   const {show, root} = overlay(); show(result(candidate));

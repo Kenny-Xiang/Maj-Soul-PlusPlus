@@ -2,7 +2,8 @@
 from pathlib import Path
 
 root = Path(SPECPATH)
-datas = [(str(root / 'src' / name), '.') for name in ('core.cjs', 'browser.js', 'overlay.js')]
+datas = [(str(root / 'src' / name), '.') for name in
+         ('core.cjs', 'browser.js', 'overlay.js', 'game_actions.js', 'lobby.js', 'autoplay.js')]
 datas += [(str(root / 'docs'), 'docs')]
 datas += [(str(root / name), '.') for name in ('README.md', 'README.en.md')]
 for folder in ('src', 'tests', 'docs', 'scripts'):

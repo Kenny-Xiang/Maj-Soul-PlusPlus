@@ -38,7 +38,11 @@ def overlay_update(event):
                   "text": event.get("message", "统计暂不可用") if event["kind"] == "error" else labels.get(phase, "等待最新统计")}
     else:
         return None
-    return "window.__mjStatsOverlay?.update(" + json.dumps(packet, ensure_ascii=False) + ");"
+    payload = json.dumps(packet, ensure_ascii=False)
+    script = "window.__mjStatsOverlay?.update(" + payload + ");"
+    if packet['kind'] == 'advice':
+        script += "window.__mjAutoplay?.onAdvice(" + payload + ");"
+    return script
 
 
 def main():
@@ -186,6 +190,9 @@ def main():
     controller.addUserScript_(WebKit.WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly_(
         (ROOT / "overlay.js").read_text(encoding="utf-8"), WebKit.WKUserScriptInjectionTimeAtDocumentStart, True))
     controller.addUserScript_(script)
+    for name in ('game_actions.js', 'lobby.js', 'autoplay.js'):
+        controller.addUserScript_(WebKit.WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly_(
+            (ROOT / name).read_text(encoding='utf-8'), WebKit.WKUserScriptInjectionTimeAtDocumentStart, True))
     window, view = make_window(config, "Maj-Soul++")
     view.loadRequest_(NSURLRequest.requestWithURL_(NSURL.URLWithString_("https://game.maj-soul.com/1/")))
     app.activateIgnoringOtherApps_(True)
