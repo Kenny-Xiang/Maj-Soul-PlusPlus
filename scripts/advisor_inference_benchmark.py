@@ -192,6 +192,8 @@ def main():
     previous, reused_files = {}, []
     if reuse:
         previous = json.loads((reuse / "summary.json").read_text())
+        if previous.get("runnerSha256") != runner_info:
+            raise ValueError("Reused baseline runner metadata is missing or does not match")
         expected = {"budgetSeconds": 2, "rankedLimitBothVersions": 3, "warmupPasses": 1, "measuredPasses": 3}
         environment = {"python": sys.version, "platform": platform.platform(),
                        "mahjong": importlib.metadata.version("mahjong")}
