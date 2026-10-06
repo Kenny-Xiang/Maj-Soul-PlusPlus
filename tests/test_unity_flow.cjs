@@ -55,12 +55,21 @@ async function setup(players = 4, early = false) {
     const masked = payload.map((byte, i) => byte ^ (((23 ^ payload.length) + 5 * i + keys[i % 9]) & 255));
     await feed(socket, frame(1, 0, '.lq.ActionPrototype', encode([[1, step], [2, name], [3, masked]])));
   }
-  const account = () => encode([[1, 11], [11, 30000], [21, encode([[1,10301]])], [22,encode([[1,20201]])]]);
+  const account = (gold = 30000) => encode([[1, 11], ...(gold === null ? [] : [[11,gold]]),
+    [21, encode([[1,10301]])], [22,encode([[1,20301]])]]);
+  async function replyAccount(gold = 30000) {
+    const request = core.envelope(lobby.sent.at(-1));
+    assert.equal(request.name,'.lq.Lobby.fetchAccountInfo');
+    // Explicit account_id is the profile endpoint and omits private gold, even
+    // when the requested ID happens to be the currently logged-in account.
+    const privateGold = first(fields(request.data),1) === 0 ? gold : null;
+    return reply(lobby,encode([[2,account(privateGold)]]));
+  }
   const lobby = connect();
   lobby.send(frame(2, 1, '.lq.Lobby.login', encode([[11, 'current-native-client-version']])));
   await reply(lobby, encode([[2,11], [3,account()]]));
   const api = window.__mjAutoplay; api.setPlayerCount(players);
-  return {window, api, lobby, packets, statuses, advance, feed, frame, reply, action, connect, encode, first, fields, str, account,
+  return {window, api, lobby, packets, statuses, advance, feed, frame, reply, replyAccount, action, connect, encode, first, fields, str, account,
     last(socket) {return core.envelope(socket.sent.at(-1));},
     advice(best) {const packet = packets.findLast(p => p.kind === 'turn');
       api.onAdvice({adviceKey:`${packet.session}:${packet.serial}`, advice:{status:'ready',best}});}};
@@ -72,19 +81,20 @@ for (const players of [4, 3]) test(`Unity ${players}-player flow matches, discar
   assert.equal(h.api.getStatus().enabled, false);
   h.api.setEnabled(true); await h.advance(3000);
   assert.equal(h.last(h.lobby).name, '.lq.Lobby.fetchAccountInfo');
-  await h.reply(h.lobby, e([[2,h.account()]]));
+  assert.equal(h.last(h.lobby).data.length,0, 'the wire request must fetch private self-account data');
+  await h.replyAccount();
   await h.advance(100); await h.advance(3000);
   const match = h.last(h.lobby);
   assert.equal(match.name, '.lq.Lobby.startUnifiedMatch');
-  assert.equal(str(fields(match.data),1), players === 4 ? '1:8' : '1:19');
+  assert.equal(str(fields(match.data),1), players === 4 ? '1:8' : '1:21');
   assert.equal(str(fields(match.data),2), 'current-native-client-version');
   await h.reply(h.lobby);
-  await h.feed(h.lobby, h.frame(1,0,'.lq.NotifyMatchGameStart',e([[3,'public-test-match'],[4,players === 4 ? 8 : 19]])));
+  await h.feed(h.lobby, h.frame(1,0,'.lq.NotifyMatchGameStart',e([[3,'public-test-match'],[4,players === 4 ? 8 : 21]])));
   assert.equal(core.envelope(h.lobby.seen.at(-1)).name, '.lq.NotifyMatchGameStart');
   const game = h.connect(true), seats = [11,22,33,44].slice(0,players);
   game.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11]])));
-  const auth = e([...seats.map(id => [2,e([[1,id],[5,e([[1,10301]])],[7,e([[1,20201]])]])]),
-    ...seats.map(id => [3,id]), [5,e([[1,2],[2,e([[1,players === 4 ? 1 : 11]])],[3,e([[2,players === 4 ? 8 : 19]])]])]]);
+  const auth = e([...seats.map(id => [2,e([[1,id],[5,e([[1,10301]])],[7,e([[1,20301]])]])]),
+    ...seats.map(id => [3,id]), [5,e([[1,2],[2,e([[1,players === 4 ? 1 : 11]])],[3,e([[2,players === 4 ? 8 : 21]])]])]]);
   await h.reply(game,auth);
   const hand = ['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','7z','1z'];
   await h.action(game,'ActionNewRound',0,[[1,0],[2,0],[3,0],...hand.map(tile => [4,tile]),
@@ -116,7 +126,8 @@ for (const players of [4, 3]) test(`Unity ${players}-player flow matches, discar
   assert.equal(h.lobby.sent.length,before);
   await h.advance(1000); await h.advance(3000);
   assert.equal(h.last(h.lobby).name,'.lq.Lobby.fetchAccountInfo');
-  await h.reply(h.lobby,e([[2,h.account()]]));
+  assert.equal(h.last(h.lobby).data.length,0);
+  await h.replyAccount();
   await h.advance(100); await h.advance(3000);
   assert.equal(h.last(h.lobby).name,'.lq.Lobby.startUnifiedMatch');
   await h.reply(h.lobby);
@@ -133,6 +144,26 @@ test('enabling while Unity has no authenticated connection proceeds when native 
   assert.equal(h.api.getStatus().enabled,true);
   await h.advance(100); await h.advance(3000);
   assert.equal(h.last(h.lobby).name,'.lq.Lobby.fetchAccountInfo');
+  assert.equal(h.last(h.lobby).data.length,0);
   assert.equal(h.api.getStatus().enabled,true);
   assert.ok(h.statuses.some(s => /登录/.test(s.message)));
+});
+
+test('re-enabling after insufficient private gold refreshes the balance and then enters the eligible queue', async () => {
+  const h = await setup(4);
+  h.api.setEnabled(true); await h.advance(3000);
+  await h.replyAccount(null); await h.advance(100);
+  assert.equal(h.api.getStatus().enabled,false);
+  assert.match(h.api.getStatus().message,/金币/);
+  const previous = h.lobby.sent.length;
+  h.api.setEnabled(true); await h.advance(3000);
+  assert.equal(h.lobby.sent.length,previous+1, 'reopening must query fresh private data rather than reusing cached zero');
+  assert.equal(h.last(h.lobby).name,'.lq.Lobby.fetchAccountInfo');
+  assert.equal(h.last(h.lobby).data.length,0);
+  await h.replyAccount(6000); await h.advance(100); await h.advance(3000);
+  assert.equal(h.last(h.lobby).name,'.lq.Lobby.startUnifiedMatch');
+  assert.equal(h.str(h.fields(h.last(h.lobby).data),1),'1:8');
+  assert.equal(h.api.getStatus().enabled,true);
+  await h.reply(h.lobby); h.api.setEnabled(false);
+  await h.reply(h.lobby); await h.advance(100);
 });

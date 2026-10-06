@@ -133,6 +133,9 @@
         if (!fast && f.has(3)) account = readAccount(first(f, 3));
         if (fast && f.has(3)) problem = '请先退出当前房间并返回大厅';
       } else if (kind === 'response' && method === '.lq.Lobby.fetchAccountInfo' && !injected) {
+        // Explicit account_id requests are profile lookups, not a full wallet
+        // refresh. Even our own public profile must not overwrite private gold.
+        if (!message.requestPayload || first(fields(message.requestPayload), 1) !== 0) return;
         const f = responseFields(payload);
         if (f.has(2)) {
           const next = readAccount(first(f, 2));
@@ -193,9 +196,16 @@
     if (account.frozen) return result('blocked', '账号当前无法匹配，请检查游戏提示');
     const rank = playerCount === 3 ? account.level3 : account.level;
     const offset = playerCount === 3 ? 10000 : 0;
-    const room = [3, 4].includes(playerCount) && Number.isInteger(rank) && Number.isInteger(account.gold) &&
-      rooms.filter(row => rank >= row[4] + offset && rank <= row[5] + offset && account.gold >= row[6]).at(-1);
-    if (!room) return result('blocked', '当前段位或金币下没有可进入的东风场');
+    const mode = playerCount === 3 ? '三麻' : '四麻';
+    if (!Number.isInteger(rank) || rank === 0)
+      return result('blocked', `未取得${mode}段位，请重新登录后开启`);
+    const rankedRooms = [3, 4].includes(playerCount) ?
+      rooms.filter(row => rank >= row[4] + offset && rank <= row[5] + offset) : [];
+    if (!rankedRooms.length)
+      return result('blocked', `无法识别${mode}段位（${rank}），请重新登录后开启`);
+    if (!Number.isInteger(account.gold)) return result('blocked', '未取得金币信息，请重新登录后开启');
+    const room = rankedRooms.filter(row => account.gold >= row[6]).at(-1);
+    if (!room) return result('blocked', `金币不足：当前 ${account.gold}，${mode}当前段位的东风场最低需要 ${rankedRooms[0][6]}`);
     const version = versions.get(live.lobbySessionId);
     if (!version) return result('blocked', '尚未取得当前客户端版本，请重新登录后开启');
     const modeId = room[playerCount === 3 ? 3 : 2];
@@ -213,7 +223,9 @@
     if (state.action === 'refresh') {
       const request = busy = {}, accountId = transport.snapshot().accountId;
       try {
-        const {payload} = await transport.request('.lq.Lobby.fetchAccountInfo', encode([[1, accountId]]), {game:false});
+        // The official client's own-account refresh sends an empty request;
+        // account_id selects a public profile that can omit the private wallet.
+        const {payload} = await transport.request('.lq.Lobby.fetchAccountInfo', encode([]), {game:false});
         sync();
         if (binding !== identity || generation !== version || busy !== request)
           return {ok:false, reason:'账号或连接已变化，取消旧账号刷新'};
@@ -261,7 +273,7 @@
     const live = sync();
     if (busy) {busy = null; generation++;}
     if (cancelError) {const reason = cancelError; cancelError = ''; return {ok:false, reason};}
-    if (!owned) return {ok:true};
+    if (!owned) {refreshNeeded = true; generation++; return {ok:true};}
     owned.cancelRequested = true;
     if (validId(live.accountId) && owned.accountId !== live.accountId) {owned = null; return {ok:true};}
     if (!live.connected || owned.submitting || owned.cancelling) return {ok:true, pending:true};

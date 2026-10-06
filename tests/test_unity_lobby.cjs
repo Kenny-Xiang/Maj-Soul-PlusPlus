@@ -16,7 +16,17 @@ function encode(entries) {
 const first = (f, n, fallback = 0) => f.get(n)?.[0] ?? fallback;
 const str = (f, n) => f.has(n) ? decoder.decode(first(f, n)) : null;
 function account(id = 42, rank = 10201, gold = 3000, rank3 = 20201, roomId = 0) {
-  return encode([[1,id], [5,roomId], [11,gold], [21,encode([[1,rank]])], [22,encode([[1,rank3]])]]);
+  return encode([[1,id], [5,roomId], ...(gold === null ? [] : [[11,gold]]),
+    ...(rank === null ? [] : [[21,encode([[1,rank]])]]),
+    ...(rank3 === null ? [] : [[22,encode([[1,rank3]])]])]);
+}
+function accountResponse(request, privateAccount) {
+  // The official client's own-account refresh sends {}. An explicit account_id
+  // requests a public profile, which does not contain the private gold balance.
+  const publicProfile = first(core.fields(request),1) !== 0;
+  const fields = [...core.fields(privateAccount)].flatMap(([id, values]) =>
+    publicProfile && id === 11 ? [] : values.map(value => [id,value]));
+  return encode([[2,encode(fields)]]);
 }
 function harness() {
   let now = 0, listener;
@@ -41,7 +51,8 @@ function harness() {
     async refresh(data=account()) {
       const s=this.api.snapshot(); assert.equal(s.action,'refresh');
       const result=this.api.start(4,s.actionKey);
-      calls.at(-1).resolve({payload:encode([[2,data]])});
+      const request=calls.at(-1);
+      request.resolve({payload:accountResponse(request.payload,data)});
       assert.equal((await result).ok,true);
     }};
 }
@@ -50,12 +61,80 @@ const flush = async () => {await Promise.resolve(); await Promise.resolve(); awa
 test('fresh account refresh chooses highest permitted East room using separate sanma rank and gold',async()=>{
   const h=harness(); await h.refresh();
   assert.equal(h.calls[0].method,'.lq.Lobby.fetchAccountInfo');
-  assert.equal(first(core.fields(h.calls[0].payload),1),42);
+  assert.equal(h.calls[0].payload.length,0, 'own private-account refresh must send an empty payload');
   assert.equal(h.api.snapshot().modeId,5); assert.equal(h.api.snapshot(3).modeId,19);
   const old=h.api.snapshot().actionKey;
-  h.emit('.lq.Lobby.fetchAccountInfo',encode([[2,account(42,10201,1000,20201)]]),{kind:'response'});
+  h.emit('.lq.Lobby.fetchAccountInfo',encode([[2,account(42,10201,1000,20201)]]),
+    {kind:'response',requestPayload:encode([])});
   assert.equal(h.api.snapshot().modeId,2);
   assert.equal((await h.api.start(4,old)).ok,false); assert.equal(h.calls.length,1);
+});
+
+test('request-aware server returns private gold only for an empty self query, allowing both gold East rooms',async()=>{
+  const full=account(42,10301,30000,20301), h=harness();
+  const profile=accountResponse(encode([[1,42]]),full);
+  assert.equal(core.fields(first(core.fields(profile),2)).has(11),false);
+  assert.equal(first(core.fields(first(core.fields(accountResponse(encode([]),full)),2)),11),30000);
+  await h.refresh(full);
+  assert.equal(h.api.snapshot(4).modeId,8, 'four-player 雀杰 should reach 金之间 with the private gold balance');
+  assert.equal(h.api.snapshot(3).modeId,21, 'three-player 雀杰 should use its separate rank and reach 金之间');
+  assert.equal(h.calls[0].payload.length,0);
+});
+
+test('native public profiles, including our own ID, cannot overwrite private gold or invalidate a match key',async()=>{
+  const h=harness(); await h.refresh(account(42,10301,30000,20301));
+  const key=h.api.snapshot(4).actionKey;
+  for (const id of [42,99]) {
+    h.emit('.lq.Lobby.fetchAccountInfo',encode([[2,account(id,10301,null,20301)]]),
+      {kind:'response',requestPayload:encode([[1,id]])});
+    assert.equal(h.api.snapshot(4).modeId,8);
+    assert.equal(h.api.snapshot(3).modeId,21);
+    assert.equal(h.api.snapshot(4).actionKey,key);
+  }
+  // A response without its originating request is not proof of a self query.
+  h.emit('.lq.Lobby.fetchAccountInfo',encode([[2,account(42,10301,null,20301)]]),{kind:'response'});
+  assert.equal(h.api.snapshot(4).actionKey,key);
+  const started=h.api.start(4,key);
+  assert.equal(h.calls.at(-1).method,'.lq.Lobby.startUnifiedMatch');
+  h.calls.at(-1).resolve({payload:encode([])}); assert.equal((await started).ok,true);
+});
+
+test('known native self responses honor proto3 omitted gold as zero and invalidate old eligibility',async()=>{
+  for (const requestPayload of [encode([]),encode([[1,0]])]) {
+    const h=harness(); await h.refresh(account(42,10201,3000,20201));
+    const old=h.api.snapshot().actionKey;
+    h.emit('.lq.Lobby.fetchAccountInfo',encode([[2,account(42,10201,null,20201)]]),
+      {kind:'response',requestPayload});
+    assert.equal(h.api.snapshot(4).modeId,2);
+    assert.equal(h.api.snapshot(3).modeId,17);
+    assert.notEqual(h.api.snapshot().actionKey,old);
+    assert.equal((await h.api.start(4,old)).ok,false);
+    assert.equal(h.calls.length,1);
+  }
+});
+
+test('an own refresh with omitted gold is valid zero, while missing or invalid ranks report a different problem',async()=>{
+  const zero=harness(); await zero.refresh(account(42,10301,null,20301));
+  assert.equal(zero.api.snapshot().phase,'blocked');
+  assert.match(zero.api.snapshot().message,/金币/);
+  for (const rank of [null,20201]) {
+    const invalid=harness(); await invalid.refresh(account(42,rank,30000,20301));
+    assert.equal(invalid.api.snapshot().phase,'blocked');
+    assert.match(invalid.api.snapshot().message,/段位/);
+    assert.notEqual(invalid.api.snapshot().message,zero.api.snapshot().message);
+    assert.equal(invalid.api.snapshot(3).modeId,21);
+  }
+});
+
+test('disabling invalidates cached eligibility so reopening refreshes recovered gold before matching',async()=>{
+  const h=harness(); await h.refresh(account(42,10301,null,20301));
+  assert.equal(h.api.snapshot().phase,'blocked');
+  assert.equal(h.api.cancel().ok,true);
+  assert.equal(h.api.snapshot().action,'refresh');
+  await h.refresh(account(42,10301,6000,20301));
+  assert.equal(h.calls.length,2);
+  assert.ok(h.calls.every(call=>call.method==='.lq.Lobby.fetchAccountInfo' && call.payload.length===0));
+  assert.equal(h.api.snapshot(4).modeId,8); assert.equal(h.api.snapshot(3).modeId,21);
 });
 
 test('match start serializes official sid/version, native notification and auth confirm entry',async()=>{
