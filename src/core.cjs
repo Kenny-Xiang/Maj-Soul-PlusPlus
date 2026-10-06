@@ -211,7 +211,7 @@ function setOperations(state, e) {
 }
 function apply(state, e) {
   if (e.name === 'ActionNewRound') {
-    if (state.phase === 'playing' && state.baseline === 'new_round' &&
+    if (state.phase === 'playing' && ['new_round','restore_actions'].includes(state.baseline) &&
         state.lastStep !== null && e.step <= state.lastStep &&
         ['chang', 'ju', 'ben'].every(key => state.round?.[key] === e[key])) return false;
     const seat = e.selfSeat ?? (e.hand.length === 14 ? e.ju : state.selfSeat);
@@ -232,6 +232,13 @@ function apply(state, e) {
   if (state.lastStep !== null && e.step !== state.lastStep + 1) {
     state.handComplete = state.historyComplete = false;
     state.warning = `动作缺口：${state.lastStep} → ${e.step}，等待新基线`;
+  }
+  // A consecutive live action confirms the end of an intact recovery replay.
+  // Replayed operations stay closed; only this new action may offer a decision.
+  if (state.baseline === 'restore_actions' && state.handComplete && !state.historyComplete &&
+      state.lastStep !== null && e.step === state.lastStep + 1) {
+    state.historyComplete = true;
+    state.warning = '';
   }
   state.lastStep = e.step;
   state.phase = 'playing';
@@ -336,10 +343,16 @@ function applyRestore(state, result) {
   if (start >= 0) {
     const {match, selfSeat} = state;
     Object.assign(state, emptyState(), {match, selfSeat});
-    for (const e of result.actions.slice(start)) apply(state, e);
-    // The server's step convention needs a real restore capture before asserting completeness.
+    for (const e of result.actions.slice(start)) {
+      if (!apply(state, e)) {
+        state.handComplete = state.historyComplete = false;
+        state.warning = '恢复动作顺序不连续，等待新基线';
+      }
+    }
     state.baseline = 'restore_actions';
-    state.warning = '已回放恢复动作；恢复响应边界待现场核对';
+    if (state.handComplete && state.historyComplete) {
+      state.warning = '已回放恢复动作；等待连续实时动作确认恢复边界';
+    }
     state.historyComplete = false;
     setOperations(state, {});
   } else if (result.snapshot) {
