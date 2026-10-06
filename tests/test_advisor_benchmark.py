@@ -93,6 +93,16 @@ class AdvisorBenchmarkTests(unittest.TestCase):
         self.assertNotIn("private", json.dumps(all_windows))
         self.assertNotIn("secret", json.dumps(all_windows))
 
+    def test_ranked_log_export_keeps_strategy_context_without_account_metadata(self):
+        snapshot = comparison.load_cases(comparison.FIXTURES)[0]['state'].copy()
+        snapshot['match'] = {'source': 'auth-game', 'category': 2, 'modeId': 12,
+                             'room': 4, 'levelId': 10401, 'levelIds': [10401] * 4,
+                             'playerCount': 4, 'roundCount': 2, 'accountId': 'private'}
+        exported = log_export.public_state(snapshot)
+        self.assertEqual(exported['match']['levelId'], 10401)
+        self.assertEqual(exported['match']['roundCount'], 2)
+        self.assertNotIn('accountId', exported['match'])
+
     @unittest.skipIf(getattr(sys, "frozen", False), "requires a Python CLI subprocess")
     def test_budget_timeouts_are_reported_instead_of_hiding_failed_windows(self):
         with tempfile.TemporaryDirectory() as directory:

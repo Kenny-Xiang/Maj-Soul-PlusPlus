@@ -24,6 +24,93 @@ const actionFrame = (name, step, data = []) => {
   return new Uint8Array([1, ...str(1, '.lq.ActionPrototype'),
     ...bytes(2, [...num(1, step), ...str(2, name), ...bytes(3, encrypted)])]);
 };
+const authResponse = ({category=2, modeId=12, mode=2, seats=[11,22,4000000007,44],
+  players=seats.map((id, i) => ({id, level:10401 + i % 3, level3:20401 + i % 3})), packed=false} = {}) => new Uint8Array([
+  ...players.flatMap(p => bytes(2, [...num(1,p.id), ...str(4,'private-nickname'),
+    ...(p.level ? bytes(5,num(1,p.level)) : []), ...(p.level3 ? bytes(7,num(1,p.level3)) : [])])),
+  ...(packed ? bytes(3,seats.flatMap(vi)) : seats.flatMap(id => num(3,id))),
+  ...bytes(5,[...num(1,category), ...bytes(2,num(1,mode)), ...bytes(3,num(2,modeId))]),
+]);
+const rpcFrame = (kind, id, name, data) => new Uint8Array([kind,id & 255,id >> 8,
+  ...str(1,name), ...bytes(2,data)]);
+
+test('authGame resolves own seat by account id, reads the correct rank and omits private fields', () => {
+  const account = 4000000007;
+  assert.equal(core.authAccount(new Uint8Array([...num(1,account), ...str(2,'private-token'),
+    ...str(3,'private-game-uuid')])),account);
+  assert.equal(core.authAccount(new Uint8Array()),null);
+  const seats = [11,22,account,44];
+  const players = [{id:44,level:10501}, {id:account,level:10402}, {id:11,level:10401}, {id:22,level:10403}];
+  for (const packed of [false,true]) {
+    assert.deepEqual(core.authGame(authResponse({seats,players,packed}),account),{selfSeat:2,match:{
+      source:'auth-game',category:2,modeId:12,room:4,levelId:10402,
+      levelIds:[10401,10403,10402,10501],playerCount:4,roundCount:2,
+    }});
+  }
+  const three = core.authGame(authResponse({modeId:23,mode:11,seats:seats.slice(0,3),
+    players:[{id:account,level:10503,level3:20401},{id:11,level:10401,level3:20502},{id:22,level3:20403}]}),account);
+  assert.deepEqual(three,{selfSeat:2,match:{source:'auth-game',category:2,modeId:23,room:4,
+    levelId:20401,levelIds:[20502,20403,20401],playerCount:3,roundCount:1}});
+  assert.doesNotMatch(JSON.stringify(three),/4000000007|nickname|token|uuid|account/);
+});
+
+test('authGame fails closed on custom modes, missing own rank, identity ambiguity and mode mismatches', () => {
+  const unknown = {selfSeat:null,match:null};
+  const cases = [
+    new Uint8Array(), new Uint8Array(bytes(1,num(1,1001))),
+    authResponse({category:1}), authResponse({category:4}), authResponse({modeId:13,mode:1}),
+    authResponse({modeId:999}), authResponse({mode:1}), authResponse({seats:[11,22,44]}),
+    authResponse({seats:[11,22,4000000007,4000000007]}), authResponse({seats:[0,22,4000000007,44]}),
+    authResponse({players:[{id:11,level:10401}]}),
+    authResponse({players:[{id:4000000007,level:10401},{id:4000000007,level:10402}]}),
+    authResponse({players:[{id:4000000007,level3:20401}]}),
+    authResponse({players:[{id:4000000007,level:20401}]}),
+  ];
+  for (const response of cases) assert.deepEqual(core.authGame(response,4000000007),unknown);
+  assert.deepEqual(core.authGame(authResponse(),null),unknown);
+  assert.deepEqual(core.authGame(authResponse(),99),unknown);
+  assert.deepEqual(core.authGame(authResponse({modeId:24,mode:12,seats:[11,22,4000000007],
+    players:[{id:4000000007,level:10401}]}),4000000007),unknown);
+});
+
+test('known match format identifies scheduled all-last and extension without guessing South four', () => {
+  for (const [modeId, mode, count, winds] of [[11,1,4,1],[12,2,4,2],[23,11,3,1],[24,12,3,2]]) {
+    const state = core.emptyState(), seats = [11,22,4000000007,44].slice(0,count);
+    const auth = core.authGame(authResponse({modeId,mode,seats}),4000000007);
+    Object.assign(state,{selfSeat:auth.selfSeat}); core.setMatch(state,auth.match);
+    const opening = {name:'ActionNewRound',step:0,selfSeat:2,hand:['1p'],scores:Array(count).fill(35000),
+      doras:[],left:50,chang:winds-1,ju:count-2,ben:0};
+    core.apply(state,opening);
+    assert.equal(state.round.isFinal,false);
+    core.apply(state,{...opening,ju:count-1});
+    assert.equal(state.round.isFinal,true); assert.equal(state.round.isExtension,false);
+    core.apply(state,{...opening,chang:winds,ju:0});
+    assert.equal(state.round.isFinal,true); assert.equal(state.round.isExtension,true);
+    assert.deepEqual(state.match,auth.match);
+    core.applyRestore(state,{ended:false,actions:[{...opening,ju:count-1}],snapshot:null});
+    assert.deepEqual(state.match,auth.match); assert.equal(state.selfSeat,2);
+    assert.equal(state.round.isFinal,true);
+    core.applyRestore(state,{ended:false,actions:[],step:7,snapshot:{selfSeat:2,hand:['2p'],doras:[],
+      chang:winds,ju:0,ben:1,left:20,players:seats.map(()=>({score:35000,discards:[],melds:[]}))}});
+    assert.deepEqual(state.match,auth.match); assert.equal(state.round.isExtension,true);
+    core.applyRestore(state,{ended:true,actions:[]});
+    assert.equal(state.match,null); assert.equal(state.round.isFinal,undefined);
+  }
+  const state = core.emptyState();
+  core.apply(state,{name:'ActionNewRound',step:0,selfSeat:0,hand:['1p'],scores:[25000,25000,25000,25000],
+    doras:[],left:50,chang:1,ju:3,ben:0});
+  assert.equal(state.match,null); assert.equal(state.round.isFinal,undefined);
+});
+
+test('rank metadata is cleared when action evidence contradicts the authenticated player count or seat', () => {
+  for (const overrides of [{selfSeat:1},{scores:[35000,35000,35000]}]) {
+    const state = core.emptyState(), auth = core.authGame(authResponse(),4000000007);
+    Object.assign(state,{match:auth.match,selfSeat:auth.selfSeat});
+    core.apply(state,{name:'ActionNewRound',step:0,selfSeat:2,hand:['1p'],scores:Array(4).fill(25000),
+      doras:[],left:50,chang:1,ju:3,ben:0,...overrides});
+    assert.equal(state.match,null); assert.equal(state.round.isFinal,undefined);
+  }
+});
 
 test('48 live actions match independently verified tile, seat, steps and visibility', () => {
   assert.equal(decoded.length, 48);
@@ -462,6 +549,84 @@ test('native listener preserves socket sends and fully detaches on uninstall', a
   game.dispatchEvent(new MessageEvent('message', {data:Uint8Array.from(Buffer.from(frames[0].hex,'hex')).buffer}));
   await new Promise(setImmediate);
   assert.equal(posts.length, before);
+});
+
+test('browser correlates authGame separately from restore and clears stale rank metadata', async () => {
+  const posts = [], sent = [];
+  let invalidations = 0;
+  class Socket extends EventTarget {
+    constructor(url) {super(); this.url = url; this.readyState = 1;}
+    send(data) {sent.push(data); return 'original';}
+  }
+  const window = {WebSocket:Socket,__mjStatsOverlay:{invalidateAdvice(){invalidations++;}},
+    webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+    Uint8Array,ArrayBuffer,Blob,URL,setInterval:()=>0,clearInterval(){},console:{log(){}}});
+  const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
+  const receive = async (socket, data) => {
+    socket.dispatchEvent(new MessageEvent('message',{data:data.buffer}));
+    await new Promise(setImmediate);
+  };
+  const authenticate = (socket,id) => {
+    const request = rpcFrame(2,id,'.lq.FastTest.authGame',[...num(1,4000000007),
+      ...str(2,'private-token'),...str(3,'private-game-uuid')]);
+    assert.equal(socket.send(request),'original'); assert.equal(sent.at(-1),request);
+  };
+  const state = () => window.__mjMonitor.getSnapshot().state;
+  const reply = id => rpcFrame(3,id,'',authResponse());
+  authenticate(game,42);
+  await receive(game,reply(41));
+  assert.equal(state().match,null);
+  await receive(game,reply(42));
+  assert.equal(state().match.levelId,10403); assert.equal(state().selfSeat,2);
+  assert.equal(state().lastStep,null); assert.equal(state().phase,'connected');
+  assert.equal(posts.filter(p=>p.kind==='turn').length,0);
+  const opening = actionFrame('ActionNewRound',0,[...num(1,1),...num(2,3),...str(4,'1p'),
+    ...Array(4).fill(0).flatMap(()=>num(6,25000)),...num(13,60)]);
+  await receive(game,opening);
+  assert.equal(state().round.isFinal,true); assert.equal(state().match.modeId,12);
+  assert.equal(state().selfSeat,2);
+  game.send(rpcFrame(2,43,'.lq.FastTest.syncGame',[]));
+  await receive(game,rpcFrame(3,43,'',[...num(3,1)]));
+  assert.equal(state().match.modeId,12); assert.equal(state().canAct,false);
+  // A second game authenticating on the same socket invalidates the previous game.
+  authenticate(game,44);
+  assert.equal(state().match,null); assert.equal(state().round,null);
+  await receive(game,rpcFrame(3,44,'',authResponse({category:1})));
+  assert.equal(state().match,null);
+  // Reusing a request id for a different method must cancel the old correlation.
+  authenticate(game,45);
+  game.send(rpcFrame(2,45,'.lq.FastTest.heartbeat',[]));
+  await receive(game,reply(45)); assert.equal(state().match,null);
+  authenticate(game,46); authenticate(game,47);
+  await receive(game,reply(46)); assert.equal(state().match,null);
+  await receive(game,reply(47)); assert.equal(state().match.modeId,12);
+  // A newly opened connection clears the old match before receiving any actions.
+  const previousInvalidations = invalidations;
+  const next = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-next');
+  assert.equal(invalidations,previousInvalidations+1);
+  assert.equal(state().match,null);
+  await receive(game,opening); assert.equal(state().round,null);
+  authenticate(next,48);
+  await receive(next,reply(48)); assert.equal(state().match.modeId,12);
+  await receive(game,reply(47)); assert.equal(state().match.modeId,12);
+  // Auth failure, malformed data, disconnect, stop and whole-match end fail closed.
+  authenticate(next,49);
+  await receive(next,rpcFrame(3,49,'',bytes(1,num(1,1001))));
+  assert.equal(state().match,null);
+  authenticate(next,50); await receive(next,reply(50));
+  await receive(next,new Uint8Array([1,255]));
+  assert.equal(state().match,null);
+  authenticate(next,51); await receive(next,reply(51));
+  await receive(next,new Uint8Array([1,...str(1,'.lq.NotifyGameEndResult'),...bytes(2,[])]));
+  assert.equal(state().match,null); assert.equal(state().phase,'ended');
+  await receive(next,reply(51)); assert.equal(state().match,null);
+  authenticate(next,52); await receive(next,reply(52));
+  next.dispatchEvent(new Event('close')); assert.equal(state().match,null);
+  const final = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-final');
+  authenticate(final,53); await receive(final,reply(53));
+  window.__mjMonitor.stop(); assert.equal(state().match,null);
+  assert.doesNotMatch(JSON.stringify(posts),/4000000007|private-token|private-game-uuid|private-nickname|accountId/);
 });
 
 test('sending a decision clears stale advice immediately and preserves the original RPC unchanged', async () => {

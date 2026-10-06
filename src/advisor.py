@@ -22,9 +22,10 @@ from advisor_policy import Outcome, TABLES, discard as _policy_discard, residual
 from advisor_settlement import opponent_payments
 from advisor_continuation import finite_policy, leaf_policy
 from advisor_routes import target_policy
+from advisor_rank_policy import ranked_context
 
 
-MODEL = "public-information-actions-ev-v9-finite-routes (未校准启发式)"
+MODEL = "public-information-actions-ev-v10-rank-preference (未校准启发式)"
 SEARCH_SECONDS = 2.
 # Public-evidence priors, not frequencies fitted to game records.
 OPEN_YAKU_CONFIDENCE = .6
@@ -1232,12 +1233,14 @@ def _kokushi_outcome(counts, remaining, opponents, state, discard, opportunities
 
 
 def _rank_context(state):
-    """Small, uncalibrated preferences gated by a caller-confirmed final round.
+    """Verified ranked-match preferences, or the legacy explicit final marker.
 
-    The capture layer does not yet know match length. In particular, south 4
-    alone is not evidence that a custom match is ending. Ties stay intervals;
-    initial seating and settlement rules are not inferred from current seats.
+    South 4 alone is not evidence that a custom match is ending. Ties stay
+    intervals; the smooth preference is not a final-placement prediction.
     """
+    ranked = ranked_context(state)
+    if ranked is not None:
+        return deepcopy(ranked)
     players, seat = state["playerCount"], state["selfSeat"]
     scores = state.get("scores", [])[:players]
     round_ = state.get("round") or {}
@@ -1269,6 +1272,9 @@ def _rank_context(state):
 
 
 def _risk_weight(state):
+    ranked = ranked_context(state)
+    if ranked is not None:
+        return ranked["riskWeight"]
     players, seat = state["playerCount"], state["selfSeat"]
     scores = state.get("scores", [])
     weight = 1.15
@@ -2084,9 +2090,16 @@ def _advise(state, *, ranked_limit=None):
             ranked_ids = {id(candidate) for candidate in ranked}
             ranked.extend(candidate for candidate in candidates if id(candidate) not in ranked_ids)
         candidates = ranked
+        rank_context = _rank_context(state)
+        if rank_context.get("objective") == "rank-points":
+            profile = rank_context["profile"]
+            preference = {"protect": "偏重保位", "push": "增加追分意愿", "balanced": "均衡攻守"}[rank_context["preference"]]
+            for candidate in candidates:
+                candidate["reasons"].append(
+                    f"排位目标：{profile['rankName']}·{profile['roomName']}，根据点差{preference}（近似偏好）")
         return result("analysis" if analysis_only else "ready",
                       "等待下一次行动 · 当前手牌评估" if analysis_only else "综合动作推荐（概率为未校准估计）", candidates,
-                      riskWeight=_risk_weight(state), rankContext=_rank_context(state), unseenTileCount=sum(remaining),
+                      riskWeight=_risk_weight(state), rankContext=rank_context, unseenTileCount=sum(remaining),
                       remainingOwnDraws=opportunities.count(seat),
                       warnings=list(dict.fromkeys(warnings)),
                       assumptions=["未见牌包含对手手牌与王牌，并非实际牌山余张",
@@ -2094,6 +2107,7 @@ def _advise(state, *, ranked_limit=None):
                                    "评分按策略终局净收益与动作代价比较；真正同分再比较安全与形状改良",
                                    "仅比较服务端许可的动作组合；立直计供托代价及后续摸切风险",
                                    "补牌按未见张数加权；新宝牌、一发、里宝牌和排名后续价值未精确建模",
+                                   "已识别段位场按官方顺位收益调整有界攻守偏好，不是完整排位分期望或实证名次概率",
                                    "振听结合弃牌历史与服务端标志；可和牌操作以游戏为准",
                                    "概率未经实战校准，非保证最优或真实胜率"])
     except (KeyError, TypeError, ValueError, IndexError) as exc:

@@ -170,6 +170,14 @@
       : { attack: '进攻', fold: '弃和', locked: '立直续打', replacement: '补牌后分别决策' }[best.currentStrategy];
     const title = result.status === 'analysis' ? '当前手牌评估' : '当前建议';
     row(advice, 'advice-title', strategy ? `${title} · ${strategy}` : title);
+    const rank = result.rankContext, profile = rank?.profile;
+    const preference = {protect:'偏重保位', push:'增加追分意愿', balanced:'均衡攻守'}[rank?.preference];
+    const players = {3:'三人', 4:'四人'}[profile?.playerCount], length = {1:'东', 2:'南'}[profile?.roundCount];
+    if (rank?.active === true && rank.objective === 'rank-points' && preference && players && length &&
+        profile.roomName && profile.rankName) {
+      row(advice, 'advice-message rank-context',
+        `排位上升 · ${profile.roomName} · ${players}${length} · ${profile.rankName} · ${preference}`);
+    }
     const recommendation = row(advice, 'recommendation', '');
     row(recommendation, 'best-tile' + (best.action && best.action !== 'discard' ? ' best-action' : ''), actionName(best));
     const reasons = displayReasons(best);

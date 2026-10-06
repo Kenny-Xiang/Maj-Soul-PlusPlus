@@ -27,6 +27,8 @@ function closeDecisionWindow() {
 }
 function fail(error) {
   closeDecisionWindow();
+  core.setMatch(state, null);
+  for (const meta of sockets.values()) meta.pending.clear();
   errors++; state.handComplete = state.historyComplete = false;
   state.warning = `解析失败：${error.message}，当前数据可能不完整`;
   publish({kind:'error', message:state.warning});
@@ -41,16 +43,20 @@ function resetStatistics() {
   window.__mjStatsOverlay?.invalidateAdvice();
   const alreadyReset = state.phase === 'ended' && state.lastStep === null && turns === 0;
   Object.assign(state, core.emptyState(), {phase:'ended', warning:''});
+  for (const meta of sockets.values()) meta.pending.clear();
   received = errors = turns = 0;
   if (!alreadyReset) publish({kind:'status', phase:'ended', reset:true,
     message:'对局已结束，统计已重置，等待下一场'});
 }
 function resetForConnection(meta) {
   if (activeSocket === meta.id) return;
+  closeDecisionWindow();
+  for (const previous of sockets.values()) if (previous !== meta) previous.pending.clear();
   activeSocket = meta.id;
   Object.assign(state, core.emptyState(), {phase:'connected'});
 }
 function receivedFrame(meta, bytes) {
+  if (activeSocket !== null && meta.id < activeSocket) return;
   received++;
   const env = core.envelope(bytes);
   if (!env) return;
@@ -66,12 +72,22 @@ function receivedFrame(meta, bytes) {
   } else if (env.kind === 1 && env.name === '.lq.NotifyGameEndResult') {
     if (activeSocket === meta.id || activeSocket === null) resetStatistics();
   } else if (env.kind === 3 && meta.pending.has(env.id)) {
-    const method = meta.pending.get(env.id); meta.pending.delete(env.id);
+    const request = meta.pending.get(env.id); meta.pending.delete(env.id);
     resetForConnection(meta);
+    if (request.method === '.lq.FastTest.authGame') {
+      const result = core.authGame(env.data, request.accountId);
+      core.setMatch(state, result.match);
+      if (result.match) {
+        state.selfSeat = result.selfSeat;
+        state.playerCount = result.match.playerCount;
+      }
+      status(result.match ? '已从游戏认证信息读取段位与排位模式' : '排位信息未确认，使用通用策略');
+      return;
+    }
     const result = core.restore(env.data);
     if (result.ended) {resetStatistics(); return;}
     core.applyRestore(state, result);
-    status(`已解析 ${method} 恢复响应；恢复边界仍需核对`);
+    status(`已解析 ${request.method} 恢复响应；恢复边界仍需核对`);
     // A recovery response is one current snapshot, not a series of live actions.
     const last = result.actions.at(-1);
     updateStatistics({name:last?.name || 'GameRestore', seat:last?.seat, step:state.lastStep ?? result.step});
@@ -93,12 +109,15 @@ function attach(socket) {
     }).catch(fail);
   };
   meta.open = () => {
+    if (activeSocket !== null && meta.id < activeSocket) return;
+    resetForConnection(meta);
     if (['waiting','disconnected','ended'].includes(state.phase)) state.phase = 'connected';
     status('发现牌局连接，等待真实动作确认对局');
   };
   meta.close = () => {
     if ((activeSocket === meta.id || activeSocket === null) && state.phase !== 'ended') {
       closeDecisionWindow();
+      core.setMatch(state, null);
       state.phase = 'disconnected';
       state.handComplete = state.historyComplete = false;
       state.warning = '牌局连接关闭，等待自动重新连接';
@@ -112,15 +131,25 @@ function attach(socket) {
   meta.originalSend = socket.send;
   meta.ownSendDescriptor = Object.getOwnPropertyDescriptor(socket, 'send');
   meta.send = function(data) {
+    if (activeSocket !== null && meta.id < activeSocket) return Reflect.apply(meta.originalSend, this, arguments);
     try {
       const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) :
         ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
       const env = bytes ? core.envelope(bytes) : null;
+      if (env?.kind === 2) meta.pending.delete(env.id);
       if (env?.kind === 2 && ['.lq.FastTest.inputOperation','.lq.FastTest.inputChiPengGang'].includes(env.name)) {
         closeDecisionWindow();
       }
-      if (env?.kind === 2 && ['.lq.FastTest.syncGame','.lq.FastTest.enterGame'].includes(env.name)) {
-        meta.pending.set(env.id, env.name);
+      if (env?.kind === 2 && (activeSocket === null || meta.id >= activeSocket) &&
+          ['.lq.FastTest.authGame','.lq.FastTest.syncGame','.lq.FastTest.enterGame'].includes(env.name)) {
+        if (env.name === '.lq.FastTest.authGame') {
+          closeDecisionWindow();
+          resetForConnection(meta);
+          Object.assign(state, core.emptyState(), {phase:'connected'});
+          meta.pending.clear();
+        }
+        meta.pending.set(env.id, {method:env.name,
+          accountId:env.name === '.lq.FastTest.authGame' ? core.authAccount(env.data) : null});
         if (meta.pending.size > 256) meta.pending.delete(meta.pending.keys().next().value);
       }
     } catch (error) {fail(error);}
@@ -130,6 +159,7 @@ function attach(socket) {
   if (socket.readyState === 1) meta.open();
 }
 function detach(meta) {
+  meta.pending.clear();
   meta.socket.removeEventListener('message', meta.message);
   meta.socket.removeEventListener('open', meta.open);
   meta.socket.removeEventListener('close', meta.close);
@@ -141,6 +171,7 @@ function detach(meta) {
 function stop() {
   running = false; clearInterval(heartbeatTimer);
   closeDecisionWindow();
+  core.setMatch(state, null);
   for (const meta of sockets.values()) detach(meta);
   if (window.WebSocket === wrappedConstructor) window.WebSocket = NativeSocket;
   state.phase = 'stopped'; console.log('[雀魂监听] 页面监听已停止');

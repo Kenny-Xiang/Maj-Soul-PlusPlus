@@ -129,6 +129,56 @@ function restore(bytes) {
   return result;
 }
 
+// Official client 0.11.252.w desktop.matchmode and liqi.json (proto 0.11.243.w).
+// Only normal ranked modes are recognized; event/custom modes must not inherit rank rules.
+const rankedModes = {
+  2:[1,1], 3:[2,1], 5:[1,2], 6:[2,2], 8:[1,3], 9:[2,3],
+  11:[1,4], 12:[2,4], 15:[1,6], 16:[2,6],
+  17:[11,1], 18:[12,1], 19:[11,2], 20:[12,2], 21:[11,3], 22:[12,3],
+  23:[11,4], 24:[12,4], 25:[11,6], 26:[12,6],
+};
+function authAccount(bytes) {
+  const id = first(fields(bytes), 1);
+  return Number.isInteger(id) && id > 0 && id <= 0xffffffff ? id : null;
+}
+function authGame(bytes, accountId) {
+  const response = fields(bytes), unknown = {match:null, selfSeat:null};
+  if (response.has(1) && first(fields(first(response, 1)), 1)) return unknown;
+  if (!accountId || !response.has(5)) return unknown;
+  const config = fields(first(response, 5)), category = first(config, 1);
+  if (category !== 2 || !config.has(2) || !config.has(3)) return unknown;
+  const modeId = first(fields(first(config, 3)), 2), known = rankedModes[modeId];
+  if (!known || first(fields(first(config, 2)), 1) !== known[0]) return unknown;
+  const playerCount = known[0] > 10 ? 3 : 4, roundCount = known[0] % 10;
+  // seat_list is uint32, unlike signed score fields decoded by integers().
+  const seats = integers(response, 3).map(id => id >>> 0);
+  if (seats.length !== playerCount || new Set(seats).size !== playerCount || seats.includes(0)) return unknown;
+  const selfSeat = seats.indexOf(accountId);
+  if (selfSeat < 0) return unknown;
+  const players = (response.get(2) || []).map(data => fields(data));
+  const levelIds = seats.map(id => {
+    const matching = players.filter(player => first(player, 1) === id), levelField = playerCount === 3 ? 7 : 5;
+    if (matching.length !== 1 || !matching[0].has(levelField)) return null;
+    const levelId = first(fields(first(matching[0], levelField)), 1);
+    return Number.isInteger(levelId) && Math.floor(levelId / 10000) === (playerCount === 3 ? 2 : 1) ? levelId : null;
+  });
+  if (levelIds[selfSeat] === null) return unknown;
+  return {selfSeat, match:{source:'auth-game', category, modeId, room:known[1],
+    levelId:levelIds[selfSeat], levelIds, playerCount, roundCount}};
+}
+function setMatch(state, match) {
+  state.match = match;
+  if (!state.round) return;
+  delete state.round.isFinal; delete state.round.isExtension;
+  const {chang, ju} = state.round;
+  if (!match || !Number.isInteger(chang) || chang < 0 || !Number.isInteger(ju) ||
+      ju < 0 || ju >= match.playerCount) return;
+  // roundCount counts scheduled winds (East=1, South=2). All-last can still repeat
+  // or extend; isFinal means the scheduled final hand or any extension hand.
+  state.round.isExtension = chang >= match.roundCount;
+  state.round.isFinal = state.round.isExtension || chang === match.roundCount - 1 && ju === match.playerCount - 1;
+}
+
 function emptyState() {
   return {phase: 'waiting', selfSeat: null, hand: [], handComplete: false, historyComplete: false,
     baseline: null, lastStep: null, lastDraw: null, lastAction: null, left: null, doras: [], scores: [],
@@ -138,7 +188,7 @@ function emptyState() {
     riichiStep: [null, null, null, null], riichiSticks: null, furiten: null,
     canAct: false, canDiscard: false, noCallsYet: false, canDoubleRiichi: false,
     operations: [], operationDetails: [], forbiddenDiscards: [],
-    playerCount: 4, warning: '尚未取得开局或恢复基线', round: null};
+    playerCount: 4, warning: '尚未取得开局或恢复基线', round: null, match: null};
 }
 const tileFamily = t => t?.replace(/^0/, '5');
 function setOperations(state, e) {
@@ -165,6 +215,8 @@ function apply(state, e) {
         state.lastStep !== null && e.step <= state.lastStep &&
         ['chang', 'ju', 'ben'].every(key => state.round?.[key] === e[key])) return false;
     const seat = e.selfSeat ?? (e.hand.length === 14 ? e.ju : state.selfSeat);
+    const match = state.match?.playerCount === e.scores.length &&
+      (state.selfSeat === null || state.selfSeat === seat) ? state.match : null;
     Object.assign(state, emptyState(), {phase: 'playing', selfSeat: seat, hand: [...e.hand],
       handComplete: e.hand.length > 0, historyComplete: true, baseline: 'new_round',
       riichi: [false, false, false, false], doubleRiichi: [false, false, false, false],
@@ -172,6 +224,7 @@ function apply(state, e) {
       lastDraw: e.hand.length === 14 && seat === e.ju ? e.hand.at(-1) : null,
       warning: '', lastStep: e.step, left: e.left, doras: e.doras, scores: e.scores,
       playerCount: e.scores.length || 4, round: {chang: e.chang, ju: e.ju, ben: e.ben}});
+    setMatch(state, match);
     setOperations(state, e);
     return true;
   }
@@ -184,7 +237,9 @@ function apply(state, e) {
   state.phase = 'playing';
   const localSeat = e.name === 'ActionDealTile' && e.tile ? e.seat : e.selfSeat;
   if (localSeat !== undefined) {
-    if (state.selfSeat !== null && state.selfSeat !== localSeat) invalidate('本人座位与基线不一致，等待新基线');
+    if (state.selfSeat !== null && state.selfSeat !== localSeat) {
+      invalidate('本人座位与基线不一致，等待新基线'); setMatch(state, null);
+    }
     else state.selfSeat = localSeat;
   }
   if (e.doras?.length) state.doras = e.doras;
@@ -266,6 +321,7 @@ function apply(state, e) {
     if (e.seat === state.selfSeat) { remove('4z'); state.lastDraw = null; }
   } else if (['ActionHule', 'ActionNoTile', 'ActionLiuJu'].includes(e.name)) {
     state.phase = e.matchEnd ? 'ended' : 'between_rounds';
+    if (e.matchEnd) setMatch(state, null);
     state.riichiPending.forEach((pending, seat) => {if (pending && !state.riichi[seat]) state.riichiStep[seat] = null;});
     state.riichiPending.fill(false);
     state.doubleRiichiPending.fill(false);
@@ -275,10 +331,11 @@ function apply(state, e) {
 }
 
 function applyRestore(state, result) {
-  if (result.ended) {state.phase = 'ended'; setOperations(state, {}); return;}
+  if (result.ended) {state.phase = 'ended'; setMatch(state, null); setOperations(state, {}); return;}
   const start = result.actions.findLastIndex(e => e.name === 'ActionNewRound');
   if (start >= 0) {
-    Object.assign(state, emptyState());
+    const {match, selfSeat} = state;
+    Object.assign(state, emptyState(), {match, selfSeat});
     for (const e of result.actions.slice(start)) apply(state, e);
     // The server's step convention needs a real restore capture before asserting completeness.
     state.baseline = 'restore_actions';
@@ -287,11 +344,14 @@ function applyRestore(state, result) {
     setOperations(state, {});
   } else if (result.snapshot) {
     const s = result.snapshot;
+    const match = state.match?.playerCount === s.players.length &&
+      (state.selfSeat === null || state.selfSeat === s.selfSeat) ? state.match : null;
     Object.assign(state, emptyState(), {phase: 'playing', selfSeat: s.selfSeat,
       hand: s.hand, handComplete: false, baseline: 'snapshot_unverified', left: s.left,
       doras: s.doras, scores: s.players.map(p => p.score), playerCount: s.players.length || 4,
       round: {chang: s.chang, ju: s.ju, ben: s.ben}, lastStep: result.step,
       warning: '已收到恢复快照；与补发动作的边界待核对，手牌仅作快照展示'});
+    setMatch(state, match);
     s.players.slice(0, 4).forEach((p, i) => {
       state.rivers[i] = p.discards.map(tile => ({tile, called: false, snapshot: true}));
       state.melds[i] = p.melds;
@@ -304,4 +364,4 @@ function applyRestore(state, result) {
   }
 }
 
-module.exports = {fields, envelope, action, restore, emptyState, apply, applyRestore};
+module.exports = {fields, envelope, action, restore, authAccount, authGame, setMatch, emptyState, apply, applyRestore};
