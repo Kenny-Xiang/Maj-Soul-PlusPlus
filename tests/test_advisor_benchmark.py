@@ -29,6 +29,7 @@ class AdvisorBenchmarkTests(unittest.TestCase):
         cases = comparison.load_cases(comparison.FIXTURES)
         cases += comparison.load_cases(ROOT / "tests/fixtures/advisor_threat_cases.json")
         cases += comparison.load_cases(ROOT / "tests/fixtures/advisor_phase_cases.json")
+        cases += comparison.load_cases(ROOT / "tests/fixtures/advisor_performance_logged_cases.json")
         tags = {tag for case in cases for tag in case["tags"]}
         self.assertTrue({"efficiency", "no-yaku", "furiten", "riichi", "opponent-riichi",
                          "chi", "pon", "ankan", "daiminkan", "shouminkan", "kita", "three-player",
@@ -109,6 +110,26 @@ class AdvisorBenchmarkTests(unittest.TestCase):
         self.assertEqual(result["cases"]["timeout"]["timeoutCount"], 2)
         self.assertEqual(result["latency"]["count"], 2)
 
+    def test_comparison_checks_prefix_order_and_all_candidate_accounts(self):
+        first = {"actionId": "a", "score": 1}
+        second = {"actionId": "b", "score": 1}
+        third = {"actionId": "c", "score": 0}
+        fourth = {"actionId": "d", "score": 0}
+        advice = {"status": "ready", "best": first,
+                  "candidates": [first, second, third, fourth]}
+        baseline = {"cases": {"case": {"advice": advice}}}
+        current = deepcopy(baseline)
+        actual = current["cases"]["case"]["advice"]
+        actual["rankedCandidateCount"] = 2
+        actual["candidates"] = [first, second, fourth, third]
+        change = comparison.compare_cases(baseline, current)["case"]
+        self.assertFalse(change["rankedPrefixChanged"])
+        self.assertEqual(change["candidateChanges"], [])
+        actual["candidates"] = [second, first, fourth, {**third, "score": -1}]
+        change = comparison.compare_cases(baseline, current)["case"]
+        self.assertTrue(change["rankedPrefixChanged"])
+        self.assertEqual(change["candidateChanges"][0]["actionId"], "c")
+
     @unittest.skipIf(getattr(sys, "frozen", False), "requires a Python CLI subprocess, not the frozen App executable")
     def test_native_accounts_are_distinct_from_derived_residuals(self):
         cases = comparison.load_cases(comparison.FIXTURES, ["closed-tsumo-only-tenpai"])
@@ -121,6 +142,20 @@ class AdvisorBenchmarkTests(unittest.TestCase):
             internal = item["internalCandidates"][candidate["actionId"]]
             self.assertIn("_rawScore", internal)
             self.assertAlmostEqual(internal["_outcome"]["win"], candidate["terminalProbabilities"]["selfWin"])
+
+    @unittest.skipIf(getattr(sys, "frozen", False), "requires a Python CLI subprocess")
+    def test_ranked_prefix_keeps_internal_accounts_for_unranked_tail(self):
+        cases = comparison.load_cases(comparison.FIXTURES, ["closed-tsumo-only-tenpai"])
+        report = comparison.run_version(ROOT / "src", cases, warmups=0, repeats=1,
+                                        include_internal=True, ranked_limit=3)
+        item = report["cases"][cases[0]["id"]]
+        candidates = item["advice"]["candidates"]
+        self.assertEqual(item["advice"]["rankedCandidateCount"], 3)
+        self.assertGreater(len(candidates), 3)
+        self.assertEqual(set(item["internalCandidates"]), {c["actionId"] for c in candidates})
+        for candidate in candidates:
+            account = item["internalCandidates"][candidate["actionId"]]
+            self.assertAlmostEqual(account["_outcome"]["win"], candidate["terminalProbabilities"]["selfWin"])
 
     @unittest.skipIf(getattr(sys, "frozen", False), "requires a Git checkout and Python CLI subprocesses")
     def test_same_ref_isolated_comparison_preserves_analysis_and_reports_provenance(self):
@@ -153,6 +188,7 @@ class AdvisorBenchmarkTests(unittest.TestCase):
         for change in report["changes"].values():
             self.assertFalse(change["statusChanged"])
             self.assertFalse(change["recommendationChanged"])
+            self.assertFalse(change["rankedPrefixChanged"])
             self.assertEqual(change["candidateChanges"], [])
 
 

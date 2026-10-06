@@ -87,13 +87,14 @@ def diagnostic_fields(value):
     return value
 
 
-def evaluate(source, cases, warmups, repeats, include_internal=False):
+def evaluate(source, cases, warmups, repeats, include_internal=False, ranked_limit=None):
     # The caller starts a fresh interpreter for each version. No project imports
     # occur before this explicit path is installed, even when PYTHONPATH is set.
     sys.path.insert(0, str(source))
     import advisor
     if Path(advisor.__file__).resolve() != (source / "advisor.py").resolve():
         raise ValueError("Advisor import does not match the isolated source snapshot")
+    options = {} if ranked_limit is None else {"ranked_limit": ranked_limit}
 
     captured = []
     if include_internal:
@@ -102,14 +103,14 @@ def evaluate(source, cases, warmups, repeats, include_internal=False):
         def capture(candidates):
             explain(candidates)
             # Retain references only inside the timer; copy/encode afterwards.
-            captured[:] = candidates
+            captured[:] = [candidates]
 
         advisor._explain_tie = capture
 
     warmup_timeouts = {case["id"]: 0 for case in cases}
     for _ in range(warmups):
         for case in cases:
-            advice = advisor.advise(deepcopy(case["state"]))
+            advice = advisor.advise(deepcopy(case["state"]), **options)
             if advice["status"] == "unavailable" and "时间预算" in advice.get("message", ""):
                 warmup_timeouts[case["id"]] += 1
     results = {case["id"]: {"samplesMs": [], "advisorSamplesMs": [],
@@ -119,7 +120,7 @@ def evaluate(source, cases, warmups, repeats, include_internal=False):
             snapshot = deepcopy(case["state"])
             captured.clear()
             started = time.perf_counter()
-            advice = advisor.advise(snapshot)
+            advice = advisor.advise(snapshot, **options)
             elapsed = (time.perf_counter() - started) * 1000
             timed_out = advice["status"] == "unavailable" and "时间预算" in advice.get("message", "")
             if advice["status"] != case["expectedStatus"] and not timed_out:
@@ -140,7 +141,7 @@ def evaluate(source, cases, warmups, repeats, include_internal=False):
                     item["internalCandidates"] = {
                         candidate["actionId"]: diagnostic_fields({key: value for key, value in candidate.items()
                                                                    if key.startswith("_")})
-                        for candidate in captured} if not timed_out else {}
+                        for candidate in (captured[0] if captured else [])} if not timed_out else {}
             elif ({k: v for k, v in advice.items() if k != "elapsedMs"} !=
                   {k: v for k, v in item["advice"].items() if k != "elapsedMs"}):
                 item["changedRepeats"].append({"repeat": repeat + 1, "advice": advice})
@@ -183,11 +184,11 @@ def snapshot_source(repo, destination, ref=None):
                     "sourceSha256": source_hash(source), "sourceChanges": dirty}
 
 
-def run_version(source, cases, warmups, repeats, include_internal=False):
+def run_version(source, cases, warmups, repeats, include_internal=False, ranked_limit=None):
     completed = subprocess.run(
         [sys.executable, "-I", "-B", str(Path(__file__).resolve()), "--worker", str(source)],
         input=json.dumps({"cases": cases, "warmups": warmups, "repeats": repeats,
-                          "include_internal": include_internal}),
+                          "include_internal": include_internal, "ranked_limit": ranked_limit}),
         text=True, capture_output=True, check=True)
     return json.loads(completed.stdout)
 
@@ -209,14 +210,17 @@ def compare_cases(baseline, current):
                           if type(old[key].get(k)) in (int, float) and type(new[key].get(k)) in (int, float)}
                 candidates.append({"actionId": key, "change": "modified",
                                    "changedFields": fields, "numericDeltas": deltas})
+        ranked_count = after.get("rankedCandidateCount", len(after.get("candidates", [])))
         changes[case_id] = {"statusChanged": before["status"] != after["status"],
                             "recommendationChanged": recommendation(before) != recommendation(after),
+                            "rankedPrefixChanged": before.get("candidates", [])[:ranked_count] !=
+                                                   after.get("candidates", [])[:ranked_count],
                             "baselineRecommendation": recommendation(before),
                             "currentRecommendation": recommendation(after), "candidateChanges": candidates}
     return changes
 
 
-def build_report(repo, fixtures, baseline_ref, current_ref, selected, warmups, repeats, include_internal=False):
+def build_report(repo, fixtures, baseline_ref, current_ref, selected, warmups, repeats, include_internal=False, ranked_limit=None):
     cases = load_cases(fixtures, selected)
     with tempfile.TemporaryDirectory(prefix="advisor-comparison-") as temporary:
         directory = Path(temporary)
@@ -224,13 +228,16 @@ def build_report(repo, fixtures, baseline_ref, current_ref, selected, warmups, r
         # never reset, switched, imported directly, or written by this script.
         old_source, old_info = snapshot_source(repo, directory / "baseline", baseline_ref)
         new_source, new_info = snapshot_source(repo, directory / "current", current_ref)
-        baseline = {"source": old_info, **run_version(old_source, cases, warmups, repeats, include_internal)}
-        current = {"source": new_info, **run_version(new_source, cases, warmups, repeats, include_internal)}
+        baseline = {"source": old_info, **run_version(old_source, cases, warmups, repeats,
+                                                     include_internal=include_internal)}
+        current = {"source": new_info, **run_version(new_source, cases, warmups, repeats,
+                                                    include_internal=include_internal, ranked_limit=ranked_limit)}
     return {"schemaVersion": 1,
             "environment": {"python": sys.version, "platform": platform.platform(),
                             "mahjong": importlib.metadata.version("mahjong")},
             "method": {"warmupPasses": warmups, "measuredPasses": repeats,
                        "internalCandidates": include_internal,
+                       "currentRankedLimit": ranked_limit, "baselineRankedLimit": None,
                        "caseOrder": [case["id"] for case in cases], "versionOrder": ["baseline", "current"],
                        "timing": "perf_counter around advise only; excludes imports, copying, and process startup",
                        "cache": "fresh process per version; identical ordered full-suite warmup and measurement passes",
@@ -249,6 +256,8 @@ def main():
     parser.add_argument("--case", action="append", default=[], help="Case ID to include; repeat for multiple cases")
     parser.add_argument("--warmups", type=int, default=1, help="Excluded full-suite warmup passes (default: 1)")
     parser.add_argument("--repeats", type=int, default=5, help="Measured full-suite passes (default: 5)")
+    parser.add_argument("--ranked-limit", type=int,
+                        help="Current version's exact ranked prefix; baseline retains full ordering")
     parser.add_argument("--output", type=Path, help="Write JSON report to this path instead of stdout")
     parser.add_argument("--include-internal", action="store_true",
                         help="Include unrounded private candidate accounts for offline diagnosis")
@@ -260,9 +269,12 @@ def main():
         return
     if args.warmups < 0 or args.repeats < 1:
         parser.error("warmups must be nonnegative and repeats must be positive")
+    if args.ranked_limit is not None and args.ranked_limit < 2:
+        parser.error("ranked-limit must be at least 2")
     try:
         report = build_report(ROOT, args.fixtures.resolve(), args.baseline, args.current_ref,
-                              args.case, args.warmups, args.repeats, args.include_internal)
+                              args.case, args.warmups, args.repeats,
+                              include_internal=args.include_internal, ranked_limit=args.ranked_limit)
     except (ValueError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Comparison failed: {exc}\n{getattr(exc, 'stderr', '') or ''}")
     payload = json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n"

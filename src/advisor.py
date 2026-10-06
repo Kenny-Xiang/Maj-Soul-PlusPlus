@@ -796,7 +796,7 @@ def _same_shanten_improvement(candidate, cache):
     return cache[key]
 
 
-def _rank_candidates(candidates, shape_cache=None, *, best_only=False):
+def _rank_candidates(candidates, shape_cache=None, *, best_only=False, limit=None):
     """Rank any root or nested choice using one epsilon-aware criterion list.
 
     _tieLoss: raw expected adverse payments, including current/future deal-in,
@@ -824,19 +824,27 @@ def _rank_candidates(candidates, shape_cache=None, *, best_only=False):
         (lambda c: _same_shanten_improvement(c, cache), True),
     ]
 
-    def rank(group, depth):
+    def rank(group, depth, count):
+        _check_search()
         if len(group) < 2:
-            return group
+            return group[:count]
         if depth == len(metrics):
             ordered = sorted(group, key=lambda c: c.get("actionId") or c.get("discard") or c.get("tile") or "")
-            return ordered[:1] if best_only else ordered
+            return ordered[:count]
         metric, descending = metrics[depth]
         groups = _numeric_groups(group, metric, descending)
-        # Nested windows consume only the winner; lower groups cannot change it.
-        return [candidate for tied in (groups[:1] if best_only else groups)
-                for candidate in rank(tied, depth + 1)]
+        # Resolve the complete fixed-anchor tie group crossing the cutoff.
+        # Later groups cannot affect this prefix, so skip their shape searches.
+        result = []
+        for tied in groups:
+            result.extend(rank(tied, depth + 1, count - len(result)))
+            if len(result) >= count:
+                break
+        return result
 
-    return rank(list(candidates), 0)
+    candidates = list(candidates)
+    count = 1 if best_only else len(candidates) if limit is None else limit
+    return rank(candidates, 0, count)
 
 
 def _explain_tie(candidates):
@@ -1390,10 +1398,18 @@ def _coarse_policy(hand, state, remaining, opponents, events, sh, ukeire, value,
     This coarse push policy does not invent safe retreat or precise future
     hands. Its projected ready state and payment remain heuristic.
     """
+    _check_search()
     ron_value, ron_factor = (value, yaku_factor) if ron is None else ron
     _, _, average = _policy_risks((), state, remaining, opponents)
     unseen = max(1, sum(remaining))
     survival, payments, fees = _policy_environment(state, opponents)
+    cache = TABLES.get()
+    # Different replacement hands can produce the same projected policy. Keep
+    # every derived input at full precision; Outcome is immutable.
+    key = ("coarse", tuple(events), state["selfSeat"], sh, ukeire, value, yaku_factor,
+           ron_value, ron_factor, average, unseen, survival, payments, fees)
+    if cache is not None and key in cache:
+        return cache[key]
     rates = [min(.9, (ukeire if k == 0 else
                      max(6., min(16 * .60 ** (k - 1), ukeire * .60 ** k))) / unseen)
              for k in range(sh)] + [min(.8, 6. / unseen)]
@@ -1422,8 +1438,11 @@ def _coarse_policy(hand, state, remaining, opponents, events, sh, ukeire, value,
         stages = nxt
     win, income, deal, loss, draw, draw_income = stages[0]
     ended = max(0., 1 - win - deal - draw)
-    return Outcome(win, income, deal, loss, ended * .4, ended * .4 * payments[0],
+    outcome = Outcome(win, income, deal, loss, ended * .4, ended * .4 * payments[0],
                    ended * .6, ended * .6 * payments[1], draw, draw_income)
+    if cache is not None:
+        cache[key] = outcome
+    return outcome
 
 
 def _shape_preference(sh, ukeire, state, own_draws):
@@ -1953,12 +1972,14 @@ def _replacement(state, choice, remaining):
     return result
 
 
-def _advise(state):
+def _advise(state, *, ranked_limit=None):
     """Return JSON-safe action advice for one immutable public snapshot."""
     started = time.monotonic()
 
     def result(status, message, candidates=None, **extra):
         candidates = [{k: v for k, v in c.items() if not k.startswith("_")} for c in candidates or []]
+        if ranked_limit is not None:
+            extra["rankedCandidateCount"] = min(ranked_limit, len(candidates))
         return {"status": status, "message": message, "candidates": candidates,
                 "best": candidates[0] if candidates else None, "model": MODEL,
                 "elapsedMs": round((time.monotonic() - started) * 1000, 1), **extra}
@@ -2052,9 +2073,13 @@ def _advise(state):
                 if candidate["action"] == "abort":
                     continue
                 candidate["reasons"].append("与九种九牌按同一本局终局账目比较，不计形状奖励，保留自摸损失和流局收支")
-        candidates = _rank_candidates(candidates)
-        _explain_tie(candidates)
-        _explain_comparison(candidates)
+        ranked = _rank_candidates(candidates, limit=ranked_limit)
+        _explain_tie(ranked)
+        _explain_comparison(ranked)
+        if ranked_limit is not None:
+            ranked_ids = {id(candidate) for candidate in ranked}
+            ranked.extend(candidate for candidate in candidates if id(candidate) not in ranked_ids)
+        candidates = ranked
         return result("analysis" if analysis_only else "ready",
                       "等待下一次行动 · 当前手牌评估" if analysis_only else "综合动作推荐（概率为未校准估计）", candidates,
                       riskWeight=_risk_weight(state), rankContext=_rank_context(state), unseenTileCount=sum(remaining),
@@ -2085,8 +2110,16 @@ def _check_search():
             raise _SearchStopped("前瞻计算超过时间预算，等待下一次局面")
 
 
-def advise(state, cancelled=None):
-    """Publish only a complete, uniformly evaluated decision within the budget."""
+def advise(state, cancelled=None, *, ranked_limit=None):
+    """Publish only a complete, uniformly evaluated decision within the budget.
+
+    Default to full ordering for offline analysis. A ranked_limit of at least
+    two orders only that exact prefix, retaining every other fully evaluated
+    candidate in input order. rankedCandidateCount marks the ordered prefix;
+    the first two still support the same best-candidate comparison reasons.
+    """
+    if ranked_limit is not None and (type(ranked_limit) is not int or ranked_limit < 2):
+        raise ValueError("ranked_limit must be None or an integer of at least two")
     started = time.monotonic()
     token = _SEARCH.set((started + SEARCH_SECONDS, cancelled))
     values_token = _HAND_VALUES.set({})
@@ -2094,7 +2127,7 @@ def advise(state, cancelled=None):
     tables_token = TABLES.set({})
     try:
         _check_search()
-        result = _advise(state)
+        result = _advise(state) if ranked_limit is None else _advise(state, ranked_limit=ranked_limit)
         _check_search()
         return result
     except _SearchStopped as error:
