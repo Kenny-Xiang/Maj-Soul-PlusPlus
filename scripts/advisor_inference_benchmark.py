@@ -9,6 +9,7 @@ import json
 import math
 from pathlib import Path
 import platform
+import shutil
 import subprocess
 import sys
 import time
@@ -139,6 +140,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, default=ROOT, help="Checkout to compare (default: this repository)")
     parser.add_argument("--baseline", required=True, help="Git reference for the source before optimization")
+    parser.add_argument("--baseline-results", type=Path, help="Reuse baseline measurements from a completed artifact directory")
     parser.add_argument("--live", type=Path, help="Optional local public-state fixture export")
     parser.add_argument("--artifacts", type=Path, help="New output directory (default: build/advisor-inference/<timestamp>)")
     args = parser.parse_args()
@@ -186,9 +188,29 @@ def main():
     fixture_info.append({"path": str((output / "fixtures.json").resolve()),
                          "sha256": hashlib.sha256((output / "fixtures.json").read_bytes()).hexdigest(),
                          "caseCount": len(cases)})
+    reuse = args.baseline_results.resolve() if args.baseline_results else None
+    previous, reused_files = {}, []
+    if reuse:
+        previous = json.loads((reuse / "summary.json").read_text())
+        expected = {"budgetSeconds": 2, "rankedLimitBothVersions": 3, "warmupPasses": 1, "measuredPasses": 3}
+        environment = {"python": sys.version, "platform": platform.platform(),
+                       "mahjong": importlib.metadata.version("mahjong")}
+        if (previous["sources"]["baseline"]["sourceSha256"] != source_info["baseline"]["sourceSha256"] or
+                not previous["fixtures"][-1]["sha256"] == hashlib.sha256((reuse / "fixtures.json").read_bytes()).hexdigest() == fixture_info[-1]["sha256"] or
+                previous["environment"] != environment or
+                any(previous["method"][key] != value for key, value in expected.items())):
+            raise ValueError("Reused baseline source, fixtures, environment, or settings do not match")
 
     def run(label, version, selected, warmups, repeats, internal=False, ranked_limit=3,
             extended_reference=False):
+        if reuse and version == "baseline":
+            original = reuse / f"{label}-baseline.json"
+            raw = original.read_bytes()
+            result = json.loads(raw)
+            shutil.copyfile(original, output / original.name)
+            reused_files.append({"label": label, "source": str(original), "sha256": hashlib.sha256(raw).hexdigest()})
+            print(f"Reusing {label}: baseline from {reuse}", flush=True)
+            return result
         print(f"Running {label}: {version}, {len(selected)} cases", flush=True)
         if extended_reference:
             if version != "baseline" or not internal or warmups or repeats != 1:
@@ -215,7 +237,8 @@ def main():
         for repeat in range(3):
             versions = ("baseline", "current") if (case_index * 3 + repeat) % 2 == 0 else ("current", "baseline")
             for version in versions:
-                cold_order.append({"case": case_id, "repeat": repeat + 1, "version": version})
+                cold_order.append({"case": case_id, "repeat": repeat + 1, "version": version,
+                                   "reused": bool(reuse and version == "baseline")})
                 result = run(f"cold-{case_id}-{repeat + 1}", version, [by_id[case_id]], 0, 1)
                 cold[version].setdefault(case_id, []).append(result)
     warm = {version: run("warm", version, cases, 1, 3) for version in ("baseline", "current")}
@@ -301,19 +324,25 @@ def main():
             raise ValueError(f"Benchmark runner changed during execution: {path}")
     summary = {
         "artifacts": str(output.resolve()), "sources": source_info, "fixtures": fixture_info,
+        "baselineReuse": {"source": str(reuse), "summarySha256": hashlib.sha256((reuse / "summary.json").read_bytes()).hexdigest(),
+                          "environment": previous["environment"], "files": reused_files} if reuse else None,
         "runnerSha256": runner_info,
         "environment": {"python": sys.version, "platform": platform.platform(),
                         "mahjong": importlib.metadata.version("mahjong")},
         "method": {"budgetSeconds": 2, "rankedLimitBothVersions": 3, "warmupPasses": 1,
+                   "baselineExecution": "all baseline measurements reused from a previous run" if reuse else "measured in this run",
+                   "baselineRunSource": previous.get("method", {}).get("baselineRunSource", str(reuse)) if reuse else str(output.resolve()),
                    "measuredPasses": 3, "coldRepeatsPerCase": 3, "coldOrder": cold_order,
                    "currentColdAllPasses": 1,
                    "actualWorker": "Five heavy cases and every rank-policy fixture each run once in a fresh current-source process using default AdviceWorker; includes its actual cancellation callback and default ranked prefix 3; submit-to-result includes deepcopy and thread dispatch, excludes imports and UI timer/rendering",
                    "timing": "perf_counter around advise only; imports and process startup excluded",
-                   "processes": "fresh interpreter for every cold sample, each warm version, and each diagnostic version",
+                   "processes": ("Current cold samples, warm suite, and diagnostic suites run in separate fresh interpreters; every baseline result is reused from the recorded prior run; versions are not interleaved in this run" if reuse else
+                                 "fresh interpreter for every cold sample, each warm version, and each diagnostic version"),
                    "equivalence": "independent diagnostic runs; ignore only elapsedMs; compare all numerical fields at full precision with stated tolerances; actions/order/explanations/all nonnumeric values exact",
                    "numericTolerance": {"absolute": ABS_TOLERANCE, "relative": REL_TOLERANCE,
                                         "rule": "math.isclose: abs(delta) <= max(absolute, relative * max(abs(values)))"},
-                   "legacyTimeoutReferences": "Only the two timeout cases use baseline in-memory SEARCH_SECONDS=120 for diagnostic output extraction; current and every performance run remain 2 seconds; reference durations excluded from performance",
+                   "legacyTimeoutReferences": ("The two 120-second baseline diagnostic references are reused from the previous run; current and all performance measurements use 2 seconds; reference durations excluded from performance" if reuse else
+                                               "Only the two timeout cases use baseline in-memory SEARCH_SECONDS=120 for diagnostic output extraction; current and every performance run remain 2 seconds; reference durations excluded from performance"),
                    "p95": "nearest rank", "caseCounts": {"public": len(public), "rank": len(rank_ids), "live": len(live), "all": len(cases)}},
         "currentColdAll": {group: aggregate(cold_all_combined, selected_ids)
                            for group, selected_ids in groups.items()},
