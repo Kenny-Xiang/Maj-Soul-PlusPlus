@@ -51,6 +51,7 @@ function resetForConnection(meta) {
   Object.assign(state, core.emptyState(), {phase:'connected'});
 }
 function receivedFrame(meta, bytes) {
+  if (activeSocket !== null && meta.id < activeSocket) return;
   received++;
   const env = core.envelope(bytes);
   if (!env) return;
@@ -71,7 +72,7 @@ function receivedFrame(meta, bytes) {
     const result = core.restore(env.data);
     if (result.ended) {resetStatistics(); return;}
     core.applyRestore(state, result);
-    status(`已解析 ${method} 恢复响应；恢复边界仍需核对`);
+    status(`已解析 ${method} 恢复响应；${state.warning || '牌局状态已更新'}`);
     // A recovery response is one current snapshot, not a series of live actions.
     const last = result.actions.at(-1);
     updateStatistics({name:last?.name || 'GameRestore', seat:last?.seat, step:state.lastStep ?? result.step});
@@ -84,13 +85,15 @@ function attach(socket) {
   sockets.set(socket, meta);
   meta.message = event => {
     meta.queue = meta.queue.then(async () => {
-      if (!running) return;
+      if (!running || !sockets.has(socket)) return;
       const data = event.data;
       const bytes = data instanceof ArrayBuffer ? new Uint8Array(data) :
         data instanceof Blob ? new Uint8Array(await data.arrayBuffer()) :
         ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
-      if (bytes) receivedFrame(meta, bytes);
-    }).catch(fail);
+      if (running && sockets.has(socket) && bytes) receivedFrame(meta, bytes);
+    }).catch(error => {
+      if (running && sockets.has(socket) && (activeSocket === null || meta.id >= activeSocket)) fail(error);
+    });
   };
   meta.open = () => {
     if (['waiting','disconnected','ended'].includes(state.phase)) state.phase = 'connected';
