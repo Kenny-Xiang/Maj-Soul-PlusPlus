@@ -6,8 +6,69 @@
   let lastStatus = '';
   let lastLogState = '';
   let clientLoadingSince = null, initialRoundSince = null;
+  let pace = 1, observed = null, threatVersion = 0, handledThreat = 0, continuation = null, lastWindow = null;
   const now = () => performance.now();
-  const delay = () => 1000 + Math.random() * 4000;
+  // Initial pacing parameters, not a fit to human play. Sample once per window.
+  const ranges = {forced:[450,900], win:[650,1200], followup:[550,1100], pass:[650,1300],
+    clear:[1000,2000], normal:[1400,2700], deliberate:[2200,3800], reassess:[2600,4500]};
+  const delay = () => 800 + Math.random() * 800;
+  const roundKey = event => JSON.stringify([event.session, event.state.round]);
+  const sameTiles = (a, b) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
+  function observe(event) {
+    const state = event.state, round = roundKey(event);
+    const threats = (state.riichi || []).map((value, seat) => seat === state.selfSeat ? false :
+      !!(value || state.riichiPending?.[seat]));
+    const melds = (state.melds || []).map((value, seat) => seat === state.selfSeat ? 0 : value.length);
+    if (!observed || observed.round !== round || state.phase !== 'playing') {
+      threatVersion = handledThreat = 0; continuation = null;
+    } else if (enabled && (threats.some((value, seat) => value && !observed.threats[seat]) ||
+        melds.some((count, seat) => count > (observed.melds[seat] || 0)) ||
+        (state.doras || []).length > observed.doras)) threatVersion++;
+    observed = {round, threats, melds, doras:(state.doras || []).length};
+    if (!continuation) return;
+    const action = event.action;
+    if (continuation.round !== round || state.lastStep !== continuation.step ||
+        action?.name !== 'ActionChiPengGang' || action.seat !== state.selfSeat ||
+        action.type !== continuation.type || !Array.isArray(action.tiles) || !Array.isArray(action.froms) ||
+        action.froms.length !== action.tiles.length || !sameTiles(action.tiles, continuation.tiles) ||
+        !sameTiles(action.tiles.filter((tile, i) => action.froms[i] === state.selfSeat), continuation.consumed) ||
+        action.froms.filter(seat => seat === continuation.fromSeat).length !== 1) continuation = null;
+    else continuation.confirmed = true;
+  }
+  function plan(turn) {
+    if (turn.timing || !['ready','win'].includes(turn.advice?.status)) return;
+    const advice = turn.advice, best = advice.best, state = turn.state;
+    let category = 'normal';
+    const complete = !advice.warnings?.length;
+    if (advice.status === 'win') category = 'win';
+    else if (complete && best?.action === 'discard' && state.canDiscard &&
+        (state.riichi?.[state.selfSeat] || state.riichiPending?.[state.selfSeat]) &&
+        state.operations?.length === 1 && state.operations[0] === 1 && best.tile === state.lastDraw) category = 'forced';
+    else if (turn.threat > handledThreat) category = 'reassess';
+    else if (complete && continuation?.confirmed && continuation.round === turn.round &&
+        state.lastStep === continuation.step && best?.action === 'discard' &&
+        best.tile === continuation.tile) category = 'followup';
+    else if (complete && best) {
+      const alternate = advice.rankedCandidateCount === undefined || advice.rankedCandidateCount >= 2 ?
+        advice.candidates?.[1] : null;
+      const gap = best.decisionBasis?.scoreGap;
+      const components = Object.values(best.decisionBasis?.componentAdvantages || {});
+      const tradeoff = alternate && (alternate.action !== best.action ||
+        alternate.currentStrategy !== best.currentStrategy ||
+        alternate.metricContext !== best.metricContext ||
+        components.some(value => value > 50) && components.some(value => value < -50));
+      if (Number.isFinite(gap) && gap >= 0 && gap < 100 && tradeoff) category = 'deliberate';
+      else if (alternate && Number.isFinite(gap) && gap >= 100) category = best.action === 'pass' ? 'pass' : 'clear';
+    }
+    const [low, high] = ranges[category];
+    const targetMs = Math.round(pace * (low + (high - low) * turn.sample * turn.sample));
+    turn.target = turn.startedAt + targetMs;
+    turn.timing = {category, targetMs, adviceReadyMs:Math.max(0, now() - turn.startedAt)};
+  }
+  function restartTiming(turn, startedAt) {
+    turn.startedAt = startedAt; turn.sample = Math.random(); turn.timing = null;
+    turn.target = startedAt; plan(turn);
+  }
   function status(nextPhase, nextMessage) {
     phase = nextPhase; message = nextMessage;
     const value = getStatus(), signature = JSON.stringify(value);
@@ -20,7 +81,11 @@
       lastLogState = logState; window.__mjMonitor?.reportAutomation?.(value);
     }
   }
-  function getStatus() { return {enabled, playerCount, phase, message}; }
+  function getStatus() {
+    const timing = current?.timing;
+    return {enabled, playerCount, phase, message, ...(timing ? {timing:{...timing,
+      elapsedMs:Math.max(0, (current.sentAt ?? now()) - current.startedAt)}} : {})};
+  }
   function cancelMatch() {
     try {
       const result = window.__mjLobby?.cancel();
@@ -36,7 +101,7 @@
   }
   function pause(reason) {
     const wasEnabled = enabled;
-    enabled = false; pending = null; clientLoadingSince = initialRoundSince = null;
+    enabled = false; pending = null; clientLoadingSince = initialRoundSince = null; continuation = null; lastWindow = null;
     status('paused', reason);
     if (wasEnabled) cancelMatch();
   }
@@ -44,7 +109,7 @@
     if (stopped) return;
     if (!value) {
       const wasEnabled = enabled;
-      enabled = false; pending = null; clientLoadingSince = initialRoundSince = null;
+      enabled = false; pending = null; clientLoadingSince = initialRoundSince = null; continuation = null; lastWindow = null;
       status('idle', '已关闭 · 手动操作');
       if (wasEnabled) cancelMatch();
       return;
@@ -55,7 +120,8 @@
       status('waiting', '等待上次操作确认，请稍后开启'); return;
     }
     enabled = true; pending = null; submitted = null; clientLoadingSince = initialRoundSince = null;
-    if (current && !current.sent) current.target = now() + delay();
+    pace = .95 + Math.random() * .1; handledThreat = threatVersion;
+    if (current && !current.sent) { restartTiming(current, now()); lastWindow = current; }
     status('waiting', '已开启 · 检查当前对局');
     tick();
   }
@@ -68,10 +134,24 @@
   }
   function onEvent(event) {
     if (stopped || !['turn', 'status', 'error'].includes(event.kind)) return;
+    const previous = lastWindow;
     current = null; pending = null;
+    if (event.reset) {
+      observed = continuation = lastWindow = null; threatVersion = handledThreat = 0;
+    }
     if (event.kind === 'turn') {
+      observe(event);
+      const windowKey = JSON.stringify([event.session, event.state]);
+      const sameWindow = previous?.windowKey === windowKey;
       current = {key: `${event.session}:${event.serial}`, state: event.state,
-        target: now() + delay(), advice: null, sent: false};
+        round:roundKey(event), windowKey, threat:threatVersion, advice:null, sent:false};
+      if (sameWindow) Object.assign(current, {startedAt:previous.startedAt, sample:previous.sample,
+        target:previous.target, timing:previous.timing, sent:previous.sent, sentAt:previous.sentAt});
+      else {
+        const receivedAt = event.state.operationTiming?.receivedAt;
+        restartTiming(current, Number.isFinite(receivedAt) && receivedAt >= 0 && receivedAt <= now() ? receivedAt : now());
+      }
+      lastWindow = current;
       if (enabled && event.state.phase === 'playing' &&
           (!event.state.handComplete || !event.state.historyComplete)) {
         pause('已暂停：牌局基线不完整，需恢复后重新开启');
@@ -83,6 +163,7 @@
   function onAdvice(packet) {
     if (!current || current.sent || packet.adviceKey !== current.key) return;
     current.advice = packet.advice;
+    plan(current);
     if (enabled && current.state.canAct && packet.advice?.status === 'unavailable') {
       pause(`已暂停：${packet.advice.message || '当前建议不可用'}`);
     }
@@ -176,7 +257,7 @@
       if (!client?.available) { pause('已暂停：游戏操作接口不可用'); return; }
       if (client.blocked) { pause(`已暂停：${client.reason}`); return; }
       if (!client.canAct) {
-        if (client.remainingMs !== null && client.remainingMs <= 350 || now() - turn.target > 10000)
+        if (client.remainingMs !== null && client.remainingMs <= 350 || now() - turn.startedAt > 10000)
           pause(`已暂停：${client.reason || '操作界面未能及时就绪'}`);
         else status('waiting', client.reason || '等待游戏操作界面');
         return;
@@ -192,7 +273,13 @@
       }
       const wait = Math.min(turn.target - now(), client.remainingMs - 350);
       if (wait > 0) { status('delaying', `按建议操作 · ${(wait / 1000).toFixed(1)} 秒`); return; }
-      turn.sent = true;
+      turn.sent = true; turn.sentAt = now(); handledThreat = turn.threat;
+      turn.timing.deadlineLimited = now() < turn.target;
+      const choice = turn.advice.best;
+      continuation = ['chi','pon'].includes(choice?.action) && choice.followupDiscard && Array.isArray(choice.consumed) ?
+        {round:turn.round, step:turn.state.lastStep + 1, type:choice.action === 'chi' ? 0 : 1,
+          tile:choice.followupDiscard, tiles:[...choice.consumed, choice.calledTile],
+          consumed:[...choice.consumed], fromSeat:choice.fromSeat, confirmed:false} : null;
       run(turn.key, () => window.__mjUnityActions.execute(turn.advice, turn.state), '已提交建议操作');
     } catch (error) { pause(`已暂停：${error.message}`); }
   }

@@ -113,7 +113,8 @@ for (const players of [4, 3]) test(`Unity ${players}-player flow matches, discar
   const state = h.window.__mjMonitor.getSnapshot().state;
   assert.equal(state.canAct,true); assert.equal(state.operationTiming.timeFixed,5000);
   assert.equal(h.window.__mjUnityActions.snapshot(state).canAct,true);
-  h.advice({action:'discard',tile:'1z'}); await h.advance(2999);
+  h.advice({action:'discard',tile:'1z'});
+  await h.advance(h.api.getStatus().timing.targetMs - 1);
   assert.equal(game.sent.length,2);
   await h.advance(1);
   assert.equal(game.sent.length,3, 'the first advised action is sent exactly once after the valid deal');
@@ -206,6 +207,70 @@ test('reopening during settlement preserves the countdown and automatically queu
   assert.equal(h.str(h.fields(h.last(h.lobby).data),1),'1:21');
   await h.reply(h.lobby); h.api.setEnabled(false); await h.reply(h.lobby);
 });
+
+for (const [action, type, consumed] of [['chi',2,['2m','3m']], ['pon',3,['1m','1m']]])
+  for (const scenario of ['matching', 'changed', 'before-ack'])
+    test(`Unity ${action} follow-up ${scenario} requires confirmation and fresh advice`, async () => {
+      const h = await setup(), {encode:e, first, fields, str} = h;
+      const game = h.connect(true), seats = [11,22,33,44];
+      game.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11]])));
+      await h.reply(game,e([...seats.map(id => [2,e([[1,id],[5,e([[1,10301]])]])]),
+        ...seats.map(id => [3,id]), [5,e([[1,2],[2,e([[1,1]])],[3,e([[2,8]])]])]]));
+      const hand = [...consumed,'1p','2p','3p','4p','5p','6p','1s','2s','3s','1z','7z'];
+      const operation = (kind, combination = []) => e([[1,0],
+        [2,e([[1,kind],...combination.map(value => [2,value])])],[4,20000],[5,5000]]);
+      await h.action(game,'ActionNewRound',0,[[1,0],[2,3],[3,0],...hand.map(tile => [4,tile]),
+        ...seats.map(() => [6,25000]),[13,69],[14,'1p']]);
+      await h.action(game,'ActionDiscardTile',1,[[1,3],[2,'1m'],[4,operation(type,[consumed.join('|')])]]);
+      h.api.setEnabled(true);
+      h.advice({action,consumed,calledTile:'1m',fromSeat:3,followupDiscard:'1z'});
+      const callDelay = h.api.getStatus().timing.targetMs;
+      await h.advance(callDelay);
+      assert.equal(h.last(game).name,'.lq.FastTest.inputChiPengGang');
+      assert.equal(first(fields(h.last(game).data),1),type);
+      const submitted = game.sent.length;
+      const tiles = [...consumed,'1m'], froms = [0,0,3];
+      await h.action(game,'ActionChiPengGang',2,[[1,0],[2,action === 'chi' ? 0 : 1],
+        ...tiles.map(tile => [3,tile]),...froms.map(seat => [4,seat]),[6,operation(1)]]);
+      const state = h.window.__mjMonitor.getSnapshot().state;
+      assert.equal(state.handComplete,true);
+      assert.equal(state.canDiscard,true);
+      assert.equal(state.hand.length,11);
+      assert.equal(h.window.__mjUnityActions.snapshot().pending,true);
+      const tile = scenario === 'changed' ? '7z' : '1z';
+      if (scenario === 'before-ack') {
+        h.advice({action:'discard',tile});
+        assert.equal(h.api.getStatus().timing.category,'followup');
+        await h.advance(h.api.getStatus().timing.targetMs + 1);
+      } else await h.advance(500);
+      assert.equal(game.sent.length,submitted,'the authoritative call echo cannot replace its ACK');
+      await h.reply(game);
+      assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+      if (scenario !== 'before-ack') {
+        await h.advance(1000);
+        assert.equal(game.sent.length,submitted,'a confirmed call cannot execute the old planned discard without fresh advice');
+        assert.equal(h.api.getStatus().phase,'computing');
+        h.advice({action:'discard',tile});
+      }
+      const timing = h.api.getStatus().timing;
+      assert.equal(timing.category,scenario === 'changed' ? 'normal' : 'followup');
+      if (scenario !== 'changed') assert.ok(timing.targetMs < callDelay);
+      const remaining = timing.targetMs - timing.elapsedMs;
+      if (remaining > 0) {
+        await h.advance(remaining - 1);
+        assert.equal(game.sent.length,submitted);
+        await h.advance(1);
+      } else await h.advance(0);
+      assert.equal(game.sent.length,submitted + 1);
+      assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
+      assert.equal(str(fields(h.last(game).data),3),tile,'the submitted tile must come from the new recommendation');
+      await h.reply(game);
+      await h.action(game,'ActionDiscardTile',3,[[1,0],[2,tile]]);
+      await h.advance(1000);
+      assert.equal(game.sent.length,submitted + 1);
+      assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+      assert.equal(h.api.getStatus().enabled,true);
+    });
 
 test('enabling while Unity has no authenticated connection proceeds when native login finishes', async () => {
   const h = await setup(4, true);

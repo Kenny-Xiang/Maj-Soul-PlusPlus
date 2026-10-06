@@ -5,10 +5,10 @@ const path = require('node:path');
 const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../src/autoplay.js'), 'utf8');
 
-function setup() {
+function setup(random = () => .5) {
   let time = 0, tick;
   const actions = [], starts = [], finishes = [], statuses = [], listeners = new Map();
-  let cancels = 0;
+  let cancels = 0, randomCalls = 0;
   const lobby = {phase:'playing', message:'playing'};
   const client = {available:true, canAct:true, remainingMs:10000};
   const window = {
@@ -17,23 +17,46 @@ function setup() {
       start:(count,key)=>{starts.push({count,key}); return {ok:true};},
       cancel:()=>{cancels++;return {ok:true};}, finish:key=>{finishes.push(key);return {ok:true};}},
     __mjUnityActions:{snapshot:()=>client, execute:(advice,state)=>{
-      actions.push({advice,state}); window.__mjAutoplay.onInput(); return Promise.resolve({});
+      actions.push({advice,state,at:time}); window.__mjAutoplay.onInput(); return Promise.resolve({});
     }},
   };
   vm.runInNewContext(source, {window,location:{hostname:'game.maj-soul.com'},
-    performance:{now:()=>time},Math:{random:()=>.5,min:Math.min,max:Math.max},
+    performance:{now:()=>time},Math:Object.assign(Object.create(Math), {random:()=>{randomCalls++;return random();}}),
     setInterval:fn=>{tick=fn;return 1;},clearInterval:()=>{tick=null;},
     addEventListener:(type,fn)=>listeners.set(type,fn),removeEventListener:type=>listeners.delete(type)});
   const api = window.__mjAutoplay;
-  const state = {phase:'playing',canAct:true,handComplete:true,historyComplete:true,lastStep:3};
-  function turn(serial=1, changes={}) {
-    api.onEvent({kind:'turn',session:'session',serial,state:{...state,...changes}});
+  const state = {phase:'playing',canAct:true,canDiscard:true,handComplete:true,historyComplete:true,
+    selfSeat:0,playerCount:4,round:{chang:0,ju:0,ben:0},lastStep:3,lastDraw:'7z',
+    hand:['1m','2m','3m','4m','5m','6m','1p','2p','3p','1s','2s','3s','7z','7z'],
+    operations:[1],operationDetails:[{type:1,combination:[]}],
+    operationTiming:{receivedAt:0,timeFixed:10000,timeAdd:10000},
+    lastAction:{name:'ActionDealTile',seat:0,step:3,tile:'7z'},
+    riichi:[false,false,false,false],riichiPending:[false,false,false,false],
+    melds:[[],[],[],[]],doras:['3p']};
+  function turn(serial=1, changes={}, action) {
+    const next = {...state,...changes};
+    api.onEvent({kind:'turn',session:'session',serial,state:next,action:action || next.lastAction});
   }
   function advice(serial=1, value={status:'ready',best:{action:'discard',tile:'7z'}}) {
     api.onAdvice({kind:'advice',adviceKey:`session:${serial}`,advice:value});
   }
   return {window,api,lobby,client,actions,starts,finishes,statuses,listeners,turn,advice,
-    advance(ms){time+=ms;tick?.();},tick(){tick?.();},get cancels(){return cancels;}};
+    advance(ms){time+=ms;tick?.();},tick(){tick?.();},get cancels(){return cancels;},
+    get now(){return time;},get randomCalls(){return randomCalls;},
+    finishAction(count=1){for (let i=0;i<200 && actions.length<count;i++) {time+=100;tick?.();}assert.equal(actions.length,count);}};
+}
+
+function comparedAdvice(gap = 1000, bestChanges = {}, otherChanges = {}) {
+  const best = {action:'discard',tile:'7z',currentStrategy:'push',metricContext:'discard',
+    score:2000,decisionBasis:{scoreGap:gap,componentAdvantages:{efficiency:gap,defense:0,draw:0,actionCost:0}},
+    ...bestChanges};
+  const other = {action:'discard',tile:'1m',currentStrategy:'push',metricContext:'discard',score:2000-gap,...otherChanges};
+  return {status:'ready',best,candidates:[best,other],rankedCandidateCount:2,warnings:[]};
+}
+
+function responseTime(advice, changes = {}, random) {
+  const s=setup(random);s.turn(1,changes);s.advice(1,advice);s.api.setEnabled(true);s.finishAction();
+  return {ms:s.actions[0].at,s};
 }
 
 for (const arrivalMs of [500,2000,8000,29000]) test(`initial round arriving after ${arrivalMs}ms resumes from its event, not a fixed five-second delay`, () => {
@@ -42,7 +65,8 @@ for (const arrivalMs of [500,2000,8000,29000]) test(`initial round arriving afte
   s.turn(1,{phase:'connected',baseline:null,handComplete:false,historyComplete:false,canAct:false});
   s.advice(1,{status:'unavailable',message:'尚未取得基线'}); s.advance(arrivalMs);
   assert.equal(s.api.getStatus().enabled,true); assert.equal(s.actions.length,0);
-  s.turn(2); s.advice(2); s.advance(2999); assert.equal(s.actions.length,0);
+  s.turn(2,{operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});
+  s.advice(2); s.advance(s.api.getStatus().timing.targetMs - 1); assert.equal(s.actions.length,0);
   s.advance(1); assert.equal(s.actions.length,1); assert.equal(s.api.getStatus().enabled,true);
 });
 
@@ -70,14 +94,15 @@ test('initial waiting never suppresses an incomplete playing state or manual tak
 test('default off and four players; enabling observes a window then submits exactly once', () => {
   const s=setup(); s.turn();s.advice();s.advance(10000);
   assert.equal(s.actions.length,0);assert.equal(s.api.getStatus().playerCount,4);
-  s.api.setEnabled(true);s.advance(2999);assert.equal(s.actions.length,0);
-  s.advance(1);assert.equal(s.actions.length,1);assert.equal(s.api.getStatus().enabled,true);
+  s.api.setEnabled(true);assert.equal(s.actions.length,0);
+  s.finishAction();assert.equal(s.api.getStatus().enabled,true);
   s.advice();s.advance(50000);assert.equal(s.actions.length,1);
 });
 
 test('delay and calculation overlap instead of adding another full random wait', () => {
-  const s=setup();s.turn();s.api.setEnabled(true);s.advance(2000);s.advice();
-  s.advance(999);assert.equal(s.actions.length,0);s.advance(1);assert.equal(s.actions.length,1);
+  const baseline=responseTime({status:'ready',best:{action:'discard',tile:'7z'}}).ms;
+  const s=setup();s.turn();s.api.setEnabled(true);s.advance(baseline-100);s.advice();
+  s.advance(100);assert.equal(s.actions.length,1);
 });
 
 test('short decision deadline overrides target delay; no available decision pauses', () => {
@@ -110,10 +135,10 @@ test('unsupported client state pauses immediately and stalled animations have a 
 });
 
 test('stale advice is rejected and a new action receives its own delay', () => {
-  const s=setup();s.turn();s.api.setEnabled(true);s.advance(2000);s.turn(2);
+  const s=setup();s.turn();s.api.setEnabled(true);s.advance(2000);s.turn(2,{lastStep:4});
   s.advice(1);s.advance(5000);assert.equal(s.actions.length,0);
   s.advice(2);s.tick();assert.equal(s.actions.length,1);
-  assert.equal(s.actions[0].state.lastStep,3);
+  assert.equal(s.actions[0].state.lastStep,4);
 });
 
 test('win uses its top-level action while analysis, waiting and unavailable never execute', () => {
@@ -129,7 +154,7 @@ test('close, manual input, incomplete baseline, error and disconnect cancel pend
   for (const cancel of [s=>s.api.setEnabled(false),s=>s.api.onInput(),
     s=>s.turn(2,{historyComplete:false}),s=>s.api.onEvent({kind:'error'}),
     s=>s.api.onEvent({kind:'status',phase:'disconnected'})]) {
-    const s=setup();s.turn();s.advice();s.api.setEnabled(true);s.advance(2000);cancel(s);s.advance(5000);
+    const s=setup();s.turn();s.advice();s.api.setEnabled(true);s.advance(10);cancel(s);s.advance(5000);
     assert.equal(s.actions.length,0);assert.equal(s.api.getStatus().enabled,false);
   }
 });
@@ -228,4 +253,173 @@ test('Unity result confirmation gates settlement and prevents re-enabling an unr
   s.api.setEnabled(false); s.api.setEnabled(true); assert.equal(s.api.getStatus().enabled,false);
   s.client.pending = false; s.api.setEnabled(true); s.advance(3000);
   assert.deepEqual(s.finishes,['round:1']);
+});
+
+test('wins and forced riichi discards respond faster without changing the advised move', () => {
+  const ordinary=responseTime({status:'ready',best:{action:'discard',tile:'7z'}});
+  const win=responseTime({status:'win',action:'ron',best:null});
+  const forced=responseTime({status:'ready',best:{action:'discard',tile:'7z'}}, {riichi:[true,false,false,false]});
+  assert.ok(win.ms<ordinary.ms);assert.ok(forced.ms<ordinary.ms);
+  assert.equal(win.s.actions[0].advice.action,'ron');
+  assert.equal(forced.s.actions[0].advice.best.tile,'7z');
+});
+
+test('optional actions and warnings prevent the forced-discard shortcut', () => {
+  const advice={status:'ready',best:{action:'discard',tile:'7z'}};
+  const locked={riichi:[true,false,false,false]};
+  const forced=responseTime(advice,locked).ms;
+  for (const optional of [4,11]) {
+    const measured=responseTime(advice,{...locked,operations:[1,optional],
+      operationDetails:[{type:1,combination:[]},{type:optional,combination:[]}]}).ms;
+    assert.ok(measured>forced,`operation ${optional} still requires a decision`);
+  }
+  assert.ok(responseTime({...advice,warnings:['an optional action could not be evaluated']},locked).ms>forced);
+});
+
+test('a clear comparable choice is quicker than close scores or conflicting routes', () => {
+  const clear=responseTime(comparedAdvice()).ms;
+  const close=responseTime(comparedAdvice(25)).ms;assert.ok(close>clear);
+  for (const advice of [comparedAdvice(25,{}, {action:'riichi'}),
+    comparedAdvice(25,{}, {currentStrategy:'fold'}),
+    comparedAdvice(25,{}, {metricContext:'replacement'}),
+    comparedAdvice(25,{decisionBasis:{scoreGap:25,componentAdvantages:{efficiency:1000,defense:-975}}})]) {
+    assert.ok(responseTime(advice).ms>close);
+  }
+  assert.ok(responseTime({...comparedAdvice(),warnings:['one legal route was not evaluated']}).ms>clear);
+});
+
+test('unranked alternatives cannot supply evidence for the clear-choice shortcut', () => {
+  const clear=responseTime(comparedAdvice()).ms;
+  const incomplete={...comparedAdvice(),rankedCandidateCount:1};
+  assert.ok(responseTime(incomplete).ms>clear);
+});
+
+test('same-window advice refresh preserves its start and sample but rejects the old key', () => {
+  const s=setup();s.turn();s.advice(1,comparedAdvice());s.api.setEnabled(true);
+  const planned=s.api.getStatus().timing;
+  assert.ok(Number.isFinite(planned?.targetMs));
+  s.advance(100);const calls=s.randomCalls;s.turn(2);s.advice(1,comparedAdvice());
+  s.advance(planned.targetMs);assert.equal(s.actions.length,0);
+  assert.equal(s.randomCalls,calls);
+  s.advice(2,comparedAdvice());s.tick();assert.equal(s.actions.length,1);
+  assert.ok(s.api.getStatus().timing.elapsedMs>=planned.targetMs);
+});
+
+test('a genuinely new operation window starts a new reaction budget', () => {
+  const s=setup();s.turn();s.advice(1,comparedAdvice());s.api.setEnabled(true);s.advance(100);
+  const calls=s.randomCalls;
+  s.turn(2,{lastStep:4,operationTiming:{receivedAt:100,timeFixed:10000,timeAdd:10000},
+    lastAction:{name:'ActionDealTile',seat:0,step:4,tile:'7z'}});
+  s.advice(2,comparedAdvice());s.tick();
+  assert.ok(s.randomCalls>calls);assert.equal(s.actions.length,0);
+  assert.equal(s.api.getStatus().timing.elapsedMs,0);
+  s.finishAction();assert.ok(s.actions[0].at>100);
+});
+
+test('harmless status refresh pauses execution without resampling the same operation window', () => {
+  const s=setup();s.turn();s.advice(1,comparedAdvice());s.api.setEnabled(true);
+  const planned=s.api.getStatus().timing.targetMs;s.advance(100);const calls=s.randomCalls;
+  s.api.onEvent({kind:'status',phase:'playing'});s.advance(planned);
+  assert.equal(s.actions.length,0);
+  s.turn(2);s.advice(2,comparedAdvice());s.tick();
+  assert.equal(s.randomCalls,calls);assert.equal(s.actions.length,1);
+});
+
+test('an enabled action budget starts at packet receipt before parsing or advice completes', () => {
+  const s=setup();s.api.setEnabled(true);s.advance(750);s.turn();s.advice(1,comparedAdvice());s.tick();
+  assert.equal(s.api.getStatus().timing.elapsedMs,750);
+  const target=s.api.getStatus().timing.targetMs;s.finishAction();
+  assert.ok(s.actions[0].at>=target && s.actions[0].at<target+100);
+});
+
+test('the session pace remains stable across successive windows', () => {
+  let samples=0;
+  const s=setup(()=>++samples===1?.1:.5);s.api.setEnabled(true);s.turn();s.advice(1,comparedAdvice());s.tick();
+  const first=s.api.getStatus().timing.targetMs;s.finishAction();
+  s.turn(2,{lastStep:4,operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});
+  s.advice(2,comparedAdvice());s.tick();assert.equal(s.api.getStatus().timing.targetMs,first);
+});
+
+test('late advice consumes the original budget and a short deadline remains authoritative', () => {
+  const s=setup();s.turn();s.api.setEnabled(true);s.advance(6000);s.advice(1,comparedAdvice(25));s.tick();
+  assert.equal(s.actions.length,1);
+  const short=setup();short.turn();short.advice(1,comparedAdvice(25));short.client.remainingMs=300;
+  short.api.setEnabled(true);assert.equal(short.actions.length,1);
+  assert.equal(short.api.getStatus().timing.deadlineLimited,true);
+});
+
+test('bounded jitter favors shorter waits and does not depend on advice compute time', () => {
+  function measured(sample) {
+    let calls=0;
+    return responseTime(comparedAdvice(25),{},()=>++calls===1?.5:sample).ms;
+  }
+  const low=measured(0),middle=measured(.5),high=measured(1);
+  assert.ok(low<middle && middle<high);
+  assert.ok(middle-low<(high-low)/2);
+  assert.ok(high<6000);
+});
+
+function callThenDiscard({tile='1m',threat=false,pending=false,reset=false,newRound=false} = {}) {
+  const s=setup();s.window.__mjUnityTransport={isUnity:()=>true};
+  const call={action:'pon',consumed:['7z','7z'],calledTile:'7z',fromSeat:1,followupDiscard:'1m',
+    currentStrategy:'push',metricContext:'followup'};
+  s.turn(1,{canDiscard:false,operations:[3],operationDetails:[{type:3,combination:['7z|7z']}],
+    lastAction:{name:'ActionDiscardTile',seat:1,step:3,tile:'7z'}});
+  s.advice(1,{status:'ready',best:call});s.api.setEnabled(true);s.finishAction();
+  if (reset) {
+    if (reset==='disconnect') s.api.onEvent({kind:'status',phase:'disconnected'});
+    else s.api.setEnabled(false);
+    s.api.setEnabled(true);
+  }
+  const receivedAt=s.now;
+  const action={name:'ActionChiPengGang',seat:0,step:4,type:1,tiles:['7z','7z','7z'],froms:[0,0,1]};
+  s.client.pending=pending;
+  s.turn(2,{lastStep:4,lastDraw:null,hand:['1m','2m','3m','4m','5m','6m','1p','2p','3p','1s','2s'],
+    round:{chang:0,ju:newRound?1:0,ben:0},
+    operationTiming:{receivedAt,timeFixed:10000,timeAdd:10000},lastAction:action,
+    melds:[[{type:1,tiles:action.tiles,froms:action.froms}],[],[],[]],
+    riichi:[false,threat,false,false]},action);
+  s.advice(2,{status:'ready',best:{action:'discard',tile}});s.tick();
+  return {s,receivedAt};
+}
+
+test('a confirmed call continues the planned discard faster, only while the plan remains valid', () => {
+  const continued=callThenDiscard();continued.s.finishAction(2);
+  const quick=continued.s.actions[1].at-continued.receivedAt;
+  for (const changes of [{tile:'2m'},{threat:true},{reset:true},{reset:'disconnect'},{newRound:true}]) {
+    const fresh=callThenDiscard(changes);fresh.s.finishAction(2);
+    assert.ok(fresh.s.actions[1].at-fresh.receivedAt>quick);
+  }
+});
+
+test('a follow-up plan never bypasses pending server confirmation', () => {
+  const {s}=callThenDiscard({pending:true});s.advance(5000);assert.equal(s.actions.length,1);
+  s.client.pending=false;s.tick();assert.equal(s.actions.length,2);
+});
+
+test('new opponent threats survive passive events and are consumed by one decision window', () => {
+  for (const change of [{riichi:[false,true,false,false]},
+    {melds:[[],[{type:1,tiles:['5m','5m','5m']}],[],[]]}, {doras:['3p','4p']}]) {
+    const s=setup();s.turn(1,{canAct:false,canDiscard:false,operations:[],operationDetails:[]});s.api.setEnabled(true);
+    s.turn(2,{...change,canAct:false,canDiscard:false,operations:[],operationDetails:[],lastStep:4});
+    s.advance(100);
+    s.turn(3,{...change,lastStep:5,operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});
+    s.advice(3,comparedAdvice());s.tick();
+    const first=s.api.getStatus().timing?.targetMs;assert.ok(Number.isFinite(first));
+    s.finishAction();
+    s.turn(4,{...change,lastStep:6,operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});
+    s.advice(4,comparedAdvice());s.tick();
+    assert.ok(first>s.api.getStatus().timing.targetMs);
+  }
+});
+
+test('a game reset clears unconsumed threats even when the next game reuses its round identity', () => {
+  const s=setup();s.turn(1,{canAct:false,canDiscard:false,operations:[],operationDetails:[]});s.api.setEnabled(true);
+  s.turn(2,{riichi:[false,true,false,false],canAct:false,canDiscard:false,operations:[],operationDetails:[],lastStep:4});
+  s.api.onEvent({kind:'status',phase:'ended',reset:true});
+  s.advance(100);
+  const action={name:'ActionNewRound',seat:0,step:0};
+  s.turn(3,{lastStep:0,lastAction:action,operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}},action);
+  s.advice(3,comparedAdvice());s.tick();
+  assert.equal(s.api.getStatus().timing.category,'clear');
 });
