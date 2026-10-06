@@ -148,6 +148,13 @@ def main():
 
     output = args.artifacts or repo / "build/advisor-inference" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     output.mkdir(parents=True, exist_ok=False)
+    runner_files = [Path(__file__).resolve(), repo / "scripts/advisor_compare.py"]
+    (output / "scripts").mkdir()
+    runner_info = {}
+    for path in runner_files:
+        contents = path.read_bytes()
+        (output / "scripts" / path.name).write_bytes(contents)
+        runner_info[path.name] = hashlib.sha256(contents).hexdigest()
     fixture_paths = [repo / "tests/fixtures" / name for name in FIXTURES]
     public = [case for path in fixture_paths for case in load_cases(path)]
     live = load_cases(args.live) if args.live else []
@@ -289,8 +296,12 @@ def main():
     for version, source in sources.items():
         if source_hash(source) != source_info[version]["sourceSha256"]:
             raise ValueError(f"Source snapshot changed during the benchmark: {version}")
+    for path in runner_files:
+        if hashlib.sha256(path.read_bytes()).hexdigest() != runner_info[path.name]:
+            raise ValueError(f"Benchmark runner changed during execution: {path}")
     summary = {
         "artifacts": str(output.resolve()), "sources": source_info, "fixtures": fixture_info,
+        "runnerSha256": runner_info,
         "environment": {"python": sys.version, "platform": platform.platform(),
                         "mahjong": importlib.metadata.version("mahjong")},
         "method": {"budgetSeconds": 2, "rankedLimitBothVersions": 3, "warmupPasses": 1,
