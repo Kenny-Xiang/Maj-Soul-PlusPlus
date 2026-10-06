@@ -1,4 +1,5 @@
-// Client UI adapter verified against https://game.maj-soul.com/1/v0.11.252.w/code.js.
+// Legacy Laya UI adapter: https://game.maj-soul.com/1/v0.11.252.w/code.js.
+// The live /1/ entry now loads Unity; the old asset remaining online is not compatibility evidence.
 // Keep the client's session, matching notifications and settlement transitions intact.
 (() => {
   if (location.hostname !== 'game.maj-soul.com' || window.__mjLobby) return;
@@ -48,9 +49,12 @@
   }
 
   function snapshot(playerCount = 4) {
+    if (window.unityInstance || typeof window.createUnityInstance === 'function' ||
+        window.document?.getElementById('unity-canvas'))
+      return result('blocked', '已暂停：当前雀魂为 Unity 版，自动打牌尚未适配');
     const {manager, ui, net, desktop, modes} = client();
     syncAccount(manager, net);
-    if (!manager || !ui) return result('loading', '等待游戏客户端加载');
+    if (!manager || !ui) return result('loading', '等待游戏客户端加载', {clientLoading:true});
     if (!manager.logined) return result('login', '请先在游戏窗口登录');
     if (accountId === null) return result('blocked', '无法确认当前账号，请重新登录');
     const end = ui.UI_GameEnd?.Inst, nowEnd = enabled(end);

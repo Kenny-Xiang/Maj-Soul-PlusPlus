@@ -4,6 +4,7 @@
   let enabled = false, playerCount = 4, phase = 'idle', message = '待机';
   let current = null, pending = null, submitted = null, executing = false, stopped = false, cancelling = null;
   let lastStatus = '';
+  let clientLoadingSince = null;
   const now = () => performance.now();
   const delay = () => 1000 + Math.random() * 4000;
   function status(nextPhase, nextMessage) {
@@ -30,7 +31,7 @@
   }
   function pause(reason) {
     const wasEnabled = enabled;
-    enabled = false; pending = null;
+    enabled = false; pending = null; clientLoadingSince = null;
     status('paused', reason);
     if (wasEnabled) cancelMatch();
   }
@@ -38,14 +39,14 @@
     if (stopped) return;
     if (!value) {
       const wasEnabled = enabled;
-      enabled = false; pending = null;
+      enabled = false; pending = null; clientLoadingSince = null;
       status('idle', '已关闭 · 手动操作');
       if (wasEnabled) cancelMatch();
       return;
     }
     if (enabled) return;
     if (cancelling !== null) { status('waiting', '正在取消上一轮匹配，请稍后开启'); return; }
-    enabled = true; pending = null; submitted = null;
+    enabled = true; pending = null; submitted = null; clientLoadingSince = null;
     if (current && !current.sent) current.target = now() + delay();
     status('waiting', '已开启 · 检查当前对局');
     tick();
@@ -124,6 +125,13 @@
       const lobby = window.__mjLobby?.snapshot(playerCount);
       if (!lobby) { pause('已暂停：大厅控制器未就绪'); return; }
       if (lobby.phase === 'blocked') { pause(lobby.message || '已暂停：当前界面不支持自动操作'); return; }
+      if (lobby.clientLoading) {
+        clientLoadingSince ??= now();
+        if (now() - clientLoadingSince >= 90000) {
+          pause('已暂停：90 秒内未识别到支持的游戏客户端，请检查页面加载或客户端兼容性');
+          return;
+        }
+      } else clientLoadingSince = null;
       if (lobby.phase === 'lobby') {
         if (!lobby.actionKey) { pending = null; status('waiting', lobby.message || '等待大厅就绪'); return; }
         schedule(lobby.actionKey, () => window.__mjLobby.start(playerCount, lobby.actionKey), lobby.message || '准备匹配');

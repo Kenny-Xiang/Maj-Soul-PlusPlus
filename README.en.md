@@ -9,7 +9,7 @@ A macOS client for Mahjong Soul's Chinese server, built on system WebKit, with l
 - **Game statistics:** your hand, round, scores, remaining tiles, dora indicators, each player's discards and melds, North extractions, and confirmed riichi status.
 - **Statistics overlay:** a responsive, two-column layout with click-through interaction except for the automation buttons at the top, updated as table actions arrive.
 - **Action recommendations:** compares discards, calls, riichi, North extraction, a nine-terminals abortive draw, and pass using your hand, public information, and server-authorized operations. Available tsumo or ron takes priority.
-- **Automatic play:** an overlay switch, off by default, with four-player (default) or three-player mode. When enabled, selects the highest eligible standard East-round room for that mode using rank and entry conditions, matches, follows current advice, and continues after each match. Operations target a random 1–5 second delay, shortened near the deadline; invalid state or unavailable client interfaces pause automation. See the [usage guide](docs/使用说明.md#自动打牌).
+- **Automatic play (unavailable on the current entry page):** an overlay switch, off by default, with four-player (default) or three-player mode. The existing controller targets the legacy Laya client. The official entry page checked on 2026-10-06 uses Unity, so enabling the switch reports that this client is unsupported and pauses. This version cannot automatically match or play on that entry page. See the [usage guide](docs/使用说明.md#自动打牌).
 - **Hand analysis and logging:** shows shanten, effective unseen tiles, and estimated hand value between actions; saves text and JSONL logs locally.
 
 ## Quick start
