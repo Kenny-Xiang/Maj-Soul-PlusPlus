@@ -42,12 +42,14 @@ assert finish['snapshot']['errors']==0,finish
 assert finish['snapshot']['received']==60,finish
 for p in turns: assert f"动作 #{p['step']}" in format_turn(p)
 display=[]
-view.evaluateJavaScript_completionHandler_("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.panel').textContent",lambda value,error:display.append((value,error)))
+view.evaluateJavaScript_completionHandler_("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.game').textContent",lambda value,error:display.append((value,error)))
 deadline=time.time()+10
 while not display and time.time()<deadline:
  NSRunLoop.currentRunLoop().runUntilDate_(NSDate.dateWithTimeIntervalSinceNow_(0.05))
-assert display and not display[0][1] and '第 48 次更新' in display[0][0] and '动作 #110' in display[0][0],display
-assert '第 1 次更新' not in display[0][0],display
+latest_game=''.join(line for line in format_turn(turns[-1]).split('\n')[3:]
+                    if not line.startswith(('状态：','完整性：','说明：','触发：')))
+assert display and not display[0][1] and display[0][0]==latest_game,display
+assert '次更新' not in display[0][0] and '动作 #' not in display[0][0],display
 print(json.dumps({'test':'real WKWebView → WKScriptMessageHandler → Python formatter → overlay','frames':60,'actions':48,'statistics_updates':len(turns),'errors':0,'overlay_shows_latest_update':True,'network_requests':'none; local fixture and fake WebSocket','base_url':finish['href']},ensure_ascii=False))
 
 # A complete recorded starting hand exercises the live advisor path as well.

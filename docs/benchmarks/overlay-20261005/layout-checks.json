@@ -1,0 +1,194 @@
+[
+  {
+    "case": "furiten-800",
+    "adviceBottom": 144.6171875,
+    "bottom": 279.75,
+    "clickTarget": "underlay",
+    "dpr": 1,
+    "fontSize": "9.5px",
+    "gameBottom": 269.75,
+    "height": 600,
+    "warnings": [
+      {
+        "bottom": 95.546875,
+        "display": "block",
+        "text": "整副牌振听，所有等待均只估自摸"
+      },
+      {
+        "bottom": 112.3671875,
+        "display": "block",
+        "text": "立直后不能自由弃和，和牌与强制摸切放铳共用存活概率"
+      }
+    ],
+    "width": 800
+  },
+  {
+    "case": "ordinary-800",
+    "adviceBottom": 194.484375,
+    "bottom": 286.25,
+    "clickTarget": "underlay",
+    "dpr": 1,
+    "fontSize": "11.5px",
+    "gameBottom": 276.25,
+    "height": 600,
+    "warnings": [
+      {
+        "bottom": 124.4609375,
+        "display": "block",
+        "text": "远期牌型尚未确认荣和役，保守只估自摸；后续改良可重新评估"
+      }
+    ],
+    "width": 800
+  },
+  {
+    "case": "fourth-riichi-800",
+    "adviceBottom": 136.2890625,
+    "bottom": 279.75,
+    "clickTarget": "underlay",
+    "dpr": 1,
+    "fontSize": "9.5px",
+    "gameBottom": 269.75,
+    "height": 600,
+    "warnings": [
+      {
+        "bottom": 104.0390625,
+        "display": "block",
+        "text": "第四家立直：宣言牌未被荣和则途中流局，无后续和牌机会或听牌料"
+      }
+    ],
+    "width": 800
+  },
+  {
+    "case": "ordinary-1280",
+    "adviceBottom": 177.0078125,
+    "bottom": 321.5,
+    "clickTarget": "underlay",
+    "dpr": 1,
+    "fontSize": "13px",
+    "gameBottom": 308.5,
+    "height": 800,
+    "warnings": [
+      {
+        "bottom": 121.9609375,
+        "display": "block",
+        "text": "远期牌型尚未确认荣和役，保守只估自摸；后续改良可重新评估"
+      }
+    ],
+    "width": 1280
+  },
+  {
+    "case": "furiten-1280",
+    "adviceBottom": 181.0078125,
+    "bottom": 364.5,
+    "clickTarget": "underlay",
+    "dpr": 1,
+    "fontSize": "13px",
+    "gameBottom": 351.5,
+    "height": 800,
+    "warnings": [
+      {
+        "bottom": 121.9609375,
+        "display": "block",
+        "text": "整副牌振听，所有等待均只估自摸"
+      },
+      {
+        "bottom": 143.5078125,
+        "display": "block",
+        "text": "立直后不能自由弃和，和牌与强制摸切放铳共用存活概率"
+      }
+    ],
+    "width": 1280
+  },
+  {
+    "case": "incomplete",
+    "adviceBottom": 78.7734375,
+    "adviceHidden": false,
+    "bottom": 286.25,
+    "clickTarget": "underlay",
+    "fontSize": "11.5px",
+    "gameBottom": 276.25,
+    "warnings": [
+      {
+        "bottom": 64.7734375,
+        "display": "block",
+        "hidden": false,
+        "text": "缺少完整手牌，暂停推荐"
+      },
+      {
+        "bottom": 105.296875,
+        "display": "block",
+        "hidden": false,
+        "text": "完整性：缺少完整手牌；历史不完整或待核对"
+      }
+    ],
+    "width": 800,
+    "height": 600,
+    "dpr": 1
+  },
+  {
+    "case": "unverified",
+    "adviceBottom": 229.53125,
+    "adviceHidden": false,
+    "bottom": 286.25,
+    "clickTarget": "underlay",
+    "fontSize": "11.5px",
+    "gameBottom": 276.25,
+    "warnings": [
+      {
+        "bottom": 124.4609375,
+        "display": "block",
+        "hidden": false,
+        "text": "远期牌型尚未确认荣和役，保守只估自摸；后续改良可重新评估"
+      },
+      {
+        "bottom": 159.5078125,
+        "display": "block",
+        "hidden": false,
+        "text": "仅比较已核实动作 · 暗杠 暂不推荐：操作组合信息缺失；吃 暂不推荐：操作未核实"
+      }
+    ],
+    "width": 800,
+    "height": 600,
+    "dpr": 1
+  },
+  {
+    "case": "disconnected",
+    "adviceBottom": 0,
+    "adviceHidden": true,
+    "bottom": 286.25,
+    "clickTarget": "underlay",
+    "fontSize": "11.5px",
+    "gameBottom": 276.25,
+    "warnings": [
+      {
+        "bottom": 68.7734375,
+        "display": "block",
+        "hidden": false,
+        "text": "连接中断 · 以下统计可能已过时"
+      }
+    ],
+    "width": 800,
+    "height": 600,
+    "dpr": 1
+  },
+  {
+    "case": "long-rivers",
+    "adviceBottom": 135.859375,
+    "adviceHidden": false,
+    "bottom": 278,
+    "clickTarget": "underlay",
+    "fontSize": "9px",
+    "gameBottom": 268,
+    "warnings": [
+      {
+        "bottom": 92.2109375,
+        "display": "block",
+        "hidden": false,
+        "text": "远期牌型尚未确认荣和役，保守只估自摸；后续改良可重新评估"
+      }
+    ],
+    "width": 800,
+    "height": 600,
+    "dpr": 1
+  }
+]

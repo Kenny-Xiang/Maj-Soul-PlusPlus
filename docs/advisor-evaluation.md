@@ -6,7 +6,133 @@ action. It measures reproducibility, rule regressions, recommendation changes,
 and local calculation time; it does not establish stronger play or calibrated
 win probabilities.
 
-## Current: explicit current policy and semantic ties (v8, 2026-10-05)
+## Current: exact live ranking and decision-local reuse (2026-10-05)
+
+The policy remains v8. Relative to baseline `69c693f250ba13eeded39ae2b0780b4b8b0dd66d`,
+the live worker requests an exact three-candidate ranked prefix, while every
+legal candidate still receives the complete policy evaluation and terminal
+ledger. Fixed-anchor epsilon groups crossing the cutoff are resolved in full;
+lower groups skip only ranking work that cannot affect the prefix. Online
+`candidates[rankedCandidateCount:]` retains every other candidate in input
+order, **not rank order**. Offline `advise(state)` still returns a full ranking.
+The existing internal best-only windows remain best-only.
+
+The coarse projected policy now reuses immutable `Outcome` values within the
+existing decision-local cache. Keys contain all derived inputs without
+rounding, including event order, seat, progress, separate ron/tsumo values,
+discard risk, survival and terminal transfers. Cache hits still check
+cancellation. Search coverage, risk terms and the two-second budget are unchanged.
+
+All 57 existing fixed states plus five frozen public slow-decision snapshots
+were compared in fresh interpreters. Across **62 states and 620 candidates**,
+the best action, exact first three complete candidates and explanations,
+every public candidate field, and every private root ranking input matched
+the baseline exactly. The default full-ranking API also matched the complete
+baseline ordering. Only elapsed time, explicit prefix metadata and live tail
+order are intentionally different. The five snapshots are committed in
+`tests/fixtures/advisor_performance_logged_cases.json`; they contain public
+decision inputs, not opponent hidden hands.
+
+### Performance measurements
+
+[Machine-readable results](benchmarks/advisor-performance-20261005.json) include
+per-case first/cached/warm timings, exact source-file and fixture hashes,
+environment, equivalence checks and a separate cache diagnostic. Timings use
+`perf_counter` around `advise`, excluding imports and process startup.
+
+Warm-suite measurements use a fresh interpreter per version and suite, one
+identical ordered warmup pass, then three measured passes. First-call
+measurements use a fresh interpreter per version **per case**, alternating
+version order; each is followed immediately by one cached call. These are
+different cache workloads, so the two tables should not be combined.
+
+| Warm suite | Baseline median / P95 / max ms | Live optimized median / P95 / max ms |
+|---|---:|---:|
+| Fixed 57 states, 171 samples | 41.93 / 774.28 / 1045.04 | 32.06 / 727.98 / 1042.08 |
+| Five recorded slow states, 15 samples | 736.69 / 1158.95 / 1158.95 | 613.83 / 915.96 / 915.96 |
+
+| Isolated case workload | Baseline median / P95 / max ms | Live optimized median / P95 / max ms |
+|---|---:|---:|
+| Fixed 57, first call | 115.67 / 711.38 / 970.61 | 52.06 / 685.35 / 945.04 |
+| Fixed 57, immediate cached call | 23.03 / 582.48 / 837.60 | 11.30 / 559.88 / 784.49 |
+| Five slow states, first call | 702.20 / 1107.77 / 1107.77 | 610.33 / 919.08 / 919.08 |
+| Five slow states, immediate cached call | 285.93 / 416.38 / 416.38 | 134.79 / 409.63 / 409.63 |
+| Ordinary discard without kan/kita offered, 40 states, first call | 153.88 / 362.03 / 365.80 | 52.50 / 159.51 / 270.34 |
+| Same 40 states, immediate cached call | 22.76 / 40.22 / 56.03 | 8.27 / 35.60 / 53.88 |
+| Kan/kita offered, 11 states, first call | 702.20 / 1107.77 / 1107.77 | 619.62 / 945.04 / 945.04 |
+| Same 11 states, immediate cached call | 319.61 / 837.60 / 837.60 | 174.44 / 784.49 / 784.49 |
+
+This is not a universal per-case speedup. Nine of 62 warm per-case medians
+increased. The largest was `threat-meld-count-0`, 32.27 to 88.20 ms;
+`last-draw-after-pass` increased from 10.32 to 19.49 ms. A separate same-order
+diagnostic found zero shanten cache misses for the former baseline versus
+5,450 misses after prefix ranking, confirming changed cross-case cache reuse.
+For that same state in isolation, first-call time improved from 351.01 to
+91.41 ms and immediate repeat from 28.40 to 7.47 ms. The other small regression
+has no established cause and remains reported. No cache size was increased
+to hide these effects. All five slow-state medians improved, but the fixed
+suite maximum remains about 1.04 seconds and the sample is not a worst-case
+guarantee. P95 equals the maximum for the five-state sample by nearest rank.
+
+To reproduce the warm comparison, use the combined-fixture construction in
+the v8 section below, then:
+
+```sh
+.venv/bin/python scripts/advisor_compare.py \
+  --baseline 69c693f250ba13eeded39ae2b0780b4b8b0dd66d --ranked-limit 3 \
+  --fixtures build/current-policy-v8/combined-cases.json \
+  --warmups 1 --repeats 3 --output build/prefix-fixed.json
+.venv/bin/python scripts/advisor_compare.py \
+  --baseline 69c693f250ba13eeded39ae2b0780b4b8b0dd66d --ranked-limit 3 \
+  --fixtures tests/fixtures/advisor_performance_logged_cases.json \
+  --warmups 1 --repeats 3 --output build/prefix-slow.json
+```
+
+For isolated first/repeat timings, run one `--case ID` at a time with
+`--warmups 0 --repeats 2`; inspect each case's first and second `samplesMs`
+separately. The checked-in run alternated baseline/current execution order
+by case using `run_version`, whose worker always starts a fresh interpreter.
+The runner compares the advertised ordered prefix and all candidate fields
+by action ID, including candidates outside that prefix.
+
+### Overlay and validation
+
+The right panel now focuses on action/tile, post-call discard, current policy,
+shanten/effective unseen tiles, correctly scoped risk and conditional win
+points. It shows at most one alternative. Win probability, score and loss
+diagnostics remain calculated and logged; normal timestamps/counters and
+zero-error diagnostics are hidden. Furiten, no-yaku, four-riichi/four-kan
+termination and unverified actions take precedence over generic reasons,
+including on narrow screens. Four-riichi termination suppresses the
+inapplicable later forced-discard explanation. Click-through and the left
+column are preserved.
+
+All **307 advisor/worker/benchmark tests**, **32 protocol Node tests**,
+**7 offline overlay DOM tests**, and **6 formatter/logging tests** passed.
+New regressions cover crossing ties, raw precision, full candidate retention,
+cache keys and lifetime, cancellation/deadlines, slow recorded states and
+priority reminders. Offline browser rendering checked 1280/800 px ordinary
+and furiten states, incomplete history/hand, unverified actions, disconnection,
+four-riichi termination and long rivers. Ordinary font sizes improved from
+12 to 13 px at 1280 and 10.5 to 11.5 px at 800; long rivers still shrink to
+9 px at 800 because the unchanged left column determines panel height.
+
+Saved browser evidence: [ordinary 1280 px](benchmarks/overlay-20261005/01-ordinary-1280.jpg),
+[ordinary 800 px](benchmarks/overlay-20261005/02-ordinary-800.jpg),
+[furiten 800 px](benchmarks/overlay-20261005/04-furiten-800.jpg), and
+[all layout checks](benchmarks/overlay-20261005/layout-checks.json).
+The screenshot manifest records renderer, source and artifact hashes. These
+are offline component captures; ordinary/furiten packets reuse the saved v8
+computed results, which the equivalence checks reproduced. Exceptional and
+long-river views are display fixtures, not claimed live-game observations.
+
+Native WebKit checks were attempted but remain **unverified**: the overlay
+test encountered sandbox-extension failures and `WKErrorDomain Code=5`, and
+the native protocol test received no packets before its deadline. Browser
+checks do not establish native rendering, fullscreen or live-game background
+behavior. The running application and primary checkout were not updated.
+
+## Explicit current policy and semantic ties (v8, 2026-10-05)
 
 The current model is `public-information-actions-ev-v8-current-policy` and is
 still uncalibrated. This change builds on the completed v7 work in PR #21,

@@ -1,0 +1,1867 @@
+{
+  "baselineCommit": "69c693f250ba13eeded39ae2b0780b4b8b0dd66d",
+  "fixtureSha256": {
+    "fixed-cases.json": "912671e768a8fbb5d764a89eaca28aa73497b5a953fc8c2ac1e5ae2bb54703ab",
+    "live-slow-cases.json": "08fafb2b80db66dc5d386cf2b5a67e3a84dde9124661748c87d9f6d081117e44"
+  },
+  "method": {
+    "cold": "Fresh interpreter per version per case, first call then one immediate cached call; version order alternated by case.",
+    "warm": "Fresh interpreter per version per suite, one full-suite warmup then three measured passes.",
+    "budgetSeconds": 2,
+    "raw": "Separate untimed calls capture all private root candidate fields before ranking; no precision rounding or account-field exclusions.",
+    "groups": "ordinaryDiscards: discard recommendation and no kan/kita offered; replacement: any kan/kita offered; nonReplacementWindows also includes pass/call/analysis.",
+    "scope": "All 62 scenarios and 620 candidates match baseline raw ranking inputs, public candidate fields, best and top-three explanations; default full ordering also matches. elapsedMs excluded; live rankedCandidateCount metadata and tail order intentionally differ.",
+    "cacheOrderProbe": "Fresh process per version, one full-suite warmup and one measured pass; shanten cache hit/miss deltas around each selected case. Diagnostics are separate from headline timing."
+  },
+  "equivalence": [
+    {
+      "id": "ordinary-efficiency",
+      "candidateCount": 10,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "broad-one-shanten",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "closed-tsumo-only-one-shanten",
+      "candidateCount": 1,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "closed-tsumo-only-tenpai",
+      "candidateCount": 13,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "river-furiten",
+      "candidateCount": 13,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "new-riichi-changed-waits",
+      "candidateCount": 9,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "confirmed-riichi-furiten",
+      "candidateCount": 1,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "opponent-riichi-defense",
+      "candidateCount": 14,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "chi-no-yaku",
+      "candidateCount": 2,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "pon-yakuhai",
+      "candidateCount": 2,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "pon-red-choices",
+      "candidateCount": 3,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "ankan",
+      "candidateCount": 9,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "daiminkan",
+      "candidateCount": 2,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "shouminkan-red",
+      "candidateCount": 11,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "sanma-kita",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "last-draw-after-pass",
+      "candidateCount": 2,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "sanma-last-draw-after-pass",
+      "candidateCount": 2,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "exhausted-wall",
+      "candidateCount": 13,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "chi-called-low-yakuhai",
+      "candidateCount": 2,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "one-shanten-followup-risk",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "passed-current-discard",
+      "candidateCount": 2,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "confirmed-riichi-forced-discard",
+      "candidateCount": 1,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "confirmed-riichi-ankan-choice",
+      "candidateCount": 2,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "confirmed-riichi-kita-choice",
+      "candidateCount": 2,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-early-closed",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-early-riichi",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-meld-count-0",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-meld-count-1",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-meld-count-2",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-meld-count-3",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-meld-count-4",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-two-no-confirmed-yaku",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-early-high-value-good-wait",
+      "candidateCount": 14,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-two-same-suit",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-two-mixed-suit",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-visible-dora",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-visible-red",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-closed-ankan",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-dealer-yakuhai",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-sanma-three-pon-kita",
+      "candidateCount": 11,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-two-open-opponents",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-late-weak",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "threat-late-high-value-good-wait",
+      "candidateCount": 14,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "phase-no-own-draw",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "phase-one-own-draw",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "phase-two-own-draws",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "phase-early-quiet",
+      "candidateCount": 14,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "phase-early-riichi",
+      "candidateCount": 14,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "phase-late-valuable-tenpai",
+      "candidateCount": 13,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "logged-766-tie-two-shanten-green-dragon",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "logged-786-tie-one-shanten-green-dragon",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "logged-798-tie-one-shanten-green-dragon-later",
+      "candidateCount": 13,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "logged-906-retreat-two-shanten-future-risk",
+      "candidateCount": 11,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "logged-1358-retreat-no-ron-yaku-dora",
+      "candidateCount": 11,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "logged-1386-late-shared-safe-discard",
+      "candidateCount": 11,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "logged-1398-late-riichi-safe-other-threat",
+      "candidateCount": 11,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "logged-1410-late-no-safe-tile-push-fold",
+      "candidateCount": 11,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "live-v8-147",
+      "candidateCount": 14,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "live-v8-231",
+      "candidateCount": 12,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "live-v8-288",
+      "candidateCount": 15,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "live-v8-436",
+      "candidateCount": 14,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    },
+    {
+      "id": "live-v8-984",
+      "candidateCount": 13,
+      "rawEqual": true,
+      "allPublicAccountsEqual": true,
+      "fullOrderEqual": true,
+      "prefixEqual": true
+    }
+  ],
+  "warm": {
+    "fixed": {
+      "baseline": {
+        "count": 171,
+        "medianMs": 41.93029200541787,
+        "p95Ms": 774.2844170134049,
+        "maxMs": 1045.043666003039
+      },
+      "prefix": {
+        "count": 171,
+        "medianMs": 32.06395800225437,
+        "p95Ms": 727.9757079959381,
+        "maxMs": 1042.075624980498
+      }
+    },
+    "live": {
+      "baseline": {
+        "count": 15,
+        "medianMs": 736.6858749883249,
+        "p95Ms": 1158.9486669981852,
+        "maxMs": 1158.9486669981852
+      },
+      "prefix": {
+        "count": 15,
+        "medianMs": 613.8272910029627,
+        "p95Ms": 915.9594159864355,
+        "maxMs": 915.9594159864355
+      }
+    }
+  },
+  "perCase": [
+    {
+      "id": "ordinary-efficiency",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 56.31454099784605,
+        "prefix": 55.641749990172684
+      },
+      "immediateCachedMs": {
+        "baseline": 8.701624989043921,
+        "prefix": 6.9466669810935855
+      },
+      "warmMedianMs": {
+        "baseline": 57.73112500901334,
+        "prefix": 57.111875008558854
+      }
+    },
+    {
+      "id": "broad-one-shanten",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 76.63320799474604,
+        "baseline": 73.89154101838358
+      },
+      "immediateCachedMs": {
+        "prefix": 40.469875006238,
+        "baseline": 40.22391600301489
+      },
+      "warmMedianMs": {
+        "baseline": 78.95825000014156,
+        "prefix": 79.4537500187289
+      }
+    },
+    {
+      "id": "closed-tsumo-only-one-shanten",
+      "suite": "fixed",
+      "bestAction": "wait",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 5.813833005959168,
+        "prefix": 5.077917012386024
+      },
+      "immediateCachedMs": {
+        "baseline": 3.0032090144231915,
+        "prefix": 3.0795420170761645
+      },
+      "warmMedianMs": {
+        "baseline": 5.421249981736764,
+        "prefix": 5.400875001214445
+      }
+    },
+    {
+      "id": "closed-tsumo-only-tenpai",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 46.384917019167915,
+        "baseline": 167.92083298787475
+      },
+      "immediateCachedMs": {
+        "prefix": 21.90691599389538,
+        "baseline": 26.429416990140453
+      },
+      "warmMedianMs": {
+        "baseline": 167.22658299840987,
+        "prefix": 46.384665998630226
+      }
+    },
+    {
+      "id": "river-furiten",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 139.83266698778607,
+        "prefix": 52.94458300340921
+      },
+      "immediateCachedMs": {
+        "baseline": 42.52887499751523,
+        "prefix": 33.70070899836719
+      },
+      "warmMedianMs": {
+        "baseline": 134.80604099459015,
+        "prefix": 36.263916990719736
+      }
+    },
+    {
+      "id": "new-riichi-changed-waits",
+      "suite": "fixed",
+      "bestAction": "riichi",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 300.79058397677727,
+        "baseline": 303.2487920136191
+      },
+      "immediateCachedMs": {
+        "prefix": 59.57720801234245,
+        "baseline": 60.153250000439584
+      },
+      "warmMedianMs": {
+        "baseline": 323.76220799051225,
+        "prefix": 314.340250013629
+      }
+    },
+    {
+      "id": "confirmed-riichi-furiten",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 1.6205419960897416,
+        "prefix": 1.4517919917125255
+      },
+      "immediateCachedMs": {
+        "baseline": 1.0440409823786467,
+        "prefix": 0.9643750090617687
+      },
+      "warmMedianMs": {
+        "baseline": 1.0102909873239696,
+        "prefix": 0.9321660036221147
+      }
+    },
+    {
+      "id": "opponent-riichi-defense",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 102.4067499965895,
+        "baseline": 245.14237500261515
+      },
+      "immediateCachedMs": {
+        "prefix": 11.925332975806668,
+        "baseline": 22.733833000529557
+      },
+      "warmMedianMs": {
+        "baseline": 244.23241597833112,
+        "prefix": 94.71162501722574
+      }
+    },
+    {
+      "id": "chi-no-yaku",
+      "suite": "fixed",
+      "bestAction": "pass",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 16.614167019724846,
+        "prefix": 15.78874999540858
+      },
+      "immediateCachedMs": {
+        "baseline": 4.5544999884441495,
+        "prefix": 4.726166982436553
+      },
+      "warmMedianMs": {
+        "baseline": 17.701042001135647,
+        "prefix": 17.124334000982344
+      }
+    },
+    {
+      "id": "pon-yakuhai",
+      "suite": "fixed",
+      "bestAction": "pon",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 37.71504099131562,
+        "baseline": 38.856708008097485
+      },
+      "immediateCachedMs": {
+        "prefix": 25.487540988251567,
+        "baseline": 28.76016599475406
+      },
+      "warmMedianMs": {
+        "baseline": 44.09958401811309,
+        "prefix": 39.89283400005661
+      }
+    },
+    {
+      "id": "pon-red-choices",
+      "suite": "fixed",
+      "bestAction": "pass",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 40.05512499134056,
+        "prefix": 41.5192499931436
+      },
+      "immediateCachedMs": {
+        "baseline": 31.349124998087063,
+        "prefix": 32.31512499041855
+      },
+      "warmMedianMs": {
+        "baseline": 42.84483299124986,
+        "prefix": 42.402374994708225
+      }
+    },
+    {
+      "id": "ankan",
+      "suite": "fixed",
+      "bestAction": "ankan",
+      "replacementOffered": true,
+      "coldMs": {
+        "prefix": 619.6182910061907,
+        "baseline": 651.2356660095975
+      },
+      "immediateCachedMs": {
+        "prefix": 504.6325830044225,
+        "baseline": 523.3193750027567
+      },
+      "warmMedianMs": {
+        "baseline": 710.6349999958184,
+        "prefix": 667.1014590247069
+      }
+    },
+    {
+      "id": "daiminkan",
+      "suite": "fixed",
+      "bestAction": "pass",
+      "replacementOffered": true,
+      "coldMs": {
+        "baseline": 859.3898749968503,
+        "prefix": 871.7106670083012
+      },
+      "immediateCachedMs": {
+        "baseline": 744.3924999970477,
+        "prefix": 734.5729160006158
+      },
+      "warmMedianMs": {
+        "baseline": 969.8881250224076,
+        "prefix": 965.8764580090065
+      }
+    },
+    {
+      "id": "shouminkan-red",
+      "suite": "fixed",
+      "bestAction": "shouminkan",
+      "replacementOffered": true,
+      "coldMs": {
+        "prefix": 685.3524580074009,
+        "baseline": 711.379250016762
+      },
+      "immediateCachedMs": {
+        "prefix": 559.8842909967061,
+        "baseline": 582.4801250128075
+      },
+      "warmMedianMs": {
+        "baseline": 776.0333330079447,
+        "prefix": 739.2842500121333
+      }
+    },
+    {
+      "id": "sanma-kita",
+      "suite": "fixed",
+      "bestAction": "kita",
+      "replacementOffered": true,
+      "coldMs": {
+        "baseline": 970.6060420139693,
+        "prefix": 945.043124986114
+      },
+      "immediateCachedMs": {
+        "baseline": 837.598958023591,
+        "prefix": 784.4903749937657
+      },
+      "warmMedianMs": {
+        "baseline": 1041.9865000003483,
+        "prefix": 1036.0103749844711
+      }
+    },
+    {
+      "id": "last-draw-after-pass",
+      "suite": "fixed",
+      "bestAction": "pass",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 8.050000004004687,
+        "baseline": 8.367415983229876
+      },
+      "immediateCachedMs": {
+        "prefix": 3.6512079823296517,
+        "baseline": 3.41949998983182
+      },
+      "warmMedianMs": {
+        "baseline": 10.324250004487112,
+        "prefix": 19.48541702586226
+      }
+    },
+    {
+      "id": "sanma-last-draw-after-pass",
+      "suite": "fixed",
+      "bestAction": "pass",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 77.71391599089839,
+        "prefix": 79.4125419924967
+      },
+      "immediateCachedMs": {
+        "baseline": 43.02433299017139,
+        "prefix": 39.76920901914127
+      },
+      "warmMedianMs": {
+        "baseline": 102.27866598870605,
+        "prefix": 79.5235830009915
+      }
+    },
+    {
+      "id": "exhausted-wall",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 40.84191701258533,
+        "baseline": 42.497500020544976
+      },
+      "immediateCachedMs": {
+        "prefix": 23.686375003308058,
+        "baseline": 22.78999998816289
+      },
+      "warmMedianMs": {
+        "baseline": 43.48791699158028,
+        "prefix": 43.41404201113619
+      }
+    },
+    {
+      "id": "chi-called-low-yakuhai",
+      "suite": "fixed",
+      "bestAction": "chi",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 34.19866701005958,
+        "prefix": 32.70262500154786
+      },
+      "immediateCachedMs": {
+        "baseline": 24.67308400082402,
+        "prefix": 23.307499999646097
+      },
+      "warmMedianMs": {
+        "baseline": 32.486457988852635,
+        "prefix": 32.06395800225437
+      }
+    },
+    {
+      "id": "one-shanten-followup-risk",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 86.66408300632611,
+        "baseline": 102.19633299857378
+      },
+      "immediateCachedMs": {
+        "prefix": 53.87504099053331,
+        "baseline": 56.029792001936585
+      },
+      "warmMedianMs": {
+        "baseline": 101.53650000574999,
+        "prefix": 97.09520800970495
+      }
+    },
+    {
+      "id": "passed-current-discard",
+      "suite": "fixed",
+      "bestAction": "pass",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 34.41283298889175,
+        "prefix": 31.79991600336507
+      },
+      "immediateCachedMs": {
+        "baseline": 25.64650002750568,
+        "prefix": 24.09549997537397
+      },
+      "warmMedianMs": {
+        "baseline": 31.670124997617677,
+        "prefix": 32.74329099804163
+      }
+    },
+    {
+      "id": "confirmed-riichi-forced-discard",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 1.4657080173492432,
+        "baseline": 1.8783750128932297
+      },
+      "immediateCachedMs": {
+        "prefix": 0.9735420171637088,
+        "baseline": 0.9084170160349458
+      },
+      "warmMedianMs": {
+        "baseline": 0.9302909893449396,
+        "prefix": 0.9597079770173877
+      }
+    },
+    {
+      "id": "confirmed-riichi-ankan-choice",
+      "suite": "fixed",
+      "bestAction": "ankan",
+      "replacementOffered": true,
+      "coldMs": {
+        "baseline": 18.455709010595456,
+        "prefix": 18.924957985291258
+      },
+      "immediateCachedMs": {
+        "baseline": 17.20012500300072,
+        "prefix": 18.214416020782664
+      },
+      "warmMedianMs": {
+        "baseline": 17.59716699598357,
+        "prefix": 17.844207992311567
+      }
+    },
+    {
+      "id": "confirmed-riichi-kita-choice",
+      "suite": "fixed",
+      "bestAction": "kita",
+      "replacementOffered": true,
+      "coldMs": {
+        "prefix": 12.10737499059178,
+        "baseline": 12.668707990087569
+      },
+      "immediateCachedMs": {
+        "prefix": 11.092708999058232,
+        "baseline": 11.380334006389603
+      },
+      "warmMedianMs": {
+        "baseline": 12.211583001771942,
+        "prefix": 13.459749985486269
+      }
+    },
+    {
+      "id": "threat-early-closed",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 362.0282500050962,
+        "prefix": 270.34312501200475
+      },
+      "immediateCachedMs": {
+        "baseline": 35.67691700300202,
+        "prefix": 30.451416998403147
+      },
+      "warmMedianMs": {
+        "baseline": 378.18829200114124,
+        "prefix": 285.9945409873035
+      }
+    },
+    {
+      "id": "threat-early-riichi",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 17.407708015525714,
+        "baseline": 285.5427500035148
+      },
+      "immediateCachedMs": {
+        "prefix": 11.874834017362446,
+        "baseline": 30.28570901369676
+      },
+      "warmMedianMs": {
+        "baseline": 37.24216698901728,
+        "prefix": 16.52308300253935
+      }
+    },
+    {
+      "id": "threat-meld-count-0",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 351.0096250101924,
+        "prefix": 91.41437499783933
+      },
+      "immediateCachedMs": {
+        "baseline": 28.401040995959193,
+        "prefix": 7.466042006853968
+      },
+      "warmMedianMs": {
+        "baseline": 32.27416699519381,
+        "prefix": 88.19995800149627
+      }
+    },
+    {
+      "id": "threat-meld-count-1",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 91.00170899182558,
+        "baseline": 348.8677919958718
+      },
+      "immediateCachedMs": {
+        "prefix": 6.839332985691726,
+        "baseline": 29.064250004012138
+      },
+      "warmMedianMs": {
+        "baseline": 33.46349997445941,
+        "prefix": 11.346874991431832
+      }
+    },
+    {
+      "id": "threat-meld-count-2",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 307.11195900221355,
+        "prefix": 9.517291997326538
+      },
+      "immediateCachedMs": {
+        "baseline": 22.18033399549313,
+        "prefix": 4.1122090187855065
+      },
+      "warmMedianMs": {
+        "baseline": 28.115332999732345,
+        "prefix": 4.414374998304993
+      }
+    },
+    {
+      "id": "threat-meld-count-3",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 9.442750015296042,
+        "baseline": 330.4813749855384
+      },
+      "immediateCachedMs": {
+        "prefix": 4.452958994079381,
+        "baseline": 23.184917023172602
+      },
+      "warmMedianMs": {
+        "baseline": 31.60608300822787,
+        "prefix": 4.680250014644116
+      }
+    },
+    {
+      "id": "threat-meld-count-4",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 345.65395800746046,
+        "prefix": 159.50554099981673
+      },
+      "immediateCachedMs": {
+        "baseline": 29.65012498316355,
+        "prefix": 12.893457984318957
+      },
+      "warmMedianMs": {
+        "baseline": 33.46391598461196,
+        "prefix": 15.370332985185087
+      }
+    },
+    {
+      "id": "threat-two-no-confirmed-yaku",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 91.59362499485724,
+        "baseline": 332.4334170029033
+      },
+      "immediateCachedMs": {
+        "prefix": 7.356541987974197,
+        "baseline": 22.9860830004327
+      },
+      "warmMedianMs": {
+        "baseline": 30.79712501494214,
+        "prefix": 8.950209012255073
+      }
+    },
+    {
+      "id": "threat-early-high-value-good-wait",
+      "suite": "fixed",
+      "bestAction": "riichi",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 150.40187499835156,
+        "prefix": 154.7538339800667
+      },
+      "immediateCachedMs": {
+        "baseline": 77.79145799577236,
+        "prefix": 76.09237500582822
+      },
+      "warmMedianMs": {
+        "baseline": 170.6385409925133,
+        "prefix": 169.77354200207628
+      }
+    },
+    {
+      "id": "threat-two-same-suit",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 213.98654201766476,
+        "baseline": 298.3825420087669
+      },
+      "immediateCachedMs": {
+        "prefix": 15.462874987861142,
+        "baseline": 21.585999988019466
+      },
+      "warmMedianMs": {
+        "baseline": 31.759874982526526,
+        "prefix": 22.873667010571808
+      }
+    },
+    {
+      "id": "threat-two-mixed-suit",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 303.551332995994,
+        "prefix": 9.7248749807477
+      },
+      "immediateCachedMs": {
+        "baseline": 21.913333010161296,
+        "prefix": 4.852457990637049
+      },
+      "warmMedianMs": {
+        "baseline": 29.42062498186715,
+        "prefix": 4.467541992198676
+      }
+    },
+    {
+      "id": "threat-visible-dora",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 120.88966599549167,
+        "baseline": 365.8042080060113
+      },
+      "immediateCachedMs": {
+        "prefix": 9.609917004127055,
+        "baseline": 29.554499982623383
+      },
+      "warmMedianMs": {
+        "baseline": 59.59066699142568,
+        "prefix": 35.57349997572601
+      }
+    },
+    {
+      "id": "threat-visible-red",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 365.2026659983676,
+        "prefix": 119.37862500781193
+      },
+      "immediateCachedMs": {
+        "baseline": 28.64624999347143,
+        "prefix": 9.366874990519136
+      },
+      "warmMedianMs": {
+        "baseline": 37.43224998470396,
+        "prefix": 12.42587500018999
+      }
+    },
+    {
+      "id": "threat-closed-ankan",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 9.07812497462146,
+        "baseline": 319.32133299415
+      },
+      "immediateCachedMs": {
+        "prefix": 3.7874160043429583,
+        "baseline": 22.848708991659805
+      },
+      "warmMedianMs": {
+        "baseline": 30.349375010700896,
+        "prefix": 3.9690000121481717
+      }
+    },
+    {
+      "id": "threat-dealer-yakuhai",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 325.87512501049787,
+        "prefix": 91.76591600407846
+      },
+      "immediateCachedMs": {
+        "baseline": 23.03004200803116,
+        "prefix": 7.45566698606126
+      },
+      "warmMedianMs": {
+        "baseline": 30.9716249757912,
+        "prefix": 9.102291980525479
+      }
+    },
+    {
+      "id": "threat-sanma-three-pon-kita",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 76.10466598998755,
+        "baseline": 104.33129200828262
+      },
+      "immediateCachedMs": {
+        "prefix": 8.26150001375936,
+        "baseline": 12.446875014575198
+      },
+      "warmMedianMs": {
+        "baseline": 112.04408400226384,
+        "prefix": 80.57020799606107
+      }
+    },
+    {
+      "id": "threat-two-open-opponents",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 276.10845799790695,
+        "prefix": 9.988374979002401
+      },
+      "immediateCachedMs": {
+        "baseline": 20.607082988135517,
+        "prefix": 5.385374999605119
+      },
+      "warmMedianMs": {
+        "baseline": 30.20020801341161,
+        "prefix": 5.724457994801924
+      }
+    },
+    {
+      "id": "threat-late-weak",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 84.43008299218491,
+        "baseline": 305.2919589972589
+      },
+      "immediateCachedMs": {
+        "prefix": 5.756083992309868,
+        "baseline": 19.813708000583574
+      },
+      "warmMedianMs": {
+        "baseline": 28.82820801460184,
+        "prefix": 8.861124981194735
+      }
+    },
+    {
+      "id": "threat-late-high-value-good-wait",
+      "suite": "fixed",
+      "bestAction": "riichi",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 124.16033301269636,
+        "prefix": 126.46491700434126
+      },
+      "immediateCachedMs": {
+        "baseline": 61.82520798756741,
+        "prefix": 62.046583014307544
+      },
+      "warmMedianMs": {
+        "baseline": 73.65208299597725,
+        "prefix": 62.09824999677949
+      }
+    },
+    {
+      "id": "phase-no-own-draw",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 7.721208996372297,
+        "baseline": 7.244792010169476
+      },
+      "immediateCachedMs": {
+        "prefix": 2.49574999907054,
+        "baseline": 2.992666995851323
+      },
+      "warmMedianMs": {
+        "baseline": 9.400209004525095,
+        "prefix": 8.689999987836927
+      }
+    },
+    {
+      "id": "phase-one-own-draw",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 49.14637500769459,
+        "prefix": 7.712457998422906
+      },
+      "immediateCachedMs": {
+        "baseline": 5.3892919968348,
+        "prefix": 2.8687499871011823
+      },
+      "warmMedianMs": {
+        "baseline": 46.784917009063065,
+        "prefix": 3.086209006141871
+      }
+    },
+    {
+      "id": "phase-two-own-draws",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 8.27137500164099,
+        "baseline": 58.99274998228066
+      },
+      "immediateCachedMs": {
+        "prefix": 3.630042017903179,
+        "baseline": 5.391457991208881
+      },
+      "warmMedianMs": {
+        "baseline": 20.067207980901003,
+        "prefix": 3.491124982247129
+      }
+    },
+    {
+      "id": "phase-early-quiet",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 252.80783299240284,
+        "prefix": 58.59983302070759
+      },
+      "immediateCachedMs": {
+        "baseline": 30.36779200192541,
+        "prefix": 6.688124994980171
+      },
+      "warmMedianMs": {
+        "baseline": 272.8543750126846,
+        "prefix": 59.58087500766851
+      }
+    },
+    {
+      "id": "phase-early-riichi",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 17.048042005626485,
+        "baseline": 115.66620800294913
+      },
+      "immediateCachedMs": {
+        "prefix": 13.097207993268967,
+        "baseline": 20.59674999327399
+      },
+      "warmMedianMs": {
+        "baseline": 27.38220800529234,
+        "prefix": 15.875874989433214
+      }
+    },
+    {
+      "id": "phase-late-valuable-tenpai",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 52.30579199269414,
+        "prefix": 52.05558400484733
+      },
+      "immediateCachedMs": {
+        "baseline": 36.025790992425755,
+        "prefix": 35.59783298987895
+      },
+      "warmMedianMs": {
+        "baseline": 53.86849999194965,
+        "prefix": 38.82041701581329
+      }
+    },
+    {
+      "id": "logged-766-tie-two-shanten-green-dragon",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 67.90491699939594,
+        "baseline": 67.38816600409336
+      },
+      "immediateCachedMs": {
+        "prefix": 8.051041979342699,
+        "baseline": 9.241417021257803
+      },
+      "warmMedianMs": {
+        "baseline": 70.01258298987523,
+        "prefix": 69.97091602534056
+      }
+    },
+    {
+      "id": "logged-786-tie-one-shanten-green-dragon",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 68.14137502806261,
+        "prefix": 67.77975001023151
+      },
+      "immediateCachedMs": {
+        "baseline": 11.151333019370213,
+        "prefix": 11.375708010746166
+      },
+      "warmMedianMs": {
+        "baseline": 65.19033299991861,
+        "prefix": 66.42049999209121
+      }
+    },
+    {
+      "id": "logged-798-tie-one-shanten-green-dragon-later",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 42.0073340064846,
+        "baseline": 41.69095799443312
+      },
+      "immediateCachedMs": {
+        "prefix": 11.298207973595709,
+        "baseline": 11.468166980193928
+      },
+      "warmMedianMs": {
+        "baseline": 28.964583994820714,
+        "prefix": 28.45837501809001
+      }
+    },
+    {
+      "id": "logged-906-retreat-two-shanten-future-risk",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 115.18379198969342,
+        "prefix": 38.99833399918862
+      },
+      "immediateCachedMs": {
+        "baseline": 24.0070830041077,
+        "prefix": 21.352042007492855
+      },
+      "warmMedianMs": {
+        "baseline": 119.46424999041483,
+        "prefix": 40.72000001906417
+      }
+    },
+    {
+      "id": "logged-1358-retreat-no-ron-yaku-dora",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 23.769874998833984,
+        "baseline": 185.6296669866424
+      },
+      "immediateCachedMs": {
+        "prefix": 8.36279199575074,
+        "baseline": 10.281791997840628
+      },
+      "warmMedianMs": {
+        "baseline": 190.47333399066702,
+        "prefix": 23.385749984299764
+      }
+    },
+    {
+      "id": "logged-1386-late-shared-safe-discard",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 67.95875000534579,
+        "prefix": 13.542290980694816
+      },
+      "immediateCachedMs": {
+        "baseline": 7.88279197877273,
+        "prefix": 5.9697499964386225
+      },
+      "warmMedianMs": {
+        "baseline": 79.43708400125615,
+        "prefix": 12.446000007912517
+      }
+    },
+    {
+      "id": "logged-1398-late-riichi-safe-other-threat",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "prefix": 54.81279201922007,
+        "baseline": 99.83087499858811
+      },
+      "immediateCachedMs": {
+        "prefix": 27.448292006738484,
+        "baseline": 28.64158299053088
+      },
+      "warmMedianMs": {
+        "baseline": 92.71050000097603,
+        "prefix": 53.031999996164814
+      }
+    },
+    {
+      "id": "logged-1410-late-no-safe-tile-push-fold",
+      "suite": "fixed",
+      "bestAction": "discard",
+      "replacementOffered": false,
+      "coldMs": {
+        "baseline": 19.32770901476033,
+        "prefix": 19.470375002129003
+      },
+      "immediateCachedMs": {
+        "baseline": 8.675249991938472,
+        "prefix": 8.278207998955622
+      },
+      "warmMedianMs": {
+        "baseline": 14.983041997766122,
+        "prefix": 15.720374998636544
+      }
+    },
+    {
+      "id": "live-v8-147",
+      "suite": "live",
+      "bestAction": "kita",
+      "replacementOffered": true,
+      "coldMs": {
+        "prefix": 919.0756670141127,
+        "baseline": 1107.7722499903757
+      },
+      "immediateCachedMs": {
+        "prefix": 174.43616699893028,
+        "baseline": 319.60979098221287
+      },
+      "warmMedianMs": {
+        "baseline": 1140.3184999944642,
+        "prefix": 895.3200840041973
+      }
+    },
+    {
+      "id": "live-v8-231",
+      "suite": "live",
+      "bestAction": "kita",
+      "replacementOffered": true,
+      "coldMs": {
+        "baseline": 702.2034580004402,
+        "prefix": 632.4735830130521
+      },
+      "immediateCachedMs": {
+        "baseline": 416.37608301243745,
+        "prefix": 409.6264579857234
+      },
+      "warmMedianMs": {
+        "baseline": 736.6858749883249,
+        "prefix": 650.2600419917144
+      }
+    },
+    {
+      "id": "live-v8-288",
+      "suite": "live",
+      "bestAction": "kita",
+      "replacementOffered": true,
+      "coldMs": {
+        "prefix": 226.4369160111528,
+        "baseline": 488.1742080033291
+      },
+      "immediateCachedMs": {
+        "prefix": 123.57308398350142,
+        "baseline": 285.93074998934753
+      },
+      "warmMedianMs": {
+        "baseline": 508.2632499979809,
+        "prefix": 242.8081250109244
+      }
+    },
+    {
+      "id": "live-v8-436",
+      "suite": "live",
+      "bestAction": "kita",
+      "replacementOffered": true,
+      "coldMs": {
+        "baseline": 474.7213750088122,
+        "prefix": 307.46429102146067
+      },
+      "immediateCachedMs": {
+        "baseline": 250.4991249879822,
+        "prefix": 134.7884169954341
+      },
+      "warmMedianMs": {
+        "baseline": 500.4682499857154,
+        "prefix": 305.8928749815095
+      }
+    },
+    {
+      "id": "live-v8-984",
+      "suite": "live",
+      "bestAction": "kita",
+      "replacementOffered": true,
+      "coldMs": {
+        "prefix": 610.3287089790683,
+        "baseline": 974.9394159880467
+      },
+      "immediateCachedMs": {
+        "prefix": 101.57833300763741,
+        "baseline": 224.404415988829
+      },
+      "warmMedianMs": {
+        "baseline": 1004.4862919894513,
+        "prefix": 613.8272910029627
+      }
+    }
+  ],
+  "cold": {
+    "fixed": {
+      "coldMs": {
+        "baseline": {
+          "count": 57,
+          "medianMs": 115.66620800294913,
+          "p95Ms": 711.379250016762,
+          "maxMs": 970.6060420139693
+        },
+        "prefix": {
+          "count": 57,
+          "medianMs": 52.05558400484733,
+          "p95Ms": 685.3524580074009,
+          "maxMs": 945.043124986114
+        }
+      },
+      "immediateCachedMs": {
+        "baseline": {
+          "count": 57,
+          "medianMs": 23.03004200803116,
+          "p95Ms": 582.4801250128075,
+          "maxMs": 837.598958023591
+        },
+        "prefix": {
+          "count": 57,
+          "medianMs": 11.298207973595709,
+          "p95Ms": 559.8842909967061,
+          "maxMs": 784.4903749937657
+        }
+      }
+    },
+    "live": {
+      "coldMs": {
+        "baseline": {
+          "count": 5,
+          "medianMs": 702.2034580004402,
+          "p95Ms": 1107.7722499903757,
+          "maxMs": 1107.7722499903757
+        },
+        "prefix": {
+          "count": 5,
+          "medianMs": 610.3287089790683,
+          "p95Ms": 919.0756670141127,
+          "maxMs": 919.0756670141127
+        }
+      },
+      "immediateCachedMs": {
+        "baseline": {
+          "count": 5,
+          "medianMs": 285.93074998934753,
+          "p95Ms": 416.37608301243745,
+          "maxMs": 416.37608301243745
+        },
+        "prefix": {
+          "count": 5,
+          "medianMs": 134.7884169954341,
+          "p95Ms": 409.6264579857234,
+          "maxMs": 409.6264579857234
+        }
+      }
+    },
+    "replacement": {
+      "coldMs": {
+        "baseline": {
+          "count": 11,
+          "medianMs": 702.2034580004402,
+          "p95Ms": 1107.7722499903757,
+          "maxMs": 1107.7722499903757
+        },
+        "prefix": {
+          "count": 11,
+          "medianMs": 619.6182910061907,
+          "p95Ms": 945.043124986114,
+          "maxMs": 945.043124986114
+        }
+      },
+      "immediateCachedMs": {
+        "baseline": {
+          "count": 11,
+          "medianMs": 319.60979098221287,
+          "p95Ms": 837.598958023591,
+          "maxMs": 837.598958023591
+        },
+        "prefix": {
+          "count": 11,
+          "medianMs": 174.43616699893028,
+          "p95Ms": 784.4903749937657,
+          "maxMs": 784.4903749937657
+        }
+      }
+    },
+    "nonReplacementWindows": {
+      "coldMs": {
+        "baseline": {
+          "count": 51,
+          "medianMs": 115.18379198969342,
+          "p95Ms": 362.0282500050962,
+          "maxMs": 365.8042080060113
+        },
+        "prefix": {
+          "count": 51,
+          "medianMs": 46.384917019167915,
+          "p95Ms": 213.98654201766476,
+          "maxMs": 300.79058397677727
+        }
+      },
+      "immediateCachedMs": {
+        "baseline": {
+          "count": 51,
+          "medianMs": 22.9860830004327,
+          "p95Ms": 60.153250000439584,
+          "maxMs": 77.79145799577236
+        },
+        "prefix": {
+          "count": 51,
+          "medianMs": 9.366874990519136,
+          "p95Ms": 59.57720801234245,
+          "maxMs": 76.09237500582822
+        }
+      }
+    },
+    "ordinaryDiscards": {
+      "coldMs": {
+        "baseline": {
+          "count": 40,
+          "medianMs": 153.8767499878304,
+          "p95Ms": 362.0282500050962,
+          "maxMs": 365.8042080060113
+        },
+        "prefix": {
+          "count": 40,
+          "medianMs": 52.50008350412827,
+          "p95Ms": 159.50554099981673,
+          "maxMs": 270.34312501200475
+        }
+      },
+      "immediateCachedMs": {
+        "baseline": {
+          "count": 40,
+          "medianMs": 22.761916494346224,
+          "p95Ms": 40.22391600301489,
+          "maxMs": 56.029792001936585
+        },
+        "prefix": {
+          "count": 40,
+          "medianMs": 8.269854006357491,
+          "p95Ms": 35.59783298987895,
+          "maxMs": 53.87504099053331
+        }
+      }
+    }
+  },
+  "algorithmFileSha256": {
+    "baseline": {
+      "advisor.py": "ac226cab78ef485848ced3848e59585bba5ec32dd11a941e312b0374c0259195",
+      "advisor_policy.py": "3bf4261b4839140777433c245a76b6f13ceee6079e8941d2e6db314182051feb",
+      "advisor_settlement.py": "52a2778311f58ba532bdd743968a731bdf5ae7c1bbee185b2b9d5354be030a42",
+      "advice_worker.py": "5376f3addfb444712d8d1cb85053b4fb2b63cd8549648f359d3f809fb0c3dc16"
+    },
+    "current": {
+      "advisor.py": "b71a6303301349a7272841f0adfb0ff7f78a9619cab0ac7ec50689c865d68072",
+      "advisor_policy.py": "3bf4261b4839140777433c245a76b6f13ceee6079e8941d2e6db314182051feb",
+      "advisor_settlement.py": "52a2778311f58ba532bdd743968a731bdf5ae7c1bbee185b2b9d5354be030a42",
+      "advice_worker.py": "784cd9d1645d78b047a9351d2baa6c2dfc983842f5828bd6418653a0273d91d2"
+    }
+  },
+  "environment": {
+    "python": "3.12.15 (main, Oct  3 2026, 00:54:33) [Clang 22.1.3 ]",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "mahjong": "2.0.0"
+  },
+  "cacheOrderProbe": {
+    "baseline": [
+      {
+        "id": "last-draw-after-pass",
+        "status": "ready",
+        "elapsedMs": 9.950999985449016,
+        "shantenHits": 395,
+        "shantenMisses": 376
+      },
+      {
+        "id": "threat-meld-count-0",
+        "status": "ready",
+        "elapsedMs": 33.69737497996539,
+        "shantenHits": 47069,
+        "shantenMisses": 0
+      }
+    ],
+    "prefix": [
+      {
+        "id": "last-draw-after-pass",
+        "status": "ready",
+        "elapsedMs": 19.38333301222883,
+        "shantenHits": 395,
+        "shantenMisses": 376
+      },
+      {
+        "id": "threat-meld-count-0",
+        "status": "ready",
+        "elapsedMs": 91.02020901627839,
+        "shantenHits": 4183,
+        "shantenMisses": 5450
+      }
+    ]
+  }
+}

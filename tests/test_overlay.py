@@ -107,24 +107,25 @@ for width, height in [(1200, 760), (800, 600), (600, 400), (1200, 760)]:
         gameText:game.textContent,recordingText:recording.textContent};
     })())'''))
     assert info['bottom'] <= height / 2, info
-    assert info['top'] >= 0 and info['rows'] >= 16, info
+    assert info['top'] >= 0 and info['rows'] >= 15, info
     assert info['gameRight'] < info['recordingLeft'], info
     assert info['recommendation'] == '打 中' and info['advisorBottom'] <= height / 2, info
     for label in ['最新动作：', '本机座位：', '剩余牌：', '本人手牌：', '宝牌指示：', '分数：',
                   '座位0 弃牌', '座位1（已立直） 弃牌', '座位3 弃牌', '副露：', '拔北：', '已知牌计数']:
         assert label in info['gameText'] and label not in info['recordingText'], (label, info)
     assert info['gameText'].count('（已立直）') == 1, info
-    for label in ['次更新', '动作 #', '状态：', '完整性：', '说明：', '触发：', '入站', '解析错误']:
-        assert label in info['recordingText'] and label not in info['gameText'], (label, info)
+    for label in ['次更新', '动作 #', '状态：', '完整性：', '触发：', '入站', '解析错误']:
+        assert label not in info['recordingText'], (label, info)
+    assert '说明：' in info['recordingText'] and '说明：' not in info['gameText'], info
     assert info['clickTarget'] == 'underlay' and info['images'] == 0 and info['containsWarning'], info
     del info['gameText'], info['recordingText']
     checks.append(info)
 assert float(checks[0]['fontSize'].removesuffix('px')) >= 12, checks[0]
-assert '后续胡牌率（估计）' in advisor_state()['text']
+assert '胡牌得点（估计）' in advisor_state()['text']
 assert '本次放铳率（估计）' in advisor_state()['text']
-assert '本次预期损失（估计）' in advisor_state()['text']
-assert '放铳输点（估计）' in advisor_state()['text']
-assert '未校准' not in advisor_state()['text'] and '风险 4.4%' in advisor_state()['text']
+for label in ['后续胡牌率', '攻守评分', '本次预期损失', '放铳输点']:
+    assert label not in advisor_state()['text']
+assert '本次放铳率 4.4%（估计）' in advisor_state()['text']
 # Action identity preserves a riichi declaration and dama discard of the same tile.
 action_advice = json.loads(json.dumps(recommendation))
 riichi = dict(action_advice['best'], action='riichi', actionId='riichi:7z',
@@ -134,11 +135,11 @@ action_advice.update(best=riichi, candidates=[riichi, riichi.copy(), dama, dama.
                                            action_advice['candidates'][1]])
 show_turn(advice=action_advice)
 info = advisor_state()
-assert info['best'] == '立直 · 打 中' and len(info['alternatives']) == 2, info
+assert info['best'] == '立直 · 打 中' and len(info['alternatives']) == 1, info
 assert info['alternatives'][0].startswith('备选 打 中'), info
 assert float(info['fontSize'].removesuffix('px')) >= 12 and info['bottom'] <= 380, info
 assert info['clickTarget'] == 'underlay', info
-assert '行动建议 · 记录状态' in evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.textContent")
+assert '行动建议' in evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.textContent")
 action_cases = [
     ({'action': 'chi', 'consumed': ['5m', '3m'], 'calledTile': '4m', 'followupDiscard': '1z'},
      '吃 3万4万5万 · 再打 东'),
@@ -174,7 +175,7 @@ for fields, expected in action_cases:
     assert info['clickTarget'] == 'underlay' and not info['images'], info
     if fields.get('replacementDraw'):
         assert f"补牌后预计 {fields['shanten']} 向听" in info['text'], info
-        assert '操作风险（估计）' in info['text'] and '操作预期损失（估计）' in info['text'], info
+        assert '操作风险（估计）' in info['text'] and '操作预期损失' not in info['text'], info
         assert '再打' not in info['best'], info
     if fields['action'] in ['chi', 'pon']:
         assert info['alternatives'][0].startswith('备选 不鸣牌 / 跳过'), info
@@ -196,7 +197,7 @@ waiting_hand = dict(recommendation['best'], action='wait', actionId='wait', tile
 show_turn(advice=dict(recommendation, status='analysis', best=waiting_hand, candidates=[waiting_hand]))
 info = advisor_state()
 assert info['best'] == '等待下一次行动' and '当前手牌评估' in info['text'], info
-assert '1 向听' in info['text'] and '后续胡牌率（估计）' in info['text'], info
+assert '1 向听' in info['text'] and '胡牌得点（估计）' in info['text'], info
 assert '本次放铳率' not in info['text'] and '本次预期损失' not in info['text'] and '放铳输点' not in info['text'], info
 assert not info['alternatives'] and info['bottom'] <= 380, info
 show_turn(advice=dict(action_advice, warnings=['暗杠 暂不推荐：操作组合信息缺失']))
@@ -212,6 +213,40 @@ empty_wait_advice = json.loads(json.dumps(recommendation))
 empty_wait_advice['best'].update({'shanten': 0, 'hasValidWait': False})
 show_turn(advice=empty_wait_advice)
 assert '形0向听·无有效听口' in advisor_state()['text'] and '听牌' not in advisor_state()['text']
+# Concrete constraints remain visible even when preceded by generic explanation.
+constraint = dict(recommendation['best'], furiten=True, reasons=[
+    '当前进攻：与弃和路线按同一终局净收益比较；新窗口重新评估',
+    '听牌；有效未见牌 4 张', '整副牌振听，所有等待均只估自摸',
+    '当前等待无役，不能仅凭宝牌和牌'])
+show_turn(advice=dict(recommendation, best=constraint, candidates=[constraint]))
+for width, height in [(1200, 760), (800, 600), (600, 400)]:
+    view.setFrameSize_(AppKit.NSMakeSize(width, height))
+    evaluate("dispatchEvent(new Event('resize')); null;")
+    info = json.loads(evaluate('''JSON.stringify((()=>{
+      const s=document.getElementById('mj-statistics-overlay').shadowRoot;
+      const warnings=[...s.querySelectorAll('.advice .advice-warning')];
+      return warnings.map(e=>({text:e.textContent,display:getComputedStyle(e).display,
+        bottom:e.getBoundingClientRect().bottom,height:e.getBoundingClientRect().height}));
+    })())'''))
+    assert len(info) == 2 and all(w['display'] != 'none' and w['height'] > 0 and w['bottom'] <= height / 2 for w in info), info
+    assert '振听' in info[0]['text'] and '无役' in info[1]['text'], info
+view.setFrameSize_(AppKit.NSMakeSize(1200, 760))
+fourth_riichi = dict(riichi, abortAfterRiichi=True, reasons=[
+    '当前已立直：按合法强制续打评估', '听牌；有效未见牌 4 张',
+    '有对手立直，已计入较高放铳风险',
+    '立直后不能自由弃和，和牌与强制摸切放铳共用存活概率',
+    '第四家立直：宣言牌未被荣和则途中流局，无后续和牌机会或听牌料'])
+show_turn(advice=dict(recommendation, best=fourth_riichi, candidates=[fourth_riichi]))
+assert '第四家立直：宣言牌未被荣和则途中流局' in advisor_state()['text']
+assert '共用存活概率' not in advisor_state()['text']
+# Normal recording diagnostics disappear, but incompleteness stays prominent.
+incomplete = json.loads(json.dumps(event))
+incomplete['state'].update(handComplete=False, historyComplete=False)
+evaluate("window.__mjStatsOverlay.expectAdvice('incomplete'); null;")
+packet({'kind': 'turn', 'adviceKey': 'incomplete', 'text': format_turn(incomplete),
+        'advice': {'status': 'unavailable', 'message': '缺少完整手牌，暂停推荐'}})
+assert '缺少完整手牌，暂停推荐' in advisor_state()['text']
+assert '历史不完整或待核对' in evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.details .advice-warning').textContent")
 # A newer turn immediately removes the previous result, including delayed worker replies.
 show_turn(key='preview:6')
 assert not advisor_state()['best'] and '正在计算' in advisor_state()['text']
@@ -255,7 +290,7 @@ for status in [{'kind': 'status', 'phase': 'disconnected'},
 evaluate(overlay_update({'kind': 'status', 'phase': 'between_rounds'}))
 assert advisor_state()['hidden']
 assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.caption').textContent").startswith('小局结束')
-assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelectorAll('.line').length") >= 16
+assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelectorAll('.line').length") >= 15
 evaluate(overlay_update({'kind': 'status', 'phase': 'ended', 'reset': True}))
 assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelectorAll('.line').length") == 0
 assert '统计已重置' in evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.caption').textContent")

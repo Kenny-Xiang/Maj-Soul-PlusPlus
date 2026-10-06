@@ -1,0 +1,984 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "live-v8-147",
+      "tags": [
+        "latest-live-slow"
+      ],
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "6s",
+          "6p",
+          "5s",
+          "3s",
+          "9p",
+          "7p",
+          "7z",
+          "1m",
+          "3p",
+          "3p",
+          "9m",
+          "1s",
+          "4z",
+          "3z"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 4,
+        "lastDraw": "3z",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 1,
+          "tile": "3z",
+          "type": null,
+          "step": 4
+        },
+        "left": 52,
+        "doras": [
+          "6z"
+        ],
+        "scores": [
+          51000,
+          27000,
+          27000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1,
+          11
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 11,
+            "combination": []
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 1
+        }
+      },
+      "expectedStatus": "ready"
+    },
+    {
+      "id": "live-v8-231",
+      "tags": [
+        "latest-live-slow"
+      ],
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "6s",
+          "6p",
+          "5s",
+          "3s",
+          "7p",
+          "3p",
+          "3p",
+          "1s",
+          "2s",
+          "7s",
+          "3s",
+          "2s",
+          "0s",
+          "4z"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 76,
+        "lastDraw": "4z",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 1,
+          "tile": "4z",
+          "type": null,
+          "step": 76
+        },
+        "left": 19,
+        "doras": [
+          "6z"
+        ],
+        "scores": [
+          51000,
+          27000,
+          27000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            },
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 11
+            },
+            {
+              "tile": "3s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 17
+            },
+            {
+              "tile": "7s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 23
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 29
+            },
+            {
+              "tile": "1s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 35
+            },
+            {
+              "tile": "6s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 41
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 47
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 53
+            },
+            {
+              "tile": "7z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 59
+            },
+            {
+              "tile": "8s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 65
+            },
+            {
+              "tile": "8p",
+              "moqie": true,
+              "riichi": false,
+              "called": true,
+              "step": 71
+            },
+            {
+              "tile": "5s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 75
+            }
+          ],
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 7
+            },
+            {
+              "tile": "9p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 13
+            },
+            {
+              "tile": "9m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 19
+            },
+            {
+              "tile": "1m",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 25
+            },
+            {
+              "tile": "3z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 31
+            },
+            {
+              "tile": "3z",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 37
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 43
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 49
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 55
+            },
+            {
+              "tile": "9m",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 61
+            },
+            {
+              "tile": "1z",
+              "moqie": true,
+              "riichi": false,
+              "called": true,
+              "step": 67
+            }
+          ],
+          [
+            {
+              "tile": "9m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 9
+            },
+            {
+              "tile": "2s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 15
+            },
+            {
+              "tile": "7s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 21
+            },
+            {
+              "tile": "9s",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 27
+            },
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 33
+            },
+            {
+              "tile": "3s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 39
+            },
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 45
+            },
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 51
+            },
+            {
+              "tile": "6s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 57
+            },
+            {
+              "tile": "8s",
+              "moqie": true,
+              "riichi": false,
+              "called": false,
+              "step": 63
+            },
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 69
+            },
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 73
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "9s",
+                "9s",
+                "9s"
+              ],
+              "froms": [
+                0,
+                0,
+                2
+              ]
+            }
+          ],
+          [],
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "1z",
+                "1z",
+                "1z"
+              ],
+              "froms": [
+                2,
+                2,
+                1
+              ]
+            },
+            {
+              "type": 1,
+              "tiles": [
+                "8p",
+                "8p",
+                "8p"
+              ],
+              "froms": [
+                2,
+                2,
+                0
+              ]
+            }
+          ],
+          []
+        ],
+        "north": [
+          1,
+          1,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1,
+          11
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 11,
+            "combination": []
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 1
+        }
+      },
+      "expectedStatus": "ready"
+    },
+    {
+      "id": "live-v8-288",
+      "tags": [
+        "latest-live-slow"
+      ],
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "6z",
+          "9m",
+          "4z",
+          "5p",
+          "6p",
+          "0p",
+          "1s",
+          "1z",
+          "7z",
+          "8s",
+          "7p",
+          "9s",
+          "9p",
+          "2s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 4,
+        "lastDraw": "2s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 1,
+          "tile": "2s",
+          "type": null,
+          "step": 4
+        },
+        "left": 52,
+        "doras": [
+          "9p"
+        ],
+        "scores": [
+          52000,
+          25000,
+          28000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "9m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1,
+          11
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 11,
+            "combination": []
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 2
+        }
+      },
+      "expectedStatus": "ready"
+    },
+    {
+      "id": "live-v8-436",
+      "tags": [
+        "latest-live-slow"
+      ],
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "8p",
+          "4z",
+          "5z",
+          "9m",
+          "1s",
+          "1p",
+          "6p",
+          "8s",
+          "2p",
+          "6s",
+          "6z",
+          "1s",
+          "9p",
+          "3p"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 4,
+        "lastDraw": "3p",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 1,
+          "tile": "3p",
+          "type": null,
+          "step": 4
+        },
+        "left": 52,
+        "doras": [
+          "1m"
+        ],
+        "scores": [
+          43000,
+          35400,
+          26600
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            }
+          ],
+          [],
+          [
+            {
+              "tile": "1m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          1,
+          11
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 11,
+            "combination": []
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        }
+      },
+      "expectedStatus": "ready"
+    },
+    {
+      "id": "live-v8-984",
+      "tags": [
+        "latest-live-slow"
+      ],
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "7z",
+          "5p",
+          "9s",
+          "7s",
+          "7p",
+          "4p",
+          "7z",
+          "8p",
+          "1p",
+          "2p",
+          "2z",
+          "7p",
+          "5s",
+          "4z"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 10,
+        "lastDraw": "4z",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 1,
+          "tile": "4z",
+          "type": null,
+          "step": 10
+        },
+        "left": 49,
+        "doras": [
+          "1s"
+        ],
+        "scores": [
+          38000,
+          33000,
+          34000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "9m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            },
+            {
+              "tile": "5z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 9
+            }
+          ],
+          [
+            {
+              "tile": "1z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 5
+            }
+          ],
+          [
+            {
+              "tile": "9m",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 7
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1,
+          11
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 11,
+            "combination": []
+          }
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 1
+        }
+      },
+      "expectedStatus": "ready"
+    }
+  ]
+}

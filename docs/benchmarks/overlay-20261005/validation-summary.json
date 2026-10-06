@@ -1,0 +1,54 @@
+{
+  "renderer": "Codex in-app browser; offline localhost component with hostname guard adapted only in temporary harness",
+  "source": "Production src/overlay.js; ordinary and confirmed-riichi-furiten use prior saved current-v8 computed packets; exceptional and long-river cases are display fixtures derived from them. Fourth-riichi fixture exercises real reason text and abort flag, not a new recommendation claim.",
+  "limitations": "No live game, fullscreen, game background or native WKWebView verified. Left column and fit unchanged.",
+  "layoutChecks": "layout-checks.json",
+  "overlaySha256": "e7227db6a7fc71c4c8caff3a098d7759eaef43747dc246f99ada1e89f8725bfe",
+  "screenshots": {
+    "01-ordinary-1280.jpg": {
+      "sha256": "6db7baf55a6e2a27c3c179b16ab705cc06fca4e204ebe0d4fd285d63f8b7aaa3",
+      "width": 1280,
+      "height": 800
+    },
+    "02-ordinary-800.jpg": {
+      "sha256": "39166cce58e6c676cdeea8cd680f56d74f1a722600eb180544c8d9d6b508e7bc",
+      "width": 800,
+      "height": 600
+    },
+    "03-furiten-1280.jpg": {
+      "sha256": "f3875a476a48f5a166993e75a9672debc7e5f62f39c3cd865a2ead8f02d384ab",
+      "width": 1280,
+      "height": 800
+    },
+    "04-furiten-800.jpg": {
+      "sha256": "fe0c1d388e1d623cf270b4ea04f325f52a346bd74bc4e7f4e4857b4a33f47b0f",
+      "width": 800,
+      "height": 600
+    },
+    "disconnected-800.jpg": {
+      "sha256": "418e02db22e71acb7e934f35957bf5fb381942de0bfaf8b26ab55da21bf41035",
+      "width": 800,
+      "height": 600
+    },
+    "fourth-riichi-800.jpg": {
+      "sha256": "5bbc988701c670625a371e855992cd21fae93067f1ba9c3ee1c9408668911267",
+      "width": 800,
+      "height": 600
+    },
+    "incomplete-800.jpg": {
+      "sha256": "cd4367a82ecc7a446207b7d2f52b2d2abd963473561e5779c26d50fd24628509",
+      "width": 800,
+      "height": 600
+    },
+    "long-rivers-800.jpg": {
+      "sha256": "1264d7372f09367999c4fea4386e6b084cce1e5b9e8f8d7e21abd4c6a0a1d776",
+      "width": 800,
+      "height": 600
+    },
+    "unverified-800.jpg": {
+      "sha256": "2cf1ced7e0420e0211805ce8c0a033fe217a408cd5d694dd6c1f1ab34b38b310",
+      "width": 800,
+      "height": 600
+    }
+  }
+}

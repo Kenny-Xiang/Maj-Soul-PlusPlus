@@ -76,22 +76,23 @@ def score_components(advice):
     return components
 
 
-def evaluate(source, cases, warmups, repeats):
+def evaluate(source, cases, warmups, repeats, ranked_limit=None):
     # The caller starts a fresh interpreter for each version. No project imports
     # occur before this explicit path is installed, even when PYTHONPATH is set.
     sys.path.insert(0, str(source))
     import advisor
+    options = {} if ranked_limit is None else {"ranked_limit": ranked_limit}
 
     for _ in range(warmups):
         for case in cases:
-            advisor.advise(deepcopy(case["state"]))
+            advisor.advise(deepcopy(case["state"]), **options)
     results = {case["id"]: {"samplesMs": [], "advisorSamplesMs": [],
                             "changedRepeats": []} for case in cases}
     for repeat in range(repeats):
         for case in cases:
             snapshot = deepcopy(case["state"])
             started = time.perf_counter()
-            advice = advisor.advise(snapshot)
+            advice = advisor.advise(snapshot, **options)
             elapsed = (time.perf_counter() - started) * 1000
             if advice["status"] != case["expectedStatus"]:
                 raise ValueError(f"{case['id']}: expected {case['expectedStatus']}, got {advice}")
@@ -144,10 +145,11 @@ def snapshot_source(repo, destination, ref=None):
                     "sourceSha256": source_hash(source), "sourceChanges": dirty}
 
 
-def run_version(source, cases, warmups, repeats):
+def run_version(source, cases, warmups, repeats, ranked_limit=None):
     completed = subprocess.run(
         [sys.executable, "-I", "-B", str(Path(__file__).resolve()), "--worker", str(source)],
-        input=json.dumps({"cases": cases, "warmups": warmups, "repeats": repeats}),
+        input=json.dumps({"cases": cases, "warmups": warmups, "repeats": repeats,
+                          "ranked_limit": ranked_limit}),
         text=True, capture_output=True, check=True)
     return json.loads(completed.stdout)
 
@@ -169,14 +171,17 @@ def compare_cases(baseline, current):
                           if type(old[key].get(k)) in (int, float) and type(new[key].get(k)) in (int, float)}
                 candidates.append({"actionId": key, "change": "modified",
                                    "changedFields": fields, "numericDeltas": deltas})
+        ranked_count = after.get("rankedCandidateCount", len(after.get("candidates", [])))
         changes[case_id] = {"statusChanged": before["status"] != after["status"],
                             "recommendationChanged": recommendation(before) != recommendation(after),
+                            "rankedPrefixChanged": before.get("candidates", [])[:ranked_count] !=
+                                                   after.get("candidates", [])[:ranked_count],
                             "baselineRecommendation": recommendation(before),
                             "currentRecommendation": recommendation(after), "candidateChanges": candidates}
     return changes
 
 
-def build_report(repo, fixtures, baseline_ref, current_ref, selected, warmups, repeats):
+def build_report(repo, fixtures, baseline_ref, current_ref, selected, warmups, repeats, ranked_limit=None):
     cases = load_cases(fixtures, selected)
     with tempfile.TemporaryDirectory(prefix="advisor-comparison-") as temporary:
         directory = Path(temporary)
@@ -185,11 +190,12 @@ def build_report(repo, fixtures, baseline_ref, current_ref, selected, warmups, r
         old_source, old_info = snapshot_source(repo, directory / "baseline", baseline_ref)
         new_source, new_info = snapshot_source(repo, directory / "current", current_ref)
         baseline = {"source": old_info, **run_version(old_source, cases, warmups, repeats)}
-        current = {"source": new_info, **run_version(new_source, cases, warmups, repeats)}
+        current = {"source": new_info, **run_version(new_source, cases, warmups, repeats, ranked_limit)}
     return {"schemaVersion": 1,
             "environment": {"python": sys.version, "platform": platform.platform(),
                             "mahjong": importlib.metadata.version("mahjong")},
             "method": {"warmupPasses": warmups, "measuredPasses": repeats,
+                       "currentRankedLimit": ranked_limit, "baselineRankedLimit": None,
                        "caseOrder": [case["id"] for case in cases], "versionOrder": ["baseline", "current"],
                        "timing": "perf_counter around advise only; excludes imports, copying, and process startup",
                        "cache": "fresh process per version; identical ordered full-suite warmup and measurement passes",
@@ -208,6 +214,8 @@ def main():
     parser.add_argument("--case", action="append", default=[], help="Case ID to include; repeat for multiple cases")
     parser.add_argument("--warmups", type=int, default=1, help="Excluded full-suite warmup passes (default: 1)")
     parser.add_argument("--repeats", type=int, default=5, help="Measured full-suite passes (default: 5)")
+    parser.add_argument("--ranked-limit", type=int,
+                        help="Current version's exact ranked prefix; baseline retains full ordering")
     parser.add_argument("--output", type=Path, help="Write JSON report to this path instead of stdout")
     parser.add_argument("--worker", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args()
@@ -217,9 +225,11 @@ def main():
         return
     if args.warmups < 0 or args.repeats < 1:
         parser.error("warmups must be nonnegative and repeats must be positive")
+    if args.ranked_limit is not None and args.ranked_limit < 2:
+        parser.error("ranked-limit must be at least 2")
     try:
         report = build_report(ROOT, args.fixtures.resolve(), args.baseline, args.current_ref,
-                              args.case, args.warmups, args.repeats)
+                              args.case, args.warmups, args.repeats, args.ranked_limit)
     except (ValueError, subprocess.CalledProcessError) as exc:
         parser.exit(1, f"Comparison failed: {exc}\n{getattr(exc, 'stderr', '') or ''}")
     payload = json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
