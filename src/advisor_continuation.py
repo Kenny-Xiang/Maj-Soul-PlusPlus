@@ -6,25 +6,29 @@ or riichi is assumed. Only the first draw is sampled without replacement;
 continuation hazards are frozen public-information estimates.
 """
 from copy import deepcopy
-from advisor_routes import route_targets, seven_pair_targets, target_policy
+from advisor_routes import _scoring_context, route_targets, seven_pair_targets, target_policy
 
 
-def leaf_policy(hand, state, remaining, opponents, events, discard=None):
+def leaf_policy(hand, state, remaining, opponents, events, discard=None, *, shape=None):
     """A common coarse leaf, with physical targets for dominant seven pairs."""
     import advisor as a
 
-    counts = a.counts34(hand)
     special = not state['melds'][state['selfSeat']]
-    sh = a.shanten(counts, special)
-    regular = a.shanten(counts, False)
-    chiitoi = (special and sh <= 2 and regular > sh and
-               a.Shanten.calculate_shanten_for_chiitoitsu_hand(counts) == sh)
+    if shape is None:
+        counts = a.counts34(hand)
+        sh = a.shanten(counts, special)
+    else:
+        counts, sh, ukeire = shape
+    chiitoi = (special and sh <= 2 and
+               a.Shanten.calculate_shanten_for_chiitoitsu_hand(counts) == sh and
+               a.shanten(counts, False) > sh)
     # Ordinary progress cannot borrow the wider special-hand ukeire or its
     # two-han value while skipping the seventh distinct pair prerequisite.
     shape_special = special and not chiitoi
     if chiitoi:
-        sh = regular
-    ukeire = sum(t['count'] for t in a._improvements(counts, remaining, shape_special))
+        sh = a.shanten(counts, False)
+    if chiitoi or shape is None:
+        ukeire = sum(t['count'] for t in a._improvements(counts, remaining, shape_special))
     value, factor = a._future_value(hand, state, counts, shape_special, tsumo=True)
     ron = a._future_value(hand, state, counts, shape_special)
     _, _, average = a._policy_risks((), state, remaining, opponents)
@@ -81,12 +85,21 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
     witnesses = []
     result = a.Outcome()
     weight = a._risk_weight(state)
-    for draw, mass in sorted(a._draw_pool(after, remaining)):
+    context = _scoring_context(state)
+    cache = a.TABLES.get()
+    cache = {} if cache is None else cache
+    continuation_context = (context, tuple(suffix), survival, payments, fees, weight,
+                            bool(state.get('furiten', False)))
+    own_river = frozenset(a.tile_index(d['tile']) for d in after['rivers'][seat])
+    pool = sorted(a._draw_pool(after, remaining))
+    initial_red = frozenset(a.tile_index(tile) for tile, _ in pool if tile.startswith('0'))
+    for draw, mass in pool:
         a._check_search()
         index = a.tile_index(draw)
         unseen = list(remaining)
         unseen[index] -= 1
         unseen = tuple(unseen)
+        red_pool = initial_red - {index} if draw.startswith('0') or not unseen[index] else initial_red
         drawn = {**after, 'hand': [*hand, draw], 'lastDraw': draw,
                  'forbiddenDiscards': []}
         current_opponents = opponents
@@ -101,27 +114,38 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
         for tile in sorted(set(drawn['hand'])):
             a._check_search()
             nxt_hand = a._remove_exact(drawn['hand'], [tile])
-            nxt_counts = a.counts34(nxt_hand)
-            sh = a.shanten(nxt_counts, special)
-            ukeire = sum(t['count'] for t in a._improvements(nxt_counts, unseen, special))
-            discard_states[tile] = nxt_hand, nxt_counts, sh, ukeire
             danger, loss, _ = a._danger(tile, unseen, current_opponents)
             priced_discards[tile] = (danger, loss)
             future = [{**o, 'safe': o['safe'] | {a.tile_index(tile)} if o['riichi'] else o['safe']}
                       for o in opponents]
-            if sh == 0:
-                waits, _ = a._wait_values(nxt_hand, nxt_counts, unseen, drawn, tile, special)
-                continuation = a._ready_policy(nxt_hand, drawn, unseen, future, suffix, waits)[0]
-            elif special and sh <= 2 and a.Shanten.calculate_shanten_for_kokushi_hand(nxt_counts) == sh:
-                ron_value = a._future_value(nxt_hand, drawn, nxt_counts, special)[0]
-                tsumo_value = a._future_value(nxt_hand, drawn, nxt_counts, special, tsumo=True)[0]
-                continuation = a._kokushi_outcome(nxt_counts, unseen, future, drawn, tile,
-                                                   suffix, ron_value, tsumo_value=tsumo_value)
+            # Root A then B and root B then A can reach exactly the same
+            # future hand. Keep both passed discards for furiten and safety.
+            key = ('finite-continuation', continuation_context, tuple(sorted(nxt_hand)), unseen,
+                   own_river | {a.tile_index(tile)}, red_pool,
+                   tuple((o['seat'], o['riichi'], frozenset(o['safe']), o['tenpai']) for o in future))
+            if key in cache:
+                nxt_counts, sh, ukeire, continuation = cache[key]
             else:
-                # Every distance has the same leaf contract. Unknown open yaku
-                # never acquires the old .3 income simply by moving backwards.
-                continuation = leaf_policy(nxt_hand, drawn, unseen, future, suffix, tile)
-            outcome = a._policy_discard(a._policy_residual(continuation, survival, *payments), danger, loss)
+                nxt_counts = a.counts34(nxt_hand)
+                sh = a.shanten(nxt_counts, special)
+                ukeire = sum(t['count'] for t in a._improvements(nxt_counts, unseen, special))
+                if sh == 0:
+                    waits, _ = a._wait_values(nxt_hand, nxt_counts, unseen, drawn, tile, special)
+                    continuation = a._ready_policy(nxt_hand, drawn, unseen, future, suffix, waits)[0]
+                elif special and sh <= 2 and a.Shanten.calculate_shanten_for_kokushi_hand(nxt_counts) == sh:
+                    ron_value = a._future_value(nxt_hand, drawn, nxt_counts, special)[0]
+                    tsumo_value = a._future_value(nxt_hand, drawn, nxt_counts, special, tsumo=True)[0]
+                    continuation = a._kokushi_outcome(nxt_counts, unseen, future, drawn, tile,
+                                                       suffix, ron_value, tsumo_value=tsumo_value)
+                else:
+                    # Every distance has the same leaf contract. Unknown open yaku
+                    # never acquires the old .3 income simply by moving backwards.
+                    continuation = leaf_policy(nxt_hand, drawn, unseen, future, suffix, tile,
+                                               shape=(nxt_counts, sh, ukeire))
+                continuation = a._policy_residual(continuation, survival, *payments)
+                cache[key] = nxt_counts, sh, ukeire, continuation
+            discard_states[tile] = nxt_hand, nxt_counts, sh, ukeire
+            outcome = a._policy_discard(continuation, danger, loss)
             preference = (outcome.utility(weight), -a._adverse_payments(outcome), -loss,
                           -sh, ukeire, tile)
             if best is None or preference > best[0]:
@@ -130,28 +154,31 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
         # A target is chosen after seeing this draw, so retaining two value
         # honors preserves both branches without summing overlapping wins.
         drawn_counts = a.counts34(drawn['hand'])
+        priced_indices = tuple((t, a.tile_index(t)) for t in priced_discards)
+        held_red = tuple((t, a.tile_index(t)) for t in drawn['hand'] if t.startswith('0'))
         for name, target in targets:
             a._check_search()
-            surplus = [t for t in priced_discards if drawn_counts[a.tile_index(t)] > target[a.tile_index(t)]]
+            surplus = [t for t, index in priced_indices if drawn_counts[index] > target[index]]
             # Retained red identity determines the common target tail. Keep
             # each discard's current risk until comparing its full utility.
             choices = {}
             for tile in surplus:
-                retained_red = tuple(t for t in drawn['hand'] if t.startswith('0') and t != tile
-                                     and target[a.tile_index(t)])
+                retained_red = tuple(t for t, index in held_red if t != tile and target[index])
                 key = tuple(sorted(retained_red))
                 choices.setdefault(key, []).append(tile)
             for equivalent in choices.values():
                 tile = equivalent[0]
                 nxt_hand, nxt_counts, sh, ukeire = discard_states[tile]
                 continuation, metadata = target_policy(nxt_hand, drawn, unseen, opponents, suffix,
-                                                       tile, [(name, target)], average=target_average, counts=nxt_counts)
+                                                       tile, [(name, target)], average=target_average, counts=nxt_counts,
+                                                       red_pool=red_pool, context=context, weight=weight)
                 if continuation is None:
                     continue
+                continuation = a._policy_residual(continuation, survival, *payments)
                 for tile in equivalent:
                     _, _, sh, ukeire = discard_states[tile]
                     danger, loss = priced_discards[tile]
-                    outcome = a._policy_discard(a._policy_residual(continuation, survival, *payments), danger, loss)
+                    outcome = a._policy_discard(continuation, danger, loss)
                     preference = (outcome.utility(weight), -a._adverse_payments(outcome), -loss,
                                   -sh, ukeire, tile)
                     if best is None or preference > best[0]:

@@ -82,6 +82,44 @@ class ScoringCacheTests(unittest.TestCase):
         finally:
             advisor._HAND_VALUES.reset(token)
 
+    def test_completed_red_hand_reuses_winning_family_without_losing_physical_reds(self):
+        cases = [
+            ("234m340p345p678s55s", "p", []),
+            ("111m055p999p333s77z", "p", []),
+            ("111m999p333s666s05p", "p", []),
+            ("111m055p345p999s22z", "p", []),
+            ("123m789s111z05s", "s", [{"type": 2, "tiles": tiles("5555p")}]),
+        ]
+        for complete_hand, suit, melds in cases:
+            with self.subTest(hand=complete_hand):
+                snapshot = state()
+                snapshot["melds"][0] = melds
+                complete = tiles(complete_hand)
+                token = advisor._HAND_VALUES.set({})
+                reference = advisor._score_hand
+                try:
+                    with patch.object(advisor, "_score_hand", wraps=reference) as compute:
+                        for mode, tsumo in enumerate((False, True), 1):
+                            results = []
+                            for win in ("0" + suit, "5" + suit):
+                                hand = complete.copy()
+                                hand.remove(win)
+                                expected = reference(hand, win, snapshot, tsumo)
+                                results.append(advisor._hand_value(hand, win, snapshot, tsumo))
+                                self.assertEqual(results[-1], expected)
+                                self.assertGreater(expected["points"], 0)
+                            self.assertEqual(results[0], results[1])
+                            self.assertEqual(compute.call_count, 2 * mode - 1)
+                            plain = ["5" + suit if tile == "0" + suit else tile for tile in complete]
+                            plain.remove("5" + suit)
+                            expected = reference(plain, "5" + suit, snapshot, tsumo)
+                            self.assertEqual(advisor._hand_value(plain, "5" + suit, snapshot, tsumo), expected)
+                            self.assertEqual(compute.call_count, 2 * mode)
+                        if melds:
+                            self.assertEqual(advisor._scoring_tiles(complete, melds)[3], 1)
+                finally:
+                    advisor._HAND_VALUES.reset(token)
+
     def test_each_decision_owns_and_releases_its_cache_on_all_exits(self):
         outer = {}
         token = advisor._HAND_VALUES.set(outer)

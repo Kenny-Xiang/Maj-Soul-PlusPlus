@@ -4,7 +4,7 @@ The comparison runner evaluates identical public snapshots against two advisor
 source versions. It never opens the game, connects to game servers, or submits an
 action. It measures reproducibility, rule regressions, recommendation changes,
 and local calculation time; it does not establish stronger play or calibrated
-win probabilities. The latest v9 method and results appear in the final section;
+win probabilities. The latest v10 performance results appear in the final section;
 earlier sections retain their historical comparison context.
 
 ## Historical: exact live ranking and decision-local reuse (v8, 2026-10-05)
@@ -1454,3 +1454,99 @@ continuations are not enumerated. Measured fold rates are descriptive rather
 than an acceptance target. Regression checks and offline score changes do not
 establish calibrated probabilities, higher long-run win rates or avoidance of
 the recorded deal-in.
+
+## One-second inference and recorded pon/kan timeouts (v10, 2026-10-06)
+
+Two recorded sanma reaction windows offering pon and daiminkan exhausted the
+two-second search budget and skipped their recommendations. Their minimal public
+states are now regression fixtures in `advisor_timeout_cases.json`. The optimized
+engine returns all offered choices and preserves the original search coverage,
+ranked-match preferences, and two-second interruption budget.
+
+Both benchmark versions include PR #25 (`5aa927b`, expanded sidebar) and PR #26
+(`cd3c221`, ranked-match preferences). The performance branch is stacked on #26;
+#25 was merged locally into the validation checkout. The workload combines 73
+existing cases, 14 rank-policy cases, the two actual timeout cases, and 40 local
+public discard snapshots: 129 cases total. Full game logs are not committed.
+
+The main changes reuse exact suit decompositions, passed-tile risk evidence,
+equivalent future hands, scoring configurations, and completed-hand scores.
+Fixed-target collection now counts without-replacement subsets using integer
+polynomial coefficients, then applies the original event hazards. Complete
+outcomes also share results across equivalent deficit/stock/payment profiles.
+The suit calculator remains tied to the pinned `mahjong==2.0.0` implementation
+and has differential reference tests for dependency upgrades.
+
+Triplet tsumo prices share a winning representative only when the decomposition
+is unique, or when a complete all-triplet hand with no chi and standard counted
+yakuman limits dominates alternative sequence decompositions. Closed hands keep
+four-concealed-triplet value; one open group keeps toitoi plus sanankou. Tests
+cover pair migration (`11122233344`), chanta/junchan, kans, green yakuman, reds,
+three/four players, chi, and alternative counted-yakuman rules. Tanki remains
+separately priced. The background worker uses a per-calculation cancellation
+event; queue updates and publication still hold the condition lock and reject
+superseded results, including resubmissions using the same key.
+
+The final local arm64 / Python 3.12.15 / mahjong 2.0.0 measurements are below.
+Times are milliseconds; P95 is nearest rank. A warm pass over all 129 cases is
+followed by three measured passes. Every cold sample uses a new interpreter.
+
+| Measurement | Samples | Median | P95 | Maximum | Timeouts |
+|---|---:|---:|---:|---:|---:|
+| Baseline mixed warm workload | 387 | 483.4 | 1613.8 | 2028.7 | 6 |
+| Optimized mixed warm workload | 387 | 283.1 | 730.6 | 982.4 | 0 |
+| Optimized fresh process per case | 129 | 275.8 | 654.3 | 858.7 | 0 |
+| Optimized actual background worker | 19 | 663.5 | 904.8 | 904.8 | 0 |
+
+| Recorded timeout case | Baseline cold timeouts | Optimized maximum of 3 cold runs | Optimized actual worker |
+|---|---:|---:|---:|
+| `live-timeout-serial-578` | 3 / 3 | 642.5 | 679.5 |
+| `live-timeout-serial-1017` | 3 / 3 | 862.9 | 904.8 |
+
+All 129 optimized cold samples, 387 mixed warm samples, 15 repeated heavy cold
+samples, and 19 actual-worker samples were below one second, with zero timeouts.
+The worker samples include all 14 rank-policy states and five heavy states;
+their timer includes snapshot copying, dispatch and the real cancellation
+callback. Timings exclude imports, process startup, and the UI publish timer or
+rendering. These are measurements on this machine and corpus, not a universal
+wall-clock bound for other hardware, system load, or unseen positions.
+
+All 129 ranked-prefix outputs and all 89 committed cases with full ranking were
+compared against the baseline, including unrounded private candidate accounts.
+Actions, candidate order, reasons, and all nonnumeric fields agree. The maximum
+numerical difference was 1.82e-12, caused by floating-point evaluation order;
+the comparator uses absolute tolerance 1e-8 and relative tolerance 1e-12.
+Every repeated optimized output was stable. Only the two legacy timeout cases
+use a separate 120-second diagnostic reference to obtain complete old outputs;
+that reference's duration is excluded from every performance result. Production
+and all optimized/ordinary diagnostic runs retain the two-second budget.
+
+The original baseline was measured once, including six measured warm timeouts
+and six repeated cold timeouts across the two recorded failures. After a first
+optimization missed the warm one-second goal (maximum 1048.4 ms), the final
+implementation was retested in full. Unchanged baseline results were reused
+after verifying source, workload, Python/platform/library environment and
+measurement settings. The final report records original file hashes and marks
+this reuse explicitly; the final timings do not claim interleaved version runs.
+
+Validation: **430 advisor/worker/benchmark Python tests**, **6 formatting/logging
+Python tests**, **48 protocol/overlay Node tests** on the integration tree, and
+**45 Node tests** on the performance branch passed. Native UI, package building,
+desktop replacement, and a new online playing session are outside this run.
+
+[Machine-readable results](benchmarks/advisor-inference-20261006.json) include
+per-case timings, source and fixture hashes, runner hashes, baseline provenance,
+all worker results, and complete-equivalence summaries. To reproduce the 89
+committed cases with the same backend baseline on this performance branch:
+
+```sh
+.venv/bin/python scripts/advisor_inference_benchmark.py \
+  --baseline cd3c22199713dc524d6377071d201a06919075cb \
+  --artifacts build/advisor-inference-verification
+```
+
+To reproduce the combined UI source hashes, merge #25 into both source trees in
+an independent checkout before benchmarking. `--live` accepts an optional local
+public-state fixture export. `--baseline-results` reuses only a matching complete
+baseline artifact directory and records that provenance explicitly. The runner
+saves both source snapshots, its own scripts, full raw results, inputs and hashes.

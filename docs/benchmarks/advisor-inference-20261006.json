@@ -1,0 +1,2210 @@
+{
+  "artifacts": "final-benchmark-v2",
+  "sources": {
+    "baseline": {
+      "ref": "7b69f09f35822c56a3f8ef2696f0a388002ac513",
+      "commit": "7b69f09f35822c56a3f8ef2696f0a388002ac513",
+      "sourceSha256": "b9a51479e0a1d1c6893eb28f02257422fcc4eb0ba4af6768385ae67a0b410b3d",
+      "sourceChanges": []
+    },
+    "current": {
+      "ref": "working-tree",
+      "commit": "f6f70ce084e3b7c1fe32fb4c3a1f6895856e3c8b",
+      "sourceSha256": "27bea501a61a5c3a6c14a14591e3682ae6c29175ddfc1924df6e05fde18176d9",
+      "sourceChanges": []
+    }
+  },
+  "fixtures": [
+    {
+      "path": "tests/fixtures/advisor_cases.json",
+      "sha256": "188161c7c7db6a2fe1f6d34b4e699ea84826f67331fadd55e7fc78e6051fe4f7",
+      "caseCount": 24
+    },
+    {
+      "path": "tests/fixtures/advisor_threat_cases.json",
+      "sha256": "83eab6ec338d88cef751dc313f9670ff45dcaabafff053c2722db9a96dedf141",
+      "caseCount": 19
+    },
+    {
+      "path": "tests/fixtures/advisor_phase_cases.json",
+      "sha256": "6039caca3a81584b618dc480f14670cdcc64e6b8a2df2f54a5ab5ed4587477c7",
+      "caseCount": 6
+    },
+    {
+      "path": "tests/fixtures/advisor_performance_logged_cases.json",
+      "sha256": "08fafb2b80db66dc5d386cf2b5a67e3a84dde9124661748c87d9f6d081117e44",
+      "caseCount": 5
+    },
+    {
+      "path": "tests/fixtures/advisor_policy_logged_cases.json",
+      "sha256": "51aeaced0d33c1805c2ed1181c25e565b2f4a11b9cba874f24c08df856a5ba62",
+      "caseCount": 8
+    },
+    {
+      "path": "tests/fixtures/advisor_route_cases.json",
+      "sha256": "9c821d6d5deb3af88ec89f5da7a9b34875601968004226bda478f89a15a743cc",
+      "caseCount": 11
+    },
+    {
+      "path": "tests/fixtures/advisor_timeout_cases.json",
+      "sha256": "fee66e4c4c2dc26914431b98a943e34b95c5f78d21950d51456787a62faf6e25",
+      "caseCount": 2
+    },
+    {
+      "path": "tests/fixtures/advisor_rank_cases.json",
+      "sha256": "bc26d18f604adedee9c8b5ddc3f059c6456a441fed85bd8f9cb93b6ad4f7a503",
+      "caseCount": 14
+    },
+    {
+      "path": "live-cases.json",
+      "sha256": "859692b941a506aeceec61e0da713da9657fc1d169ba3e4f4343e51f13aab859",
+      "caseCount": 40
+    },
+    {
+      "path": "fixtures.json",
+      "sha256": "eacf89ff6a878ea6e7b20cdb63b909855339d8da2d4ce35cc6b8498a296f284d",
+      "caseCount": 129
+    }
+  ],
+  "baselineReuse": {
+    "source": "final-benchmark",
+    "summarySha256": "cb4e8a13145996dda1a418976db30079617b02c7bb60700d8ca0d61e71e294f8",
+    "environment": {
+      "python": "3.12.15 (main, Oct  3 2026, 00:54:33) [Clang 22.1.3 ]",
+      "platform": "macOS-27.0.1-arm64-arm-64bit",
+      "mahjong": "2.0.0"
+    },
+    "files": [
+      {
+        "label": "cold-pon-red-choices-1",
+        "source": "cold-pon-red-choices-1-baseline.json",
+        "sha256": "54b3370370f3ea4335bd063619a3fcdba8013ef9f408f7ff988dbb927e3b4367"
+      },
+      {
+        "label": "cold-pon-red-choices-2",
+        "source": "cold-pon-red-choices-2-baseline.json",
+        "sha256": "c0c61d3796d28826e1d593a721aaf2bacc3f6f45fd0c20ed3339040f8e828750"
+      },
+      {
+        "label": "cold-pon-red-choices-3",
+        "source": "cold-pon-red-choices-3-baseline.json",
+        "sha256": "23aa7c2b644ad0c6ecd506e482c90b2f344b89f5e65ec0c2abc35e1479e264ea"
+      },
+      {
+        "label": "cold-one-shanten-followup-risk-1",
+        "source": "cold-one-shanten-followup-risk-1-baseline.json",
+        "sha256": "c41af6d423b4a27658398f3cee2059a8d58c6f3e63edee1b8380db5dfcdd3e47"
+      },
+      {
+        "label": "cold-one-shanten-followup-risk-2",
+        "source": "cold-one-shanten-followup-risk-2-baseline.json",
+        "sha256": "6d74801e360f7bb3b21acf868ef6fcf215611e896e10b2f88adc278282e1ce26"
+      },
+      {
+        "label": "cold-one-shanten-followup-risk-3",
+        "source": "cold-one-shanten-followup-risk-3-baseline.json",
+        "sha256": "8758bec6b20526d2956d145b078cab327e3c1c2892a690fefc93b8810aabe3ec"
+      },
+      {
+        "label": "cold-shouminkan-red-1",
+        "source": "cold-shouminkan-red-1-baseline.json",
+        "sha256": "87d574b588a9789e87c3ec5d4d8b433439a10c8bc0e0d2900d0374b92e0ce47f"
+      },
+      {
+        "label": "cold-shouminkan-red-2",
+        "source": "cold-shouminkan-red-2-baseline.json",
+        "sha256": "12b76dc1520b318f98d64bad7401141b44d29d2c2482196683d7b10dca4775c5"
+      },
+      {
+        "label": "cold-shouminkan-red-3",
+        "source": "cold-shouminkan-red-3-baseline.json",
+        "sha256": "62d181d2aeb5ae3dc4931bd1b9880f4dad5f043ab5910477a547cb11f7b18237"
+      },
+      {
+        "label": "cold-live-timeout-serial-578-1",
+        "source": "cold-live-timeout-serial-578-1-baseline.json",
+        "sha256": "418d6447fa041aebc710730089f9c72ff36507733708e0a2123a0441f8760b81"
+      },
+      {
+        "label": "cold-live-timeout-serial-578-2",
+        "source": "cold-live-timeout-serial-578-2-baseline.json",
+        "sha256": "1e2f25deeff76a9457dd164b431ac7bbd267b11dbee192377052b2b299f6f2c9"
+      },
+      {
+        "label": "cold-live-timeout-serial-578-3",
+        "source": "cold-live-timeout-serial-578-3-baseline.json",
+        "sha256": "418d6447fa041aebc710730089f9c72ff36507733708e0a2123a0441f8760b81"
+      },
+      {
+        "label": "cold-live-timeout-serial-1017-1",
+        "source": "cold-live-timeout-serial-1017-1-baseline.json",
+        "sha256": "cea2b6e4a96aa2bda33d1aae181abba8e4458b065b6fed743804fae94a12cdc9"
+      },
+      {
+        "label": "cold-live-timeout-serial-1017-2",
+        "source": "cold-live-timeout-serial-1017-2-baseline.json",
+        "sha256": "bac2765f05181d256e4857a37d559839931ae40d0a33a6b65ad862629c4acc7f"
+      },
+      {
+        "label": "cold-live-timeout-serial-1017-3",
+        "source": "cold-live-timeout-serial-1017-3-baseline.json",
+        "sha256": "585446eed3226a82c23d4de6297fd190eb76af3d0657ab97f1bd6b04a93e263e"
+      },
+      {
+        "label": "warm",
+        "source": "warm-baseline.json",
+        "sha256": "9706a878b03b1dfecfa125988f6b217bdb1946ea9848d6f67bbaa39eabd1c73a"
+      },
+      {
+        "label": "equivalence-prefix",
+        "source": "equivalence-prefix-baseline.json",
+        "sha256": "f409467fc2def79d9c1c364c0c3fa9ec913235f10f328cc8327ce8766d32c202"
+      },
+      {
+        "label": "equivalence-full",
+        "source": "equivalence-full-baseline.json",
+        "sha256": "4145bdf66f43a090eb84f8854c75864e9bff67f7e0e19e286f81096752d975cd"
+      },
+      {
+        "label": "equivalence-timeout-reference-prefix",
+        "source": "equivalence-timeout-reference-prefix-baseline.json",
+        "sha256": "427b9af9594d0858b258ef85775e243b5e117f82471ab02394b5c59354a44094"
+      },
+      {
+        "label": "equivalence-timeout-reference-full",
+        "source": "equivalence-timeout-reference-full-baseline.json",
+        "sha256": "269c05557fecb06cd6d93545636b1ffaafa81364ae1294e5393a8ea7a11339f5"
+      }
+    ]
+  },
+  "runnerSha256": {
+    "advisor_inference_benchmark.py": "2996f34d6013e699e8dadc77e6830bff236c739ebe8b651698bde7ff232fc517",
+    "advisor_compare.py": "123235770ab612b4441e2f43f446f60b7a0ad188a34fa15c79a12319aafa1bdc"
+  },
+  "environment": {
+    "python": "3.12.15 (main, Oct  3 2026, 00:54:33) [Clang 22.1.3 ]",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "mahjong": "2.0.0"
+  },
+  "method": {
+    "budgetSeconds": 2,
+    "rankedLimitBothVersions": 3,
+    "warmupPasses": 1,
+    "baselineExecution": "all baseline measurements reused from a previous run",
+    "baselineRunSource": "final-benchmark (retained original measurement)",
+    "measuredPasses": 3,
+    "coldRepeatsPerCase": 3,
+    "coldOrder": [
+      {
+        "case": "pon-red-choices",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "pon-red-choices",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "pon-red-choices",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "pon-red-choices",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "pon-red-choices",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "pon-red-choices",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": true
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      }
+    ],
+    "currentColdAllPasses": 1,
+    "actualWorker": "Five heavy cases and every rank-policy fixture each run once in a fresh current-source process using default AdviceWorker; includes its actual cancellation callback and default ranked prefix 3; submit-to-result includes deepcopy and thread dispatch, excludes imports and UI timer/rendering",
+    "timing": "perf_counter around advise only; imports and process startup excluded",
+    "processes": "Current cold samples, warm suite, and diagnostic suites run in separate fresh interpreters; every baseline result is reused from the recorded prior run; versions are not interleaved in this run",
+    "equivalence": "independent diagnostic runs; ignore only elapsedMs; compare all numerical fields at full precision with stated tolerances; actions/order/explanations/all nonnumeric values exact",
+    "numericTolerance": {
+      "absolute": 1e-08,
+      "relative": 1e-12,
+      "rule": "math.isclose: abs(delta) <= max(absolute, relative * max(abs(values)))"
+    },
+    "legacyTimeoutReferences": "The two 120-second baseline diagnostic references are reused from the previous run; current and all performance measurements use 2 seconds; reference durations excluded from performance",
+    "p95": "nearest rank",
+    "caseCounts": {
+      "public": 89,
+      "rank": 14,
+      "live": 40,
+      "all": 129
+    }
+  },
+  "currentColdAll": {
+    "all": {
+      "count": 129,
+      "medianMs": 275.7667499827221,
+      "p95Ms": 654.2672500072513,
+      "maxMs": 858.749583014287,
+      "caseCount": 129,
+      "timeoutCount": 0,
+      "over1000MsCount": 0,
+      "over1000MsCaseIds": [],
+      "warmupTimeoutCount": 0,
+      "inconsistentCaseIds": []
+    },
+    "rank": {
+      "count": 14,
+      "medianMs": 625.5602085147984,
+      "p95Ms": 661.6166669991799,
+      "maxMs": 661.6166669991799,
+      "caseCount": 14,
+      "timeoutCount": 0,
+      "over1000MsCount": 0,
+      "over1000MsCaseIds": [],
+      "warmupTimeoutCount": 0,
+      "inconsistentCaseIds": []
+    },
+    "live": {
+      "count": 40,
+      "medianMs": 215.35777101234999,
+      "p95Ms": 303.44604200217873,
+      "maxMs": 425.32770801335573,
+      "caseCount": 40,
+      "timeoutCount": 0,
+      "over1000MsCount": 0,
+      "over1000MsCaseIds": [],
+      "warmupTimeoutCount": 0,
+      "inconsistentCaseIds": []
+    }
+  },
+  "actualWorkerCurrent": {
+    "cases": {
+      "pon-red-choices": {
+        "caseId": "pon-red-choices",
+        "submitToResultMs": 646.2783750030212,
+        "advisorElapsedMs": 643.6,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "one-shanten-followup-risk": {
+        "caseId": "one-shanten-followup-risk",
+        "submitToResultMs": 666.1822499881964,
+        "advisorElapsedMs": 660.3,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "shouminkan-red": {
+        "caseId": "shouminkan-red",
+        "submitToResultMs": 695.1505419856403,
+        "advisorElapsedMs": 691.3,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "live-timeout-serial-578": {
+        "caseId": "live-timeout-serial-578",
+        "submitToResultMs": 679.4750000117347,
+        "advisorElapsedMs": 676.1,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "live-timeout-serial-1017": {
+        "caseId": "live-timeout-serial-1017",
+        "submitToResultMs": 904.7946249775123,
+        "advisorElapsedMs": 900.6,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-opponent-riichi-defense-third-late": {
+        "caseId": "rank-opponent-riichi-defense-third-late",
+        "submitToResultMs": 683.308792009484,
+        "advisorElapsedMs": 674.8,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-opponent-riichi-defense-last-late": {
+        "caseId": "rank-opponent-riichi-defense-last-late",
+        "submitToResultMs": 660.6615420023445,
+        "advisorElapsedMs": 653.5,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-opponent-riichi-defense-third-early": {
+        "caseId": "rank-opponent-riichi-defense-third-early",
+        "submitToResultMs": 699.7048750054091,
+        "advisorElapsedMs": 692.1,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-opponent-riichi-defense-saint-third-late": {
+        "caseId": "rank-opponent-riichi-defense-saint-third-late",
+        "submitToResultMs": 681.9505830062553,
+        "advisorElapsedMs": 674.7,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-one-shanten-followup-risk-third-late": {
+        "caseId": "rank-one-shanten-followup-risk-third-late",
+        "submitToResultMs": 674.0718749933876,
+        "advisorElapsedMs": 668.6,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-one-shanten-followup-risk-last-late": {
+        "caseId": "rank-one-shanten-followup-risk-last-late",
+        "submitToResultMs": 663.5321670037229,
+        "advisorElapsedMs": 657.7,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-one-shanten-followup-risk-third-early": {
+        "caseId": "rank-one-shanten-followup-risk-third-early",
+        "submitToResultMs": 672.4265000084415,
+        "advisorElapsedMs": 666.5,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-one-shanten-followup-risk-saint-third-late": {
+        "caseId": "rank-one-shanten-followup-risk-saint-third-late",
+        "submitToResultMs": 657.6591669872869,
+        "advisorElapsedMs": 651.2,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-closed-tsumo-only-tenpai-third-late": {
+        "caseId": "rank-closed-tsumo-only-tenpai-third-late",
+        "submitToResultMs": 389.0832499891985,
+        "advisorElapsedMs": 387.2,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-closed-tsumo-only-tenpai-last-late": {
+        "caseId": "rank-closed-tsumo-only-tenpai-last-late",
+        "submitToResultMs": 413.65800000494346,
+        "advisorElapsedMs": 411.7,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-closed-tsumo-only-tenpai-third-early": {
+        "caseId": "rank-closed-tsumo-only-tenpai-third-early",
+        "submitToResultMs": 414.6792500105221,
+        "advisorElapsedMs": 412.6,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-closed-tsumo-only-tenpai-saint-third-late": {
+        "caseId": "rank-closed-tsumo-only-tenpai-saint-third-late",
+        "submitToResultMs": 413.5883749986533,
+        "advisorElapsedMs": 411.6,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-ordinary-efficiency": {
+        "caseId": "rank-ordinary-efficiency",
+        "submitToResultMs": 196.7678340151906,
+        "advisorElapsedMs": 195.7,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      },
+      "rank-sanma-kita": {
+        "caseId": "rank-sanma-kita",
+        "submitToResultMs": 266.27741698757745,
+        "advisorElapsedMs": 264.4,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3
+      }
+    },
+    "latency": {
+      "count": 19,
+      "medianMs": 663.5321670037229,
+      "p95Ms": 904.7946249775123,
+      "maxMs": 904.7946249775123
+    },
+    "timeoutCount": 0,
+    "over1000MsCount": 0,
+    "allStatusPass": true
+  },
+  "warm": {
+    "baseline": {
+      "all": {
+        "count": 387,
+        "medianMs": 483.4351669996977,
+        "p95Ms": 1613.8235830003396,
+        "maxMs": 2028.7283749785274,
+        "caseCount": 129,
+        "timeoutCount": 6,
+        "over1000MsCount": 70,
+        "over1000MsCaseIds": [
+          "broad-one-shanten",
+          "closed-tsumo-only-tenpai",
+          "opponent-riichi-defense",
+          "pon-red-choices",
+          "shouminkan-red",
+          "one-shanten-followup-risk",
+          "passed-current-discard",
+          "threat-early-riichi",
+          "threat-early-high-value-good-wait",
+          "phase-early-riichi",
+          "live-v8-147",
+          "route-1007-early-riichi-genbutsu-counterexample",
+          "live-timeout-serial-578",
+          "live-timeout-serial-1017",
+          "rank-opponent-riichi-defense-third-late",
+          "rank-opponent-riichi-defense-last-late",
+          "rank-opponent-riichi-defense-third-early",
+          "rank-opponent-riichi-defense-saint-third-late",
+          "rank-one-shanten-followup-risk-third-late",
+          "rank-one-shanten-followup-risk-last-late",
+          "rank-one-shanten-followup-risk-third-early",
+          "rank-one-shanten-followup-risk-saint-third-late",
+          "rank-closed-tsumo-only-tenpai-third-late",
+          "log-1-serial-12"
+        ],
+        "warmupTimeoutCount": 2,
+        "inconsistentCaseIds": []
+      },
+      "rank": {
+        "count": 42,
+        "medianMs": 1059.3282705231104,
+        "p95Ms": 1784.370334004052,
+        "maxMs": 1834.6839580044616,
+        "caseCount": 14,
+        "timeoutCount": 0,
+        "over1000MsCount": 27,
+        "over1000MsCaseIds": [
+          "rank-opponent-riichi-defense-third-late",
+          "rank-opponent-riichi-defense-last-late",
+          "rank-opponent-riichi-defense-third-early",
+          "rank-opponent-riichi-defense-saint-third-late",
+          "rank-one-shanten-followup-risk-third-late",
+          "rank-one-shanten-followup-risk-last-late",
+          "rank-one-shanten-followup-risk-third-early",
+          "rank-one-shanten-followup-risk-saint-third-late",
+          "rank-closed-tsumo-only-tenpai-third-late"
+        ],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      },
+      "live": {
+        "count": 120,
+        "medianMs": 461.43779149861075,
+        "p95Ms": 859.4487499794923,
+        "maxMs": 1650.321499997517,
+        "caseCount": 40,
+        "timeoutCount": 0,
+        "over1000MsCount": 3,
+        "over1000MsCaseIds": [
+          "log-1-serial-12"
+        ],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      }
+    },
+    "current": {
+      "all": {
+        "count": 387,
+        "medianMs": 283.12720797839575,
+        "p95Ms": 730.6068340258207,
+        "maxMs": 982.4256249994505,
+        "caseCount": 129,
+        "timeoutCount": 0,
+        "over1000MsCount": 0,
+        "over1000MsCaseIds": [],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      },
+      "rank": {
+        "count": 42,
+        "medianMs": 604.8071044933749,
+        "p95Ms": 816.1119589931332,
+        "maxMs": 825.3129590011667,
+        "caseCount": 14,
+        "timeoutCount": 0,
+        "over1000MsCount": 0,
+        "over1000MsCaseIds": [],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      },
+      "live": {
+        "count": 120,
+        "medianMs": 236.6542295058025,
+        "p95Ms": 404.9970000050962,
+        "maxMs": 501.40633300179616,
+        "caseCount": 40,
+        "timeoutCount": 0,
+        "over1000MsCount": 0,
+        "over1000MsCaseIds": [],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      }
+    }
+  },
+  "cold": {
+    "baseline": {
+      "pon-red-choices": {
+        "count": 3,
+        "medianMs": 1696.8146250001155,
+        "p95Ms": 1697.535917017376,
+        "maxMs": 1697.535917017376,
+        "timeoutCount": 0,
+        "over1000MsCount": 3
+      },
+      "one-shanten-followup-risk": {
+        "count": 3,
+        "medianMs": 1532.6531250029802,
+        "p95Ms": 1556.6708749975078,
+        "maxMs": 1556.6708749975078,
+        "timeoutCount": 0,
+        "over1000MsCount": 3
+      },
+      "shouminkan-red": {
+        "count": 3,
+        "medianMs": 1842.7309999824502,
+        "p95Ms": 1862.6750410185196,
+        "maxMs": 1862.6750410185196,
+        "timeoutCount": 0,
+        "over1000MsCount": 3
+      },
+      "live-timeout-serial-578": {
+        "count": 3,
+        "medianMs": 2004.5744999952149,
+        "p95Ms": 2004.6837499830872,
+        "maxMs": 2004.6837499830872,
+        "timeoutCount": 3,
+        "over1000MsCount": 3
+      },
+      "live-timeout-serial-1017": {
+        "count": 3,
+        "medianMs": 2004.764334007632,
+        "p95Ms": 2018.2839170156512,
+        "maxMs": 2018.2839170156512,
+        "timeoutCount": 3,
+        "over1000MsCount": 3
+      }
+    },
+    "current": {
+      "pon-red-choices": {
+        "count": 3,
+        "medianMs": 633.1106669967994,
+        "p95Ms": 633.8072079815902,
+        "maxMs": 633.8072079815902,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "one-shanten-followup-risk": {
+        "count": 3,
+        "medianMs": 627.3657080018893,
+        "p95Ms": 633.9762090065051,
+        "maxMs": 633.9762090065051,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "shouminkan-red": {
+        "count": 3,
+        "medianMs": 657.9543749976438,
+        "p95Ms": 659.4853340066038,
+        "maxMs": 659.4853340066038,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-timeout-serial-578": {
+        "count": 3,
+        "medianMs": 641.9346250186209,
+        "p95Ms": 642.4850000184961,
+        "maxMs": 642.4850000184961,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-timeout-serial-1017": {
+        "count": 3,
+        "medianMs": 853.0149580037687,
+        "p95Ms": 862.9249170189723,
+        "maxMs": 862.9249170189723,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      }
+    }
+  },
+  "equivalence": {
+    "equivalence-prefix": {
+      "caseCount": 127,
+      "completeCaseCount": 127,
+      "candidateCount": 1253,
+      "incomplete": [],
+      "baselineDiagnosticBudgetSeconds": 2,
+      "currentDiagnosticBudgetSeconds": 2,
+      "public": {
+        "numericChanged": 592,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 1.8189894035458565e-12,
+        "equalWithinTolerance": true,
+        "exactValueEquality": false,
+        "mismatchIds": []
+      },
+      "private": {
+        "numericChanged": 334,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 9.094947017729282e-13,
+        "equalWithinTolerance": true,
+        "exactValueEquality": false,
+        "mismatchIds": []
+      },
+      "timeouts": {
+        "baseline": 0,
+        "current": 0
+      }
+    },
+    "equivalence-full": {
+      "caseCount": 87,
+      "completeCaseCount": 87,
+      "candidateCount": 876,
+      "incomplete": [],
+      "baselineDiagnosticBudgetSeconds": 2,
+      "currentDiagnosticBudgetSeconds": 2,
+      "public": {
+        "numericChanged": 243,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 1.1368683772161603e-13,
+        "equalWithinTolerance": true,
+        "exactValueEquality": false,
+        "mismatchIds": []
+      },
+      "private": {
+        "numericChanged": 150,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 1.1368683772161603e-13,
+        "equalWithinTolerance": true,
+        "exactValueEquality": false,
+        "mismatchIds": []
+      },
+      "timeouts": {
+        "baseline": 0,
+        "current": 0
+      }
+    },
+    "equivalence-timeout-reference-prefix": {
+      "caseCount": 2,
+      "completeCaseCount": 2,
+      "candidateCount": 7,
+      "incomplete": [],
+      "baselineDiagnosticBudgetSeconds": 120,
+      "currentDiagnosticBudgetSeconds": 2,
+      "public": {
+        "numericChanged": 0,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 0.0,
+        "equalWithinTolerance": true,
+        "exactValueEquality": true,
+        "mismatchIds": []
+      },
+      "private": {
+        "numericChanged": 3979,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 6.821210263296962e-13,
+        "equalWithinTolerance": true,
+        "exactValueEquality": false,
+        "mismatchIds": []
+      },
+      "timeouts": {
+        "baseline": 0,
+        "current": 0
+      }
+    },
+    "equivalence-timeout-reference-full": {
+      "caseCount": 2,
+      "completeCaseCount": 2,
+      "candidateCount": 7,
+      "incomplete": [],
+      "baselineDiagnosticBudgetSeconds": 120,
+      "currentDiagnosticBudgetSeconds": 2,
+      "public": {
+        "numericChanged": 0,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 0.0,
+        "equalWithinTolerance": true,
+        "exactValueEquality": true,
+        "mismatchIds": []
+      },
+      "private": {
+        "numericChanged": 3979,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 6.821210263296962e-13,
+        "equalWithinTolerance": true,
+        "exactValueEquality": false,
+        "mismatchIds": []
+      },
+      "timeouts": {
+        "baseline": 0,
+        "current": 0
+      }
+    }
+  },
+  "schemaVersion": 1,
+  "integration": {
+    "pr25": {
+      "head": "5aa927ba72b8eddd8be49a50bc7c253759146101",
+      "url": "https://github.com/Kenny-Xiang/Maj-Soul-PlusPlus/pull/25"
+    },
+    "pr26": {
+      "head": "cd3c22199713dc524d6377071d201a06919075cb",
+      "url": "https://github.com/Kenny-Xiang/Maj-Soul-PlusPlus/pull/26"
+    },
+    "description": "Both source snapshots include PR 25 and PR 26. The performance PR is based on PR 26; PR 25 is included in the local integration checkout."
+  },
+  "validation": {
+    "advisorWorkerBenchmarkPythonTests": 430,
+    "formattingLoggingPythonTests": 6,
+    "integrationNodeTests": 48,
+    "performanceBranchNodeTests": 45,
+    "nativeUITested": false,
+    "desktopAppReplaced": false
+  },
+  "currentPerCase": {
+    "ordinary-efficiency": {
+      "status": "ready",
+      "coldMs": 185.2495000057388,
+      "warmMs": [
+        208.037707983749,
+        274.28879198851064,
+        223.98858398082666
+      ]
+    },
+    "pon-yakuhai": {
+      "status": "ready",
+      "coldMs": 244.45349999587052,
+      "warmMs": [
+        269.7147079743445,
+        290.9590420022141,
+        335.5178330093622
+      ]
+    },
+    "log-11-serial-80": {
+      "status": "ready",
+      "coldMs": 123.22020801366307,
+      "warmMs": [
+        138.74408398987725,
+        159.93637501378544,
+        155.5567909963429
+      ]
+    },
+    "log-12-serial-87": {
+      "status": "ready",
+      "coldMs": 38.00387500086799,
+      "warmMs": [
+        36.349166999571025,
+        43.099791975691915,
+        39.95904099429026
+      ]
+    },
+    "log-13-serial-96": {
+      "status": "ready",
+      "coldMs": 65.71541601442732,
+      "warmMs": [
+        62.75491701671854,
+        67.32208401081152,
+        69.08724998356774
+      ]
+    },
+    "log-14-serial-103": {
+      "status": "ready",
+      "coldMs": 82.73158301017247,
+      "warmMs": [
+        99.46579198003747,
+        139.22587502747774,
+        107.94395802076906
+      ]
+    },
+    "log-15-serial-112": {
+      "status": "ready",
+      "coldMs": 82.04333300818689,
+      "warmMs": [
+        81.40204200753942,
+        85.39562500664033,
+        88.38549998472445
+      ]
+    },
+    "log-16-serial-118": {
+      "status": "ready",
+      "coldMs": 62.60854098945856,
+      "warmMs": [
+        77.17124998453073,
+        57.873915997333825,
+        58.96054199547507
+      ]
+    },
+    "log-17-serial-131": {
+      "status": "ready",
+      "coldMs": 303.2650829991326,
+      "warmMs": [
+        337.7664999861736,
+        375.0614169985056,
+        380.38212500396185
+      ]
+    },
+    "log-18-serial-138": {
+      "status": "ready",
+      "coldMs": 303.44604200217873,
+      "warmMs": [
+        315.8307920093648,
+        334.51370798866265,
+        313.2431670092046
+      ]
+    },
+    "log-19-serial-145": {
+      "status": "ready",
+      "coldMs": 289.6146669809241,
+      "warmMs": [
+        323.8592499983497,
+        349.004582996713,
+        352.5515419896692
+      ]
+    },
+    "log-20-serial-150": {
+      "status": "ready",
+      "coldMs": 224.91120800259523,
+      "warmMs": [
+        246.31716700969264,
+        305.3962080157362,
+        258.0238329828717
+      ]
+    },
+    "pon-red-choices": {
+      "status": "ready",
+      "coldMs": 634.785041998839,
+      "warmMs": [
+        685.110958002042,
+        742.3028329794761,
+        747.0119589997921
+      ]
+    },
+    "log-21-serial-157": {
+      "status": "ready",
+      "coldMs": 210.3305829805322,
+      "warmMs": [
+        204.38462498714216,
+        215.64412501174957,
+        219.19420798076317
+      ]
+    },
+    "log-22-serial-164": {
+      "status": "ready",
+      "coldMs": 210.86741701583378,
+      "warmMs": [
+        223.31995802232996,
+        230.7353329961188,
+        237.1495419938583
+      ]
+    },
+    "log-23-serial-169": {
+      "status": "ready",
+      "coldMs": 85.05354198860005,
+      "warmMs": [
+        103.77029201481491,
+        113.43875000602566,
+        120.2473749872297
+      ]
+    },
+    "log-24-serial-176": {
+      "status": "ready",
+      "coldMs": 98.86216701124795,
+      "warmMs": [
+        92.74979200563394,
+        96.19258402381092,
+        98.51962499669753
+      ]
+    },
+    "log-25-serial-183": {
+      "status": "ready",
+      "coldMs": 83.89887498924509,
+      "warmMs": [
+        81.00508400821127,
+        88.42087499215268,
+        84.76141697610728
+      ]
+    },
+    "log-26-serial-191": {
+      "status": "ready",
+      "coldMs": 143.5841659840662,
+      "warmMs": [
+        156.96920800837688,
+        167.3100829939358,
+        163.03225001320243
+      ]
+    },
+    "log-27-serial-211": {
+      "status": "ready",
+      "coldMs": 328.74649998848327,
+      "warmMs": [
+        409.4376249995548,
+        404.9970000050962,
+        419.7067080240231
+      ]
+    },
+    "log-28-serial-214": {
+      "status": "ready",
+      "coldMs": 279.17216601781547,
+      "warmMs": [
+        323.8699159992393,
+        348.66083299857564,
+        329.0845840238035
+      ]
+    },
+    "log-29-serial-221": {
+      "status": "ready",
+      "coldMs": 285.671249992447,
+      "warmMs": [
+        304.1644170007203,
+        303.56845899950713,
+        312.6800419995561
+      ]
+    },
+    "log-30-serial-228": {
+      "status": "ready",
+      "coldMs": 276.85295898118056,
+      "warmMs": [
+        447.06904102349654,
+        309.94408298283815,
+        312.560874997871
+      ]
+    },
+    "ankan": {
+      "status": "ready",
+      "coldMs": 209.8560419981368,
+      "warmMs": [
+        236.49991699494421,
+        261.6805419966113,
+        268.13229199615307
+      ]
+    },
+    "log-31-serial-235": {
+      "status": "ready",
+      "coldMs": 284.0149170078803,
+      "warmMs": [
+        241.6061669937335,
+        275.65770799992606,
+        283.54379200027324
+      ]
+    },
+    "log-32-serial-242": {
+      "status": "ready",
+      "coldMs": 248.86541700107045,
+      "warmMs": [
+        298.7122499907855,
+        283.12720797839575,
+        277.78983299504034
+      ]
+    },
+    "log-33-serial-249": {
+      "status": "ready",
+      "coldMs": 215.96633302397095,
+      "warmMs": [
+        242.16858300496824,
+        240.46308299875818,
+        251.93079200107604
+      ]
+    },
+    "log-34-serial-305": {
+      "status": "ready",
+      "coldMs": 289.52699998626485,
+      "warmMs": [
+        324.93929198244587,
+        330.2439169783611,
+        337.6999580068514
+      ]
+    },
+    "log-35-serial-308": {
+      "status": "ready",
+      "coldMs": 204.69291601330042,
+      "warmMs": [
+        227.0930410013534,
+        226.61720900214277,
+        239.16349999490194
+      ]
+    },
+    "log-36-serial-319": {
+      "status": "ready",
+      "coldMs": 222.68520802026615,
+      "warmMs": [
+        254.21670798095874,
+        252.1251250000205,
+        248.19608399411663
+      ]
+    },
+    "log-37-serial-323": {
+      "status": "ready",
+      "coldMs": 214.39554099924862,
+      "warmMs": [
+        245.10229198494926,
+        224.950583971804,
+        245.83233299199492
+      ]
+    },
+    "log-38-serial-330": {
+      "status": "ready",
+      "coldMs": 214.74920900072902,
+      "warmMs": [
+        241.61183298565447,
+        236.86070900293998,
+        235.47504100133665
+      ]
+    },
+    "log-39-serial-335": {
+      "status": "ready",
+      "coldMs": 168.0862920184154,
+      "warmMs": [
+        207.8474159934558,
+        192.77191700530238,
+        210.94900000025518
+      ]
+    },
+    "log-40-serial-341": {
+      "status": "ready",
+      "coldMs": 194.93329199030995,
+      "warmMs": [
+        236.44775000866503,
+        220.51833299337886,
+        223.0023329902906
+      ]
+    },
+    "daiminkan": {
+      "status": "ready",
+      "coldMs": 290.8499579934869,
+      "warmMs": [
+        284.38241698313504,
+        274.80754200951196,
+        283.28283299924806
+      ]
+    },
+    "shouminkan-red": {
+      "status": "ready",
+      "coldMs": 660.7884580153041,
+      "warmMs": [
+        616.2089999997988,
+        660.2845830202568,
+        665.6543750141282
+      ]
+    },
+    "sanma-kita": {
+      "status": "ready",
+      "coldMs": 249.58583401166834,
+      "warmMs": [
+        269.82629200210795,
+        310.1482079946436,
+        324.50725001399405
+      ]
+    },
+    "last-draw-after-pass": {
+      "status": "ready",
+      "coldMs": 5.4304169898387045,
+      "warmMs": [
+        6.890667020343244,
+        7.112958002835512,
+        8.895415987353772
+      ]
+    },
+    "sanma-last-draw-after-pass": {
+      "status": "ready",
+      "coldMs": 4.501999996136874,
+      "warmMs": [
+        4.092125018360093,
+        4.3872499954886734,
+        4.5816659985575825
+      ]
+    },
+    "exhausted-wall": {
+      "status": "ready",
+      "coldMs": 4.535250016488135,
+      "warmMs": [
+        4.049500013934448,
+        4.728041007183492,
+        3.753957978915423
+      ]
+    },
+    "chi-called-low-yakuhai": {
+      "status": "ready",
+      "coldMs": 195.70762498187833,
+      "warmMs": [
+        209.7844580130186,
+        236.96458400809206,
+        240.24708301294595
+      ]
+    },
+    "broad-one-shanten": {
+      "status": "ready",
+      "coldMs": 332.9026249994058,
+      "warmMs": [
+        383.7146669975482,
+        452.54695901530795,
+        368.97237499943003
+      ]
+    },
+    "one-shanten-followup-risk": {
+      "status": "ready",
+      "coldMs": 623.8882500038017,
+      "warmMs": [
+        724.9177909980062,
+        742.612709000241,
+        802.4921669857576
+      ]
+    },
+    "passed-current-discard": {
+      "status": "ready",
+      "coldMs": 506.5794159891084,
+      "warmMs": [
+        586.7618340125773,
+        634.6571670146659,
+        594.2000829963945
+      ]
+    },
+    "confirmed-riichi-forced-discard": {
+      "status": "ready",
+      "coldMs": 1.436541002476588,
+      "warmMs": [
+        1.088457996957004,
+        1.1516670056153089,
+        1.1884589912369847
+      ]
+    },
+    "confirmed-riichi-ankan-choice": {
+      "status": "ready",
+      "coldMs": 12.246624974068254,
+      "warmMs": [
+        14.356625004438683,
+        15.300291997846216,
+        14.93991698953323
+      ]
+    },
+    "confirmed-riichi-kita-choice": {
+      "status": "ready",
+      "coldMs": 9.121500013861805,
+      "warmMs": [
+        8.711833012057468,
+        8.644500019727275,
+        8.87141699786298
+      ]
+    },
+    "threat-early-closed": {
+      "status": "ready",
+      "coldMs": 312.7160420117434,
+      "warmMs": [
+        365.50608300603926,
+        364.21945798792876,
+        374.3406249850523
+      ]
+    },
+    "threat-early-riichi": {
+      "status": "ready",
+      "coldMs": 637.4849579879083,
+      "warmMs": [
+        618.6162089870777,
+        681.5718750003725,
+        653.0255419784226
+      ]
+    },
+    "threat-meld-count-0": {
+      "status": "ready",
+      "coldMs": 308.08904202422127,
+      "warmMs": [
+        265.8949170145206,
+        307.630707975477,
+        276.6518749995157
+      ]
+    },
+    "threat-meld-count-1": {
+      "status": "ready",
+      "coldMs": 315.6069169926923,
+      "warmMs": [
+        256.8965410173405,
+        298.25320799136534,
+        265.08700000704266
+      ]
+    },
+    "threat-meld-count-2": {
+      "status": "ready",
+      "coldMs": 319.5307079877239,
+      "warmMs": [
+        278.7884999997914,
+        273.5730000131298,
+        313.36487497901544
+      ]
+    },
+    "closed-tsumo-only-one-shanten": {
+      "status": "analysis",
+      "coldMs": 65.05316600669175,
+      "warmMs": [
+        68.74479202087969,
+        69.81245800852776,
+        97.95820800354704
+      ]
+    },
+    "threat-meld-count-3": {
+      "status": "ready",
+      "coldMs": 325.0596659781877,
+      "warmMs": [
+        266.3389160006773,
+        309.2755830148235,
+        320.6778750172816
+      ]
+    },
+    "threat-meld-count-4": {
+      "status": "ready",
+      "coldMs": 327.7200410084333,
+      "warmMs": [
+        288.43354200944304,
+        283.1307500018738,
+        281.4142919960432
+      ]
+    },
+    "threat-two-no-confirmed-yaku": {
+      "status": "ready",
+      "coldMs": 322.2914590151049,
+      "warmMs": [
+        264.2143749981187,
+        313.19845898542553,
+        296.9235420168843
+      ]
+    },
+    "threat-early-high-value-good-wait": {
+      "status": "ready",
+      "coldMs": 363.6566670029424,
+      "warmMs": [
+        407.1471670176834,
+        459.10687500145286,
+        411.86454199487343
+      ]
+    },
+    "threat-two-same-suit": {
+      "status": "ready",
+      "coldMs": 327.5140420009848,
+      "warmMs": [
+        288.61491702264175,
+        297.0693749957718,
+        303.66508301813155
+      ]
+    },
+    "threat-two-mixed-suit": {
+      "status": "ready",
+      "coldMs": 323.2103750051465,
+      "warmMs": [
+        284.14245799649507,
+        308.81466600112617,
+        300.8759590156842
+      ]
+    },
+    "threat-visible-dora": {
+      "status": "ready",
+      "coldMs": 315.0838329747785,
+      "warmMs": [
+        255.84837500355206,
+        302.63791701872833,
+        289.08625000622123
+      ]
+    },
+    "threat-visible-red": {
+      "status": "ready",
+      "coldMs": 306.8550839961972,
+      "warmMs": [
+        269.120707991533,
+        269.05566701316275,
+        315.79858300392516
+      ]
+    },
+    "threat-closed-ankan": {
+      "status": "ready",
+      "coldMs": 306.684832990868,
+      "warmMs": [
+        251.44249998265877,
+        285.19645900814794,
+        283.839290990727
+      ]
+    },
+    "threat-dealer-yakuhai": {
+      "status": "ready",
+      "coldMs": 319.15283302078024,
+      "warmMs": [
+        280.92870899126865,
+        279.0455420035869,
+        323.3658329991158
+      ]
+    },
+    "closed-tsumo-only-tenpai": {
+      "status": "ready",
+      "coldMs": 390.1897089963313,
+      "warmMs": [
+        406.9119170017075,
+        446.4427499915473,
+        443.5870419838466
+      ]
+    },
+    "threat-sanma-three-pon-kita": {
+      "status": "ready",
+      "coldMs": 226.6590830113273,
+      "warmMs": [
+        258.9874170080293,
+        301.0304589988664,
+        291.0340419912245
+      ]
+    },
+    "threat-two-open-opponents": {
+      "status": "ready",
+      "coldMs": 330.9588749834802,
+      "warmMs": [
+        274.3477920012083,
+        285.28158299741335,
+        329.8225420003291
+      ]
+    },
+    "threat-late-weak": {
+      "status": "ready",
+      "coldMs": 296.10320800566114,
+      "warmMs": [
+        267.41033399594016,
+        251.41525000799447,
+        258.580499998061
+      ]
+    },
+    "threat-late-high-value-good-wait": {
+      "status": "ready",
+      "coldMs": 323.9274999941699,
+      "warmMs": [
+        276.99349998147227,
+        286.8069999967702,
+        289.4918329839129
+      ]
+    },
+    "phase-no-own-draw": {
+      "status": "ready",
+      "coldMs": 4.42700000712648,
+      "warmMs": [
+        7.685958000365645,
+        8.652208023704588,
+        7.945290999487042
+      ]
+    },
+    "phase-one-own-draw": {
+      "status": "ready",
+      "coldMs": 264.76487499894574,
+      "warmMs": [
+        289.5821249985602,
+        337.8044170094654,
+        291.0793339833617
+      ]
+    },
+    "phase-two-own-draws": {
+      "status": "ready",
+      "coldMs": 294.96258302242495,
+      "warmMs": [
+        244.5376249961555,
+        269.66591700329445,
+        285.4023749823682
+      ]
+    },
+    "phase-early-quiet": {
+      "status": "ready",
+      "coldMs": 319.9372079980094,
+      "warmMs": [
+        366.41691700788215,
+        401.42937502241693,
+        404.609958990477
+      ]
+    },
+    "phase-early-riichi": {
+      "status": "ready",
+      "coldMs": 722.069541021483,
+      "warmMs": [
+        779.1940410097595,
+        801.543915993534,
+        804.0285409952048
+      ]
+    },
+    "phase-late-valuable-tenpai": {
+      "status": "ready",
+      "coldMs": 441.4315420144703,
+      "warmMs": [
+        494.61629198049195,
+        554.760625003837,
+        532.4678749893792
+      ]
+    },
+    "river-furiten": {
+      "status": "ready",
+      "coldMs": 385.1477080024779,
+      "warmMs": [
+        408.76845800084993,
+        465.47145798103884,
+        432.4022080108989
+      ]
+    },
+    "live-v8-147": {
+      "status": "ready",
+      "coldMs": 431.6805000125896,
+      "warmMs": [
+        492.0737500069663,
+        532.8839160210919,
+        514.8771250096615
+      ]
+    },
+    "live-v8-231": {
+      "status": "ready",
+      "coldMs": 298.4118749736808,
+      "warmMs": [
+        319.236458017258,
+        358.2778339914512,
+        377.50533301732503
+      ]
+    },
+    "live-v8-288": {
+      "status": "ready",
+      "coldMs": 307.03316698782146,
+      "warmMs": [
+        353.7101249967236,
+        387.2166250075679,
+        400.00341698760167
+      ]
+    },
+    "live-v8-436": {
+      "status": "ready",
+      "coldMs": 349.183666985482,
+      "warmMs": [
+        403.30470801563933,
+        433.3575839991681,
+        415.7761670066975
+      ]
+    },
+    "live-v8-984": {
+      "status": "ready",
+      "coldMs": 338.7861660157796,
+      "warmMs": [
+        369.6035419998225,
+        393.41704099206254,
+        416.86070899595506
+      ]
+    },
+    "logged-766-tie-two-shanten-green-dragon": {
+      "status": "ready",
+      "coldMs": 240.5167920223903,
+      "warmMs": [
+        262.4034170003142,
+        317.1222080127336,
+        273.4040829818696
+      ]
+    },
+    "logged-786-tie-one-shanten-green-dragon": {
+      "status": "ready",
+      "coldMs": 236.100083013298,
+      "warmMs": [
+        241.44137499388307,
+        258.8059169938788,
+        254.54037499730475
+      ]
+    },
+    "logged-798-tie-one-shanten-green-dragon-later": {
+      "status": "ready",
+      "coldMs": 275.7667499827221,
+      "warmMs": [
+        297.99500000081025,
+        306.1877499858383,
+        282.66208298737183
+      ]
+    },
+    "logged-906-retreat-two-shanten-future-risk": {
+      "status": "ready",
+      "coldMs": 177.65108298044652,
+      "warmMs": [
+        198.7305000075139,
+        185.88091601850465,
+        212.24041600362398
+      ]
+    },
+    "logged-1358-retreat-no-ron-yaku-dora": {
+      "status": "ready",
+      "coldMs": 236.36170901590958,
+      "warmMs": [
+        269.14987500640564,
+        310.9416249790229,
+        275.31487500527874
+      ]
+    },
+    "new-riichi-changed-waits": {
+      "status": "ready",
+      "coldMs": 241.66954099200666,
+      "warmMs": [
+        296.60987498937175,
+        291.6216660232749,
+        290.35374999511987
+      ]
+    },
+    "logged-1386-late-shared-safe-discard": {
+      "status": "ready",
+      "coldMs": 341.9762499979697,
+      "warmMs": [
+        359.8211659991648,
+        367.96895900624804,
+        393.16187499207444
+      ]
+    },
+    "logged-1398-late-riichi-safe-other-threat": {
+      "status": "ready",
+      "coldMs": 353.1232079840265,
+      "warmMs": [
+        382.79429098474793,
+        404.7080839809496,
+        405.44637499260716
+      ]
+    },
+    "logged-1410-late-no-safe-tile-push-fold": {
+      "status": "ready",
+      "coldMs": 326.15129102487117,
+      "warmMs": [
+        337.2217919968534,
+        358.8922079943586,
+        360.5422500113491
+      ]
+    },
+    "route-1329-uncapped-early-three-shanten": {
+      "status": "ready",
+      "coldMs": 246.0401670250576,
+      "warmMs": [
+        269.40141699742526,
+        293.09291701065376,
+        292.3357080144342
+      ]
+    },
+    "route-297-same-shanten-shape-improvement": {
+      "status": "ready",
+      "coldMs": 273.7664589949418,
+      "warmMs": [
+        295.7658340164926,
+        309.5103749947157,
+        354.32637500343844
+      ]
+    },
+    "route-561-closed-retreat-loses-progress": {
+      "status": "ready",
+      "coldMs": 191.60491600632668,
+      "warmMs": [
+        216.50262500043027,
+        236.82525000185706,
+        240.29200000222772
+      ]
+    },
+    "route-640-open-no-yaku-depth-boundary": {
+      "status": "ready",
+      "coldMs": 109.08995801582932,
+      "warmMs": [
+        123.52566598565318,
+        132.51699999091215,
+        129.65424999129027
+      ]
+    },
+    "route-590-open-yakuhai-counterexample": {
+      "status": "ready",
+      "coldMs": 190.57245799922384,
+      "warmMs": [
+        179.67920898809098,
+        190.3694169886876,
+        212.78574998723343
+      ]
+    },
+    "route-572-first-pon-yaku-route": {
+      "status": "ready",
+      "coldMs": 250.1627090096008,
+      "warmMs": [
+        250.4661249986384,
+        291.03654201026075,
+        266.5352080075536
+      ]
+    },
+    "route-658-second-pon-toitoi-route": {
+      "status": "ready",
+      "coldMs": 61.89854198601097,
+      "warmMs": [
+        53.98429199703969,
+        57.66045901691541,
+        55.410875007510185
+      ]
+    },
+    "confirmed-riichi-furiten": {
+      "status": "ready",
+      "coldMs": 1.4513749920297414,
+      "warmMs": [
+        2.6077500078827143,
+        3.014665999216959,
+        3.2961250108201057
+      ]
+    },
+    "route-659-second-pon-followup-route": {
+      "status": "ready",
+      "coldMs": 41.33270800230093,
+      "warmMs": [
+        50.57741698692553,
+        38.96799997892231,
+        34.25200001220219
+      ]
+    },
+    "route-663-confirmed-toitoi-pon": {
+      "status": "ready",
+      "coldMs": 3.0590839742217213,
+      "warmMs": [
+        4.174040979705751,
+        2.7015000232495368,
+        2.5442079931963235
+      ]
+    },
+    "route-664-confirmed-toitoi-followup": {
+      "status": "ready",
+      "coldMs": 2.284707996295765,
+      "warmMs": [
+        1.6057920001912862,
+        1.5266250120475888,
+        1.6721250140108168
+      ]
+    },
+    "route-1007-early-riichi-genbutsu-counterexample": {
+      "status": "ready",
+      "coldMs": 453.08425000985153,
+      "warmMs": [
+        524.8323749983683,
+        546.677041973453,
+        532.119709008839
+      ]
+    },
+    "live-timeout-serial-578": {
+      "status": "ready",
+      "coldMs": 640.0055830017664,
+      "warmMs": [
+        669.9310420081019,
+        683.3385000063572,
+        703.2069159904495
+      ]
+    },
+    "live-timeout-serial-1017": {
+      "status": "ready",
+      "coldMs": 858.749583014287,
+      "warmMs": [
+        910.7560419943184,
+        970.2578329888638,
+        982.4256249994505
+      ]
+    },
+    "rank-opponent-riichi-defense-third-late": {
+      "status": "ready",
+      "coldMs": 654.1925420169719,
+      "warmMs": [
+        744.5932080154307,
+        816.1119589931332,
+        818.5161659785081
+      ]
+    },
+    "rank-opponent-riichi-defense-last-late": {
+      "status": "ready",
+      "coldMs": 658.4576250170358,
+      "warmMs": [
+        671.9898339943029,
+        709.7874169994611,
+        712.0570839906577
+      ]
+    },
+    "rank-opponent-riichi-defense-third-early": {
+      "status": "ready",
+      "coldMs": 661.6166669991799,
+      "warmMs": [
+        678.924250009004,
+        730.6068340258207,
+        729.6853750012815
+      ]
+    },
+    "rank-opponent-riichi-defense-saint-third-late": {
+      "status": "ready",
+      "coldMs": 654.2672500072513,
+      "warmMs": [
+        678.1204160070047,
+        739.3402919988148,
+        717.4431249732152
+      ]
+    },
+    "opponent-riichi-defense": {
+      "status": "ready",
+      "coldMs": 655.6274999747984,
+      "warmMs": [
+        748.701832984807,
+        814.9439589760732,
+        831.5494999988005
+      ]
+    },
+    "rank-one-shanten-followup-risk-third-late": {
+      "status": "ready",
+      "coldMs": 626.8599170143716,
+      "warmMs": [
+        722.3618749994785,
+        825.3129590011667,
+        784.4035830057692
+      ]
+    },
+    "rank-one-shanten-followup-risk-last-late": {
+      "status": "ready",
+      "coldMs": 627.7262920048088,
+      "warmMs": [
+        603.7249169894494,
+        605.8892919973005,
+        609.360165981343
+      ]
+    },
+    "rank-one-shanten-followup-risk-third-early": {
+      "status": "ready",
+      "coldMs": 624.2605000152253,
+      "warmMs": [
+        593.7527909991331,
+        621.4488749974407,
+        645.1556250103749
+      ]
+    },
+    "rank-one-shanten-followup-risk-saint-third-late": {
+      "status": "ready",
+      "coldMs": 628.4885829954874,
+      "warmMs": [
+        567.061209003441,
+        616.8535839824472,
+        639.8667090106755
+      ]
+    },
+    "rank-closed-tsumo-only-tenpai-third-late": {
+      "status": "ready",
+      "coldMs": 400.17075001378544,
+      "warmMs": [
+        439.9830829934217,
+        471.9188330054749,
+        477.96441600075923
+      ]
+    },
+    "rank-closed-tsumo-only-tenpai-last-late": {
+      "status": "ready",
+      "coldMs": 394.45954200346023,
+      "warmMs": [
+        288.43787498772144,
+        304.6516249887645,
+        324.9018329952378
+      ]
+    },
+    "rank-closed-tsumo-only-tenpai-third-early": {
+      "status": "ready",
+      "coldMs": 390.4860830225516,
+      "warmMs": [
+        289.4532919744961,
+        310.58208298054524,
+        312.3688749910798
+      ]
+    },
+    "rank-closed-tsumo-only-tenpai-saint-third-late": {
+      "status": "ready",
+      "coldMs": 393.661832989892,
+      "warmMs": [
+        289.70920798019506,
+        316.1834169877693,
+        318.8942919950932
+      ]
+    },
+    "rank-ordinary-efficiency": {
+      "status": "ready",
+      "coldMs": 188.83425000240095,
+      "warmMs": [
+        220.3409579815343,
+        227.55612499895506,
+        231.77470799419098
+      ]
+    },
+    "rank-sanma-kita": {
+      "status": "ready",
+      "coldMs": 252.05304101109505,
+      "warmMs": [
+        277.09770799265243,
+        289.24866701709107,
+        285.66183301154524
+      ]
+    },
+    "chi-no-yaku": {
+      "status": "ready",
+      "coldMs": 9.268875000998378,
+      "warmMs": [
+        11.937915987800807,
+        12.854708009399474,
+        13.094167021336034
+      ]
+    },
+    "log-1-serial-12": {
+      "status": "ready",
+      "coldMs": 425.32770801335573,
+      "warmMs": [
+        489.8314999882132,
+        501.40633300179616,
+        497.03020800370723
+      ]
+    },
+    "log-2-serial-15": {
+      "status": "ready",
+      "coldMs": 233.96733400295489,
+      "warmMs": [
+        221.36008401867002,
+        260.5351249803789,
+        266.4302079938352
+      ]
+    },
+    "log-3-serial-24": {
+      "status": "ready",
+      "coldMs": 236.5602089848835,
+      "warmMs": [
+        227.99041602411307,
+        238.24729199986905,
+        247.7016249904409
+      ]
+    },
+    "log-4-serial-31": {
+      "status": "ready",
+      "coldMs": 258.33783400594257,
+      "warmMs": [
+        258.88087501516566,
+        275.50904199597426,
+        277.2509169881232
+      ]
+    },
+    "log-5-serial-39": {
+      "status": "ready",
+      "coldMs": 253.5857499751728,
+      "warmMs": [
+        223.98841599351726,
+        233.47854099120013,
+        232.26087499642745
+      ]
+    },
+    "log-6-serial-44": {
+      "status": "ready",
+      "coldMs": 239.0819169813767,
+      "warmMs": [
+        260.6048329907935,
+        273.0963750218507,
+        280.3267919807695
+      ]
+    },
+    "log-7-serial-50": {
+      "status": "ready",
+      "coldMs": 238.3056250109803,
+      "warmMs": [
+        248.15654099802487,
+        239.74616700434126,
+        231.76675001741387
+      ]
+    },
+    "log-8-serial-57": {
+      "status": "ready",
+      "coldMs": 115.52770802518353,
+      "warmMs": [
+        106.45908300648443,
+        129.62983301258646,
+        138.86366700171493
+      ]
+    },
+    "log-9-serial-67": {
+      "status": "ready",
+      "coldMs": 79.06741602346301,
+      "warmMs": [
+        78.78995800274424,
+        85.05591601715423,
+        88.79070897819474
+      ]
+    },
+    "log-10-serial-74": {
+      "status": "ready",
+      "coldMs": 91.984250000678,
+      "warmMs": [
+        109.5054580073338,
+        117.31129200779833,
+        122.03387499903329
+      ]
+    }
+  }
+}
