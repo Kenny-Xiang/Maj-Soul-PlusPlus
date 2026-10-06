@@ -42,6 +42,7 @@ test('the initial match-start notification waits for the first round without cre
   assert.equal(state.phase,'connected'); assert.equal(state.lastStep,0);
   assert.equal(state.baseline,null); assert.equal(state.canAct,false);
   assert.equal(state.handComplete,false); assert.equal(state.historyComplete,false);
+  assert.equal(state.recovery,null, 'initial loading is not reconnect recovery');
   assert.equal(core.apply(state,start),false, 'a duplicate start must not restart initialization');
   core.apply(state,{name:'ActionNewRound',step:1,selfSeat:0,
     hand:['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','7z','1z'],
@@ -565,6 +566,7 @@ test('restored replay resumes decisions only after the next continuous live acti
   assert.equal(state.handComplete,true);
   assert.equal(state.historyComplete,false);
   assert.equal(state.canAct,false);
+  assert.deepEqual(state.recovery,{status:'waiting',reason:'live'});
   assert.equal(core.apply(state,previous),false);
   assert.equal(core.apply(state,opening),false);
   assert.equal(state.historyComplete,false);
@@ -573,6 +575,7 @@ test('restored replay resumes decisions only after the next continuous live acti
   assert.equal(state.canAct,true);
   assert.equal(state.canDiscard,true);
   assert.equal(state.warning,'');
+  assert.equal(state.recovery,null);
   const reference = core.emptyState();
   for (const event of [opening,previous,next]) core.apply(reference,event);
   assert.deepEqual({...state,baseline:reference.baseline},reference);
@@ -580,7 +583,7 @@ test('restored replay resumes decisions only after the next continuous live acti
 
 test('authenticated restore retains rank and inferred seat without reopening replayed operations', () => {
   const auth = core.authGame(authResponse(),4000000007), state = core.emptyState();
-  Object.assign(state,{match:auth.match,selfSeat:auth.selfSeat});
+  Object.assign(state,{match:auth.match,selfSeat:auth.selfSeat,gameId:'game-1'});
   const opening = {name:'ActionNewRound',step:0,
     hand:['1p','1p','2p','3p','4p','5p','6p','7p','8p','9p','1s','1s','1z'],
     scores:Array(4).fill(25000),doras:['1m'],left:69,chang:1,ju:3,ben:0};
@@ -592,6 +595,7 @@ test('authenticated restore retains rank and inferred seat without reopening rep
   assert.equal(state.round.isFinal,true);
   assert.equal(state.round.isExtension,false);
   assert.equal(state.handComplete,true);
+  assert.equal(state.gameId,'game-1');
   assert.equal(state.historyComplete,false);
   assert.equal(state.canAct,false);
   assert.deepEqual(state.operations,[]);
@@ -651,6 +655,7 @@ test('invalid restored replay or live continuation never enables decisions', asy
       assert.equal(state.historyComplete,false);
       assert.equal(state.canAct,false);
       assert.equal(state.canDiscard,false);
+      assert.equal(state.recovery.status,'failed');
     });
   }
   const snapshot = core.emptyState();
@@ -659,6 +664,54 @@ test('invalid restored replay or live continuation never enables decisions', asy
   core.apply(snapshot,next);
   assert.equal(snapshot.historyComplete,false);
   assert.equal(snapshot.canAct,false);
+  assert.deepEqual(snapshot.recovery,{status:'waiting',reason:'snapshot'});
+});
+
+test('complete terminal recovery permits round settlement without opening a decision', () => {
+  for (const name of ['ActionHule','ActionNoTile','ActionLiuJu']) {
+    const state = Object.assign(core.emptyState(),{gameId:'game-1',recovery:{status:'waiting',reason:'restore'}});
+    const opening = {name:'ActionNewRound',step:0,selfSeat:0,hand:['1p'],
+      scores:[25000,25000,25000,25000],doras:[],chang:0,ju:0,ben:0};
+    core.applyRestore(state,{actions:[opening,{name,step:1,matchEnd:false}],step:2});
+    assert.equal(state.phase,'between_rounds');
+    assert.equal(state.recovery,null);
+    assert.equal(state.gameId,'game-1');
+    assert.equal(state.canAct,false); assert.equal(state.operationTiming,null);
+    core.applyRestore(state,{actions:[opening,{name,step:3,matchEnd:false}],step:4});
+    assert.equal(state.recovery.status,'failed', 'terminal actions cannot repair a replay gap');
+  }
+});
+
+test('a continuous live action cannot bypass a newer in-flight restore', () => {
+  const state = core.emptyState();
+  core.applyRestore(state,{actions:[{name:'ActionNewRound',step:0,selfSeat:0,hand:['1p'],
+    scores:Array(4).fill(25000),chang:0,ju:0,ben:0}],step:1});
+  state.recovery = {status:'waiting',reason:'restore'};
+  core.apply(state,{name:'ActionDealTile',step:1,seat:0,tile:'2p',selfSeat:0,
+    operations:[1],operationDetails:[{type:1,combination:[]}],
+    operationTiming:{timeFixed:5000,timeAdd:20000,receivedAt:9000}});
+  assert.equal(state.historyComplete,false); assert.equal(state.canAct,false);
+  assert.deepEqual(state.recovery,{status:'waiting',reason:'restore'});
+});
+
+test('snapshot recovery waits for a new round and empty recovery retains its waiting state', () => {
+  const state = Object.assign(core.emptyState(),{gameId:'game-1',recovery:{status:'waiting',reason:'restore'}});
+  core.applyRestore(state,{actions:[],step:0});
+  assert.deepEqual(state.recovery,{status:'waiting',reason:'restore'});
+  core.applyRestore(state,{actions:[],step:5,snapshot:{selfSeat:0,hand:['1p'],doras:[],left:40,
+    chang:0,ju:0,ben:0,players:Array.from({length:4},()=>({score:25000,discards:[],melds:[]}))}});
+  assert.deepEqual(state.recovery,{status:'waiting',reason:'snapshot'});
+  assert.equal(state.gameId,'game-1');
+  core.apply(state,{name:'ActionDealTile',step:6,seat:0,tile:'2p',selfSeat:0,
+    operations:[1],operationDetails:[{type:1,combination:[]}],
+    operationTiming:{timeFixed:5000,timeAdd:20000,receivedAt:8000}});
+  assert.equal(state.canAct,false);
+  assert.deepEqual(state.recovery,{status:'waiting',reason:'snapshot'});
+  core.apply(state,{name:'ActionNewRound',step:0,selfSeat:0,hand:['2p'],scores:Array(4).fill(25000),
+    chang:0,ju:1,ben:0,operations:[1],operationDetails:[{type:1,combination:[]}],
+    operationTiming:{timeFixed:5000,timeAdd:20000,receivedAt:9000}});
+  assert.equal(state.recovery,null); assert.equal(state.canAct,true);
+  assert.equal(state.operationTiming.receivedAt,9000); assert.equal(state.gameId,'game-1');
 });
 
 test('reconnected socket restores advice with a fresh key after continuous live actions', async () => {
@@ -676,7 +729,7 @@ test('reconnected socket restores advice with a fresh key after continuous live 
     await new Promise(setImmediate);
   };
   const authenticate = async (socket,id) => {
-    socket.send(rpcFrame(2,id,'.lq.FastTest.authGame',num(1,11)));
+    socket.send(rpcFrame(2,id,'.lq.FastTest.authGame',[...num(1,11),...str(3,'private-reconnect-game')]));
     await feed(socket,rpcFrame(3,id,'',authResponse({modeId:24,mode:12,seats:[11,22,4000000007]})));
     assert.equal(window.__mjMonitor.getSnapshot().state.match.modeId,24);
   };
@@ -686,10 +739,14 @@ test('reconnected socket restores advice with a fresh key after continuous live 
   await authenticate(old,40);
   await feed(old,actionFrame('ActionNewRound',0,opening));
   assert.equal(posts.at(-1).state.canAct,true);
+  assert.equal(posts.at(-1).state.recovery,null);
+  const originalGameId = posts.at(-1).state.gameId;
+  assert.equal(typeof originalGameId,'string');
   const originalKey = keys.at(-1);
   old.dispatchEvent(new Event('close'));
   assert.equal(window.__mjMonitor.getSnapshot().state.canAct,false);
   assert.equal(window.__mjMonitor.getSnapshot().state.match,null);
+  assert.equal(posts.at(-1).recovery.status,'waiting');
   const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-new');
   assert.equal(window.__mjMonitor.getSnapshot().state.match,null);
   await authenticate(game,41);
@@ -701,6 +758,9 @@ test('reconnected socket restores advice with a fresh key after continuous live 
   assert.equal(posts.at(-1).state.handComplete,true);
   assert.equal(posts.at(-1).state.historyComplete,false);
   assert.equal(posts.at(-1).state.canAct,false);
+  assert.deepEqual(posts.at(-1).state.recovery,{status:'waiting',reason:'live'});
+  assert.equal(posts.at(-1).state.gameId,originalGameId);
+  assert.equal(posts.at(-1).state.operationTiming,null);
   assert.equal(posts.at(-1).state.match.modeId,24);
   assert.equal(posts.at(-1).state.selfSeat,0);
   assert.equal(posts.at(-1).state.round.isFinal,false);
@@ -716,12 +776,59 @@ test('reconnected socket restores advice with a fresh key after continuous live 
   assert.equal(latest.state.canAct,true);
   assert.equal(latest.state.canDiscard,true);
   assert.equal(latest.state.warning,'');
+  assert.equal(latest.state.recovery,null);
   assert.equal(latest.state.match.modeId,24);
   assert.equal(keys.at(-1),`${latest.session}:${latest.serial}`);
   assert.notEqual(keys.at(-1),originalKey);
   assert.notEqual(keys.at(-1),restoredKey);
   assert.equal(window.__mjMonitor.getSnapshot().errors,0);
+  assert.doesNotMatch(JSON.stringify(posts),/private-reconnect-game/);
   window.__mjMonitor.uninstall();
+});
+
+test('an authenticated lobby with no active game clears only pending recovery and publishes a waiting reset', async () => {
+  const posts = [];
+  class Socket extends EventTarget {
+    constructor(url) {super(); this.url=url; this.readyState=1;}
+    send() {}
+  }
+  const window = {WebSocket:Socket,webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,performance,
+    Uint8Array,ArrayBuffer,Blob,URL,setInterval:fn=>fn,clearInterval(){},console:{log(){}}});
+  const monitor = window.__mjMonitor;
+  const initialPosts = posts.length;
+  monitor.onLobbyRecovery();
+  assert.equal(posts.length,initialPosts, 'ordinary initial loading is untouched');
+  const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway');
+  const feed = async frame => {
+    game.dispatchEvent(new MessageEvent('message',{data:frame.buffer}));
+    await new Promise(setImmediate);
+  };
+  await feed(actionFrame('ActionNewRound',0,[...str(4,'1p'),...Array(4).fill(0).flatMap(()=>num(6,25000)),
+    ...bytes(7,[...num(1,0),...bytes(2,num(1,1))])]));
+  const playing = JSON.stringify(monitor.getSnapshot()), playingPosts = posts.length;
+  monitor.onLobbyRecovery();
+  assert.equal(JSON.stringify(monitor.getSnapshot()),playing);
+  assert.equal(posts.length,playingPosts, 'an active game cannot be reset by this callback');
+  game.dispatchEvent(new Event('close'));
+  assert.equal(monitor.getSnapshot().state.recovery.status,'waiting');
+  monitor.onLobbyRecovery();
+  const reset = monitor.getSnapshot();
+  assert.deepEqual(JSON.parse(JSON.stringify(reset.state)),{...core.emptyState(),phase:'waiting',warning:''});
+  assert.equal(reset.turns,0); assert.equal(reset.received,0); assert.equal(reset.errors,0);
+  assert.equal(posts.at(-1).phase,'waiting'); assert.equal(posts.at(-1).reset,true);
+  assert.equal(posts.at(-1).recovery,null);
+  const afterReset = posts.length;
+  monitor.onLobbyRecovery(); assert.equal(posts.length,afterReset, 'repeated lobby evidence cannot reset twice');
+  const next = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-next');
+  next.dispatchEvent(new MessageEvent('message',{data:new Uint8Array([1,255]).buffer}));
+  await new Promise(setImmediate);
+  assert.equal(monitor.getSnapshot().state.recovery.status,'failed');
+  const failed = JSON.stringify(monitor.getSnapshot()), failedPosts = posts.length;
+  monitor.onLobbyRecovery();
+  assert.equal(JSON.stringify(monitor.getSnapshot()),failed);
+  assert.equal(posts.length,failedPosts, 'real parse errors must not be hidden by lobby recovery');
+  monitor.uninstall();
 });
 
 test('replaced sockets cannot apply delayed frames or errors to the active connection', async t => {
@@ -854,9 +961,9 @@ test('browser correlates authGame separately from restore and clears stale rank 
     socket.dispatchEvent(new MessageEvent('message',{data:data.buffer}));
     await new Promise(setImmediate);
   };
-  const authenticate = (socket,id) => {
+  const authenticate = (socket,id,uuid='private-game-uuid') => {
     const request = rpcFrame(2,id,'.lq.FastTest.authGame',[...num(1,4000000007),
-      ...str(2,'private-token'),...str(3,'private-game-uuid')]);
+      ...str(2,'private-token'),...str(3,uuid)]);
     assert.equal(socket.send(request),'original'); assert.equal(sent.at(-1),request);
   };
   const state = () => window.__mjMonitor.getSnapshot().state;
@@ -865,6 +972,9 @@ test('browser correlates authGame separately from restore and clears stale rank 
   await receive(game,reply(41));
   assert.equal(state().match,null);
   await receive(game,reply(42));
+  const originalGameId = state().gameId;
+  assert.equal(originalGameId,'game-1');
+  assert.equal(state().recovery,null);
   assert.equal(state().match.levelId,10403); assert.equal(state().selfSeat,2);
   assert.equal(state().lastStep,null); assert.equal(state().phase,'connected');
   assert.equal(posts.filter(p=>p.kind==='turn').length,0);
@@ -874,10 +984,21 @@ test('browser correlates authGame separately from restore and clears stale rank 
   assert.equal(state().round.isFinal,true); assert.equal(state().match.modeId,12);
   assert.equal(state().selfSeat,2);
   game.send(rpcFrame(2,43,'.lq.FastTest.syncGame',[]));
+  assert.deepEqual(JSON.parse(JSON.stringify(state().recovery)),{status:'waiting',reason:'restore'});
+  assert.equal(state().canAct,false); assert.equal(state().lastAction,null);
+  assert.equal(posts.at(-1).recovery.status,'waiting', 'same-socket sync closes the old window before its response');
+  await receive(game,actionFrame('ActionNewRound',1,[...num(1,1),...num(2,3),...num(3,1),...str(4,'1p'),
+    ...Array(4).fill(0).flatMap(()=>num(6,25000)),...bytes(7,[...num(1,2),...bytes(2,num(1,1))])]));
+  assert.equal(state().canAct,false, 'a queued new round cannot reopen a window while sync is in flight');
+  assert.equal(state().operationTiming,null);
+  assert.equal(state().recovery.reason,'restore');
   await receive(game,rpcFrame(3,43,'',[...num(3,1)]));
   assert.equal(state().match.modeId,12); assert.equal(state().canAct,false);
   // A second game authenticating on the same socket invalidates the previous game.
   authenticate(game,44);
+  assert.equal(state().gameId,null, 'identity is bound only by a successful authentication');
+  assert.equal(state().recovery.reason,'authentication');
+  assert.equal(posts.at(-1).recovery.reason,'authentication');
   assert.equal(state().match,null); assert.equal(state().round,null);
   await receive(game,rpcFrame(3,44,'',authResponse({category:1})));
   assert.equal(state().match,null);
@@ -888,6 +1009,7 @@ test('browser correlates authGame separately from restore and clears stale rank 
   authenticate(game,46); authenticate(game,47);
   await receive(game,reply(46)); assert.equal(state().match,null);
   await receive(game,reply(47)); assert.equal(state().match.modeId,12);
+  assert.equal(state().gameId,originalGameId);
   // A newly opened connection clears the old match before receiving any actions.
   const previousInvalidations = invalidations;
   const next = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-next');
@@ -911,9 +1033,10 @@ test('browser correlates authGame separately from restore and clears stale rank 
   authenticate(next,52); await receive(next,reply(52));
   next.dispatchEvent(new Event('close')); assert.equal(state().match,null);
   const final = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-final');
-  authenticate(final,53); await receive(final,reply(53));
+  authenticate(final,53,'private-new-game'); await receive(final,reply(53));
+  assert.notEqual(state().gameId,originalGameId, 'a different authenticated game has a different opaque identity');
   window.__mjMonitor.stop(); assert.equal(state().match,null);
-  assert.doesNotMatch(JSON.stringify(posts),/4000000007|private-token|private-game-uuid|private-nickname|accountId/);
+  assert.doesNotMatch(JSON.stringify(posts),/4000000007|private-token|private-game-uuid|private-new-game|private-nickname|accountId/);
 });
 
 test('sending a decision clears stale advice immediately and preserves the original RPC unchanged', async () => {

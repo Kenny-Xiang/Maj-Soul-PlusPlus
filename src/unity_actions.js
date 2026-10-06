@@ -9,14 +9,18 @@
   let pending = null, submitted = null;
   const now = () => performance.now();
   const check = (ok, message) => {if (!ok) throw new Error(message);};
+  const reconnectError = message => Object.assign(new Error(message), {recoverable:true});
   const validTile = tile => typeof tile === 'string' && /^(?:[0-9][mps]|[1-7]z)$/.test(tile);
   const family = tile => tile.replace(/^0/, '5');
   const sameTiles = (a, b) => Array.isArray(a) && Array.isArray(b) &&
     JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
-  const fingerprint = state => JSON.stringify(['phase','selfSeat','playerCount','round','match',
+  const fingerprint = state => JSON.stringify(['phase','gameId','selfSeat','playerCount','round','match',
     'lastStep','lastAction','lastDraw','hand','handComplete','historyComplete','canAct','canDiscard',
     'operations','operationDetails','operationTiming','forbiddenDiscards','riichi','riichiPending',
     'melds','rivers','north'].map(key => state[key]));
+  // Recovery replaces timers and the connection, but does not create a new turn.
+  const submissionKey = state => JSON.stringify([state.gameId ?? null, state.selfSeat, state.playerCount,
+    state.round?.chang, state.round?.ju, state.round?.ben, state.lastStep]);
   const liveState = () => window.__mjMonitor?.getSnapshot()?.state;
   function offered(state) {
     const list = state.operationDetails;
@@ -37,12 +41,16 @@
     const available = !!(transport && typeof transport.request === 'function' &&
       typeof window.__mjProtocol?.encode === 'function' && state);
     const inGame = state?.phase === 'playing';
-    let remainingMs = null, reason = '', blocked = false;
+    let remainingMs = null, reason = '', blocked = false, recoverable = false;
     try {
       check(available, 'Unity 操作接口尚未就绪');
+      recoverable = true;
       check(transport.snapshot().gameConnected, '牌局连接尚未认证或已断开');
-      check(inGame, '等待正在进行的对局');
+      check(state.recovery?.status !== 'waiting', '等待服务器恢复完整牌局状态');
       check(!pending, '等待上次操作的回应和权威动作');
+      check(submitted !== submissionKey(state), '本次操作已经提交，等待权威状态推进，不能重复发送');
+      recoverable = false;
+      check(inGame, '等待正在进行的对局');
       blocked = true;
       check(state.match?.category === 2 && state.match.playerCount === state.playerCount &&
         [3,4].includes(state.playerCount), '自动操作仅支持已确认的普通段位场');
@@ -58,15 +66,15 @@
       remainingMs = Math.max(0, timing.timeFixed + timing.timeAdd - (now() - timing.receivedAt));
       check(remainingMs > 0, '本次操作已经超时');
       check(!expected || fingerprint(expected) === fingerprint(state), '建议所依据的牌局状态已过期');
-      check(submitted !== fingerprint(state), '本次操作已经提交，不能重复发送');
       blocked = false;
     } catch (error) {reason = error.message;}
-    return {available, inGame, canAct:!reason, blocked, pending:!!pending, remainingMs, clientStep:state?.lastStep ?? null, reason};
+    return {available, inGame, canAct:!reason, blocked, recoverable, pending:!!pending,
+      remainingMs, clientStep:state?.lastStep ?? null, reason};
   }
   function execute(advice, expected) {
     check(expected && typeof expected === 'object', '缺少建议所依据的牌局状态');
     const current = snapshot(expected);
-    check(current.canAct, current.reason);
+    if (!current.canAct) throw Object.assign(new Error(current.reason), {recoverable:current.recoverable});
     const state = liveState(), list = offered(state);
     check(advice?.status === 'ready' || advice?.status === 'win', '当前建议不可执行');
     const choice = advice.status === 'win' ? {action:advice.action} : advice.best;
@@ -146,12 +154,12 @@
       } else check(!reaction, '当前不是自摸窗口');
     }
     put('timeuse', 6, Math.floor((now() - state.operationTiming.receivedAt) / 1000));
-    const bytes = window.__mjProtocol.encode(entries), key = fingerprint(state);
+    const bytes = window.__mjProtocol.encode(entries), key = submissionKey(state);
     check(snapshot(expected).canAct, '提交前牌局状态发生变化');
     submitted = key;
     return new Promise((resolve, reject) => {
       const request = pending = {state, choice:JSON.parse(JSON.stringify(choice)), action, method, ack:false, echo:false, finish};
-      const timer = setTimeout(() => finish(new Error('操作回应或权威动作确认超时；已停止，请核对牌局')),
+      const timer = setTimeout(() => finish(reconnectError('操作回应或权威动作确认超时；等待权威状态推进，暂不重复操作')),
         Math.min(60000, Math.max(10000, current.remainingMs + 5000)));
       function finish(error) {
         if (pending !== request) return;
@@ -169,9 +177,14 @@
     });
   }
   function onEvent(packet) {
+    if (packet.phase === 'ended' || packet.state?.phase === 'ended') submitted = null;
     const request = pending;
     if (!request) return;
-    if (packet.kind === 'error' || ['disconnected','stopped'].includes(packet.phase)) {
+    if (packet.phase === 'disconnected' || packet.recovery?.status === 'waiting' ||
+        packet.state?.recovery?.status === 'waiting') {
+      request.finish(reconnectError('连接正在恢复，操作结果未确认，等待权威状态推进')); return;
+    }
+    if (packet.kind === 'error' || packet.phase === 'stopped') {
       request.finish(new Error('连接或牌局解析异常，操作结果未确认')); return;
     }
     if (packet.kind !== 'turn' || request.echo) return;

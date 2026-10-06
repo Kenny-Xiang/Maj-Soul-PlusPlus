@@ -6,6 +6,7 @@
   let lastStatus = '';
   let lastLogState = '';
   let clientLoadingSince = null, initialRoundSince = null;
+  let recovery = null;
   let pace = 1, observed = null, threatVersion = 0, handledThreat = 0, continuation = null, lastWindow = null;
   const now = () => performance.now();
   // Initial pacing parameters, not a fit to human play. Sample once per window.
@@ -140,6 +141,13 @@
   }
   function onEvent(event) {
     if (stopped || !['turn', 'status', 'error'].includes(event.kind)) return;
+    const nextRecovery = event.kind === 'turn' ? event.state.recovery : event.recovery;
+    if (nextRecovery !== undefined) recovery = nextRecovery;
+    else if (event.phase === 'disconnected') recovery = {status:'waiting', reason:'connection'};
+    if (event.reset) recovery = null;
+    if (recovery?.status === 'waiting') {
+      submitted = null; continuation = lastWindow = null; initialRoundSince = null;
+    }
     const previous = lastWindow;
     current = null; pending = null;
     if (event.reset) {
@@ -159,15 +167,18 @@
       }
       lastWindow = current;
       if (enabled && event.state.phase === 'playing' &&
-          (!event.state.handComplete || !event.state.historyComplete)) {
+          (!event.state.handComplete || !event.state.historyComplete) && recovery?.status !== 'waiting') {
         pause('已暂停：牌局基线不完整，需恢复后重新开启');
       }
-    } else if (enabled && (event.kind === 'error' || ['disconnected', 'stopped'].includes(event.phase))) {
+    } else if (enabled && (event.kind === 'error' || event.phase === 'stopped')) {
       pause('已暂停：连接或牌局解析异常');
     }
+    if (enabled && recovery?.status === 'failed') pause(`已暂停：${recovery.reason}`);
+    if (enabled && recovery?.status === 'waiting')
+      status('reconnecting', '正在重新连接并恢复牌局 · 自动打牌保持开启');
   }
   function onAdvice(packet) {
-    if (!current || current.sent || packet.adviceKey !== current.key) return;
+    if (!current || current.sent || packet.adviceKey !== current.key || recovery?.status === 'waiting') return;
     current.advice = packet.advice;
     plan(current);
     if (enabled && current.state.canAct && packet.advice?.status === 'unavailable') {
@@ -175,25 +186,30 @@
     }
   }
   function onInput() {
-    if (enabled && !executing) pause('已暂停：游戏客户端已提交操作');
+    if (enabled && !executing && recovery?.status !== 'waiting') pause('已暂停：游戏客户端已提交操作');
     if (current) current.sent = true;
     pending = null;
   }
   function run(key, action, label) {
     const request = submitted = {key, at: now()}; pending = null;
+    const accepted = result => {
+      if (result?.ok === false) throw Object.assign(new Error(result.reason || '客户端拒绝操作'),
+        {recoverable:result.recoverable === true});
+    };
+    const failed = error => {
+      if (!enabled || submitted !== request) return;
+      if (error.recoverable) {
+        submitted = pending = null;
+        status('reconnecting', '连接恢复中 · 等待确认当前状态');
+      } else pause(`已暂停：${error.message}`);
+    };
     executing = true;
     try {
       const result = action();
-      if (result?.ok === false) throw new Error(result.reason || '客户端拒绝操作');
-      if (result?.then) result.then(value => {
-        if (value?.ok === false) throw new Error(value.reason || '客户端拒绝操作');
-      }).catch(error => {
-        if (enabled && submitted === request) pause(`已暂停：${error.message}`);
-      });
-      if (enabled) status('submitted', label);
-    } catch (error) {
-      pause(`已暂停：${error.message}`);
-    } finally { executing = false; }
+      accepted(result);
+      if (result?.then) result.then(accepted).catch(failed);
+      if (enabled && submitted === request) status('submitted', label);
+    } catch (error) {failed(error);} finally {executing = false;}
   }
   function schedule(key, action, label) {
     if (!key) { pause('已暂停：无法确认当前操作标识'); return; }
@@ -221,6 +237,10 @@
       if (!lobby) { pause('已暂停：大厅控制器未就绪'); return; }
       if (lobby.phase !== 'playing') initialRoundSince = null;
       if (lobby.phase === 'blocked') { pause(lobby.message || '已暂停：当前界面不支持自动操作'); return; }
+      if (recovery?.status === 'failed') {pause(`已暂停：${recovery.reason}`); return;}
+      if (recovery?.status === 'waiting') {
+        status('reconnecting', '正在重新连接并恢复牌局 · 自动打牌保持开启'); return;
+      }
       if (window.__mjUnityTransport?.isUnity() && window.__mjUnityActions?.snapshot().pending) {
         status('submitted', '等待服务器回应及牌局动作确认'); return;
       }
@@ -264,6 +284,7 @@
       }
       const client = window.__mjUnityActions?.snapshot(turn.state);
       if (!client?.available) { pause('已暂停：游戏操作接口不可用'); return; }
+      if (client.recoverable) {status('reconnecting', client.reason || '等待恢复后的牌局状态'); return;}
       if (client.blocked) { pause(`已暂停：${client.reason}`); return; }
       if (!client.canAct) {
         if (client.remainingMs !== null && client.remainingMs <= 350 || now() - turn.startedAt > 10000)

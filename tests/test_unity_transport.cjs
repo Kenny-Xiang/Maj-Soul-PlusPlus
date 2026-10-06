@@ -334,3 +334,52 @@ test('real collector observes outgoing actions once while injected ACK never ent
   h.acknowledge(c, 1); await h.flush();
   assert.equal(c.unity.length, 1); assert.equal(core.envelope(c.unity[0].bytes).id, 31);
 });
+
+test('network interruption is recoverable, retires the old request and cannot affect a replacement socket', async () => {
+  const h=setup(), old=h.connect(); await h.login(old,81);
+  const pending=h.api.request('.lq.Lobby.fetchAccountInfo',new Uint8Array());
+  const rejected=assert.rejects(pending,error=>error.recoverable===true);
+  old.socket.close(); await rejected;
+  const current=h.connect(); await h.login(current,81);
+  const session=h.api.snapshot().lobbySessionId;
+  h.acknowledge(old); await h.flush();
+  assert.equal(old.unity.length,0);
+  assert.equal(h.api.snapshot().lobbySessionId,session);
+  assert.equal(h.api.snapshot().connected,true);
+});
+
+test('native recovery on the same socket interrupts an unknown input and filters its late ACK', async () => {
+  const h=setup(), game=h.connect(true); await h.login(game,81,true);
+  const pending=h.api.request('.lq.FastTest.inputOperation',h.protocol.encode([[1,1],[3,'1m']]));
+  const rejected=assert.rejects(pending,error=>error.recoverable===true);
+  game.socket.send(h.frame(2,19,'.lq.FastTest.syncGame'));
+  await rejected; h.acknowledge(game,0); await h.flush();
+  assert.equal(game.unity.length,0);
+  assert.equal(h.timerCount,0);
+  h.acknowledge(game,1); await h.flush();
+  assert.equal(game.unity.length,1);
+  assert.equal(core.envelope(game.unity[0].bytes).id,19);
+});
+
+test('a new authenticated socket supersedes pending work and a late older authentication cannot reclaim selection', async () => {
+  const h=setup(), old=h.connect(true); await h.login(old,81,true);
+  const pending=h.api.request('.lq.FastTest.inputOperation',h.protocol.encode([[1,1],[3,'1m']]));
+  const rejected=assert.rejects(pending,error=>error.recoverable===true);
+  const current=h.connect(true); await h.login(current,81,true); await rejected;
+  const session=h.api.snapshot().gameSessionId;
+  old.socket.send(h.frame(2,20,'.lq.FastTest.authGame',h.protocol.encode([[1,81]])));
+  old.socket.receive(h.frame(3,20).buffer); await h.flush();
+  assert.equal(h.api.snapshot().gameSessionId,session);
+  h.acknowledge(old,0); await h.flush();
+  assert.equal(old.unity.length,1,'only the native auth response remains visible');
+  assert.equal(h.timerCount,0);
+});
+
+test('late game authentication for a previous account cannot create a usable game connection', async () => {
+  const h=setup(), lobby=h.connect(), game=h.connect(true); await h.login(lobby,81);
+  game.socket.send(h.frame(2,20,'.lq.FastTest.authGame',h.protocol.encode([[1,81]])));
+  const other=h.connect(); await h.login(other,99);
+  game.socket.receive(h.frame(3,20).buffer); await h.flush();
+  assert.equal(h.api.snapshot().accountId,99);
+  assert.equal(h.api.snapshot().gameConnected,false);
+});

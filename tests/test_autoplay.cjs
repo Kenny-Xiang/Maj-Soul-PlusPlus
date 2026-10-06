@@ -25,7 +25,7 @@ function setup(random = () => .5) {
     setInterval:fn=>{tick=fn;return 1;},clearInterval:()=>{tick=null;},
     addEventListener:(type,fn)=>listeners.set(type,fn),removeEventListener:type=>listeners.delete(type)});
   const api = window.__mjAutoplay;
-  const state = {phase:'playing',canAct:true,canDiscard:true,handComplete:true,historyComplete:true,
+  const state = {phase:'playing',canAct:true,canDiscard:true,handComplete:true,historyComplete:true,recovery:null,
     selfSeat:0,playerCount:4,round:{chang:0,ju:0,ben:0},lastStep:3,lastDraw:'7z',
     hand:['1m','2m','3m','4m','5m','6m','1p','2p','3p','1s','2s','3s','7z','7z'],
     operations:[1],operationDetails:[{type:1,combination:[]}],
@@ -167,13 +167,81 @@ test('win uses its top-level action while analysis, waiting and unavailable neve
   }
 });
 
-test('close, manual input, incomplete baseline, error and disconnect cancel pending operations', () => {
+test('close, manual input, incomplete baseline, error and stop cancel pending operations', () => {
   for (const cancel of [s=>s.api.setEnabled(false),s=>s.api.onInput(),
     s=>s.turn(2,{historyComplete:false}),s=>s.api.onEvent({kind:'error'}),
-    s=>s.api.onEvent({kind:'status',phase:'disconnected'})]) {
+    s=>s.api.onEvent({kind:'status',phase:'stopped'})]) {
     const s=setup();s.turn();s.advice();s.api.setEnabled(true);s.advance(10);cancel(s);s.advance(5000);
     assert.equal(s.actions.length,0);assert.equal(s.api.getStatus().enabled,false);
   }
+});
+
+test('disconnect and verified recovery preserve intent and resume only with fresh advice', () => {
+  const s=setup();s.turn();s.advice();s.api.setEnabled(true);s.advance(100);
+  s.api.onEvent({kind:'status',phase:'disconnected',recovery:{status:'waiting',reason:'connection'}});
+  Object.assign(s.lobby,{phase:'lobby',actionKey:'must-not-match-during-recovery'});
+  s.advance(120000);
+  assert.equal(s.api.getStatus().enabled,true);assert.equal(s.api.getStatus().phase,'reconnecting');
+  assert.equal(s.actions.length,0);assert.equal(s.starts.length,0);assert.equal(s.cancels,0);
+  s.api.onEvent({kind:'status',phase:'connected',recovery:{status:'waiting',reason:'authentication'}});
+  s.turn(2,{baseline:'restore_actions',handComplete:true,historyComplete:false,canAct:false,
+    operationTiming:null,recovery:{status:'waiting',reason:'live'}});
+  s.advice(2,{status:'unavailable',message:'等待恢复边界'});s.advance(30000);
+  assert.equal(s.api.getStatus().enabled,true);assert.equal(s.actions.length,0);
+  s.api.onInput();assert.equal(s.api.getStatus().enabled,true,'native recovery input must not turn off intent');
+  s.lobby.phase='playing';s.turn(3,{operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});
+  s.advice(1);s.advice(2);s.advance(500);assert.equal(s.actions.length,0);
+  s.advice(3);s.finishAction();assert.equal(s.api.getStatus().enabled,true);
+  assert.equal(s.cancels,0);
+});
+
+test('manual takeover or switching off during recovery prevents automatic resumption', () => {
+  for (const stop of [s=>s.api.setEnabled(false),
+    s=>s.listeners.get('pointerdown')({isTrusted:true,composedPath:()=>[]}),s=>s.api.stop()]) {
+    const s=setup();s.turn();s.advice();s.api.setEnabled(true);
+    s.api.onEvent({kind:'status',phase:'disconnected',recovery:{status:'waiting',reason:'connection'}});
+    stop(s);s.turn(2);s.advice(2);s.advance(5000);
+    assert.equal(s.api.getStatus().enabled,false);assert.equal(s.actions.length,0);
+  }
+});
+
+test('enabling during recovery waits, while malformed replay still pauses', () => {
+  const s=setup();s.turn(1,{baseline:'restore_actions',historyComplete:false,canAct:false,
+    operationTiming:null,recovery:{status:'waiting',reason:'live'}});
+  s.api.setEnabled(true);s.advance(60000);
+  assert.equal(s.api.getStatus().enabled,true);assert.equal(s.api.getStatus().phase,'reconnecting');
+  s.turn(2,{baseline:'restore_actions',historyComplete:false,canAct:false,
+    recovery:{status:'failed',reason:'恢复动作顺序不连续'}});
+  assert.equal(s.api.getStatus().enabled,false);assert.equal(s.actions.length,0);
+});
+
+test('recoverable client gates retain intent without reusing the previous operation', () => {
+  const s=setup();s.turn();s.advice();
+  Object.assign(s.client,{canAct:false,recoverable:true,remainingMs:0,reason:'等待恢复后的权威动作'});
+  s.api.setEnabled(true);s.advance(60000);
+  assert.equal(s.api.getStatus().enabled,true);assert.equal(s.actions.length,0);
+  Object.assign(s.client,{canAct:true,recoverable:false,remainingMs:10000});
+  s.turn(2,{operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});s.advice(2);
+  s.finishAction();assert.equal(s.api.getStatus().enabled,true);
+});
+
+test('recoverable request failures keep the switch on and a late old failure cannot stop a recovered turn', async () => {
+  for (const fail of [()=>Promise.resolve({ok:false,recoverable:true,reason:'连接替换'}),
+    ()=>Promise.reject(Object.assign(new Error('连接断开'),{recoverable:true}))]) {
+    const s=setup();s.window.__mjLobby.start=fail;
+    Object.assign(s.lobby,{phase:'lobby',actionKey:'old-lobby'});
+    s.api.setEnabled(true);s.advance(3000);await new Promise(setImmediate);
+    assert.equal(s.api.getStatus().enabled,true);assert.equal(s.cancels,0);
+    s.lobby.phase='login';s.advance(60000);
+    assert.equal(s.api.getStatus().enabled,true);
+  }
+  const s=setup();let rejectOld;
+  s.window.__mjUnityActions.execute=()=>new Promise((resolve,reject)=>{rejectOld=reject;});
+  s.turn();s.advice();s.api.setEnabled(true);s.advance(3000);
+  s.api.onEvent({kind:'status',phase:'disconnected',recovery:{status:'waiting',reason:'connection'}});
+  s.turn(2,{operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});s.advice(2);
+  rejectOld(new Error('迟到的旧操作错误'));await new Promise(setImmediate);
+  assert.equal(s.api.getStatus().enabled,true);
 });
 
 test('trusted manual input yields control, overlay controls and synthetic events do not', () => {

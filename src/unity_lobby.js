@@ -16,11 +16,12 @@
     [4, '玉之间', [11, 12], [23, 24], 10401, 10503, [10000, 14000]],
     [6, '王座间', [15, 16], [25, 26], 10501, 10720, [10000, 14000]],
   ];
-  const versions = new Map();
+  const versions = new Map(), gameIds = new Map();
   let transport, identity = '', lastAccountId = null, generation = 0, account = null, refreshNeeded = true;
   let busy = null, owned = null, externalQueue = null, playing = false, enteringAt = null;
   let endedAt = null, roundKey = null, lastRound = null, roundEpoch = 0, roundLocation = null;
-  let confirmingAt = null, problem = '', cancelError = '';
+  let confirmingAt = null, problem = '', problemGame = false, cancelError = '', gameConnection = '';
+  let recoveryWaiting = false;
   const clock = () => performance.now();
   const result = (phase, message, extra = {}) => ({phase, message, ...extra});
   const protocol = () => window.__mjProtocol;
@@ -38,11 +39,22 @@
       if (validId(live.accountId)) lastAccountId = live.accountId;
       identity = next; generation++; account = null; refreshNeeded = true; busy = null;
       // Keep cancellation ownership through a reconnect of the same account.
+      if (owned) owned.cancelRequested = true;
       if (changedAccount) {
         owned = externalQueue = null; playing = false;
         enteringAt = endedAt = roundKey = confirmingAt = lastRound = roundLocation = null;
+        recoveryWaiting = false;
       }
-      problem = ''; cancelError = '';
+      problem = ''; problemGame = false; cancelError = '';
+    }
+    const nextGame = `${live.gameSessionId || 0}:${!!live.gameConnected}`;
+    if (nextGame !== gameConnection) {
+      if (gameConnection) {
+        if (roundKey) lastRound = null;
+        roundKey = confirmingAt = null;
+        if (problemGame) {problem = ''; problemGame = false;}
+      }
+      gameConnection = nextGame;
     }
     return live;
   }
@@ -59,8 +71,9 @@
     if (error) throw new Error(`服务器拒绝操作（${error}）`);
     return f;
   }
-  function newRound(event) {
-    const location = [transport?.snapshot().gameSessionId, event.chang, event.ju, event.ben].join(':');
+  function newRound(event, onlyIfChanged = false) {
+    const location = [gameIds.get(transport?.snapshot().gameSessionId), event.chang, event.ju, event.ben].join(':');
+    if (onlyIfChanged && location === roundLocation) return;
     if (![event.chang, event.ju, event.ben].every(Number.isInteger) || location !== roundLocation) {
       roundLocation = location; roundEpoch++; lastRound = null;
     }
@@ -68,17 +81,25 @@
   }
   function endGame() {
     if (endedAt === null) endedAt = clock();
-    playing = false; enteringAt = null; roundKey = null; confirmingAt = null;
+    playing = recoveryWaiting = false;
+    enteringAt = roundKey = confirmingAt = lastRound = roundLocation = null;
     owned = externalQueue = null; refreshNeeded = true; generation++;
   }
   function onEvent(packet) {
+    sync();
+    if (packet.recovery !== undefined || packet.state?.recovery !== undefined) {
+      recoveryWaiting = (packet.state?.recovery ?? packet.recovery)?.status === 'waiting';
+      if (recoveryWaiting) confirmingAt = null;
+    }
     const event = packet.action;
     if (packet.kind === 'turn') {
       if (packet.state?.phase === 'ended' || event?.matchEnd) {endGame(); return;}
       if (['playing', 'between_rounds'].includes(packet.state?.phase)) {
         playing = true; enteringAt = endedAt = null; owned = externalQueue = null;
+        const round = packet.state.round;
+        if (round && [round.chang, round.ju, round.ben].every(Number.isInteger)) newRound(round, true);
         if (['ActionHule', 'ActionNoTile', 'ActionLiuJu'].includes(event?.name)) {
-          const key = `round:${identity}:${transport?.snapshot().gameSessionId}:${roundEpoch}:${event.name}:${event.step}`;
+          const key = `round:${lastAccountId}:${gameIds.get(transport?.snapshot().gameSessionId) || 'unknown'}:${roundEpoch}:${event.name}:${event.step}`;
           if (lastRound !== key) {lastRound = key; roundKey = key;}
         } else {
           roundKey = null;
@@ -92,6 +113,10 @@
     try {
       const live = sync(), {fields, first, str} = protocol();
       const {method, payload, direction, kind, game, sessionId, injected} = message;
+      if (game && direction === 'out' && method === '.lq.FastTest.authGame') {
+        const id = str(fields(payload), 3);
+        if (id) gameIds.set(sessionId, id);
+      }
       if (direction === 'out' && kind === 'request' && !game) {
         const field = {'.lq.Lobby.login':11, '.lq.Lobby.oauth2Login':10,
           '.lq.Lobby.emailLogin':6, '.lq.Lobby.fastLogin':1, '.lq.Lobby.startUnifiedMatch':2}[method];
@@ -121,7 +146,9 @@
           owned = externalQueue = null; refreshNeeded = true;
         }
         if (direction === 'in' && method === '.lq.NotifyGameEndResult') endGame();
-        if (direction === 'in' && method === '.lq.NotifyGameTerminate') problem = '对局被终止，请检查游戏提示';
+        if (direction === 'in' && method === '.lq.NotifyGameTerminate') {
+          problem = '对局被终止，请检查游戏提示'; problemGame = true;
+        }
         return;
       }
       if (sessionId !== live.lobbySessionId) return;
@@ -132,7 +159,14 @@
       if (kind === 'response' && ['.lq.Lobby.login', '.lq.Lobby.oauth2Login', '.lq.Lobby.emailLogin', '.lq.Lobby.fastLogin'].includes(method)) {
         const f = responseFields(payload), fast = method === '.lq.Lobby.fastLogin';
         const gameInfo = fast ? 2 : 4;
-        if (f.has(gameInfo) && str(fields(first(f, gameInfo)), 3)) enteringAt = clock();
+        if (f.has(gameInfo) && str(fields(first(f, gameInfo)), 3)) {
+          owned = externalQueue = null;
+          enteringAt = live.gameConnected && playing ? null : clock();
+        } else if (!f.has(gameInfo) && !live.gameConnected) {
+          playing = recoveryWaiting = false;
+          enteringAt = endedAt = roundKey = confirmingAt = lastRound = roundLocation = null;
+          window.__mjMonitor?.onLobbyRecovery?.();
+        }
         if (!fast && f.has(3)) account = readAccount(first(f, 3));
         if (fast && f.has(3)) problem = '请先退出当前房间并返回大厅';
       } else if (kind === 'response' && method === '.lq.Lobby.fetchAccountInfo' && !injected) {
@@ -169,7 +203,7 @@
         try {responseFields(payload);} catch (error) {externalQueue = null; problem = error.message;}
       }
       if (owned?.cancelRequested && live.connected && !owned.submitting && !owned.cancelling) cancel();
-    } catch (error) {problem = `大厅协议解析失败：${error.message}`;}
+    } catch (error) {problem = `大厅协议解析失败：${error.message}`; problemGame = !!message.game;}
   }
 
   function snapshot(playerCount = 4, roundCount = 1) {
@@ -178,6 +212,8 @@
     if (!live.connected) return result('login', '等待大厅连接，请先在游戏窗口登录');
     if (!validId(live.accountId)) return result('login', '请先在游戏窗口登录');
     if (problem) return result('blocked', problem);
+    if (recoveryWaiting || (playing || roundKey || confirmingAt !== null) && !live.gameConnected)
+      return result('reconnecting', '牌局连接已中断，等待自动恢复', {recoverable:true});
     if (enteringAt !== null) {
       if (clock() - enteringAt > 30000) return result('blocked', '匹配已成功，但客户端未能进入对局，请检查游戏界面');
       return result('matching', '匹配成功，等待客户端进入对局');
@@ -188,7 +224,7 @@
     if (playing) return result('playing', '对局进行中');
     if (owned || externalQueue) {
       if (owned && clock() - owned.at > 180000) return result('blocked', '匹配等待超过 3 分钟，正在取消本次队列');
-      return result('matching', owned?.submitting ? '正在提交匹配' : '正在匹配', {modeId:owned?.modeId});
+      return result('matching', owned?.cancelRequested ? '正在取消恢复前的匹配' : owned?.submitting ? '正在提交匹配' : '正在匹配', {modeId:owned?.modeId});
     }
     if (endedAt !== null && clock() - endedAt < 45000) {
       const remainingMs = 45000 - (clock() - endedAt);
@@ -225,7 +261,7 @@
   async function start(playerCount, actionKey, roundCount = 1) {
     const state = snapshot(playerCount, roundCount), binding = identity, version = generation;
     if (state.phase !== 'lobby' || !actionKey || state.actionKey !== actionKey)
-      return {ok:false, reason:'大厅状态已经变化，取消本次操作'};
+      return {ok:false, recoverable:true, reason:'大厅状态已经变化，取消本次操作'};
     const {encode, first} = protocol();
     if (state.action === 'refresh') {
       const request = busy = {}, accountId = transport.snapshot().accountId;
@@ -235,7 +271,7 @@
         const {payload} = await transport.request('.lq.Lobby.fetchAccountInfo', encode([]), {game:false});
         sync();
         if (binding !== identity || generation !== version || busy !== request)
-          return {ok:false, reason:'账号或连接已变化，取消旧账号刷新'};
+          return {ok:false, recoverable:true, reason:'账号或连接已变化，取消旧账号刷新'};
         const f = responseFields(payload);
         if (!f.has(2)) throw new Error('服务器没有返回账号信息');
         const next = readAccount(first(f, 2));
@@ -243,7 +279,10 @@
         if (f.has(3)) next.roomId ||= 1;
         account = next; refreshNeeded = false; generation++; endedAt = null;
         return {ok:true};
-      } catch (error) {return {ok:false, reason:`账号刷新失败：${error.message}`};}
+      } catch (error) {
+        sync();
+        return {ok:false, recoverable:binding !== identity || !!error.recoverable, reason:`账号刷新失败：${error.message}`};
+      }
       finally {if (busy === request) busy = null;}
     }
     const queue = owned = {sid:state.sid, modeId:state.modeId, accountId:transport.snapshot().accountId,
@@ -253,12 +292,15 @@
         encode([[1, state.sid], [2, state.version]]), {game:false});
       responseFields(payload);
       sync();
-      if (binding !== identity) return {ok:false, reason:'账号或连接已变化，请检查匹配状态'};
+      if (binding !== identity) return {ok:false, recoverable:true, reason:'账号或连接已变化，等待恢复匹配状态'};
       return {ok:true, modeId:state.modeId};
     } catch (error) {
+      sync();
       // A server rejection is definite; timeout/disconnect still needs cancellation.
       if (Number.isInteger(error.code) && owned === queue) {owned = null; generation++;}
-      return {ok:false, reason:`开始匹配失败：${error.message}`};
+      const recoverable = binding !== identity || !!error.recoverable;
+      if (recoverable && owned === queue) queue.cancelRequested = true;
+      return {ok:false, recoverable, reason:`开始匹配失败：${error.message}`};
     } finally {
       queue.submitting = false;
       if (owned === queue && queue.cancelRequested) cancel();
@@ -266,14 +308,18 @@
   }
 
   async function finish(actionKey) {
-    const state = snapshot();
+    const state = snapshot(), binding = identity, sessionId = transport?.snapshot().gameSessionId;
     if (state.phase !== 'settlement' || !actionKey || state.actionKey !== actionKey || state.action !== 'confirm')
-      return {ok:false, reason:'结算状态已经变化，取消本次操作'};
+      return {ok:false, recoverable:true, reason:'结算状态已经变化，取消本次操作'};
     roundKey = null;
     try {
       const {payload} = await transport.request('.lq.FastTest.confirmNewRound', new Uint8Array(), {game:true});
       responseFields(payload); return {ok:true};
-    } catch (error) {return {ok:false, reason:`进入下一小局失败：${error.message}`};}
+    } catch (error) {
+      const live = sync();
+      return {ok:false, recoverable:binding !== identity || sessionId !== live.gameSessionId ||
+        !live.gameConnected || !!error.recoverable, reason:`进入下一小局失败：${error.message}`};
+    }
   }
 
   function cancel() {
@@ -284,11 +330,17 @@
     owned.cancelRequested = true;
     if (validId(live.accountId) && owned.accountId !== live.accountId) {owned = null; return {ok:true};}
     if (!live.connected || owned.submitting || owned.cancelling) return {ok:true, pending:true};
-    const queue = owned; queue.cancelling = true;
+    const queue = owned, binding = identity; queue.cancelling = true;
     transport.request('.lq.Lobby.cancelUnifiedMatch', protocol().encode([[1, queue.sid]]), {game:false})
       .then(({payload}) => {responseFields(payload); sync(); if (owned === queue) {owned = null; generation++;}})
-      .catch(error => {if (owned === queue) cancelError = error.message;})
-      .finally(() => {queue.cancelling = false;});
+      .catch(error => {
+        sync();
+        if (owned === queue && binding === identity && !error.recoverable) cancelError = error.message;
+      })
+      .finally(() => {
+        queue.cancelling = false;
+        if (owned === queue && binding !== identity && transport.snapshot().connected) cancel();
+      });
     return {ok:true, pending:true};
   }
 

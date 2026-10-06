@@ -9,7 +9,7 @@ const core = require('../src/core.cjs');
 const read = name => fs.readFileSync(path.join(__dirname, '../src', name), 'utf8');
 async function setup(players = 4, early = false, roundCount = 1) {
   let time = 0, timerId = 0;
-  const timers = new Map(), intervals = new Map(), packets = [], statuses = [];
+  const timers = new Map(), intervals = new Map(), listeners = new Map(), packets = [], statuses = [];
   class Socket extends EventTarget {
     constructor(url) {super(); this.url = url; this.readyState = 1; this.sent = []; this.seen = [];
       // Assigned only after the transport and collector attach their own listeners.
@@ -24,7 +24,8 @@ async function setup(players = 4, early = false, roundCount = 1) {
     Uint8Array, ArrayBuffer, Blob, TextEncoder, TextDecoder, MessageEvent, URL, console, Math:math,
     performance:{now:() => time}, setTimeout:(fn, ms) => {timers.set(++timerId, {fn, at:time + ms}); return timerId;},
     clearTimeout:id => timers.delete(id), setInterval:fn => {intervals.set(++timerId, fn); return timerId;},
-    clearInterval:id => intervals.delete(id), addEventListener() {}, removeEventListener() {}});
+    clearInterval:id => intervals.delete(id), addEventListener:(type,fn)=>listeners.set(type,fn),
+    removeEventListener:type=>listeners.delete(type)});
   vm.runInContext(read('unity_transport.js'), context);
   vm.runInContext(`(() => {${read('browser.js')}\n})()`, context);
   for (const file of ['unity_actions.js','unity_lobby.js','autoplay.js'])
@@ -70,6 +71,7 @@ async function setup(players = 4, early = false, roundCount = 1) {
   await reply(lobby, encode([[2,11], [3,account()]]));
   const api = window.__mjAutoplay; api.setPlayerCount(players); api.setRoundCount(roundCount);
   return {window, api, lobby, packets, statuses, advance, feed, frame, reply, replyAccount, action, connect, encode, first, fields, str, account,
+    manual() {listeners.get('pointerdown')?.({isTrusted:true,composedPath:()=>[]});},
     last(socket) {return core.envelope(socket.sent.at(-1));},
     advice(best) {const packet = packets.findLast(p => p.kind === 'turn');
       api.onAdvice({adviceKey:`${packet.session}:${packet.serial}`, advice:{status:'ready',best}});}};
@@ -169,7 +171,7 @@ for (const players of [4, 3]) for (const roundCount of [1, 2]) for (const switch
     'automation diagnostics must not reorder native log events');
 });
 
-for (const fault of ['step gap','unverified snapshot','invalid first deal'])
+for (const fault of ['step gap','invalid first deal'])
   test(`Unity initial loading allowance does not accept ${fault}`, async () => {
     const h = await setup(4), e = h.encode, game = h.connect(true), seats = [11,22,33,44];
     game.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11]])));
@@ -184,15 +186,7 @@ for (const fault of ['step gap','unverified snapshot','invalid first deal'])
       assert.equal(h.api.getStatus().enabled,true);
       const ready = h.window.__mjMonitor.getSnapshot().state;
       assert.equal(ready.handComplete,true); assert.equal(ready.historyComplete,true);
-      if (fault === 'step gap') {
-        await h.action(game,'ActionDiscardTile',3,[[1,1],[2,'7z']]);
-      } else {
-        game.send(h.frame(2,3,'.lq.FastTest.syncGame'));
-        const snapshot = e([[1,0],[2,0],[3,0],[4,0],[5,69],...hand.map(tile=>[6,tile]),[7,'1p'],
-          ...seats.map(()=>[9,e([[1,25000]])])]);
-        await h.reply(game,e([[3,2],[4,e([[1,snapshot]])]]));
-        assert.equal(h.window.__mjMonitor.getSnapshot().state.baseline,'snapshot_unverified');
-      }
+      await h.action(game,'ActionDiscardTile',3,[[1,1],[2,'7z']]);
     }
     assert.equal(h.api.getStatus().enabled,false);
     assert.match(h.api.getStatus().message,/基线/);
@@ -202,7 +196,7 @@ for (const fault of ['step gap','unverified snapshot','invalid first deal'])
     assert.equal(h.api.getStatus().enabled,false, 'a later valid deal cannot override a safety pause');
   });
 
-test('re-enabling after reconnect rejects replayed operations and resumes only from a fresh live window', async () => {
+async function reconnectFixture(inFlight = false) {
   const h=await setup(),e=h.encode,seats=[11,22,33,44];
   const auth=e([...seats.map(id=>[2,e([[1,id],[5,e([[1,10301]])]])]),
     ...seats.map(id=>[3,id]),[5,e([[1,2],[2,e([[1,1]])],[3,e([[2,8]])]])]]);
@@ -210,33 +204,221 @@ test('re-enabling after reconnect rejects replayed operations and resumes only f
   const operation=e([[1,0],[2,e([[1,1]])],[4,20000],[5,5000]]);
   const opening=[[1,0],[2,0],[3,0],...hand.map(tile=>[4,tile]),
     ...seats.map(()=>[6,25000]),[7,operation],[13,69],[14,'1p']];
-  const old=h.connect(true);old.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11]])));
+  const old=h.connect(true);old.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11],[3,'reconnect-test-match']])));
   await h.reply(old,auth);await h.action(old,'ActionNewRound',0,opening);
   const previous=h.packets.findLast(p=>p.kind==='turn');
+  const statusStart=h.statuses.length;
   h.api.setEnabled(true);h.advice({action:'discard',tile:'1z'});
-  old.readyState=3;old.dispatchEvent(new Event('close'));
-  assert.equal(h.api.getStatus().enabled,false);
-  const game=h.connect(true);game.send(h.frame(2,3,'.lq.FastTest.authGame',e([[1,11]])));
-  await h.reply(game,auth);game.send(h.frame(2,4,'.lq.FastTest.syncGame'));
+  let oldInput;
+  if (inFlight) {
+    await h.advance(h.api.getStatus().timing.targetMs);
+    oldInput=h.last(old);assert.equal(oldInput.name,'.lq.FastTest.inputOperation');
+    assert.equal(h.window.__mjUnityActions.snapshot().pending,true);
+  }
+  return {h,e,seats,auth,hand,opening,operation,old,previous,oldInput,statusStart};
+}
+
+for (const scenario of [
+  {name:'closed socket before input',close:true,authenticate:true},
+  {name:'closed socket with unacknowledged input',close:true,authenticate:true,inFlight:true},
+  {name:'same-socket authentication and sync',authenticate:true},
+  {name:'same-socket sync without a close'},
+  {name:'same-socket sync with unacknowledged input',inFlight:true},
+  {name:'user turns off during recovery',close:true,authenticate:true,inFlight:true,cancel:'off'},
+  {name:'manual takeover during recovery',close:true,authenticate:true,cancel:'manual'},
+]) test(`Unity recovery preserves user intent: ${scenario.name}`, async () => {
+  const {h,e,auth,opening,operation,old,previous,oldInput,statusStart}=await reconnectFixture(scenario.inFlight);
+  if (scenario.close) {old.readyState=3;old.dispatchEvent(new Event('close'));await h.advance(0);}
+  assert.equal(h.api.getStatus().enabled,true,'disconnect must preserve the enabled preference');
+  const stopStatusStart=h.statuses.length;
+  if (scenario.cancel === 'off') h.api.setEnabled(false);
+  if (scenario.cancel === 'manual') h.manual();
+  const enabled=!scenario.cancel;
+  assert.equal(h.api.getStatus().enabled,enabled);
+  const game=scenario.close?h.connect(true):old;
+  if (scenario.authenticate) {
+    game.send(h.frame(2,3,'.lq.FastTest.authGame',e([[1,11],[3,'reconnect-test-match']])));
+    const sent=game.sent.length;await h.advance(3000);
+    assert.equal(game.sent.length,sent,'authentication cannot send the previous decision');
+    assert.equal(h.api.getStatus().enabled,enabled);
+    await h.reply(game,auth);
+  }
+  game.send(h.frame(2,4,'.lq.FastTest.syncGame'));
+  const beforeRestore=game.sent.length;
+  await h.advance(3000);
+  assert.equal(game.sent.length,beforeRestore,'sync must close the previous operation window immediately');
+  assert.equal(h.api.getStatus().enabled,enabled);
   await h.reply(game,e([[3,1],[4,e([[2,e([[1,0],[2,'ActionNewRound'],[3,e(opening)]])]])]]));
   const restored=h.window.__mjMonitor.getSnapshot().state;
   assert.equal(restored.baseline,'restore_actions');assert.equal(restored.handComplete,true);
-  assert.equal(restored.historyComplete,false);assert.equal(restored.operationTiming,null);
-  h.api.setEnabled(true);
-  assert.equal(h.api.getStatus().enabled,false);assert.match(h.api.getStatus().message,/基线不完整/);
-  h.api.onAdvice({adviceKey:`${previous.session}:${previous.serial}`,
-    advice:{status:'ready',best:{action:'discard',tile:'1z'}}});
-  await h.advance(5000);assert.equal(game.sent.length,2);
+  assert.equal(restored.canAct,false,'a replay without an authoritative current timer cannot reopen old operations');
+  assert.equal(h.api.getStatus().enabled,enabled);
+  const staleAdvice={adviceKey:`${previous.session}:${previous.serial}`,
+    advice:{status:'ready',best:{action:'discard',tile:'1z'}}};
+  h.api.onAdvice(staleAdvice);
+  await h.advance(5000);assert.equal(game.sent.length,beforeRestore);
   await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z']]);
   await h.action(game,'ActionDealTile',2,[[1,0],[2,'2z'],[3,68],[4,operation]]);
   assert.equal(h.window.__mjMonitor.getSnapshot().state.canAct,true);
-  assert.equal(h.api.getStatus().enabled,false);
-  h.api.setEnabled(true);h.advice({action:'discard',tile:'2z'});
-  await h.advance(h.api.getStatus().timing.targetMs);
-  assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
-  assert.equal(h.str(h.fields(h.last(game).data),3),'2z');
-  await h.reply(game);await h.action(game,'ActionDiscardTile',3,[[1,0],[2,'2z'],[5,1]]);
+  assert.equal(h.api.getStatus().enabled,enabled);
+  h.api.onAdvice(staleAdvice);
+  await h.advance(100);assert.equal(game.sent.length,beforeRestore,'old advice is invalid even after live recovery');
+  h.advice({action:'discard',tile:'2z'});
+  await h.advance(5000);
+  if (!enabled) {
+    assert.equal(game.sent.length,beforeRestore,'off or manual takeover must survive all recovery packets and advice');
+    assert.equal(h.api.getStatus().enabled,false);
+    assert.ok(h.statuses.slice(stopStatusStart).every(status=>!status.enabled),'recovery must never flip a cancelled preference back on');
+    return;
+  }
+  assert.equal(game.sent.length,beforeRestore+1,'fresh advice resumes automatically exactly once');
+  const input=h.last(game);
+  assert.equal(input.name,'.lq.FastTest.inputOperation');
+  assert.equal(h.str(h.fields(input.data),3),'2z');
+  await h.action(game,'ActionDiscardTile',3,[[1,0],[2,'2z'],[5,1]]);
+  assert.equal(h.window.__mjUnityActions.snapshot().pending,true,'the action echo still needs its own ACK');
+  if (oldInput) {
+    await h.feed(old,h.frame(3,oldInput.id,''));
+    assert.equal(h.window.__mjUnityActions.snapshot().pending,true,'an old RPC ACK cannot confirm the new input');
+  }
+  await h.reply(game);
   assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+  h.api.onAdvice(staleAdvice);await h.feed(game,h.frame(3,input.id,''));await h.advance(5000);
+  assert.equal(game.sent.length,beforeRestore+1,'late ACK or advice cannot repeat the confirmed action');
+  assert.equal(h.api.getStatus().enabled,true);
+  assert.ok(h.statuses.slice(statusStart).every(status=>status.enabled),'the toggle remains on throughout recovery');
+});
+
+test('Unity snapshot-only recovery waits with automation enabled until a trustworthy new round', async () => {
+  const {h,e,seats,hand,opening,old:game}=await reconnectFixture();
+  game.send(h.frame(2,4,'.lq.FastTest.syncGame'));
+  const snapshot=e([[1,0],[2,0],[3,0],[4,0],[5,69],...hand.map(tile=>[6,tile]),[7,'1p'],
+    ...seats.map(()=>[9,e([[1,25000]])])]);
+  await h.reply(game,e([[3,2],[4,e([[1,snapshot]])]]));
+  assert.equal(h.window.__mjMonitor.getSnapshot().state.baseline,'snapshot_unverified');
+  assert.equal(h.api.getStatus().enabled,true);
+  const sent=game.sent.length;
+  h.advice({action:'discard',tile:'1z'});await h.advance(5000);
+  assert.equal(game.sent.length,sent);
+  await h.action(game,'ActionNewRound',3,opening);
+  assert.equal(h.window.__mjMonitor.getSnapshot().state.canAct,true);
+  h.advice({action:'discard',tile:'1z'});await h.advance(5000);
+  assert.equal(game.sent.length,sent+1);
+  assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
+  assert.equal(h.api.getStatus().enabled,true);
+});
+
+for (const scenario of [
+  {name:'unconfirmed same round',confirm:false,expected:1},
+  {name:'same round with an unknown confirmation result',confirm:true,expected:0},
+  {name:'same round already confirmed',confirm:true,ack:true,expected:0},
+  {name:'a different round reusing the terminal step',confirm:true,ack:true,nextRound:true,expected:1},
+]) test(`Unity terminal replay advances once: ${scenario.name}`, async () => {
+  const {h,e,auth,opening,old}=await reconnectFixture();
+  if (scenario.confirm) {
+    await h.action(old,'ActionDiscardTile',1,[[1,0],[2,'1z']]);
+    await h.action(old,'ActionNoTile',2,[]);
+    await h.advance(100);await h.advance(3000);
+    assert.equal(h.last(old).name,'.lq.FastTest.confirmNewRound');
+    if (scenario.ack) await h.reply(old);
+  }
+  old.readyState=3;old.dispatchEvent(new Event('close'));await h.advance(0);
+  assert.equal(h.api.getStatus().enabled,true);
+  const game=h.connect(true);
+  game.send(h.frame(2,3,'.lq.FastTest.authGame',e([[1,11],[3,'reconnect-test-match']])));
+  await h.reply(game,auth);
+  const restoredOpening=opening.map(([field,value])=>[field,field===3&&scenario.nextRound?1:value]);
+  const replay=e([[3,3],[4,e([
+    [2,e([[1,0],[2,'ActionNewRound'],[3,e(restoredOpening)]])],
+    [2,e([[1,1],[2,'ActionDiscardTile'],[3,e([[1,0],[2,'1z']])]])],
+    [2,e([[1,2],[2,'ActionNoTile'],[3,e([])]])],
+  ])]]);
+  game.send(h.frame(2,4,'.lq.FastTest.syncGame'));await h.reply(game,replay);
+  const state=h.window.__mjMonitor.getSnapshot().state;
+  assert.equal(state.phase,'between_rounds');assert.equal(state.recovery,null);
+  assert.equal(state.canAct,false,'a terminal replay must not reopen its historical operations');
+  const before=game.sent.length;
+  await h.advance(100);await h.advance(3000);
+  assert.equal(game.sent.length,before+scenario.expected);
+  if (scenario.expected) {
+    assert.equal(h.last(game).name,'.lq.FastTest.confirmNewRound');await h.reply(game);
+  }
+  game.send(h.frame(2,5,'.lq.FastTest.syncGame'));await h.reply(game,replay);
+  const synced=game.sent.length;await h.advance(100);await h.advance(3000);
+  assert.equal(game.sent.length,synced,'repeating a terminal replay cannot send another confirmation');
+  assert.equal(h.api.getStatus().enabled,true);
+});
+
+test('a new game UUID can reuse a previously submitted step after reconnect', async () => {
+  const {h,e,auth,opening,old,oldInput}=await reconnectFixture(true);
+  const previousId=h.window.__mjMonitor.getSnapshot().state.gameId;
+  old.readyState=3;old.dispatchEvent(new Event('close'));await h.advance(0);
+  const game=h.connect(true);
+  game.send(h.frame(2,3,'.lq.FastTest.authGame',e([[1,11],[3,'different-test-match']])));
+  await h.reply(game,auth);await h.action(game,'ActionNewRound',0,opening);
+  assert.notEqual(h.window.__mjMonitor.getSnapshot().state.gameId,previousId);
+  assert.equal(h.window.__mjUnityActions.snapshot().canAct,true,'old-game deduplication cannot block a new match');
+  h.advice({action:'discard',tile:'1z'});await h.advance(5000);
+  assert.equal(game.sent.length,2);assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
+  await h.feed(old,h.frame(3,oldInput.id,''));
+  assert.equal(h.window.__mjUnityActions.snapshot().pending,true);
+  await h.reply(game);await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z'],[5,1]]);
+  assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+  assert.equal(h.api.getStatus().enabled,true);
+});
+
+for (const method of ['login','fastLogin'])
+  test(`Unity ${method} without a running game clears stale recovery and matches again`, async () => {
+    const {h,e,old,statusStart}=await reconnectFixture(method==='fastLogin');
+    old.readyState=3;old.dispatchEvent(new Event('close'));
+    h.lobby.readyState=3;h.lobby.dispatchEvent(new Event('close'));await h.advance(0);
+    assert.equal(h.api.getStatus().enabled,true);
+    const lobby=h.connect(),versionField=method==='fastLogin'?1:11;
+    lobby.send(h.frame(2,7,`.lq.Lobby.${method}`,e([[versionField,'current-native-client-version']])));
+    await h.advance(3000);
+    assert.equal(lobby.sent.length,1,'an unauthenticated connection is not proof the old game ended');
+    assert.ok(h.window.__mjMonitor.getSnapshot().state.hand.length>0);
+    assert.equal(h.window.__mjMonitor.getSnapshot().state.recovery.status,'waiting');
+    await h.reply(lobby,method==='fastLogin'?e([]):e([[2,11],[3,h.account()]]));
+    const state=h.window.__mjMonitor.getSnapshot().state;
+    assert.equal(state.phase,'waiting');assert.equal(state.recovery,null);
+    assert.equal(state.baseline,null);assert.equal(state.hand.length,0);assert.equal(state.match,null);
+    assert.equal(state.canAct,false);
+    const reset=h.packets.findLast(packet=>packet.kind==='status'&&packet.reset);
+    assert.equal(reset.phase,'waiting','returning to an empty lobby must not fabricate a new game-end notification');
+    assert.equal(reset.recovery,null);
+    await h.advance(100);await h.advance(3000);
+    assert.equal(h.last(lobby).name,'.lq.Lobby.fetchAccountInfo');
+    assert.equal(h.last(lobby).data.length,0);
+    await h.reply(lobby,e([[2,h.account()]]));await h.advance(100);await h.advance(3000);
+    assert.equal(h.last(lobby).name,'.lq.Lobby.startUnifiedMatch');
+    assert.equal(h.str(h.fields(h.last(lobby).data),1),'1:8');
+    assert.equal(h.api.getStatus().enabled,true);
+    assert.ok(h.statuses.slice(statusStart).every(status=>status.enabled));
+  });
+
+test('Unity no-game relogin cancels an unknown old queue before refreshing and matching again', async () => {
+  const h=await setup(),e=h.encode;
+  h.api.setEnabled(true);await h.advance(3000);await h.replyAccount();
+  await h.advance(100);await h.advance(3000);
+  const oldMatch=h.last(h.lobby);
+  assert.equal(oldMatch.name,'.lq.Lobby.startUnifiedMatch');
+  h.lobby.readyState=3;h.lobby.dispatchEvent(new Event('close'));await h.advance(0);
+  const lobby=h.connect();
+  lobby.send(h.frame(2,7,'.lq.Lobby.fastLogin',e([[1,'current-native-client-version']])));
+  await h.reply(lobby);
+  assert.deepEqual(lobby.sent.map(bytes=>core.envelope(bytes).name),
+    ['.lq.Lobby.fastLogin','.lq.Lobby.cancelUnifiedMatch']);
+  assert.equal(h.str(h.fields(h.last(lobby).data),1),'1:8');
+  const cancelling=lobby.sent.length;
+  await h.feed(h.lobby,h.frame(3,oldMatch.id,''));await h.advance(5000);
+  assert.equal(lobby.sent.length,cancelling,'the absent game_info does not prove an uncertain match queue was cancelled');
+  assert.equal(h.api.getStatus().enabled,true);
+  await h.reply(lobby);await h.advance(100);await h.advance(3000);
+  assert.equal(h.last(lobby).name,'.lq.Lobby.fetchAccountInfo');
+  await h.reply(lobby,e([[2,h.account()]]));await h.advance(100);await h.advance(3000);
+  assert.equal(h.last(lobby).name,'.lq.Lobby.startUnifiedMatch');
+  assert.equal(h.str(h.fields(h.last(lobby).data),1),'1:8');
   assert.equal(h.api.getStatus().enabled,true);
 });
 

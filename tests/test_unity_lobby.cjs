@@ -28,9 +28,9 @@ function accountResponse(request, privateAccount) {
     publicProfile && id === 11 ? [] : values.map(value => [id,value]));
   return encode([[2,encode(fields)]]);
 }
-function harness() {
+function harness({gameConnected = false, onLobbyRecovery = () => {}} = {}) {
   let now = 0, listener;
-  const live = {connected:true, gameConnected:false, accountId:42, lobbySessionId:1, gameSessionId:2};
+  const live = {connected:true, gameConnected, accountId:42, lobbySessionId:1, gameSessionId:2};
   const calls = [];
   const transport = {isUnity:()=>true, snapshot:() => ({...live}), onMessage:fn => {listener=fn;},
     request(method,payload,options) {
@@ -40,7 +40,8 @@ function harness() {
       emit(method,payload,{direction:'out',kind:'request',game:options.game,injected:true});
       return promise;
     }};
-  const window = {__mjProtocol:{fields:core.fields,first,str,encode,action:core.action},__mjUnityTransport:transport};
+  const window = {__mjProtocol:{fields:core.fields,first,str,encode,action:core.action},__mjUnityTransport:transport,
+    __mjMonitor:{onLobbyRecovery}};
   vm.runInNewContext(source,{window,location:{hostname:'game.maj-soul.com'},performance:{now:()=>now},Uint8Array,console});
   function emit(method,payload=encode([]),extra={}) {
     const game = extra.game || method.startsWith('.lq.FastTest.') || method === '.lq.NotifyGameEndResult';
@@ -249,7 +250,7 @@ test('room membership and invalid ranks reject matching; login with existing gam
 
 test('actual core round-end state triggers confirmation once for win, exhaustive and abortive draws',async()=>{
   for (const name of ['ActionHule','ActionNoTile','ActionLiuJu']) {
-    const h=harness(), state=core.emptyState(); state.phase='playing';
+    const h=harness({gameConnected:true}), state=core.emptyState(); state.phase='playing';
     const action={name,step:30,matchEnd:false};
     core.apply(state,action); assert.equal(state.phase,'between_rounds');
     h.api.onEvent({kind:'turn',state,action});
@@ -295,7 +296,7 @@ test('unrelated manual cancel and timeout do not clear an existing queue',async(
 });
 
 test('native confirm before collector delivery cannot re-arm the same round',async()=>{
-  const h=harness(), plain=encode([[5,25000]]), keys=[132,94,78,66,57,162,31,96,28];
+  const h=harness({gameConnected:true}), plain=encode([[5,25000]]), keys=[132,94,78,66,57,162,31,96,28];
   const scrambled=plain.map((b,i)=>b^(((23^plain.length)+5*i+keys[i%9])&255));
   const payload=encode([[1,99],[2,'ActionHule'],[3,scrambled]]);
   h.emit('.lq.ActionPrototype',payload,{game:true});
@@ -317,7 +318,7 @@ test('explicit match rejection clears ownership while transport uncertainty reta
 });
 
 test('a new round resets confirmation deduplication when terminal action names and steps repeat',async()=>{
-  const h=harness();
+  const h=harness({gameConnected:true});
   const action={name:'ActionNoTile',step:99,matchEnd:false};
   const actionKeys=[];
   for (let i=0;i<2;i++) {
@@ -332,7 +333,7 @@ test('a new round resets confirmation deduplication when terminal action names a
 });
 
 test('confirmation ACK waits for a real new round with a bounded timeout, and native rejection stops',async()=>{
-  const h=harness();
+  const h=harness({gameConnected:true});
   h.api.onEvent({kind:'turn',state:{phase:'between_rounds'},action:{name:'ActionNoTile',step:99,matchEnd:false}});
   const result=h.api.finish(h.api.snapshot().actionKey);
   h.calls.at(-1).resolve({payload:encode([])}); await result;
@@ -481,4 +482,172 @@ test('a selection change cannot add a second queue and cancellation still target
   assert.equal(str(core.fields(h.calls.at(-1).payload),1),'1:21');
   h.calls.at(-1).resolve({payload:encode([])}); await flush();
   assert.equal(h.api.snapshot(3,2).modeId,22);
+});
+
+test('a late refresh failure from an old connection is recoverable and cannot poison a newer account refresh',async()=>{
+  const h=harness(), old=h.api.start(4,h.api.snapshot().actionKey), oldRequest=h.calls[0];
+  h.live.connected=false; h.live.accountId=null; h.api.snapshot();
+  h.live.connected=true; h.live.accountId=42; h.live.lobbySessionId=3;
+  h.emit('.lq.Lobby.fastLogin',encode([[1,'WebGL_test']]),{direction:'out',kind:'request'});
+  await h.refresh(account(42,10301,8000,20301));
+  oldRequest.reject(new Error('late connection close'));
+  assert.equal((await old).recoverable,true);
+  assert.equal(h.api.snapshot().modeId,8);
+  assert.equal(h.calls.length,2);
+});
+
+test('an uncertain old match is cancelled after reconnect before any new match can be submitted',async()=>{
+  const h=harness(); await h.refresh();
+  const started=h.api.start(4,h.api.snapshot().actionKey), original=h.calls.at(-1);
+  h.live.connected=false; h.live.accountId=null; h.api.snapshot();
+  original.reject(Object.assign(new Error('connection closed'),{recoverable:true}));
+  assert.equal((await started).recoverable,true);
+  h.live.connected=true; h.live.accountId=42; h.live.lobbySessionId=3;
+  h.emit('.lq.Lobby.fastLogin',encode([[1,'WebGL_test']]),{direction:'out',kind:'request'});
+  h.emit('.lq.Lobby.fastLogin',encode([]),{kind:'response'});
+  assert.equal(h.api.snapshot().phase,'matching');
+  assert.equal(h.calls.at(-1).method,'.lq.Lobby.cancelUnifiedMatch');
+  assert.equal(str(core.fields(h.calls.at(-1).payload),1),'1:5');
+  assert.equal(h.calls.filter(call=>call.method.endsWith('startUnifiedMatch')).length,1);
+  h.calls.at(-1).resolve({payload:encode([])}); await flush();
+  assert.equal(h.api.snapshot().action,'refresh');
+  await h.refresh();
+  assert.equal(h.api.snapshot().action,'match');
+});
+
+test('late cancellation failure does not block cancelling the same owned queue on the new connection',async()=>{
+  const h=harness(); await h.refresh();
+  const started=h.api.start(4,h.api.snapshot().actionKey);
+  h.calls.at(-1).resolve({payload:encode([])}); await started;
+  h.api.cancel(); const oldCancel=h.calls.at(-1);
+  h.live.connected=false; h.live.accountId=null; h.api.snapshot();
+  h.live.connected=true; h.live.accountId=42; h.live.lobbySessionId=3;
+  h.emit('.lq.Lobby.fastLogin',encode([]),{kind:'response'});
+  oldCancel.reject(new Error('late connection close')); await flush();
+  assert.notEqual(h.calls.at(-1),oldCancel);
+  assert.equal(h.calls.at(-1).method,'.lq.Lobby.cancelUnifiedMatch');
+  h.calls.at(-1).resolve({payload:encode([])}); await flush();
+  assert.equal(h.api.cancel().ok,true);
+  assert.equal(h.api.snapshot().action,'refresh');
+});
+
+test('reauthenticated active game does not become a new entry wait when the lobby reconnects later',async()=>{
+  const h=harness({gameConnected:true});
+  h.emit('.lq.FastTest.authGame',encode([]),{kind:'response',game:true});
+  h.live.connected=false; h.live.accountId=null; h.api.snapshot();
+  h.live.connected=true; h.live.accountId=42; h.live.lobbySessionId=3;
+  h.emit('.lq.Lobby.fastLogin',encode([[2,encode([[3,'existing-game']])]]),{kind:'response'});
+  h.advance(60000);
+  assert.equal(h.api.snapshot().phase,'playing');
+  assert.equal(h.calls.length,0);
+});
+
+test('game recovery suppresses obsolete watchdogs, clears an old game error, and ignores its late RPC failure',async()=>{
+  const h=harness({gameConnected:true});
+  h.api.onEvent({kind:'turn',state:{phase:'between_rounds'},action:{name:'ActionNoTile',step:99}});
+  const finished=h.api.finish(h.api.snapshot().actionKey), old=h.calls.at(-1);
+  h.emit('.lq.FastTest.confirmNewRound',encode([[1,encode([[1,1004]])]]),{kind:'response',game:true});
+  assert.equal(h.api.snapshot().phase,'blocked');
+  h.live.gameConnected=false; h.api.snapshot();
+  h.api.onEvent({kind:'status',phase:'disconnected',recovery:{status:'waiting',reason:'connection'}});
+  h.advance(60000); assert.equal(h.api.snapshot().phase,'reconnecting');
+  h.live.gameConnected=true; h.live.gameSessionId=4;
+  h.emit('.lq.FastTest.authGame',encode([]),{kind:'response',game:true});
+  old.reject(new Error('late old game failure'));
+  assert.equal((await finished).recoverable,true);
+  h.api.onEvent({kind:'turn',state:{phase:'playing',recovery:null},action:{name:'ActionNewRound',chang:0,ju:1,ben:0,step:0}});
+  assert.equal(h.api.snapshot().phase,'playing');
+  assert.equal(h.calls.length,1);
+});
+
+test('same-round terminal recovery does not repeat a confirmation sent on the old socket',async()=>{
+  const h=harness({gameConnected:true}), auth=encode([[1,42],[3,'same-game']]);
+  h.emit('.lq.FastTest.authGame',auth,{direction:'out',kind:'request',game:true});
+  h.api.onEvent({kind:'turn',state:{phase:'playing'},action:{name:'ActionNewRound',chang:0,ju:0,ben:0,step:0}});
+  const terminal={name:'ActionNoTile',step:99,matchEnd:false};
+  h.api.onEvent({kind:'turn',state:{phase:'between_rounds'},action:terminal});
+  const finished=h.api.finish(h.api.snapshot().actionKey);
+  h.calls.at(-1).resolve({payload:encode([])}); await finished;
+  h.live.gameConnected=false; h.api.snapshot();
+  h.live.gameSessionId=4;
+  h.emit('.lq.FastTest.authGame',auth,{direction:'out',kind:'request',game:true});
+  h.live.gameConnected=true; h.emit('.lq.FastTest.authGame',encode([]),{kind:'response',game:true});
+  h.api.onEvent({kind:'turn',state:{phase:'between_rounds',recovery:null},action:terminal});
+  assert.equal(h.api.snapshot().actionKey,undefined);
+  assert.equal(h.calls.length,1);
+});
+
+test('a restored later round can confirm even when its terminal action and step equal the previous round',async()=>{
+  const h=harness({gameConnected:true}), terminal={name:'ActionNoTile',step:99,matchEnd:false};
+  for (const ju of [0,1]) {
+    h.api.onEvent({kind:'turn',state:{phase:'between_rounds',recovery:null,round:{chang:0,ju,ben:0}},action:terminal});
+    const s=h.api.snapshot(); assert.equal(s.action,'confirm');
+    const confirmed=h.api.finish(s.actionKey);
+    h.calls.at(-1).resolve({payload:encode([])}); await confirmed;
+    h.api.onEvent({kind:'turn',state:{phase:'between_rounds',round:{chang:0,ju,ben:0}},action:terminal});
+    assert.equal(h.api.snapshot().actionKey,undefined);
+  }
+  assert.equal(h.calls.length,2);
+});
+
+test('successful login without an active game clears recovery through the collector and resumes lobby refresh',async()=>{
+  for (const method of ['.lq.Lobby.login','.lq.Lobby.fastLogin']) {
+    let resets=0;
+    const h=harness({gameConnected:true,onLobbyRecovery:()=>{resets++;}});
+    h.api.onEvent({kind:'turn',state:{phase:'between_rounds'},action:{name:'ActionNoTile',step:99}});
+    h.live.gameConnected=false;
+    h.api.onEvent({kind:'status',phase:'disconnected',recovery:{status:'waiting',reason:'connection'}});
+    assert.equal(h.api.snapshot().phase,'reconnecting');
+    h.emit(method,encode([]),{kind:'response'});
+    assert.equal(resets,1);
+    assert.equal(h.api.snapshot().action,'refresh');
+    assert.equal(h.calls.length,0,'clearing old game state must not itself send a game operation');
+  }
+});
+
+test('a failed login, existing game info, or still authenticated game cannot clear recovery',()=>{
+  for (const [payload,connected] of [
+    [encode([[1,encode([[1,1004]])]]),false],
+    [encode([[2,encode([[3,'active-game']])]]),false],
+    [encode([[2,encode([])]]),false],
+    [encode([]),true],
+  ]) {
+    let resets=0;
+    const h=harness({gameConnected:connected,onLobbyRecovery:()=>{resets++;}});
+    h.api.onEvent({kind:'status',phase:'disconnected',recovery:{status:'waiting',reason:'connection'}});
+    h.emit('.lq.Lobby.fastLogin',payload,{kind:'response'});
+    assert.equal(resets,0);
+    assert.notEqual(h.api.snapshot().action,'refresh');
+  }
+});
+
+test('no-game login recovery retains an uncertain owned match until its cancellation is confirmed',async()=>{
+  let resets=0;
+  const h=harness({onLobbyRecovery:()=>{resets++;}}); await h.refresh();
+  const started=h.api.start(4,h.api.snapshot().actionKey);
+  h.live.connected=false; h.live.accountId=null;
+  h.api.onEvent({kind:'status',phase:'disconnected',recovery:{status:'waiting',reason:'connection'}});
+  h.calls.at(-1).reject(Object.assign(new Error('closed'),{recoverable:true})); await started;
+  h.live.connected=true; h.live.accountId=42; h.live.lobbySessionId=3;
+  h.emit('.lq.Lobby.fastLogin',encode([]),{kind:'response'});
+  assert.equal(resets,1);
+  assert.equal(h.api.snapshot().phase,'matching');
+  assert.equal(h.calls.at(-1).method,'.lq.Lobby.cancelUnifiedMatch');
+  assert.equal(str(core.fields(h.calls.at(-1).payload),1),'1:5');
+  h.calls.at(-1).resolve({payload:encode([])}); await flush();
+  assert.equal(h.api.snapshot().action,'refresh');
+});
+
+test('a confirmed game end clears round deduplication even when later game authentication omits its UUID',async()=>{
+  const h=harness({gameConnected:true}), round={chang:0,ju:0,ben:0};
+  const action={name:'ActionNoTile',step:99,matchEnd:false}, keys=[];
+  for (let game=0;game<2;game++) {
+    h.api.onEvent({kind:'turn',state:{phase:'between_rounds',round},action});
+    const s=h.api.snapshot(); assert.equal(s.action,'confirm'); keys.push(s.actionKey);
+    const finished=h.api.finish(s.actionKey);
+    h.calls.at(-1).resolve({payload:encode([])}); await finished;
+    h.emit('.lq.NotifyGameEndResult');
+  }
+  assert.notEqual(keys[0],keys[1]);
+  assert.equal(h.calls.length,2);
 });

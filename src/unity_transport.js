@@ -31,6 +31,13 @@
   const errorCode = payload => {const f = core.fields(payload); return f.has(1) ? first(core.fields(first(f, 1)), 1) : 0;};
   const latest = game => selected.get(game) || [...sockets].filter(meta => meta.game === game).at(-1);
   const ready = meta => !!(meta?.authenticated && meta.socket.readyState === 1);
+  const connectionError = message => Object.assign(new Error(message), {recoverable:true});
+  function interrupt(meta, message) {
+    for (const [id, request] of meta.pending) if (request.injected) {
+      meta.pending.delete(id); meta.retired.add(id); clearTimeout(request.timer);
+      request.reject(connectionError(message));
+    }
+  }
   function snapshot() {
     const lobby = latest(false), game = latest(true);
     return {connected:ready(lobby), gameConnected:ready(game),
@@ -52,16 +59,22 @@
   }
   function identify(meta, request, payload) {
     if (errorCode(payload)) return;
+    if (selected.get(meta.game)?.id > meta.id) return;
     if (loginMethods.includes(request.method)) {
       meta.authenticated = true;
       if (request.method !== '.lq.Lobby.fastLogin') lastAccountId = first(core.fields(payload), 2, null);
       meta.accountId = lastAccountId;
     } else if (request.method === '.lq.FastTest.authGame') {
       meta.accountId = core.authAccount(request.payload); meta.authenticated = !!meta.accountId;
+      const lobby = selected.get(false);
+      if (ready(lobby) && lobby.accountId !== meta.accountId) meta.authenticated = false;
     }
     if (meta.authenticated && (loginMethods.includes(request.method) || request.method === '.lq.FastTest.authGame')) {
       for (const other of sockets) if (other !== meta && (other.game === meta.game ||
-          !meta.game && meta.accountId && other.accountId !== meta.accountId)) other.authenticated = false;
+          !meta.game && meta.accountId && other.accountId !== meta.accountId)) {
+        other.authenticated = false;
+        interrupt(other, '连接已更新，等待恢复后的牌局状态');
+      }
       selected.set(meta.game, meta);
     }
   }
@@ -130,20 +143,20 @@
         {method:env.name, payload:env.data, clientId:env.id, injected:false};
       if (injected || id !== env.id) meta.modified = true;
       if (!injected) meta.pending.set(id, request);
-      if (loginMethods.includes(env.name))
+      if (loginMethods.includes(env.name) || env.name === '.lq.FastTest.authGame')
         meta.authenticated = false;
       const wire = id === env.id ? data : bytes.slice();
       if (id !== env.id) {wire[1] = id & 255; wire[2] = id >> 8;}
       try {Reflect.apply(meta.originalSend, this, [wire]);}
       catch (error) {meta.pending.delete(id); throw error;}
+      if (!injected && (loginMethods.includes(env.name) ||
+          ['.lq.FastTest.authGame', '.lq.FastTest.syncGame', '.lq.FastTest.enterGame'].includes(env.name)))
+        interrupt(meta, '客户端正在恢复连接，等待权威牌局状态');
       emit(meta, {direction:'out', kind:'request', method:env.name, payload:env.data, injected});
     };
     meta.close = () => {
       meta.authenticated = false;
-      for (const [id, request] of meta.pending) if (request.injected) {
-        meta.retired.add(id);
-        clearTimeout(request.timer); request.reject(new Error('连接已关闭，自动操作已停止'));
-      }
+      interrupt(meta, '连接已关闭，等待自动重新连接');
       meta.pending.clear();
       emit(meta, {direction:'in', kind:'close', method:'', payload:new Uint8Array(), injected:false});
       if (stopped) detach(meta);
@@ -155,7 +168,7 @@
   function request(method, payload, {game = method.startsWith('.lq.FastTest.')} = {}) {
     if (stopped) return Promise.reject(new Error('自动控制连接已停止'));
     const meta = latest(game);
-    if (!ready(meta)) return Promise.reject(new Error('尚未取得已登录的游戏连接'));
+    if (!ready(meta)) return Promise.reject(connectionError('尚未取得已登录的游戏连接，等待自动重新连接'));
     if (!(payload instanceof Uint8Array) || game !== method.startsWith('.lq.FastTest.') ||
         !['.lq.Lobby.fetchAccountInfo', '.lq.Lobby.startUnifiedMatch', '.lq.Lobby.cancelUnifiedMatch',
           '.lq.FastTest.inputOperation', '.lq.FastTest.inputChiPengGang', '.lq.FastTest.confirmNewRound'].includes(method))
@@ -167,7 +180,8 @@
       meta.pending.set(id, entry);
       entry.timer = setTimeout(() => {
         if (meta.pending.get(id) !== entry) return;
-        meta.pending.delete(id); meta.retired.add(id); reject(new Error('等待服务器确认超时，已停止自动操作'));
+        meta.pending.delete(id); meta.retired.add(id);
+        reject(connectionError('等待服务器确认超时，等待权威状态恢复，暂不重复操作'));
       }, 10000);
       try {sending = {meta, bytes:frame}; meta.socket.send(frame);}
       catch (error) {clearTimeout(entry.timer); meta.pending.delete(id); meta.retired.add(id); reject(error);}

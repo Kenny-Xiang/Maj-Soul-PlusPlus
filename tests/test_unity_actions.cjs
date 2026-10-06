@@ -25,7 +25,7 @@ function encode(entries) {
 function setup(options = {}) {
   const ops = options.ops || [{type:1,combination:[]}];
   const cards = options.hand || hand, players = options.players || 4;
-  const state = Object.assign(core.emptyState(), {phase:'playing', selfSeat:0, playerCount:players,
+  const state = Object.assign(core.emptyState(), {phase:'playing', gameId:'game-fixture', selfSeat:0, playerCount:players,
     match:{source:'auth-game',category:2,modeId:players === 3 ? 17 : 2,playerCount:players},
     hand:[...cards], handComplete:true, historyComplete:true, lastStep:12,
     lastDraw:options.drawn === false ? null : cards.at(-1), round:{chang:0,ju:0,ben:0},
@@ -53,6 +53,7 @@ function setup(options = {}) {
     ack(index = 0) {sent[index].resolve({payload:new Uint8Array()});},
     echo(event, extra = {}) {api.onEvent({kind:'turn',action:{step:13,...event},...extra});},
     advance(ms) {time += ms; for (const [id,timer] of [...timers]) if (timer.at <= time) {timers.delete(id);timer.fn();}},
+    reconnect() {connected = true;},
     disconnect() {connected = false; api.onEvent({kind:'status',phase:'disconnected'});}};
 }
 const fields = h => core.fields(h.sent[0].bytes);
@@ -333,4 +334,34 @@ test('a final-hand win retains its authoritative echo across collector reset unt
   assert.equal(h.api.snapshot().pending,true);
   h.ack(); assert.equal((await p).action,'tsumo');
   assert.equal(h.api.snapshot().pending,false);
+});
+
+test('recovery preserves an unknown submitted turn despite new timing, and only a new authoritative turn can act',async()=>{
+  const h=setup(), old=h.run({action:'discard',tile:'1m'});
+  const interrupted=assert.rejects(old,error=>error.recoverable===true);
+  h.disconnect(); await interrupted; h.reconnect();
+  h.state.operationTiming.receivedAt=2000;
+  const restored=h.api.snapshot(h.state);
+  assert.equal(restored.canAct,false); assert.equal(restored.blocked,false); assert.equal(restored.recoverable,true);
+  assert.throws(()=>h.run({action:'discard',tile:'1m'}),/已经提交/);
+  assert.equal(h.sent.length,1);
+  h.state.lastStep=14; h.state.lastAction={name:'ActionDealTile',seat:0,tile:'1z',step:14};
+  const next=h.run({action:'discard',tile:'2m'});
+  h.sent[0].reject(new Error('old socket closed')); await Promise.resolve(); await Promise.resolve();
+  assert.equal(h.api.snapshot().pending,true,'old transport rejection cannot clear the new request');
+  h.ack(1); h.echo({name:'ActionDiscardTile',seat:0,tile:'2m',step:15,moqie:false});
+  assert.equal((await next).ok,true); assert.equal(h.sent.length,2);
+});
+
+test('same-socket recovery interrupts pending work and new game identity does not inherit the old submitted turn',async()=>{
+  const h=setup(), pending=h.run({action:'discard',tile:'1m'});
+  const interrupted=assert.rejects(pending,error=>error.recoverable===true);
+  h.state.recovery={status:'waiting',reason:'restore'};
+  h.api.onEvent({kind:'status',phase:'connected',recovery:h.state.recovery});
+  await interrupted; assert.equal(h.api.snapshot().recoverable,true);
+  h.ack(); await Promise.resolve(); assert.equal(h.api.snapshot().pending,false);
+  h.state.recovery=null; h.state.gameId='next-game';
+  const next=h.run({action:'discard',tile:'1m'});
+  h.ack(1); h.echo({name:'ActionDiscardTile',seat:0,tile:'1m',moqie:false});
+  assert.equal((await next).ok,true); assert.equal(h.sent.length,2);
 });

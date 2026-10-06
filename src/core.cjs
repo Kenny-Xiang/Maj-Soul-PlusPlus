@@ -190,7 +190,8 @@ function emptyState() {
     riichiStep: [null, null, null, null], riichiSticks: null, furiten: null,
     canAct: false, canDiscard: false, noCallsYet: false, canDoubleRiichi: false,
     operations: [], operationDetails: [], operationTiming: null, forbiddenDiscards: [],
-    playerCount: 4, warning: '尚未取得开局或恢复基线', round: null, match: null};
+    playerCount: 4, warning: '尚未取得开局或恢复基线', round: null, match: null,
+    gameId: null, recovery: null};
 }
 const tileFamily = t => t?.replace(/^0/, '5');
 function setOperations(state, e) {
@@ -206,7 +207,7 @@ function setOperations(state, e) {
   // In type 1, combination lists forbidden kuikae discards, not legal candidates.
   // See majsoulrpa screens/match/operation/_decode.py at the revision above.
   state.forbiddenDiscards = state.operationDetails.filter(op => op.type === 1).flatMap(op => op.combination);
-  state.canAct = state.phase === 'playing' && state.handComplete && state.historyComplete &&
+  state.canAct = state.phase === 'playing' && !state.recovery && state.handComplete && state.historyComplete &&
     Number.isInteger(state.selfSeat) && state.selfSeat >= 0 && state.selfSeat < state.playerCount &&
     e.selfSeat === state.selfSeat && state.operations.some(type => Number.isInteger(type) && type >= 1 && type <= 11);
   state.canDiscard = state.canAct && state.operations.includes(1);
@@ -227,7 +228,8 @@ function apply(state, e) {
     const seat = e.selfSeat ?? (e.hand.length === 14 ? e.ju : state.selfSeat);
     const match = state.match?.playerCount === e.scores.length &&
       (state.selfSeat === null || state.selfSeat === seat) ? state.match : null;
-    Object.assign(state, emptyState(), {phase: 'playing', selfSeat: seat, hand: [...e.hand],
+    const gameId = state.gameId;
+    Object.assign(state, emptyState(), {phase: 'playing', gameId, selfSeat: seat, hand: [...e.hand],
       handComplete: e.hand.length > 0, historyComplete: true, baseline: 'new_round',
       riichi: [false, false, false, false], doubleRiichi: [false, false, false, false],
       riichiSticks: e.riichiSticks ?? 0, furiten: false, noCallsYet: true,
@@ -242,13 +244,16 @@ function apply(state, e) {
   if (state.lastStep !== null && e.step !== state.lastStep + 1) {
     state.handComplete = state.historyComplete = false;
     state.warning = `动作缺口：${state.lastStep} → ${e.step}，等待新基线`;
+    state.recovery = {status:'failed', reason:state.warning};
   }
   // A consecutive live action confirms the end of an intact recovery replay.
   // Replayed operations stay closed; only this new action may offer a decision.
-  if (state.baseline === 'restore_actions' && state.handComplete && !state.historyComplete &&
+  if (state.baseline === 'restore_actions' && state.recovery?.status === 'waiting' &&
+      state.recovery.reason === 'live' && state.handComplete && !state.historyComplete &&
       state.lastStep !== null && e.step === state.lastStep + 1) {
     state.historyComplete = true;
     state.warning = '';
+    state.recovery = null;
   }
   state.lastStep = e.step;
   state.phase = 'playing';
@@ -279,6 +284,7 @@ function apply(state, e) {
   function invalidate(reason) {
     state.handComplete = state.historyComplete = false;
     state.warning = reason;
+    state.recovery = {status:'failed', reason};
   }
   function remove(tile, family = false) {
     if (!state.handComplete) return;
@@ -348,20 +354,28 @@ function apply(state, e) {
 }
 
 function applyRestore(state, result) {
-  if (result.ended) {state.phase = 'ended'; setMatch(state, null); setOperations(state, {}); return;}
+  if (result.ended) {state.phase = 'ended'; state.recovery = null; setMatch(state, null); setOperations(state, {}); return;}
   const start = result.actions.findLastIndex(e => e.name === 'ActionNewRound');
   if (start >= 0) {
-    const {match, selfSeat} = state;
-    Object.assign(state, emptyState(), {match, selfSeat});
+    const {match, selfSeat, gameId} = state;
+    Object.assign(state, emptyState(), {match, selfSeat, gameId});
     for (const e of result.actions.slice(start)) {
       if (!apply(state, e)) {
         state.handComplete = state.historyComplete = false;
         state.warning = '恢复动作顺序不连续，等待新基线';
+        state.recovery = {status:'failed', reason:state.warning};
       }
     }
     state.baseline = 'restore_actions';
     if (state.handComplete && state.historyComplete) {
       state.warning = '已回放恢复动作；等待连续实时动作确认恢复边界';
+      state.recovery = {status:'waiting', reason:'live'};
+      if (['between_rounds','ended'].includes(state.phase)) {
+        state.recovery = null;
+        state.warning = '';
+      }
+    } else {
+      state.recovery = {status:'failed', reason:state.warning || '恢复动作缺少完整基线'};
     }
     state.historyComplete = false;
     setOperations(state, {});
@@ -369,11 +383,13 @@ function applyRestore(state, result) {
     const s = result.snapshot;
     const match = state.match?.playerCount === s.players.length &&
       (state.selfSeat === null || state.selfSeat === s.selfSeat) ? state.match : null;
-    Object.assign(state, emptyState(), {phase: 'playing', selfSeat: s.selfSeat,
+    const gameId = state.gameId;
+    Object.assign(state, emptyState(), {phase: 'playing', gameId, selfSeat: s.selfSeat,
       hand: s.hand, handComplete: false, baseline: 'snapshot_unverified', left: s.left,
       doras: s.doras, scores: s.players.map(p => p.score), playerCount: s.players.length || 4,
       round: {chang: s.chang, ju: s.ju, ben: s.ben}, lastStep: result.step,
-      warning: '已收到恢复快照；与补发动作的边界待核对，手牌仅作快照展示'});
+      warning: '已收到恢复快照；与补发动作的边界待核对，手牌仅作快照展示',
+      recovery: {status:'waiting', reason:'snapshot'}});
     setMatch(state, match);
     s.players.slice(0, 4).forEach((p, i) => {
       state.rivers[i] = p.discards.map(tile => ({tile, called: false, snapshot: true}));

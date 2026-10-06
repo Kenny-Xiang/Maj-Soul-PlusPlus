@@ -5,6 +5,8 @@ const nativeBridge = window.webkit?.messageHandlers?.mjStatistics;
 if (!nativeBridge) return {installed:false, reason:'native bridge unavailable'};
 const NativeSocket = window.WebSocket, sockets = new Map(), state = core.emptyState();
 const session = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+// Keep reconnect identity stable without publishing the private game UUID.
+const gameIds = new Map();
 let running = true, sequence = 0, serial = 0, activeSocket = null;
 let received = 0, errors = 0, turns = 0, connectedAt = 0;
 let heartbeatTimer, wrappedConstructor;
@@ -22,7 +24,7 @@ function publish(event) {
   nativeBridge.postMessage(JSON.stringify(packet));
   connectedAt = Date.now();
 }
-function status(message) {publish({kind:'status', message, phase:state.phase});}
+function status(message) {publish({kind:'status', message, phase:state.phase, recovery:state.recovery});}
 function closeDecisionWindow() {
   window.__mjStatsOverlay?.invalidateAdvice();
   state.canAct = state.canDiscard = state.canDoubleRiichi = false; state.lastAction = null;
@@ -35,7 +37,8 @@ function fail(error) {
   for (const meta of sockets.values()) meta.pending.clear();
   errors++; state.handComplete = state.historyComplete = false;
   state.warning = `解析失败：${error.message}，当前数据可能不完整`;
-  publish({kind:'error', message:state.warning});
+  state.recovery = {status:'failed', reason:state.warning};
+  publish({kind:'error', message:state.warning, recovery:state.recovery});
 }
 function updateStatistics(event) {
   window.__mjStatsOverlay?.invalidateAdvice();
@@ -43,21 +46,23 @@ function updateStatistics(event) {
   publish({kind:'turn', trigger:event.name, actorSeat:event.seat, step:event.step, turnNumber:turns,
     action:event, statistics:{received, errors}, state:JSON.parse(JSON.stringify(state))});
 }
-function resetStatistics() {
+function resetStatistics(phase = 'ended') {
   window.__mjStatsOverlay?.invalidateAdvice();
-  const alreadyReset = state.phase === 'ended' && state.lastStep === null && turns === 0;
-  Object.assign(state, core.emptyState(), {phase:'ended', warning:''});
+  const alreadyReset = state.phase === phase && state.lastStep === null && turns === 0;
+  Object.assign(state, core.emptyState(), {phase, warning:''});
   for (const meta of sockets.values()) meta.pending.clear();
   received = errors = turns = 0;
-  if (!alreadyReset) publish({kind:'status', phase:'ended', reset:true,
-    message:'对局已结束，统计已重置，等待下一场'});
+  if (!alreadyReset) publish({kind:'status', phase, reset:true, recovery:null,
+    message:phase === 'ended' ? '对局已结束，统计已重置，等待下一场' : '已确认没有进行中的对局，恢复状态已清除，等待大厅就绪'});
 }
 function resetForConnection(meta) {
   if (activeSocket === meta.id) return;
+  const recovery = state.recovery || (state.baseline || state.phase === 'disconnected' ?
+    {status:'waiting', reason:'authentication'} : null);
   closeDecisionWindow();
   for (const previous of sockets.values()) if (previous !== meta) previous.pending.clear();
   activeSocket = meta.id;
-  Object.assign(state, core.emptyState(), {phase:'connected'});
+  Object.assign(state, core.emptyState(), {phase:'connected', recovery});
 }
 function receivedFrame(meta, bytes, receivedAt) {
   if (activeSocket !== null && meta.id < activeSocket) return;
@@ -67,10 +72,17 @@ function receivedFrame(meta, bytes, receivedAt) {
   if (env.kind === 1 && env.name === '.lq.ActionPrototype') {
     resetForConnection(meta);
     const event = core.action(env.data), previousPhase = state.phase;
+    const recovery = state.recovery;
     if (event.operationTiming) event.operationTiming.receivedAt = receivedAt;
     if (state.phase === 'ended' && state.lastStep === null &&
         ['ActionHule','ActionNoTile','ActionLiuJu'].includes(event.name)) {received = 0; return;}
     if (!core.apply(state, event)) return;
+    // A queued live packet must not bypass a restore/authentication still in flight.
+    if (recovery?.status === 'waiting' && meta.pending.size &&
+        state.recovery?.status !== 'failed' && state.phase !== 'ended') {
+      state.recovery = recovery;
+      closeDecisionWindow();
+    }
     if (state.phase !== previousPhase) status('牌局状态更新');
     updateStatistics(event);
     if (state.phase === 'ended') resetStatistics();
@@ -85,6 +97,7 @@ function receivedFrame(meta, bytes, receivedAt) {
       if (result.match) {
         state.selfSeat = result.selfSeat;
         state.playerCount = result.match.playerCount;
+        state.gameId = request.gameId;
       }
       status(result.match ? '已从游戏认证信息读取段位与排位模式' : '排位信息未确认，使用通用策略');
       return;
@@ -129,6 +142,7 @@ function attach(socket) {
       state.phase = 'disconnected';
       state.handComplete = state.historyComplete = false;
       state.warning = '牌局连接关闭，等待自动重新连接';
+      if (state.recovery?.status !== 'failed') state.recovery = {status:'waiting', reason:'connection'};
       status(state.warning);
     }
     detach(meta); sockets.delete(socket);
@@ -151,14 +165,29 @@ function attach(socket) {
       }
       if (env?.kind === 2 && (activeSocket === null || meta.id >= activeSocket) &&
           ['.lq.FastTest.authGame','.lq.FastTest.syncGame','.lq.FastTest.enterGame'].includes(env.name)) {
+        const recovering = Boolean(state.recovery || state.baseline || state.phase === 'disconnected' ||
+          env.name === '.lq.FastTest.syncGame' && state.phase !== 'ended');
+        closeDecisionWindow();
         if (env.name === '.lq.FastTest.authGame') {
-          closeDecisionWindow();
           resetForConnection(meta);
           Object.assign(state, core.emptyState(), {phase:'connected'});
           meta.pending.clear();
         }
+        if (recovering) {
+          state.recovery = {status:'waiting', reason:env.name === '.lq.FastTest.authGame' ? 'authentication' : 'restore'};
+          status('正在恢复牌局连接，等待可信实时操作');
+        }
+        let gameId = null;
+        if (env.name === '.lq.FastTest.authGame') {
+          const uuid = core.fields(env.data).get(3)?.[0];
+          if (uuid instanceof Uint8Array && uuid.length) {
+            const key = new TextDecoder().decode(uuid);
+            if (!gameIds.has(key)) gameIds.set(key, `game-${gameIds.size + 1}`);
+            gameId = gameIds.get(key);
+          }
+        }
         meta.pending.set(env.id, {method:env.name,
-          accountId:env.name === '.lq.FastTest.authGame' ? core.authAccount(env.data) : null});
+          accountId:env.name === '.lq.FastTest.authGame' ? core.authAccount(env.data) : null, gameId});
         if (meta.pending.size > 256) meta.pending.delete(meta.pending.keys().next().value);
       }
     } catch (error) {fail(error);}
@@ -184,7 +213,7 @@ function stop() {
   core.setMatch(state, null);
   for (const meta of sockets.values()) detach(meta);
   if (window.WebSocket === wrappedConstructor) window.WebSocket = NativeSocket;
-  state.phase = 'stopped'; console.log('[雀魂监听] 页面监听已停止');
+  state.phase = 'stopped'; state.recovery = null; console.log('[雀魂监听] 页面监听已停止');
 }
 wrappedConstructor = new Proxy(NativeSocket, {construct(target, args, newTarget) {
   const socket = Reflect.construct(target, args, newTarget);
@@ -193,6 +222,7 @@ wrappedConstructor = new Proxy(NativeSocket, {construct(target, args, newTarget)
 }});
 window.WebSocket = wrappedConstructor;
 window.__mjMonitor = {version:'3.0.0', getSnapshot:snapshot, stop,
+  onLobbyRecovery:() => {if (running && state.recovery?.status === 'waiting') resetStatistics('waiting');},
   reportAutomation:value => Promise.resolve().then(() => {if (running) publish({kind:'automation', ...value});}),
   uninstall:() => {stop(); delete window.__mjMonitor;}};
 heartbeatTimer = setInterval(() => {
