@@ -2073,10 +2073,14 @@ def _advise(state, *, ranked_limit=None):
                 if candidate["action"] == "abort":
                     continue
                 candidate["reasons"].append("与九种九牌按同一本局终局账目比较，不计形状奖励，保留自摸损失和流局收支")
-        ranked = _rank_candidates(candidates, limit=ranked_limit)
+        # Comparison reasons annotate both alternatives, even when the caller
+        # requests only two ranked candidates in the published prefix.
+        ranked = _rank_candidates(candidates, limit=None if ranked_limit is None else max(3, ranked_limit))
         _explain_tie(ranked)
         _explain_comparison(ranked)
         if ranked_limit is not None:
+            # Keep the list identity for offline diagnostic capture.
+            del ranked[ranked_limit:]
             ranked_ids = {id(candidate) for candidate in ranked}
             ranked.extend(candidate for candidate in candidates if id(candidate) not in ranked_ids)
         candidates = ranked
@@ -2116,7 +2120,7 @@ def advise(state, cancelled=None, *, ranked_limit=None):
     Default to full ordering for offline analysis. A ranked_limit of at least
     two orders only that exact prefix, retaining every other fully evaluated
     candidate in input order. rankedCandidateCount marks the ordered prefix;
-    the first two still support the same best-candidate comparison reasons.
+    internally rank at least three to preserve every comparison explanation.
     """
     if ranked_limit is not None and (type(ranked_limit) is not int or ranked_limit < 2):
         raise ValueError("ranked_limit must be None or an integer of at least two")

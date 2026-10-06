@@ -146,16 +146,23 @@ class AdvisorBenchmarkTests(unittest.TestCase):
     @unittest.skipIf(getattr(sys, "frozen", False), "requires a Python CLI subprocess")
     def test_ranked_prefix_keeps_internal_accounts_for_unranked_tail(self):
         cases = comparison.load_cases(comparison.FIXTURES, ["closed-tsumo-only-tenpai"])
-        report = comparison.run_version(ROOT / "src", cases, warmups=0, repeats=1,
-                                        include_internal=True, ranked_limit=3)
-        item = report["cases"][cases[0]["id"]]
-        candidates = item["advice"]["candidates"]
-        self.assertEqual(item["advice"]["rankedCandidateCount"], 3)
-        self.assertGreater(len(candidates), 3)
-        self.assertEqual(set(item["internalCandidates"]), {c["actionId"] for c in candidates})
-        for candidate in candidates:
-            account = item["internalCandidates"][candidate["actionId"]]
-            self.assertAlmostEqual(account["_outcome"]["win"], candidate["terminalProbabilities"]["selfWin"])
+        full = comparison.run_version(ROOT / "src", cases, warmups=0, repeats=1, include_internal=True)
+        for limit in (2, 3):
+            with self.subTest(limit=limit):
+                report = comparison.run_version(ROOT / "src", cases, warmups=0, repeats=1,
+                                                include_internal=True, ranked_limit=limit)
+                item = report["cases"][cases[0]["id"]]
+                candidates = item["advice"]["candidates"]
+                self.assertEqual(item["advice"]["rankedCandidateCount"], limit)
+                self.assertGreater(len(candidates), limit)
+                self.assertEqual(set(item["internalCandidates"]), {c["actionId"] for c in candidates})
+                self.assertEqual(item["internalCandidates"], full["cases"][cases[0]["id"]]["internalCandidates"])
+                changes = comparison.compare_cases(full, report)[cases[0]["id"]]
+                self.assertFalse(changes["rankedPrefixChanged"])
+                self.assertEqual(changes["candidateChanges"], [])
+                for candidate in candidates:
+                    account = item["internalCandidates"][candidate["actionId"]]
+                    self.assertAlmostEqual(account["_outcome"]["win"], candidate["terminalProbabilities"]["selfWin"])
 
     @unittest.skipIf(getattr(sys, "frozen", False), "requires a Git checkout and Python CLI subprocesses")
     def test_same_ref_isolated_comparison_preserves_analysis_and_reports_provenance(self):
