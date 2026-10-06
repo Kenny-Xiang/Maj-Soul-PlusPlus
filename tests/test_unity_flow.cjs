@@ -538,3 +538,87 @@ test('re-enabling after insufficient private gold refreshes the balance and then
   await h.reply(h.lobby); h.api.setEnabled(false);
   await h.reply(h.lobby); await h.advance(100);
 });
+
+const budgetAdvice={status:'unavailable',reason:'search_budget_exceeded',recoverable:true,
+  message:'前瞻计算超过时间预算，等待下一次局面',candidates:[],best:null};
+async function budgetFixture() {
+  const h=await setup(3,false,2),e=h.encode,seats=[11,22,33],game=h.connect(true);
+  game.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11],[3,'budget-test-match']])));
+  await h.reply(game,e([...seats.map(id=>[2,e([[1,id],[7,e([[1,20301]])]])]),
+    ...seats.map(id=>[3,id]),[5,e([[1,2],[2,e([[1,12]])],[3,e([[2,22]])]])]]));
+  const hand=['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','4z','1z'];
+  const operation=e([[1,0],[2,e([[1,1]])],[2,e([[1,11]])],[4,20000],[5,5000]]);
+  await h.action(game,'ActionNewRound',0,[[1,1],[2,0],[3,0],...hand.map(tile=>[4,tile]),
+    ...seats.map(()=>[6,35000]),[7,operation],[13,54],[14,'1p']]);
+  const state=h.window.__mjMonitor.getSnapshot().state;
+  assert.equal(state.playerCount,3);assert.equal(state.match.roundCount,2);
+  assert.equal(state.canAct,true);assert.deepEqual([...state.operations],[1,11]);
+  h.api.setEnabled(true);
+  const packet=h.packets.findLast(p=>p.kind==='turn'),key=`${packet.session}:${packet.serial}`;
+  const advice=(value,adviceKey=key)=>h.api.onAdvice({adviceKey,advice:value});
+  return {h,e,game,key,advice,async nextWindow() {
+    await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z'],[5,1]]);
+    await h.action(game,'ActionDealTile',2,[[1,0],[2,'2z'],[3,53],[4,operation]]);
+    assert.equal(h.window.__mjMonitor.getSnapshot().state.canAct,true);
+  }};
+}
+
+test('Unity sanma South budget exhaustion waits and accepts fresh advice within the same live window', async () => {
+  const {h,game,advice}=await budgetFixture();
+  await h.advance(2000);advice(budgetAdvice);
+  assert.equal(h.api.getStatus().enabled,true);
+  await h.advance(3000);assert.equal(game.sent.length,1,'an exhausted search cannot invent an action');
+  advice({status:'ready',best:{action:'discard',tile:'1z'}});await h.advance(3000);
+  assert.equal(game.sent.length,2);assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
+  assert.equal(h.str(h.fields(h.last(game).data),3),'1z');
+  await h.reply(game);await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z'],[5,1]]);
+  await h.advance(1000);assert.equal(game.sent.length,2);
+  assert.equal(h.api.getStatus().enabled,true);
+});
+
+test('Unity budget exhaustion survives expiry, ignores late advice, and resumes from a fresh live window', async () => {
+  const {h,game,advice,nextWindow}=await budgetFixture();
+  advice(budgetAdvice);await h.advance(25001);
+  assert.equal(h.api.getStatus().enabled,true);assert.equal(game.sent.length,1);
+  advice({status:'ready',best:{action:'discard',tile:'1z'}});await h.advance(100);
+  assert.equal(game.sent.length,1,'late advice must not execute an expired operation');
+  await nextWindow();advice({status:'ready',best:{action:'discard',tile:'1z'}});
+  await h.advance(100);assert.equal(game.sent.length,1,'the previous advice key cannot control a new window');
+  h.advice({action:'discard',tile:'2z'});await h.advance(5000);
+  assert.equal(game.sent.length,2);assert.equal(h.str(h.fields(h.last(game).data),3),'2z');
+  assert.equal(h.api.getStatus().enabled,true);
+});
+
+for (const expired of [false,true])
+  test(`Unity native fallback after a budget result preserves autoplay ${expired?'after expiry':'before expiry'}`, async () => {
+    const {h,e,game,advice,nextWindow}=await budgetFixture();
+    advice(budgetAdvice);await h.advance(expired?25001:2000);
+    assert.equal(h.api.getStatus().enabled,true);
+    game.send(h.frame(2,8,'.lq.FastTest.inputOperation',e([[1,1],[3,'1z'],[5,1]])));
+    await h.reply(game);
+    assert.equal(h.api.getStatus().enabled,true,'native fallback is not a trusted manual takeover');
+    advice({status:'ready',best:{action:'discard',tile:'1z'}});await h.advance(1000);
+    assert.equal(game.sent.length,2,'fresh advice cannot duplicate the native input');
+    await nextWindow();h.advice({action:'discard',tile:'2z'});await h.advance(5000);
+    assert.equal(game.sent.length,3);assert.equal(h.str(h.fields(h.last(game).data),3),'2z');
+    assert.equal(h.api.getStatus().enabled,true);
+  });
+
+for (const cancel of ['off','manual'])
+  test(`Unity budget wait cannot override ${cancel} user intent`, async () => {
+    const {h,game,advice,nextWindow}=await budgetFixture();
+    advice(budgetAdvice);assert.equal(h.api.getStatus().enabled,true);
+    if (cancel==='off') h.api.setEnabled(false);else h.manual();
+    advice({status:'ready',best:{action:'discard',tile:'1z'}});await h.advance(25001);
+    await nextWindow();h.advice({action:'discard',tile:'2z'});await h.advance(5000);
+    assert.equal(h.api.getStatus().enabled,false);assert.equal(game.sent.length,1);
+  });
+
+for (const invalid of [
+  {status:'unavailable',reason:'invalid_state',recoverable:true,message:'牌局状态无法可靠计算',candidates:[],best:null},
+  {status:'ready',best:{action:'discard',tile:'9m'}},
+]) test(`Unity actual invalid advice still pauses: ${invalid.status}`, async () => {
+  const {h,game,advice}=await budgetFixture();
+  advice(invalid);await h.advance(5000);
+  assert.equal(h.api.getStatus().enabled,false);assert.equal(game.sent.length,1);
+});

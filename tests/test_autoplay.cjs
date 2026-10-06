@@ -59,6 +59,9 @@ function responseTime(advice, changes = {}, random) {
   return {ms:s.actions[0].at,s};
 }
 
+const budgetExceeded = {status:'unavailable',reason:'search_budget_exceeded',recoverable:true,
+  message:'前瞻计算超过时间预算，等待下一次局面',best:null,candidates:[]};
+
 for (const arrivalMs of [500,2000,8000,29000]) test(`initial round arriving after ${arrivalMs}ms resumes from its event, not a fixed five-second delay`, () => {
   const s=setup(); s.api.setEnabled(true);
   assert.match(s.api.getStatus().message,/等待开局牌局信息/);
@@ -122,20 +125,70 @@ test('delay and calculation overlap instead of adding another full random wait',
   s.advance(100);assert.equal(s.actions.length,1);
 });
 
-test('short decision deadline overrides target delay; no available decision pauses', () => {
+test('short decision deadline overrides target delay; no available decision skips only that window', () => {
   const s=setup();s.turn();s.advice();s.client.remainingMs=300;s.api.setEnabled(true);
   assert.equal(s.actions.length,1);
   const unavailable=setup();unavailable.turn();unavailable.client.remainingMs=300;unavailable.api.setEnabled(true);
-  assert.equal(unavailable.actions.length,0);assert.equal(unavailable.api.getStatus().enabled,false);
+  assert.equal(unavailable.actions.length,0);assert.equal(unavailable.api.getStatus().enabled,true);
+  unavailable.advice();unavailable.advance(100);
+  assert.equal(unavailable.actions.length,0,'advice arriving after the submission cutoff cannot revive this window');
 });
 
-test('missing or expired countdown and unknown client adapter fail closed', () => {
-  for (const remainingMs of [null,NaN,0,-1]) {
+test('missing countdown and unknown client adapter fail closed', () => {
+  for (const remainingMs of [null,NaN]) {
     const s=setup();s.turn();s.advice();s.client.remainingMs=remainingMs;s.api.setEnabled(true);
     assert.equal(s.actions.length,0);assert.equal(s.api.getStatus().enabled,false);
   }
   const s=setup();s.turn();s.advice();s.client.available=false;s.api.setEnabled(true);
   assert.equal(s.api.getStatus().enabled,false);
+});
+
+test('expired countdown skips stale advice without disabling the next window', () => {
+  const s=setup();s.turn();s.advice();s.client.remainingMs=0;s.client.blocked=true;s.client.canAct=false;
+  s.api.setEnabled(true);s.advance(5000);
+  assert.equal(s.api.getStatus().enabled,true);assert.equal(s.actions.length,0);
+  Object.assign(s.client,{remainingMs:10000,canAct:true,blocked:false});
+  s.advice();s.advance(100);assert.equal(s.actions.length,0);
+  s.turn(2,{lastStep:4,operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});
+  s.advice(2);s.finishAction();assert.equal(s.api.getStatus().enabled,true);
+});
+
+test('budget exhaustion preserves intent until fresh advice or a new legal window', () => {
+  for (const expires of [false,true]) {
+    const s=setup();s.turn();s.api.setEnabled(true);s.advice(1,budgetExceeded);s.advance(3000);
+    assert.equal(s.api.getStatus().enabled,true);assert.equal(s.actions.length,0);
+    if (expires) {
+      Object.assign(s.client,{remainingMs:0,blocked:true,canAct:false});s.advance(25000);
+      assert.equal(s.api.getStatus().enabled,true);
+      s.advice();s.tick();assert.equal(s.actions.length,0);
+      s.api.onInput();assert.equal(s.api.getStatus().enabled,true,'native timeout handling is not manual takeover');
+      Object.assign(s.client,{remainingMs:10000,blocked:false,canAct:true});
+      s.turn(2,{lastStep:5,operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});s.advice(1);
+      s.advance(500);assert.equal(s.actions.length,0);s.advice(2);
+    } else s.advice();
+    s.finishAction();assert.equal(s.api.getStatus().enabled,true);
+  }
+});
+
+test('only a structured budget timeout is recoverable, and manual/off remain authoritative', () => {
+  for (const advice of [{...budgetExceeded,recoverable:false}, {...budgetExceeded,reason:'invalid_state'},
+    {status:'unavailable',message:budgetExceeded.message}]) {
+    const s=setup();s.turn();s.api.setEnabled(true);s.advice(1,advice);
+    assert.equal(s.api.getStatus().enabled,false);assert.equal(s.actions.length,0);
+  }
+  for (const off of [s=>s.api.setEnabled(false),
+    s=>s.listeners.get('pointerdown')({isTrusted:true,composedPath:()=>[]})]) {
+    const s=setup();s.turn();s.api.setEnabled(true);s.advice(1,budgetExceeded);off(s);
+    s.turn(2);s.advice(2);s.advance(5000);
+    assert.equal(s.api.getStatus().enabled,false);assert.equal(s.actions.length,0);
+  }
+});
+
+test('native input after a known deadline keeps intent even before the next scheduler tick', () => {
+  const s=setup();s.turn();s.api.setEnabled(true);s.client.remainingMs=0;
+  s.api.onInput();assert.equal(s.api.getStatus().enabled,true);
+  const invalid=setup();invalid.turn();invalid.api.setEnabled(true);invalid.client.remainingMs=null;
+  invalid.api.onInput();assert.equal(invalid.api.getStatus().enabled,false);
 });
 
 test('waiting for client animation does not execute until a valid action surface appears', () => {

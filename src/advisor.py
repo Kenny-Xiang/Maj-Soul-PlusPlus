@@ -2150,6 +2150,10 @@ class _SearchStopped(Exception):
     pass
 
 
+class _SearchBudgetExceeded(_SearchStopped):
+    pass
+
+
 def _check_search():
     search = _SEARCH.get()
     if search is not None:
@@ -2157,7 +2161,7 @@ def _check_search():
         if cancelled is not None and cancelled():
             raise _SearchStopped("局面已更新，撤销过期计算")
         if time.monotonic() >= deadline:
-            raise _SearchStopped("前瞻计算超过时间预算，等待下一次局面")
+            raise _SearchBudgetExceeded("前瞻计算超过时间预算，等待下一次局面")
 
 
 def advise(state, cancelled=None, *, ranked_limit=None):
@@ -2178,11 +2182,16 @@ def advise(state, cancelled=None, *, ranked_limit=None):
     try:
         _check_search()
         result = _advise(state) if ranked_limit is None else _advise(state, ranked_limit=ranked_limit)
-        _check_search()
+        # A known invalid snapshot must not be relabeled as a recoverable timeout.
+        if result["status"] != "unavailable":
+            _check_search()
         return result
     except _SearchStopped as error:
+        recoverable = isinstance(error, _SearchBudgetExceeded)
         return {"status": "unavailable", "message": str(error), "candidates": [],
-                "best": None, "model": MODEL, "elapsedMs": round((time.monotonic() - started) * 1000, 1)}
+                "best": None, "model": MODEL, "elapsedMs": round((time.monotonic() - started) * 1000, 1),
+                "reason": "search_budget_exceeded" if recoverable else "search_cancelled",
+                "recoverable": recoverable}
     finally:
         TABLES.reset(tables_token)
         _POLICY_RISKS.reset(policy_token)
