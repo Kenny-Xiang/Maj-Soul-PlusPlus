@@ -24,7 +24,7 @@ class ScoreAccountingTests(unittest.TestCase):
         for key, value in terms.items():
             if key == "winIncome":
                 self.assertGreater(value, 0)
-            elif key not in ("roundingAdjustment", "riskPreferenceAdjustment", "exhaustiveDrawPayment"):
+            elif key not in ("roundingAdjustment", "riskPreferenceAdjustment", "rankOpponentAdjustment", "exhaustiveDrawPayment"):
                 self.assertLess(value, 0)
         if "terminalProbabilities" in candidate:
             probabilities = candidate["terminalProbabilities"].values()
@@ -120,10 +120,15 @@ class ScoreAccountingTests(unittest.TestCase):
         self.assertTrue(candidate["abortAfterRiichi"])
         self.assertEqual(self.assert_ledger(candidate), {"riichiCost": -1000., "roundingAdjustment": 0.})
 
-    def test_call_no_yaku_penalty_is_separate(self):
+    def test_call_no_yaku_wait_has_no_income_or_extra_action_penalty(self):
         s = offered("123m456p789s55z23s", 2, ["2s|3s"], "1s")
         candidate = get_action(s, "chi")
-        self.assertEqual(self.assert_ledger(candidate)["openNoYakuPenalty"], -500)
+        terms = self.assert_ledger(candidate)
+        self.assertNotIn("openNoYakuPenalty", terms)
+        self.assertNotIn("winIncome", terms)
+        self.assertEqual(candidate["winProbability"], 0.)
+        self.assertTrue(all(wait["ronPoints"] == wait["tsumoPoints"] == 0
+                            for wait in candidate["winningTiles"]))
 
     def test_four_kan_only_direct_replacement_wins_contribute_income(self):
         # A simple kan cannot be robbed for kokushi, so physical draw weights

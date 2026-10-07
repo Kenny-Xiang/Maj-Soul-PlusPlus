@@ -1,0 +1,141 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "early-open-pon-yakuhai-pairs",
+      "notes": "Minimal public early-round pon window; retain both yakuhai pairs in the projected followup. No later outcomes.",
+      "expectedStatus": "ready",
+      "tags": ["call", "unconfirmed-yaku", "followup-consistency"],
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "hand": [
+          "5z",
+          "7z",
+          "5z",
+          "6s",
+          "3s",
+          "3p",
+          "6p",
+          "1p",
+          "2p",
+          "7z",
+          "9p",
+          "1m",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "lastStep": 8,
+        "lastDraw": null,
+        "left": 51,
+        "doras": [
+          "1z"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "operations": [
+          3
+        ],
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 0,
+          "tile": "3s",
+          "step": 8
+        },
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0,
+          "isExtension": false,
+          "isFinal": false
+        },
+        "match": {
+          "source": "auth-game",
+          "category": 2,
+          "modeId": 21,
+          "room": 3,
+          "levelId": 20301,
+          "playerCount": 3,
+          "roundCount": 1
+        },
+        "rivers": [
+          [
+            {
+              "tile": "1s",
+              "called": false,
+              "step": 2
+            },
+            {
+              "tile": "3s",
+              "called": false,
+              "step": 8
+            }
+          ],
+          [
+            {
+              "tile": "1z",
+              "called": false,
+              "step": 4
+            }
+          ],
+          [
+            {
+              "tile": "1z",
+              "called": false,
+              "step": 6
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "operationDetails": [
+          {
+            "type": 3,
+            "combination": [
+              "3s|3s"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

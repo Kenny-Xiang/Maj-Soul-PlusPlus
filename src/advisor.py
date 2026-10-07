@@ -22,11 +22,11 @@ from advisor_policy import Outcome, TABLES, discard as _policy_discard, residual
 from advisor_settlement import opponent_payments
 from advisor_continuation import finite_policy, leaf_policy
 from advisor_routes import target_policy
-from advisor_rank_policy import ranked_context
+from advisor_rank_policy import ranked_context, loss_context, loss_adjustment
 from advisor_shanten import structural_shanten as _structural_shanten
 
 
-MODEL = "public-information-actions-ev-v10-rank-preference (未校准启发式)"
+MODEL = "public-information-actions-ev-v11-rank-transfer-preference (未校准启发式)"
 SEARCH_SECONDS = 2.
 # Public-evidence priors, not frequencies fitted to game records.
 OPEN_YAKU_CONFIDENCE = .6
@@ -400,6 +400,7 @@ def _visible_yakuman_payment(state, enemy):
     cfg = _config(state, seat=enemy)
     cfg.kyoutaku_number = cfg.tsumi_number = 0
     lower, upper, shared, names = 0, 0, False, []
+    other_payments = []
     for name, indices, multiple in (("Daisangen", {31, 32, 33}, 1),
                                      ("Daisuushii", {27, 28, 29, 30}, 2)):
         relevant = [m for index, m in groups if index in indices]
@@ -414,6 +415,8 @@ def _visible_yakuman_payment(state, enemy):
             lower += full // 2 if split else full
             upper += full // 2 if split and payer is not None else full
             shared |= split
+            if split and payer is not None:
+                other_payments.append((payer, full // 2))
     if len(melds) == 4 and all(m["type"] in (2, 3) for m in melds):
         names.append("Suukantsu")  # No pao for four kans in the supported rules.
         full = _points(13, 0, cfg, state["playerCount"], yakuman=True)
@@ -422,17 +425,22 @@ def _visible_yakuman_payment(state, enemy):
     if not names:
         return None
     honba = (state["playerCount"] - 1) * 100 * (state.get("round") or {}).get("ben", 0)
-    return {"yaku": names, "lower": lower + (0 if shared else honba), "upper": upper + honba}
+    result = {"yaku": names, "lower": lower + (0 if shared else honba), "upper": upper + honba}
+    if other_payments:
+        result["otherPayments"] = tuple(other_payments)
+    return result
 
 
-def _opponents(state, remaining, *, after_current=False, passed_discard=None):
+def _opponents(state, remaining, *, after_current=False, passed_discard=None, riichi_deposit=False):
     """Public risk features, optionally after known discards have survived.
 
     Continuations may include the current river event and an explicit root
     discard as locked-hand safety evidence without advancing the event clock.
+    A newly declared riichi pays its deposit only after that discard survives.
     """
     opponents = []
     cache = _POLICY_RISKS.get()
+    rank_context = loss_context(state, riichi_deposit=riichi_deposit)
     players, seat = state["playerCount"], state["selfSeat"]
     dora = [_dora_index(t, players) for t in state.get("doras", [])]
     for enemy in range(players):
@@ -455,7 +463,7 @@ def _opponents(state, remaining, *, after_current=False, passed_discard=None):
         # Rebuild safety for every continuation; never share that mutable set.
         key = ("opponent-public", enemy)
         if cache is not None and key in cache:
-            opponents.append({**cache[key], "safe": safe})
+            opponents.append({**cache[key], "safe": safe, "rankLossContext": rank_context})
             continue
         open_melds = [m for m in melds if m["type"] != 3]
         turn = len(river)
@@ -484,7 +492,7 @@ def _opponents(state, remaining, *, after_current=False, passed_discard=None):
         yakuman = _visible_yakuman_payment(state, enemy)
         loss = yakuman["lower"] if yakuman else _points(han, fu, cfg, players)
         red_loss = loss if yakuman else _points(han + 1, fu, cfg, players)
-        opponents.append({"seat": enemy, "safe": safe, "tenpai": tenpai,
+        opponents.append({"seat": enemy, "safe": safe, "tenpai": tenpai, "rankLossContext": rank_context,
                           "loss": loss, "riichi": riichi, "dora": dora,
                           "redLoss": red_loss, "yakumanPayment": yakuman,
                           "openMeldCount": len(open_melds), "meldCount": len(melds),
@@ -593,6 +601,7 @@ def _danger(tile, remaining, opponents, *, chankan=False):
     # Only this tile's genbutsu and suji evidence affects its risk. Other
     # hypothetical passed discards must not invalidate the same calculation.
     key = ("danger", tile, tuple(remaining[j] for j in sorted(relevant)), sum(remaining), chankan,
+           opponents[0].get("rankLossContext") if opponents else None,
            tuple((o["seat"], index in o["safe"], index < 27 and (
                (n < 3 and index + 3 in o["safe"]) or
                (n > 5 and index - 3 in o["safe"]) or
@@ -650,9 +659,16 @@ def _uncached_danger(tile, remaining, opponents, *, chankan=False):
                         "tenpaiProbability": round(enemy["tenpai"], 4),
                         "conditionalRonProbability": round(conditional, 4),
                         "yakuConfidence": factor, "lossPoints": round(loss, 1), "reason": reason})
+        details[-1]["rankLossAdjustment"] = chance * loss_adjustment(
+            enemy.get("rankLossContext"), enemy["seat"], loss,
+            (enemy["yakumanPayment"] or {}).get("otherPayments", ()))
         if enemy["yakumanPayment"]:
             details[-1]["yakumanPayment"] = enemy["yakumanPayment"]
     return 1 - survival, expected_loss, details
+
+
+def _rank_loss_adjustment(details):
+    return fsum(row.get("rankLossAdjustment", 0.) for row in details)
 
 
 def _opportunities(state, after_discard=False):
@@ -761,9 +777,10 @@ def _one_shanten_branches(hand, counts, improvements, remaining, state, discard,
             trial = tuple(trial)
             if shanten(trial, special) == 0:
                 waits, furiten = _wait_values(next_hand, trial, unseen, drawn, tile, special)
-                danger, loss, _ = _danger(tile, unseen, opponents)
+                danger, loss, detail = _danger(tile, unseen, opponents)
                 options.append({"discard": tile, "hand": tuple(next_hand), "waits": waits, "furiten": furiten,
-                                "dealInProbability": danger, "expectedDealInLoss": loss})
+                                "dealInProbability": danger, "expectedDealInLoss": loss,
+                                "rankLossAdjustment": _rank_loss_adjustment(detail)})
         branches.append({"draw": draw, "count": weight, "remaining": tuple(unseen), "options": options,
                          "state": drawn, "rootHand": tuple(hand), "rootDiscard": discard})
     return branches
@@ -792,11 +809,14 @@ def _current_fold_eligibility(state, remaining, opponents):
     candidate's own proposed discard safe until its continuation.
     """
     losses = {}
+    weight = _risk_weight(state)
     for tile in _legal_discards(state):
         _check_search()
-        losses[tile] = _danger(tile, remaining, opponents)[1]
-    minimum = min(losses.values())
-    return {tile: _same_metric(loss, minimum) for tile, loss in losses.items()}
+        _, loss, detail = _danger(tile, remaining, opponents)
+        losses[tile] = weight * loss - _rank_loss_adjustment(detail), loss
+    minimum, cash = min(losses.values())
+    return {tile: _same_metric(loss, minimum) and _same_metric(payment, cash)
+            for tile, (loss, payment) in losses.items()}
 
 
 def _same_shanten_improvement(candidate, cache):
@@ -938,11 +958,12 @@ def _explain_comparison(candidates):
         return sum(first.get(k, 0.) - second.get(k, 0.) for k in keys)
     drivers = {"efficiency": delta(("winIncome",)),
                "defense": delta(("currentDealInLoss", "futureDiscardDealInLoss", "futureForcedDealInLoss",
-                                  "riskPreferenceAdjustment", "opponentTsumoLoss", "otherRonLiabilityLoss")),
+                                  "riskPreferenceAdjustment", "rankOpponentAdjustment",
+                                  "opponentTsumoLoss", "otherRonLiabilityLoss")),
                "draw": delta(("exhaustiveDrawPayment",)),
-               "actionCost": delta(("openNoYakuPenalty", "riichiCost", "newDoraPenalty"))}
+               "actionCost": delta(("riichiCost", "newDoraPenalty"))}
     primary = max(drivers, key=drivers.get)
-    labels = {"efficiency": "牌效及有役路线带来的估计和牌收入", "defense": "避险带来的预计付款减少",
+    labels = {"efficiency": "牌效及有役路线带来的估计和牌收入", "defense": "点数与顺位风险的综合取舍",
               "draw": "保听与流局收支", "actionCost": "动作代价"}
     best["decisionBasis"] = {"primary": primary, "scoreGap": gap, "componentAdvantages": drivers,
                              "approximate": True}
@@ -962,20 +983,26 @@ def _defense_inputs(hand, state, remaining, opponents, risks=None):
     """
     _check_search()
     rows, stock, average = _policy_risks(hand, state, remaining, opponents) if risks is None else risks
-    safe_draws = (sum(count for _, count, risk, _ in rows if risk == 0.), sum(count for _, count, _, _ in rows))
+    safe_draws = (sum(row[1] for row in rows if row[2] == 0.), sum(row[1] for row in rows))
     if not any(o["riichi"] for o in opponents):
         return stock, average, safe_draws
     cache = _POLICY_RISKS.get()
     key = ("defense-stock", tuple(sorted(hand)), tuple(remaining),
+           opponents[0].get("rankLossContext") if opponents else None,
            tuple((o["seat"], o["riichi"], tuple(sorted(o["safe"])), o["tenpai"]) for o in opponents))
     if cache is not None and key in cache:
         return cache[key], average, safe_draws
     held, future, stock = Counter(hand), opponents, []
+    weight = _risk_weight(state)
     while held:
         _check_search()
-        choices = [(_danger(tile, remaining, future)[:2], tile) for tile in held]
-        (risk, loss), tile = min(choices, key=lambda item: (item[0][1], item[0][0], item[1]))
-        stock.append((risk, loss))
+        choices = []
+        for tile in held:
+            risk, loss, detail = _danger(tile, remaining, future)
+            choices.append(((risk, loss, _rank_loss_adjustment(detail)), tile))
+        (risk, loss, adjustment), tile = min(
+            choices, key=lambda item: (weight * item[0][1] - item[0][2], item[0][1], item[0][0], item[1]))
+        stock.append((risk, loss, adjustment))
         held[tile] -= 1
         if not held[tile]:
             del held[tile]
@@ -996,13 +1023,13 @@ def _fold_policy(hand, state, remaining, opponents, events, risks=None):
                       safe_draws=safe_draws, tenpai_fee=fees[1] if ready else None, deplete_prefix=True)
 
 
-def _select_current_policy(attack, folded, danger, loss, state, locked=False, attack_penalty=0.):
+def _select_current_policy(attack, folded, danger, loss, state, locked=False, *, rank_adjustment=0.):
     """Compare complete policies before any nonmonetary shape preference."""
-    pushed = _policy_discard(attack, danger, loss)
+    pushed = _policy_discard(attack, danger, loss, rank_adjustment=rank_adjustment)
     weight = _risk_weight(state)
-    comparison = {"attack": pushed.utility(weight) - attack_penalty, "fold": None}
+    comparison = {"attack": pushed.utility(weight), "fold": None}
     if folded is not None and not locked:
-        defended = _policy_discard(folded, danger, loss)
+        defended = _policy_discard(folded, danger, loss, rank_adjustment=rank_adjustment)
         comparison["fold"] = defended.utility(weight)
         tied = _same_metric(comparison["fold"], comparison["attack"])
         if (comparison["fold"] > comparison["attack"] and not tied or
@@ -1018,7 +1045,7 @@ def _adverse_payments(outcome):
 def _selection_metadata(hand, remaining, special, outcome, loss, stock, waits, efficiency, ukeire, locked=False):
     return {"_tieHand": tuple(hand), "_tieRemaining": tuple(remaining), "_tieSpecial": special,
             "_tieLoss": _adverse_payments(outcome), "_tieCurrentLoss": loss,
-            "_tieSafeStock": 0 if locked else sum(risk == 0 for risk, _ in stock), "_tieWin": outcome.win,
+            "_tieSafeStock": 0 if locked else sum(row[0] == 0 for row in stock), "_tieWin": outcome.win,
             "_tieRon": sum(w["count"] for w in waits or [] if w["ronPoints"]),
             "_tieEfficiency": efficiency, "_tieUkeire": ukeire, "_tieLocked": locked}
 
@@ -1055,7 +1082,8 @@ def _ready_choices(branch, opponents, opportunities, state):
 
 def _ready_result(option, continuation, state, folded=None, own_draws=None):
     _, outcome, strategy, comparison = _select_current_policy(
-        continuation, folded, option["dealInProbability"], option["expectedDealInLoss"], state)
+        continuation, folded, option["dealInProbability"], option["expectedDealInLoss"], state,
+        rank_adjustment=option.get("rankLossAdjustment", 0.))
     ukeire = option.get("ukeire")
     if ukeire is None:
         ukeire = sum(w["count"] for w in option["waits"])
@@ -1101,9 +1129,10 @@ def _one_shanten_outcome(branches, unseen, opponents, opportunities, state, *, h
     folded = _fold_policy(hand, state, remaining, future, opportunities, (rows, stock, average))
     effective = sum(b["count"] for b in branches)
     families = {tile_index(b["draw"]) for b in branches}
-    misses = [(n, r, l) for t, n, r, l in rows if tile_index(t) not in families]
-    miss_total = sum(n for n, _, _ in misses)
-    draw_risks = {tile: risk for tile, _, risk, _ in rows}
+    misses = [(row[1], row[2], row[3], row[4] if len(row) > 4 else 0.)
+              for row in rows if tile_index(row[0]) not in families]
+    miss_total = sum(row[0] for row in misses)
+    draw_risks = {row[0]: row[2] for row in rows}
     choices = [(b, _ready_choices(b, future, opportunities, state))
                for b in sorted(branches, key=lambda b: b["draw"])]
     own_before, count = [], 0
@@ -1120,9 +1149,9 @@ def _one_shanten_outcome(branches, unseen, opponents, opportunities, state, *, h
             continue
         pool = max(effective, unseen - own_before[i], 1)
         result = Outcome()
-        for n, risk, loss in misses:
+        for n, risk, loss, adjustment in misses:
             fold = folded[i][2 if risk == 0. else 1]._replace(fold=1.)
-            attack = _policy_discard(nxt, risk, loss)
+            attack = _policy_discard(nxt, risk, loss, rank_adjustment=adjustment)
             miss = fold if fold.utility(weight) > attack.utility(weight) else attack
             result += miss.scale(n / miss_total * max(0., 1 - effective / pool))
         for branch, options in choices:
@@ -1271,7 +1300,8 @@ def _kokushi_outcome(counts, remaining, opponents, state, discard, opportunities
                 if target == (0, True):
                     result += Outcome(win=branch, income=branch * tsumo_value)
                     continue
-                result += Outcome(deal=branch * average[0], loss=branch * average[1])
+                result += Outcome(deal=branch * average[0], loss=branch * average[1],
+                                  rank_adjustment=branch * (average[2] if len(average) > 2 else 0.))
                 live = branch * (1 - average[0])
                 result += ending.scale(live)
                 next_[target] = next_.get(target, 0.) + live * survival
@@ -1383,7 +1413,8 @@ def _policy_risks(hand, state, remaining, opponents):
     # Opponent pricing is invariant inside one decision; only passed-tile
     # safety and the unseen pool change along our hypothetical continuations.
     key = (tuple(remaining), pool, tuple((o["seat"], tuple(sorted(o["safe"])), o["tenpai"])
-                                       for o in opponents))
+                                       for o in opponents),
+           opponents[0].get("rankLossContext") if opponents else None)
     stock_key = ("stock", tuple(sorted(hand)), key)
     if cache is not None and stock_key in cache:
         return cache[stock_key]
@@ -1394,18 +1425,20 @@ def _policy_risks(hand, state, remaining, opponents):
             _check_search()
             after = list(remaining)
             after[tile_index(tile)] -= 1
-            risk, loss, _ = _danger(tile, after, opponents)
-            rows.append((tile, count, risk, loss))
+            risk, loss, detail = _danger(tile, after, opponents)
+            rows.append((tile, count, risk, loss, _rank_loss_adjustment(detail)))
         if cache is not None:
             cache[key] = rows
     unseen = max(1, sum(remaining))
-    average = (sum(n * r for _, n, r, _ in rows) / unseen,
-               sum(n * l for _, n, _, l in rows) / unseen)
+    average = (sum(row[1] * row[2] for row in rows) / unseen,
+               sum(row[1] * row[3] for row in rows) / unseen,
+               fsum(row[1] * row[4] for row in rows) / unseen)
     stock = []
     for tile, count in sorted(Counter(hand).items()):
-        risk, loss, _ = _danger(tile, remaining, opponents)
-        stock.extend([(risk, loss)] * count)
-    stock.sort(key=lambda r: (r[1], r[0]))
+        risk, loss, detail = _danger(tile, remaining, opponents)
+        stock.extend([(risk, loss, _rank_loss_adjustment(detail))] * count)
+    weight = _risk_weight(state)
+    stock.sort(key=lambda r: (weight * r[1] - r[2], r[1], r[0]))
     result = rows, stock, average
     if cache is not None:
         cache[stock_key] = result
@@ -1416,6 +1449,7 @@ def _ready_policy(hand, state, remaining, opponents, events, waits, locked=False
     _check_search()
     cache = TABLES.get()
     key = ("ready-input", tuple(sorted(hand)), tuple(remaining), tuple(_draw_pool(state, remaining)),
+           opponents[0].get("rankLossContext") if opponents else None,
            tuple((o["seat"], tuple(sorted(o["safe"])), o["tenpai"]) for o in opponents),
            tuple(events), tuple(sorted((w["tile"], w["count"], w["ronPoints"], w["tsumoPoints"]) for w in waits)),
            locked, _risk_weight(state))
@@ -1426,10 +1460,10 @@ def _ready_policy(hand, state, remaining, opponents, events, waits, locked=False
     # Use the existing per-family red-weighted winning values; keep physical
     # red identity for dangerous non-winning draws.
     points = {tile_index(w["tile"]): w["tsumoPoints"] for w in waits}
-    draws = [(count / unseen, points.get(tile_index(tile), 0), risk, loss)
-             for tile, count, risk, loss in rows]
+    draws = [(row[1] / unseen, points.get(tile_index(row[0]), 0), row[2], row[3],
+              row[4] if len(row) > 4 else 0.) for row in rows]
     if not draws:
-        draws = [(1., 0., 0., 0.)]
+        draws = [(1., 0., 0., 0., 0.)]
     mass = sum(w["count"] for w in waits if w["ronPoints"])
     hit = min(.65, mass / unseen * .45)
     income = hit * sum(w["count"] * w["ronPoints"] for w in waits) / mass if mass else 0.
@@ -1470,11 +1504,11 @@ def _coarse_policy(hand, state, remaining, opponents, events, sh, ukeire, value,
     rates = [min(.9, (ukeire if k == 0 else
                      max(6., min(16 * .60 ** (k - 1), ukeire * .60 ** k))) / unseen)
              for k in range(sh)] + [min(.8, 6. / unseen)]
-    # Only six quantities vary independently here. Residual opponent endings
+    # Only seven quantities vary independently here. Residual opponent endings
     # have fixed payment and 40/60 attribution; reconstruct them once at the
-    # end instead of allocating eleven-field ledgers for every stage/event.
-    stages = [(0., 0., 0., 0., 1., fees[int(k == sh)]) for k in range(sh + 1)]
-    risk, loss = average
+    # end instead of allocating complete ledgers for every stage/event.
+    stages = [(0., 0., 0., 0., 1., fees[int(k == sh)], 0.) for k in range(sh + 1)]
+    risk, loss, adjustment = (*average, 0.) if len(average) == 2 else average
     for actor in reversed(events):
         _check_search()
         nxt = []
@@ -1483,7 +1517,7 @@ def _coarse_policy(hand, state, remaining, opponents, events, sh, ukeire, value,
                 hit = min(.8, 6. / unseen * .45) * ron_factor if k == sh else 0.
                 base, live = stages[k], (1 - hit) * survival
                 nxt.append((hit + live * base[0], hit * ron_value + live * base[1],
-                            live * base[2], live * base[3], live * base[4], live * base[5]))
+                            live * base[2], live * base[3], live * base[4], live * base[5], live * base[6]))
             else:
                 hit = rates[k] * yaku_factor if k == sh else 0.
                 base = stages[k] if k == sh else tuple(
@@ -1491,12 +1525,13 @@ def _coarse_policy(hand, state, remaining, opponents, events, sh, ukeire, value,
                 live = (1 - hit) * (1 - risk) * survival
                 nxt.append((hit + live * base[0], hit * value + live * base[1],
                             (1 - hit) * risk + live * base[2], (1 - hit) * loss + live * base[3],
-                            live * base[4], live * base[5]))
+                            live * base[4], live * base[5], (1 - hit) * adjustment + live * base[6]))
         stages = nxt
-    win, income, deal, loss, draw, draw_income = stages[0]
+    win, income, deal, loss, draw, draw_income, adjustment = stages[0]
     ended = max(0., 1 - win - deal - draw)
     outcome = Outcome(win, income, deal, loss, ended * .4, ended * .4 * payments[0],
-                   ended * .6, ended * .6 * payments[1], draw, draw_income)
+                   ended * .6, ended * .6 * payments[1], draw, draw_income,
+                   rank_adjustment=adjustment)
     if cache is not None:
         cache[key] = outcome
     return outcome
@@ -1523,7 +1558,7 @@ def _record_score(candidate, **terms):
     candidate["scoreBreakdown"] = terms
 
 
-def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, open_call=False, lookahead_depth=1):
+def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, lookahead_depth=1, riichi_deposit=False):
     """Evaluate a 13-tile-equivalent position with a common score scale."""
     special = not state["melds"][state["selfSeat"]]
     counts = counts34(hand)
@@ -1539,7 +1574,8 @@ def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, op
     kokushi_route = special and 0 < sh <= 2 and Shanten.calculate_shanten_for_kokushi_hand(counts) == sh
     frontier = None
     locked = bool(state.get("riichi", [False] * 4)[state["selfSeat"]])
-    future_opponents = _opponents(state, remaining, after_current=True, passed_discard=discard)
+    future_opponents = _opponents(state, remaining, after_current=True, passed_discard=discard,
+                                 riichi_deposit=riichi_deposit)
     risks = _policy_risks(hand, state, remaining, future_opponents)
     if locked or sh == 0:
         continuation = _ready_policy(hand, state, remaining, future_opponents,
@@ -1575,9 +1611,9 @@ def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, op
                (fold_eligibility if fold_eligibility is not None else
                 _current_fold_eligibility(state, remaining, opponents))[discard])
     folded = _fold_policy(hand, state, remaining, future_opponents, opportunities, risks)[0][0] if can_fold else None
-    attack_penalty = 500. if open_call and yaku_factor < 1 else 0.
     continuation, outcome, strategy, comparison = _select_current_policy(
-        continuation, folded, danger, loss, state, locked, attack_penalty)
+        continuation, folded, danger, loss, state, locked,
+        rank_adjustment=_rank_loss_adjustment(detail))
     future_danger = continuation.deal * (1 - danger)
     future_loss = continuation.loss * (1 - danger)
     probability, value, _, _ = outcome.metrics()
@@ -1619,16 +1655,15 @@ def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, op
                   futureDiscardDealInLoss=-future_loss if not locked else 0,
                   futureForcedDealInLoss=-future_loss if locked else 0,
                   riskPreferenceAdjustment=-(_risk_weight(state) - 1) * (loss + future_loss),
+                  rankOpponentAdjustment=outcome.rank_adjustment,
                   opponentTsumoLoss=-outcome.tsumo_loss,
-                  otherRonLiabilityLoss=-outcome.other_loss, exhaustiveDrawPayment=outcome.draw_income,
-                  openNoYakuPenalty=-attack_penalty if strategy != "fold" else 0.)
-    if attack_penalty and strategy != "fold":
-        reasons.append("本次鸣牌后的路线缺少可确认役，另计无役路线代价")
+                  otherRonLiabilityLoss=-outcome.other_loss, exhaustiveDrawPayment=outcome.draw_income)
     result.update(currentStrategy=strategy, policyComparison=comparison, _outcome=outcome,
-                  _currentDanger=danger, _currentLoss=loss, _tieDraws=draws)
+                  _currentDanger=danger, _currentLoss=loss,
+                  _currentRankAdjustment=_rank_loss_adjustment(detail), _tieDraws=draws)
     _, stock, _ = risks
     result.update(_selection_metadata(hand, remaining, special, outcome, loss, stock, waits, efficiency, ukeire, locked))
-    reasons.insert(0, {"fold": "当前弃和：先选预计损失最小的合法牌；仅实际安全保听分支计听牌料，弃和不计和牌收入",
+    reasons.insert(0, {"fold": "当前弃和：先选综合放铳成本最小的合法牌；仅实际安全保听分支计听牌料，弃和不计和牌收入",
                        "attack": "当前进攻：与弃和路线按同一终局净收益比较；新窗口重新评估",
                        "locked": "当前已立直：按合法强制续打评估"}[strategy])
     result.update(terminalProbabilities={"selfWin": outcome.win, "dealIn": outcome.deal,
@@ -1671,14 +1706,14 @@ def _legal_discards(state):
     return legal
 
 
-def _discards(state, remaining, *, open_call=False, lookahead_depth=1):
+def _discards(state, remaining, *, lookahead_depth=1):
     candidates = []
     eligible = _current_fold_eligibility(state, remaining, _opponents(state, remaining))
     for tile in _legal_discards(state):
         _check_search()
         hand = state["hand"].copy()
         hand.remove(tile)
-        candidates.append(_position(hand, state, remaining, tile, fold_eligibility=eligible, open_call=open_call, lookahead_depth=lookahead_depth))
+        candidates.append(_position(hand, state, remaining, tile, fold_eligibility=eligible, lookahead_depth=lookahead_depth))
     return candidates
 
 
@@ -1828,7 +1863,8 @@ def _abort_terminals(candidate):
     """A passed current discard ends the hand; no ordinary draw settlement."""
     danger = candidate.get("_currentDanger", candidate["dealInProbability"])
     loss = candidate.get("_currentLoss", candidate["expectedDealInLoss"])
-    candidate.update(currentStrategy="end-hand", _outcome=Outcome(deal=danger, loss=loss),
+    candidate.update(currentStrategy="end-hand", _outcome=Outcome(
+                         deal=danger, loss=loss, rank_adjustment=candidate.get("_currentRankAdjustment", 0.)),
                      _tieLoss=loss, _tieWin=0., _tieEfficiency=0.,
                      terminalProbabilities={"selfWin": 0., "dealIn": danger,
                                            "opponentTsumo": 0., "otherRon": 0., "exhaustiveDraw": 0.,
@@ -1858,7 +1894,9 @@ def _riichi(state, choice, remaining):
     next_["riichi"][seat] = True
     next_.setdefault("doubleRiichi", [False] * 4)[seat] = bool(state.get("canDoubleRiichi"))
     hand = _remove_exact(state["hand"], [choice["tile"]])
-    candidate = _position(hand, next_, remaining, choice["tile"])
+    # Only future rank prices use the paid deposit. The declaration itself
+    # still uses current scores; its cash cost remains in riichiCost below.
+    candidate = _position(hand, next_, remaining, choice["tile"], riichi_deposit=True)
     if candidate["shanten"] != 0 or not candidate["hasValidWait"]:
         raise ValueError("立直弃牌没有合法听口")
     # The new stick is our own money: recover it only if we win. Existing pot
@@ -1871,7 +1909,8 @@ def _riichi(state, choice, remaining):
                          abortAfterRiichi=True, valueMethod="四家立直流局")
         _abort_terminals(candidate)
         _record_score(candidate, currentDealInLoss=-candidate["_currentLoss"],
-                      riskPreferenceAdjustment=-(_risk_weight(state) - 1) * candidate["_currentLoss"])
+                      riskPreferenceAdjustment=-(_risk_weight(state) - 1) * candidate["_currentLoss"],
+                      rankOpponentAdjustment=candidate["_outcome"].rank_adjustment)
         candidate["reasons"].append("第四家立直：宣言牌未被荣和则途中流局，无后续和牌机会或听牌料")
     deposit_loss = 1000 * max(0., 1 - candidate["_currentDanger"] - candidate["_outcome"].win)
     candidate.update(choice, riichiDeposit=1000, expectedRiichiCost=round(deposit_loss),
@@ -1948,7 +1987,8 @@ def _replacement(state, choice, remaining):
                                      score=-_risk_weight(state) * candidate["expectedDealInLoss"])
                     _abort_terminals(candidate)
                     _record_score(candidate, currentDealInLoss=-candidate["_currentLoss"],
-                                  riskPreferenceAdjustment=-(_risk_weight(state) - 1) * candidate["_currentLoss"])
+                                  riskPreferenceAdjustment=-(_risk_weight(state) - 1) * candidate["_currentLoss"],
+                                  rankOpponentAdjustment=candidate["_outcome"].rank_adjustment)
             best = _rank_candidates(legal, best_only=True)[0]
         outcomes.append((weight, best, draw))
     total = sum(w for w, _, _ in outcomes)
@@ -1968,6 +2008,8 @@ def _replacement(state, choice, remaining):
             risks.append({"seat": enemy["seat"], "probability": .0005 * enemy["tenpai"],
                           "lossPoints": _points(13, 0, config, state["playerCount"], yakuman=True),
                           "reason": "国士抢暗杠例外估计"})
+            risks[-1]["rankLossAdjustment"] = risks[-1]["probability"] * loss_adjustment(
+                enemy.get("rankLossContext"), enemy["seat"], risks[-1]["lossPoints"])
         rob = min(1., sum(r["probability"] for r in risks))
         rob_loss = sum(r["probability"] * r["lossPoints"] for r in risks)
     else:
@@ -2018,6 +2060,7 @@ def _replacement(state, choice, remaining):
              for key in fields}
     terms["currentDealInLoss"] = terms.get("currentDealInLoss", 0) - rob_loss
     terms["riskPreferenceAdjustment"] = terms.get("riskPreferenceAdjustment", 0) - (_risk_weight(state) - 1) * rob_loss
+    terms["rankOpponentAdjustment"] = terms.get("rankOpponentAdjustment", 0) + _rank_loss_adjustment(risks)
     terms["newDoraPenalty"] = -uncertainty
     _record_score(result, **terms)
     result.update(_currentDanger=danger, _currentLoss=loss, _tieWin=probability,
@@ -2100,7 +2143,7 @@ def _advise(state, *, ranked_limit=None):
                     next_ = _apply_choice(state, choice)
                     if unseen_counts(next_) != remaining:
                         raise ValueError("鸣牌后的实体牌计数不守恒")
-                    options = _discards(next_, remaining, open_call=True)
+                    options = _discards(next_, remaining)
                     if not options:
                         raise ValueError("鸣牌后没有合法弃牌")
                     best = _rank_candidates(options, best_only=True)[0]
@@ -2146,7 +2189,8 @@ def _advise(state, *, ranked_limit=None):
             preference = {"protect": "偏重保位", "push": "增加追分意愿", "balanced": "均衡攻守"}[rank_context["preference"]]
             for candidate in candidates:
                 candidate["reasons"].append(
-                    f"排位目标：{profile['rankName']}·{profile['roomName']}，根据点差{preference}（近似偏好）")
+                    f"排位目标：{profile['rankName']}·{profile['roomName']}，根据点差{preference}；"
+                    "放铳偏好区分收款对手与预计点数，评分仍为点数尺度的近似偏好")
         return result("analysis" if analysis_only else "ready",
                       "等待下一次行动 · 当前手牌评估" if analysis_only else "综合动作推荐（概率为未校准估计）", candidates,
                       riskWeight=_risk_weight(state), rankContext=rank_context, unseenTileCount=sum(remaining),

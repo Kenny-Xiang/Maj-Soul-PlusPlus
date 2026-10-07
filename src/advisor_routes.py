@@ -316,9 +316,9 @@ def _target_outcome(deficits, remaining, events, seat, payments, average,
         if cache is not None:
             cache[key] = distribution
     cdf, first, ready = distribution
-    risk, loss = average
+    risk, loss, adjustment = (*average, 0.) if len(average) == 2 else average
     live, draw_count = 1., 0
-    win = income = deal = payment = 0.
+    win = income = deal = payment = rank_adjustment = 0.
     for actor in events:
         check()
         if actor == seat and draw_count < pool:
@@ -329,6 +329,7 @@ def _target_outcome(deficits, remaining, events, seat, payments, average,
             nonwinning = live * (1 - cdf[draw_count])
             deal += nonwinning * risk
             payment += nonwinning * loss
+            rank_adjustment += nonwinning * adjustment
             live *= 1 - risk
         live *= survival
     draw = live * (1 - cdf[-1])
@@ -337,7 +338,7 @@ def _target_outcome(deficits, remaining, events, seat, payments, average,
     result = Outcome(win=win, income=income, deal=deal, loss=payment,
                      tsumo=ended * .4, tsumo_loss=ended * .4 * opponent_payments[0],
                      other=ended * .6, other_loss=ended * .6 * opponent_payments[1],
-                     draw=draw, draw_income=draw_income)
+                     draw=draw, draw_income=draw_income, rank_adjustment=rank_adjustment)
     if cache is not None:
         cache[outcome_key] = result
     return result

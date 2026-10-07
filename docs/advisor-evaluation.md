@@ -4,7 +4,7 @@ The comparison runner evaluates identical public snapshots against two advisor
 source versions. It never opens the game, connects to game servers, or submits an
 action. It measures reproducibility, rule regressions, recommendation changes,
 and local calculation time; it does not establish stronger play or calibrated
-win probabilities. The latest v10 performance results appear in the final section;
+win probabilities. The latest v11 policy results appear in the final section;
 earlier sections retain their historical comparison context.
 
 ## Historical: exact live ranking and decision-local reuse (v8, 2026-10-05)
@@ -1680,3 +1680,103 @@ environment: replay received no events (`AssertionError: []`) and the overlay
 check reported `WKErrorDomain Code=5`. The unchanged upstream `f279314` source
 failed in the same way with the same fixtures. No online game or hidden-window
 reconnect performance session was run, and no installed application was replaced.
+
+## Recipient-aware rank preferences and consistent call previews (v11, 2026-10-07)
+
+The baseline is `03b9c7ce99b9bccc5ce4b5059b243e39cd99e379`, including the
+existing latency and autoplay changes. This update makes two policy changes:
+
+- Predicted deal-in preferences retain the receiving opponent and actual
+  predicted payment. The existing rank potential, smoothing, gain probe and
+  weight bounds are reused. A separate signed `rankOpponentAdjustment`
+  replaces the corresponding part of the old uniform preference; cash losses
+  and danger probabilities retain their original meaning. Current defense,
+  future policies, calls and replacement draws compare the same utility.
+- Call previews no longer apply an additional 500-point cost that disappears
+  as soon as a speculative future win probability becomes positive. The
+  realized discard and its preview now use the same terminal utility. Legal
+  no-yaku waits still have zero win income; structural tenpai can earn draw
+  transfers. This is not a new rule to prefer or reject all no-yaku calls.
+
+The new call fixture reproduces a preview that discarded a white-dragon pair
+but changed to discarding 1m immediately after the call with no new external
+information. All projected followup ledgers now match the realized window.
+A separate synthetic rank fixture uses a score-gap pattern found in recent
+logs: with self at seat 1 and scores `[25000,38000,40000]`, paying 8000 to last
+crosses into last place, whereas paying 12000 to first does not. Equal modeled
+hit probabilities now permit preferring the latter payment while preserving
+the unmodified cash-loss estimates. These are consistency and preference
+properties, not observed counterfactual match outcomes.
+
+### Frozen local replay and limitations
+
+The latest frozen log yielded 617 distinct executable `ready` windows,
+selected without consulting later outcomes. Both source snapshots returned
+617 `ready` results with zero timeouts. Thirteen recommendations changed:
+six ordinary discards, six pass-to-pon choices, and one pon followup discard.
+Best-policy labels changed in five windows: four fold-to-attack and one
+attack-to-fold, including three windows with the same actual discard.
+
+All six additional pons occur early, with 47–54 wall tiles remaining, and
+their selected modeled policy has **zero self-win income**. Their advantage
+comes from structural-tenpai draw receipts. The model does not fully price
+future closed-hand riichi opportunities; a zero-win selected tail is not a
+proof that every future legal winning route is impossible. These changed
+calls require further policy evaluation and must not be presented as measured
+improvements in win rate or rank-point yield. Complete match results were
+used to prioritize the audit, not to fit new probability constants or attach
+the realized result to unplayed alternatives. No installed App was replaced.
+
+Across both replay versions, 11,414 candidate ledgers reconciled with maximum
+score error below `5e-13`; terminal mass error was below `3e-15`. For 5,545
+same-action ordinary discard/riichi/pass candidates, immediate danger and
+cash expected loss were exactly unchanged. Replacement display metrics retain
+their pre-existing rounded-child aggregation, so they are not substitutes for
+the unrounded score ledger. The full local replay and private source logs are
+not committed; the report records their input fingerprint and aggregate checks.
+
+### Reproducible public regression and timing check
+
+[Machine-readable summary](benchmarks/advisor-rank-transfer-20261007.json)
+contains source and runner hashes, individual fixture hashes, candidate
+ledgers, per-case samples and recommendations. The 21 cases combine 14
+existing rank fixtures, five existing slow public snapshots, and the two new
+regressions. Each version used a fresh interpreter, one complete warmup and
+three measured passes, with full candidate ranking on both sides. This timing
+run was separate from the full-suite and local-corpus processes.
+
+| 63 measured samples per version | Baseline | v11 |
+|---|---:|---:|
+| Median | 320.9 ms | 331.5 ms |
+| P95 | 613.0 ms | 694.7 ms |
+| Maximum | 654.3 ms | 739.0 ms |
+| Warmup or measured timeouts | 0 | 0 |
+
+Repeated outputs were consistent in both versions. The extra policy work
+increases calculation time on this sample; it remains below the unchanged
+two-second budget. These results do not guarantee latency under all live
+game or system loads.
+
+```sh
+python scripts/advisor_log_fixtures.py \
+  --fixtures tests/fixtures/advisor_rank_cases.json \
+  --fixtures tests/fixtures/advisor_performance_logged_cases.json \
+  --fixtures tests/fixtures/advisor_call_consistency_cases.json \
+  --fixtures tests/fixtures/advisor_rank_transfer_cases.json \
+  --output /tmp/advisor-rank-transfer-cases.json
+python scripts/advisor_compare.py \
+  --baseline 03b9c7ce99b9bccc5ce4b5059b243e39cd99e379 \
+  --fixtures /tmp/advisor-rank-transfer-cases.json \
+  --warmups 1 --repeats 3 --output /tmp/advisor-rank-transfer-results.json
+```
+
+Validation on the final source: 468 advisor/worker/benchmark Python tests,
+24 other Python tests, and 303 Node tests passed. New call regressions were
+first observed failing on the baseline; rank tests cover payment thresholds,
+opponent-score cache isolation, defense ordering, unknown-mode/saturated-soul
+fallback, and current/future/abort/replacement accounting. An independent
+positive/negative proportional-cost probe checked 126 real-state candidates
+for omitted or duplicated rank adjustments; seven unknown-mode snapshots
+preserved all compared numerical outputs across 61 candidates. Native WebKit,
+packaged execution and live rank-point improvement were not tested by this
+algorithm-only change.

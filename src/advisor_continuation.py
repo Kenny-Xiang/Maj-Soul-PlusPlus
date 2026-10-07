@@ -90,7 +90,8 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
     cache = a.TABLES.get()
     cache = {} if cache is None else cache
     continuation_context = (context, tuple(suffix), survival, payments, fees, weight,
-                            bool(state.get('furiten', False)))
+                            bool(state.get('furiten', False)),
+                            opponents[0].get('rankLossContext') if opponents else None)
     own_river = frozenset(a.tile_index(d['tile']) for d in after['rivers'][seat])
     pool = sorted(a._draw_pool(after, remaining))
     initial_red = frozenset(a.tile_index(tile) for tile, _ in pool if tile.startswith('0'))
@@ -118,8 +119,9 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
         for tile in sorted(set(drawn['hand'])):
             a._check_search()
             nxt_hand = a._remove_exact(drawn['hand'], [tile])
-            danger, loss, _ = a._danger(tile, unseen, current_opponents)
-            priced_discards[tile] = (danger, loss)
+            danger, loss, risk_detail = a._danger(tile, unseen, current_opponents)
+            adjustment = a._rank_loss_adjustment(risk_detail)
+            priced_discards[tile] = (danger, loss, adjustment)
             future = [{**o, 'safe': o['safe'] | {a.tile_index(tile)} if o['riichi'] else o['safe']}
                       for o in opponents]
             safety = tuple((o['seat'], o['riichi'], frozenset(o['safe']), o['tenpai']) for o in future)
@@ -151,7 +153,7 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
                 continuation = a._policy_residual(continuation, survival, *payments)
                 cache[key] = nxt_counts, sh, ukeire, continuation
             discard_states[tile] = nxt_hand, nxt_counts, sh, ukeire
-            outcome = a._policy_discard(continuation, danger, loss)
+            outcome = a._policy_discard(continuation, danger, loss, rank_adjustment=adjustment)
             preference = (outcome.utility(weight), -a._adverse_payments(outcome), -loss,
                           -sh, ukeire, tile)
             if best is None or preference > best[0]:
@@ -183,8 +185,8 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
                 continuation = a._policy_residual(continuation, survival, *payments)
                 for tile in equivalent:
                     _, _, sh, ukeire = discard_states[tile]
-                    danger, loss = priced_discards[tile]
-                    outcome = a._policy_discard(continuation, danger, loss)
+                    danger, loss, adjustment = priced_discards[tile]
+                    outcome = a._policy_discard(continuation, danger, loss, rank_adjustment=adjustment)
                     preference = (outcome.utility(weight), -a._adverse_payments(outcome), -loss,
                                   -sh, ukeire, tile)
                     if best is None or preference > best[0]:
