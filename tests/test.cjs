@@ -1111,12 +1111,17 @@ test('sending a decision clears stale advice immediately and preserves the origi
     assert.equal(game.send(heartbeat),'original-result');
     assert.equal(invalidations,before);
     assert.equal(window.__mjMonitor.getSnapshot().state.canAct,true);
+    const turn = posts.findLast(event => event.kind === 'turn');
+    const cancelledBefore = posts.filter(event => event.kind === 'advice_invalidated').length;
     const decision = new Uint8Array([2,11,0,...str(1,`.lq.FastTest.${method}`),...bytes(2,num(1,1))]);
     assert.equal(game.send(decision,'extra'),'original-result');
     assert.equal(sent.at(-1).socket,game);
     assert.equal(sent.at(-1).args[0],decision);
     assert.equal(sent.at(-1).args[1],'extra');
     assert.equal(invalidations,before+1);
+    const cancelled = posts.filter(event => event.kind === 'advice_invalidated');
+    assert.equal(cancelled.length,cancelledBefore+1, 'close the native worker window before another server action arrives');
+    assert.equal(cancelled.at(-1).adviceKey,`${turn.session}:${turn.serial}`);
     const state = window.__mjMonitor.getSnapshot().state;
     assert.equal(state.canAct,false);
     assert.equal(state.canDiscard,false);
@@ -1127,6 +1132,43 @@ test('sending a decision clears stale advice immediately and preserves the origi
     assert.equal(state.forbiddenDiscards.length,0);
   }
   window.__mjMonitor.uninstall();
+});
+
+test('advice delivery uses the browser clock and rejects timings from old or closed windows', async () => {
+  const posts = [];
+  let time = 100;
+  class Socket extends EventTarget {
+    constructor(url) {super(); this.url=url; this.readyState=1;}
+    send() {}
+  }
+  const window = {WebSocket:Socket,
+    webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+    performance:{now:()=>time},Uint8Array,ArrayBuffer,Blob,URL,setInterval:()=>0,clearInterval(){},console:{log(){}}});
+  const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
+  const frame = actionFrame('ActionNewRound',0,[...str(4,'1p'),...num(6,35000),...num(6,35000),...num(6,35000),
+    ...bytes(7,[...num(1,0),...bytes(2,num(1,1)),...num(4,25000)]),...num(13,50)]);
+  game.dispatchEvent(new MessageEvent('message',{data:frame.buffer}));
+  time = 130; // Parsing/queue delay after the socket recorded receivedAt=100.
+  await new Promise(setImmediate);
+  const turn = posts.findLast(event=>event.kind==='turn'), key = `${turn.session}:${turn.serial}`;
+  time = 480;
+  window.__mjMonitor.onAdvice({adviceKey:'old:1',advice:{status:'ready'}});
+  assert.equal(posts.at(-1).kind,'advisor_delivery');
+  assert.equal(posts.at(-1).current,false);
+  assert.equal(posts.at(-1).publishToAdviceMs,undefined);
+  window.__mjMonitor.onAdvice({adviceKey:key,advice:{status:'unavailable'}});
+  assert.equal(posts.at(-1).current,true, 'timeouts also need delivery diagnostics');
+  assert.equal(posts.at(-1).publishToAdviceMs,350);
+  assert.equal(posts.at(-1).operationToAdviceMs,380);
+  game.send(rpcFrame(2,1,'.lq.FastTest.inputOperation',[]));
+  window.__mjMonitor.onAdvice({adviceKey:key,advice:{status:'ready'}});
+  assert.equal(posts.at(-1).current,false);
+  assert.equal(posts.at(-1).operationToAdviceMs,undefined);
+  window.__mjMonitor.uninstall();
+  const count = posts.length;
+  window.__mjMonitor?.onAdvice({adviceKey:key,advice:{status:'ready'}});
+  assert.equal(posts.length,count);
 });
 
 test('parse errors, disconnection and stopping all close an active decision window', async () => {

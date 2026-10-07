@@ -21,9 +21,11 @@ FIXTURES = (
     "advisor_cases.json", "advisor_threat_cases.json", "advisor_phase_cases.json",
     "advisor_performance_logged_cases.json", "advisor_policy_logged_cases.json",
     "advisor_route_cases.json", "advisor_timeout_cases.json", "advisor_rank_cases.json",
+    "advisor_latency_cases.json",
 )
 TIMEOUT_IDS = ("live-timeout-serial-578", "live-timeout-serial-1017")
-COLD_IDS = ("pon-red-choices", "one-shanten-followup-risk", "shouminkan-red", *TIMEOUT_IDS)
+LATENCY_IDS = ("live-latency-serial-1600", "live-latency-serial-1643", "live-latency-serial-1661")
+COLD_IDS = ("pon-red-choices", "one-shanten-followup-risk", "shouminkan-red", *TIMEOUT_IDS, *LATENCY_IDS)
 ABS_TOLERANCE = 1e-8
 REL_TOLERANCE = 1e-12
 
@@ -122,6 +124,7 @@ def advice_worker_process(source):
               "timeout": bool(advice and timed_out(advice)),
               "over1000Ms": elapsed > 1000,
               "rankedCandidateCount": advice.get("rankedCandidateCount") if advice else None,
+              "envelope": {key: value for key, value in packet.items() if key != "advice"} if packet else None,
               "packet": packet}
     print(json.dumps(result, ensure_ascii=False, allow_nan=False))
 
@@ -141,6 +144,8 @@ def main():
     parser.add_argument("--repo", type=Path, default=ROOT, help="Checkout to compare (default: this repository)")
     parser.add_argument("--baseline", required=True, help="Git reference for the source before optimization")
     parser.add_argument("--baseline-results", type=Path, help="Reuse baseline measurements from a completed artifact directory")
+    parser.add_argument("--legacy-timeout-reference", action="store_true",
+                        help="Allow 120-second baseline diagnostic references for the two legacy timeout cases only")
     parser.add_argument("--live", type=Path, help="Optional local public-state fixture export")
     parser.add_argument("--artifacts", type=Path, help="New output directory (default: build/advisor-inference/<timestamp>)")
     args = parser.parse_args()
@@ -169,12 +174,11 @@ def main():
         raise ValueError("Missing required cold-start cases")
     live_ids = {case["id"] for case in live}
     rank_ids = {case["id"] for case in load_cases(repo / "tests/fixtures/advisor_rank_cases.json")}
-    groups = {"all": set(ids), "rank": rank_ids}
+    groups = {"all": set(ids), "rank": rank_ids, "latency": set(LATENCY_IDS)}
     if live_ids:
         groups["live"] = live_ids
     timeout_ids = set(TIMEOUT_IDS)
     ordinary_cases = [case for case in cases if case["id"] not in timeout_ids]
-    ordinary_public = [case for case in public if case["id"] not in timeout_ids]
     timeout_cases = [by_id[case_id] for case_id in TIMEOUT_IDS]
     save(output / "fixtures.json", {"schemaVersion": 1, "cases": cases})
     sources, source_info = {}, {}
@@ -194,13 +198,14 @@ def main():
         previous = json.loads((reuse / "summary.json").read_text())
         if previous.get("runnerSha256") != runner_info:
             raise ValueError("Reused baseline runner metadata is missing or does not match")
-        expected = {"budgetSeconds": 2, "rankedLimitBothVersions": 3, "warmupPasses": 1, "measuredPasses": 3}
+        expected = {"budgetSeconds": 2, "rankedLimitBothVersions": 3, "warmupPasses": 1, "measuredPasses": 3,
+                    "legacyTimeoutReference": args.legacy_timeout_reference}
         environment = {"python": sys.version, "platform": platform.platform(),
                        "mahjong": importlib.metadata.version("mahjong")}
         if (previous["sources"]["baseline"]["sourceSha256"] != source_info["baseline"]["sourceSha256"] or
                 not previous["fixtures"][-1]["sha256"] == hashlib.sha256((reuse / "fixtures.json").read_bytes()).hexdigest() == fixture_info[-1]["sha256"] or
                 previous["environment"] != environment or
-                any(previous["method"][key] != value for key, value in expected.items())):
+                any(previous["method"].get(key) != value for key, value in expected.items())):
             raise ValueError("Reused baseline source, fixtures, environment, or settings do not match")
 
     def run(label, version, selected, warmups, repeats, internal=False, ranked_limit=3,
@@ -261,9 +266,9 @@ def main():
     diagnostics = {}
     for label, selected, ranked_limit, extended in (
             ("equivalence-prefix", ordinary_cases, 3, False),
-            ("equivalence-full", ordinary_public, None, False),
-            ("equivalence-timeout-reference-prefix", timeout_cases, 3, True),
-            ("equivalence-timeout-reference-full", timeout_cases, None, True)):
+            ("equivalence-full", ordinary_cases, None, False),
+            ("equivalence-timeout-reference-prefix", timeout_cases, 3, args.legacy_timeout_reference),
+            ("equivalence-timeout-reference-full", timeout_cases, None, args.legacy_timeout_reference)):
         results = {version: run(label, version, selected, 0, 1, True, ranked_limit,
                                 extended_reference=extended and version == "baseline")
                    for version in ("baseline", "current")}
@@ -332,18 +337,20 @@ def main():
         "environment": {"python": sys.version, "platform": platform.platform(),
                         "mahjong": importlib.metadata.version("mahjong")},
         "method": {"budgetSeconds": 2, "rankedLimitBothVersions": 3, "warmupPasses": 1,
+                   "legacyTimeoutReference": args.legacy_timeout_reference,
                    "baselineExecution": "all baseline measurements reused from a previous run" if reuse else "measured in this run",
                    "baselineRunSource": previous.get("method", {}).get("baselineRunSource", str(reuse)) if reuse else str(output.resolve()),
                    "measuredPasses": 3, "coldRepeatsPerCase": 3, "coldOrder": cold_order,
                    "currentColdAllPasses": 1,
-                   "actualWorker": "Five heavy cases and every rank-policy fixture each run once in a fresh current-source process using default AdviceWorker; includes its actual cancellation callback and default ranked prefix 3; submit-to-result includes deepcopy and thread dispatch, excludes imports and UI timer/rendering",
+                   "actualWorker": "Every designated cold-start case and rank-policy fixture runs once in a fresh current-source process using default AdviceWorker; includes its actual cancellation callback and default ranked prefix 3; submit-to-result includes deepcopy and thread dispatch, excludes imports and UI timer/rendering; worker envelope fields are preserved separately from advisor output",
                    "timing": "perf_counter around advise only; imports and process startup excluded",
                    "processes": ("Current cold samples, warm suite, and diagnostic suites run in separate fresh interpreters; every baseline result is reused from the recorded prior run; versions are not interleaved in this run" if reuse else
                                  "fresh interpreter for every cold sample, each warm version, and each diagnostic version"),
                    "equivalence": "independent diagnostic runs; ignore only elapsedMs; compare all numerical fields at full precision with stated tolerances; actions/order/explanations/all nonnumeric values exact",
                    "numericTolerance": {"absolute": ABS_TOLERANCE, "relative": REL_TOLERANCE,
                                         "rule": "math.isclose: abs(delta) <= max(absolute, relative * max(abs(values)))"},
-                   "legacyTimeoutReferences": ("The two 120-second baseline diagnostic references are reused from the previous run; current and all performance measurements use 2 seconds; reference durations excluded from performance" if reuse else
+                   "legacyTimeoutReferences": "Disabled; baseline and current diagnostics both retain the 2-second budget" if not args.legacy_timeout_reference else
+                                              ("The two 120-second baseline diagnostic references are reused from the previous run; current and all performance measurements use 2 seconds; reference durations excluded from performance" if reuse else
                                                "Only the two timeout cases use baseline in-memory SEARCH_SECONDS=120 for diagnostic output extraction; current and every performance run remain 2 seconds; reference durations excluded from performance"),
                    "p95": "nearest rank", "caseCounts": {"public": len(public), "rank": len(rank_ids), "live": len(live), "all": len(cases)}},
         "currentColdAll": {group: aggregate(cold_all_combined, selected_ids)

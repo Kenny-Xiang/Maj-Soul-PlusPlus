@@ -49,7 +49,7 @@ class StructuralCacheTests(unittest.TestCase):
 
     def test_projection_cache_preserves_physical_tiles_and_scoring_inputs(self):
         base = state("234m234p678s34p55s")
-        variants = [(base, False, True), (base, True, True), (base, False, False)]
+        variants = [(base, False, True), (base, False, False)]
         for field, value in (("playerCount", 3), ("selfSeat", 1), ("replacementWin", True),
                              ("riichi", [True, False, False, False]),
                              ("doubleRiichi", [True, False, False, False]),
@@ -68,16 +68,16 @@ class StructuralCacheTests(unittest.TestCase):
             changed["melds"][0] = [{"type": kind, "tiles": tiles("456p" if kind == 0 else
                                                                "555p" if kind == 1 else "5555p")}]
             variants.append((changed, False, True))
-        uncached = advisor._uncached_future_value
+        uncached = advisor._future_values
         token = advisor._HAND_VALUES.set({})
         try:
-            with patch.object(advisor, "_uncached_future_value", wraps=uncached) as compute:
+            with patch.object(advisor, "_future_values", wraps=uncached) as compute:
                 for index, (snapshot, tsumo, special) in enumerate(variants, 1):
                     hand = snapshot["hand"]
-                    args = hand, snapshot, advisor.counts34(hand), special, tsumo
+                    args = hand, snapshot, advisor.counts34(hand), special
                     expected = uncached(*args)
-                    self.assertEqual(advisor._future_value(*args), expected)
-                    self.assertEqual(advisor._future_value(*args), expected)
+                    for mode in (tsumo, not tsumo, tsumo):
+                        self.assertEqual(advisor._future_value(*args, mode), expected[mode])
                     self.assertEqual(compute.call_count, index)
                 with patch.object(advisor.OPTIONS, "has_aka_dora", False):
                     advisor._future_value(base["hand"], base, advisor.counts34(base["hand"]), True)
@@ -99,6 +99,35 @@ class StructuralCacheTests(unittest.TestCase):
         finally:
             advisor._SEARCH.reset(search)
             advisor._HAND_VALUES.reset(token)
+
+    def test_win_modes_share_one_projection_scan_in_either_access_order(self):
+        snapshots = [state('123456p78s12s55z1z', players=3),
+                     state('119m19p19s123456z', players=3),
+                     state('11p22p44p66s88s55z1z', players=3)]
+        opened = state('123p459p78s12s', players=3)
+        opened['melds'][0] = [{'type': 1, 'tiles': tiles('666z')}]
+        snapshots.append(opened)
+        concealed_kan = deepcopy(opened)
+        concealed_kan['melds'][0] = [{'type': 3, 'tiles': tiles('6666z')}]
+        snapshots.append(concealed_kan)
+        for snapshot in snapshots:
+            snapshot['round']['ben'] = 2
+            snapshot['riichiSticks'] = 1
+            snapshot['doras'] = ['4p', '3z']
+            snapshot['north'][0] = 1
+            hand = snapshot['hand']
+            args = hand, snapshot, advisor.counts34(hand), not snapshot['melds'][0]
+            expected = {mode: advisor._uncached_future_value(*args, mode) for mode in (False, True)}
+            for order in ((False, True), (True, False)):
+                token = advisor._HAND_VALUES.set({})
+                try:
+                    with self.subTest(hand=hand, order=order), patch.object(
+                            advisor, 'counts34', wraps=advisor.counts34) as scan:
+                        for mode in order + order[::-1]:
+                            self.assertEqual(advisor._future_value(*args, mode), expected[mode])
+                        self.assertEqual(scan.call_count, 1)
+                finally:
+                    advisor._HAND_VALUES.reset(token)
 
     def test_representative_advice_equals_identity_preserving_reference(self):
         cases = json.loads((Path(__file__).parent / "fixtures/advisor_route_cases.json").read_text())["cases"]
