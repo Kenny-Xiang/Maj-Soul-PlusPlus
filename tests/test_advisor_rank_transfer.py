@@ -6,12 +6,13 @@ import unittest
 from unittest.mock import patch
 
 import advisor
-from advisor_rank_policy import loss_context, loss_adjustment
+from advisor_rank_policy import loss_context, loss_adjustment, _potential, BASE_WEIGHT, PROBE_POINTS
 from advisor_routes import _target_outcome
 from test_advisor import state, tiles
 import test_advisor_accounting as accounting
 from test_advisor_actions import own_action, get_action
 from test_advisor_rank_policy import ranked
+from test_advisor_risk_rules import dragons, enemy_risk
 
 
 def transfer_case():
@@ -20,6 +21,87 @@ def transfer_case():
 
 
 class RankTransferTests(unittest.TestCase):
+    def test_riichi_prices_only_future_discards_after_paying_the_deposit(self):
+        s = own_action('123m123p123s45s77z1z', 7, ['1z'])
+        s.update(scores=[20500, 33000, 26500, 20000], left=4,
+                 match=ranked([20500, 33000, 26500, 20000])['match'], riichiSticks=2)
+        s['round'].update(chang=1, ju=3)
+        s['riichi'][1] = True
+        before = deepcopy(s)
+        post = deepcopy(s)
+        post['scores'][0] -= 1000
+        pre_context, post_context = loss_context(s), loss_context(post)
+        seen = []
+        ready = advisor._ready_policy
+
+        def continuation(hand, state, remaining, opponents, *args, **kwargs):
+            seen.append([enemy['rankLossContext'] for enemy in opponents])
+            return ready(hand, state, remaining, opponents, *args, **kwargs)
+
+        choice = next(c for c in advisor._action_choices(s)[0] if c['action'] == 'riichi')
+        with patch.object(advisor, '_ready_policy', side_effect=continuation):
+            candidate = advisor._riichi(s, choice, advisor.unseen_counts(s))
+        self.assertTrue(seen)
+        for context in seen[0]:
+            self.assertEqual(context[:-1], post_context[:-1])
+            # The independent adjustment offsets the root ledger's reference
+            # weight while using the post-deposit potential and gain probe.
+            self.assertEqual(context[-1], pre_context[-1])
+            payment = 8000
+            effective = pre_context[-1] * payment - loss_adjustment(context, 1, payment)
+            expected = post_context[-1] * payment - loss_adjustment(post_context, 1, payment)
+            self.assertAlmostEqual(effective, expected)
+        remaining = advisor.unseen_counts(s)
+        expected_current = advisor._danger('1z', remaining, advisor._opponents(s, remaining))
+        self.assertEqual(candidate['opponentRisks'], expected_current[2])
+        self.assertGreater(candidate['futureForcedDealInLoss'], 0)
+        self.assertAlmostEqual(candidate['scoreBreakdown']['riichiCost'],
+                               -1000 * (1 - candidate['_currentDanger'] - candidate['_outcome'].win))
+        with patch.object(advisor, 'loss_context', side_effect=lambda state, **kwargs: loss_context(state)):
+            previous = advisor._riichi(s, choice, remaining)
+        self.assertEqual(candidate['_outcome']._replace(rank_adjustment=0.),
+                         previous['_outcome']._replace(rank_adjustment=0.))
+        self.assertEqual(candidate['scoreBreakdown']['riichiCost'], previous['scoreBreakdown']['riichiCost'])
+        self.assertNotEqual(candidate['_outcome'].rank_adjustment, previous['_outcome'].rank_adjustment)
+        post['riichi'][0] = True
+        seen.clear()
+        with patch.object(advisor, '_ready_policy', side_effect=continuation):
+            advisor._position(s['hand'][:-1], post, remaining, '1z')
+        self.assertTrue(all(context == post_context for context in seen[0]),
+                        'a confirmed riichi already has the deposit in its current score')
+        self.assertEqual(s, before)
+        accounting.ScoreAccountingTests().assert_ledger(candidate)
+
+    def test_shared_pao_rank_price_includes_the_known_other_payer(self):
+        s = dragons(2)
+        s.update(scores=[35000, 15000, 35000, 15000],
+                 match=ranked([35000, 15000, 35000, 15000])['match'])
+        s['round'].update(chang=1, ju=3, ben=0)
+        before = deepcopy(s)
+        context = loss_context(s)
+        scores, seat, rewards, divisor, scale, gain, old_weight = context
+        _, (probability, cash_loss, details) = enemy_risk(s, '1p')
+        after = [19000, 47000, 19000, 15000]
+        potential_loss = (_potential(scores, seat, rewards, divisor, scale) -
+                          _potential(after, seat, rewards, divisor, scale))
+        weight = max(.75, min(1.75, BASE_WEIGHT * potential_loss / gain * PROBE_POINTS / 16000))
+        self.assertAlmostEqual(cash_loss, probability * 16000)
+        self.assertAlmostEqual(details[0]['rankLossAdjustment'], probability * (old_weight - weight) * 16000)
+        self.assertNotAlmostEqual(details[0]['rankLossAdjustment'],
+                                  probability * loss_adjustment(context, 1, 16000))
+        self.assertEqual(s, before)
+
+    def test_known_pao_payments_separate_cached_rank_prices_and_unknown_metadata_falls_back(self):
+        s = ranked([35000, 15000, 35000, 15000])
+        context = loss_context(s)
+        known = loss_adjustment(context, 1, 16000, ((2, 16000),))
+        self.assertNotEqual(known, loss_adjustment(context, 1, 16000, ((3, 16000),)))
+        self.assertNotEqual(known, loss_adjustment(context, 1, 16000))
+        self.assertEqual(known, loss_adjustment(context, 1, 16000, ((2, 16000),)))
+        s.pop('match')
+        self.assertIsNone(loss_context(s, riichi_deposit=True))
+        self.assertEqual(loss_adjustment(loss_context(s), 1, 16000, ((2, 16000),)), 0.)
+
     def test_actual_payment_detects_last_place_crossing_without_changing_cash(self):
         s = transfer_case()
         context = loss_context(s)

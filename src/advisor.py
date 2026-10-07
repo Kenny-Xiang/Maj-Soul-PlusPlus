@@ -400,6 +400,7 @@ def _visible_yakuman_payment(state, enemy):
     cfg = _config(state, seat=enemy)
     cfg.kyoutaku_number = cfg.tsumi_number = 0
     lower, upper, shared, names = 0, 0, False, []
+    other_payments = []
     for name, indices, multiple in (("Daisangen", {31, 32, 33}, 1),
                                      ("Daisuushii", {27, 28, 29, 30}, 2)):
         relevant = [m for index, m in groups if index in indices]
@@ -414,6 +415,8 @@ def _visible_yakuman_payment(state, enemy):
             lower += full // 2 if split else full
             upper += full // 2 if split and payer is not None else full
             shared |= split
+            if split and payer is not None:
+                other_payments.append((payer, full // 2))
     if len(melds) == 4 and all(m["type"] in (2, 3) for m in melds):
         names.append("Suukantsu")  # No pao for four kans in the supported rules.
         full = _points(13, 0, cfg, state["playerCount"], yakuman=True)
@@ -422,18 +425,22 @@ def _visible_yakuman_payment(state, enemy):
     if not names:
         return None
     honba = (state["playerCount"] - 1) * 100 * (state.get("round") or {}).get("ben", 0)
-    return {"yaku": names, "lower": lower + (0 if shared else honba), "upper": upper + honba}
+    result = {"yaku": names, "lower": lower + (0 if shared else honba), "upper": upper + honba}
+    if other_payments:
+        result["otherPayments"] = tuple(other_payments)
+    return result
 
 
-def _opponents(state, remaining, *, after_current=False, passed_discard=None):
+def _opponents(state, remaining, *, after_current=False, passed_discard=None, riichi_deposit=False):
     """Public risk features, optionally after known discards have survived.
 
     Continuations may include the current river event and an explicit root
     discard as locked-hand safety evidence without advancing the event clock.
+    A newly declared riichi pays its deposit only after that discard survives.
     """
     opponents = []
     cache = _POLICY_RISKS.get()
-    rank_context = loss_context(state)
+    rank_context = loss_context(state, riichi_deposit=riichi_deposit)
     players, seat = state["playerCount"], state["selfSeat"]
     dora = [_dora_index(t, players) for t in state.get("doras", [])]
     for enemy in range(players):
@@ -653,7 +660,8 @@ def _uncached_danger(tile, remaining, opponents, *, chankan=False):
                         "conditionalRonProbability": round(conditional, 4),
                         "yakuConfidence": factor, "lossPoints": round(loss, 1), "reason": reason})
         details[-1]["rankLossAdjustment"] = chance * loss_adjustment(
-            enemy.get("rankLossContext"), enemy["seat"], loss)
+            enemy.get("rankLossContext"), enemy["seat"], loss,
+            (enemy["yakumanPayment"] or {}).get("otherPayments", ()))
         if enemy["yakumanPayment"]:
             details[-1]["yakumanPayment"] = enemy["yakumanPayment"]
     return 1 - survival, expected_loss, details
@@ -1550,7 +1558,7 @@ def _record_score(candidate, **terms):
     candidate["scoreBreakdown"] = terms
 
 
-def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, lookahead_depth=1):
+def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, lookahead_depth=1, riichi_deposit=False):
     """Evaluate a 13-tile-equivalent position with a common score scale."""
     special = not state["melds"][state["selfSeat"]]
     counts = counts34(hand)
@@ -1566,7 +1574,8 @@ def _position(hand, state, remaining, discard=None, *, fold_eligibility=None, lo
     kokushi_route = special and 0 < sh <= 2 and Shanten.calculate_shanten_for_kokushi_hand(counts) == sh
     frontier = None
     locked = bool(state.get("riichi", [False] * 4)[state["selfSeat"]])
-    future_opponents = _opponents(state, remaining, after_current=True, passed_discard=discard)
+    future_opponents = _opponents(state, remaining, after_current=True, passed_discard=discard,
+                                 riichi_deposit=riichi_deposit)
     risks = _policy_risks(hand, state, remaining, future_opponents)
     if locked or sh == 0:
         continuation = _ready_policy(hand, state, remaining, future_opponents,
@@ -1885,7 +1894,9 @@ def _riichi(state, choice, remaining):
     next_["riichi"][seat] = True
     next_.setdefault("doubleRiichi", [False] * 4)[seat] = bool(state.get("canDoubleRiichi"))
     hand = _remove_exact(state["hand"], [choice["tile"]])
-    candidate = _position(hand, next_, remaining, choice["tile"])
+    # Only future rank prices use the paid deposit. The declaration itself
+    # still uses current scores; its cash cost remains in riichiCost below.
+    candidate = _position(hand, next_, remaining, choice["tile"], riichi_deposit=True)
     if candidate["shanten"] != 0 or not candidate["hasValidWait"]:
         raise ValueError("立直弃牌没有合法听口")
     # The new stick is our own money: recover it only if we win. Existing pot

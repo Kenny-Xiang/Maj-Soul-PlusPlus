@@ -97,22 +97,33 @@ def ranked_context(state):
     return _context(values, tuple(levels), tuple(scores), seat, chang, ju)
 
 
-def loss_context(state):
-    """Immutable pricing inputs, also distinguishing hypothetical riichi costs."""
+def loss_context(state, *, riichi_deposit=False):
+    """Immutable rank prices, optionally after a new riichi deposit is paid.
+
+    Keep the root ledger's reference weight so its independent adjustment
+    cancels that same weight. Only rank pricing changes, not cash or prizes.
+    """
     context = ranked_context(state)
     if context is None:
         return None
+    reference_weight = context['riskWeight']
+    if riichi_deposit:
+        scores = list(state['scores'])
+        scores[state['selfSeat']] -= 1000
+        state = {**state, 'scores': scores}
+        context = ranked_context(state)
     profile = context['profile']
     return (tuple(state['scores'][:state['playerCount']]), state['selfSeat'],
             tuple(profile['placementPoints']), profile['scoreDivisor'],
-            context['smoothingPoints'], context['probeGain'], context['riskWeight'])
+            context['smoothingPoints'], context['probeGain'], reference_weight)
 
 
 @lru_cache(maxsize=4096)
-def loss_adjustment(context, rival, payment):
+def loss_adjustment(context, rival, payment, other_payments=()):
     """Signed point-scale preference, separate from the predicted cash payment.
 
-    Normalize the actual score transfer by the existing average gain probe.
+    Include any known shared-pao payments in the complete score transfer,
+    normalized by the existing average gain probe and our own cash payment.
     This remains a bounded preference, not final-placement expected value.
     """
     if context is None or payment <= 0:
@@ -123,6 +134,9 @@ def loss_adjustment(context, rival, payment):
     after = list(scores)
     after[seat] -= payment
     after[rival] += payment
+    for payer, amount in other_payments:
+        after[payer] -= amount
+        after[rival] += amount
     loss = (_potential(scores, seat, rewards, divisor, scale) -
             _potential(after, seat, rewards, divisor, scale))
     weight = max(.75, min(1.75, BASE_WEIGHT * loss / gain * PROBE_POINTS / payment))

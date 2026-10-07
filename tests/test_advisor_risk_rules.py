@@ -57,7 +57,10 @@ class VisibleYakumanTests(unittest.TestCase):
                 before = deepcopy(s)
                 enemy, (probability, loss, details) = enemy_risk(s, "1p")
                 self.assertEqual(enemy["loss"], lower)
-                self.assertEqual(enemy["yakumanPayment"], {"yaku": ["Daisangen"], "lower": lower, "upper": upper})
+                expected = {"yaku": ["Daisangen"], "lower": lower, "upper": upper}
+                if source == 2:
+                    expected["otherPayments"] = ((2, 16000),)
+                self.assertEqual(enemy["yakumanPayment"], expected)
                 self.assertAlmostEqual(loss, probability * lower)
                 self.assertEqual(details[0]["yakumanPayment"], enemy["yakumanPayment"])
                 self.assertEqual(s, before)
@@ -78,6 +81,7 @@ class VisibleYakumanTests(unittest.TestCase):
             enemy, _ = enemy_risk(s, "1p")
             self.assertEqual(enemy["yakumanPayment"]["lower"], 24000)
             self.assertEqual(enemy["yakumanPayment"]["upper"], 24000 + (players - 1) * 200)
+            self.assertEqual(enemy["yakumanPayment"]["otherPayments"], ((2, 24000),))
 
     def test_last_concealed_kan_has_no_responsible_feeder(self):
         s = dragons()
@@ -102,6 +106,7 @@ class VisibleYakumanTests(unittest.TestCase):
         enemy, _ = enemy_risk(s, "1p")
         self.assertEqual(enemy["loss"], 64000)  # Half of two, plus one in full.
         self.assertEqual(enemy["yakumanPayment"]["yaku"], ["Daisuushii", "Suukantsu"])
+        self.assertEqual(enemy["yakumanPayment"]["otherPayments"], ((2, 32000),))
 
     def test_two_dragons_do_not_prove_yakuman_and_genbutsu_remains_safe(self):
         s = dragons(0)
