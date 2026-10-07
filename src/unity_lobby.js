@@ -22,6 +22,9 @@
   let endedAt = null, roundKey = null, lastRound = null, roundEpoch = 0, roundLocation = null;
   let confirmingAt = null, problem = '', problemGame = false, cancelError = '', gameConnection = '';
   let recoveryWaiting = false;
+  let resumeAccount = null, loginVerified = false, noGameConfirmed = false;
+  let roundCoordinates = null, terminalIdentity = null, confirmation = null, confirmationUnknown = false;
+  let confirmationWaiting = false;
   const clock = () => performance.now();
   const result = (phase, message, extra = {}) => ({phase, message, ...extra});
   const protocol = () => window.__mjProtocol;
@@ -72,16 +75,28 @@
     return f;
   }
   function newRound(event, onlyIfChanged = false) {
+    if ([event.chang, event.ju, event.ben].every(Number.isInteger)) {
+      const next = [event.chang, event.ju, event.ben];
+      const live = transport?.snapshot(), game = live?.gameIdentity || gameIds.get(live?.gameSessionId);
+      const identity = game && JSON.stringify([lastAccountId, game, ...next]);
+      const confirmedRound = confirmation && JSON.stringify(JSON.parse(confirmation).slice(0,5));
+      if (confirmation && identity && identity !== confirmedRound) confirmation = null;
+      if (roundCoordinates && JSON.stringify(next) !== JSON.stringify(roundCoordinates)) {
+        confirmationUnknown = false; terminalIdentity = null;
+      }
+      roundCoordinates = next;
+    }
     const location = [gameIds.get(transport?.snapshot().gameSessionId), event.chang, event.ju, event.ben].join(':');
     if (onlyIfChanged && location === roundLocation) return;
     if (![event.chang, event.ju, event.ben].every(Number.isInteger) || location !== roundLocation) {
       roundLocation = location; roundEpoch++; lastRound = null;
     }
-    roundKey = null; confirmingAt = null;
+    roundKey = null; confirmingAt = null; confirmationWaiting = false;
   }
   function endGame() {
     if (endedAt === null) endedAt = clock();
     playing = recoveryWaiting = false;
+    confirmation = terminalIdentity = roundCoordinates = null; confirmationUnknown = confirmationWaiting = false;
     enteringAt = roundKey = confirmingAt = lastRound = roundLocation = null;
     owned = externalQueue = null; refreshNeeded = true; generation++;
   }
@@ -99,10 +114,21 @@
         const round = packet.state.round;
         if (round && [round.chang, round.ju, round.ben].every(Number.isInteger)) newRound(round, true);
         if (['ActionHule', 'ActionNoTile', 'ActionLiuJu'].includes(event?.name)) {
+          const live = transport?.snapshot();
+          const game = live?.gameIdentity || gameIds.get(live?.gameSessionId);
+          terminalIdentity = game && roundCoordinates && Number.isInteger(event.step) ?
+            JSON.stringify([lastAccountId, game, ...roundCoordinates, event.name, event.step]) : null;
+          if (confirmationUnknown && terminalIdentity) {
+            confirmation = terminalIdentity; confirmationUnknown = false;
+          }
+          if (confirmation && confirmation === terminalIdentity) {
+            roundKey = null; confirmationWaiting = true; return;
+          }
           const key = `round:${lastAccountId}:${gameIds.get(transport?.snapshot().gameSessionId) || 'unknown'}:${roundEpoch}:${event.name}:${event.step}`;
           if (lastRound !== key) {lastRound = key; roundKey = key;}
         } else {
           roundKey = null;
+          if (confirmation && packet.state?.phase === 'between_rounds') confirmationWaiting = true;
           if (event?.name === 'ActionNewRound') newRound(event);
         }
       }
@@ -137,6 +163,8 @@
           } else if (name === 'ActionNewRound') newRound(protocol().action(payload));
         }
         if (direction === 'out' && method === '.lq.FastTest.confirmNewRound') {
+          window.__mjRecovery?.onClientAction?.();
+          confirmation = terminalIdentity; confirmationUnknown = !terminalIdentity;
           roundKey = null; confirmingAt ??= clock();
         }
         if (direction === 'in' && kind === 'response' && method === '.lq.FastTest.confirmNewRound')
@@ -153,16 +181,19 @@
       }
       if (sessionId !== live.lobbySessionId) return;
       if (direction === 'out' && !injected && method === '.lq.Lobby.startUnifiedMatch') {
+        window.__mjRecovery?.onClientAction?.();
         externalQueue = str(fields(payload), 1) || 'unknown';
       }
       if (direction !== 'in') return;
       if (kind === 'response' && ['.lq.Lobby.login', '.lq.Lobby.oauth2Login', '.lq.Lobby.emailLogin', '.lq.Lobby.fastLogin'].includes(method)) {
         const f = responseFields(payload), fast = method === '.lq.Lobby.fastLogin';
+        loginVerified = validId(live.accountId); noGameConfirmed = false;
         const gameInfo = fast ? 2 : 4;
         if (f.has(gameInfo) && str(fields(first(f, gameInfo)), 3)) {
           owned = externalQueue = null;
           enteringAt = live.gameConnected && playing ? null : clock();
         } else if (!f.has(gameInfo) && !live.gameConnected) {
+          noGameConfirmed = true;
           playing = recoveryWaiting = false;
           enteringAt = endedAt = roundKey = confirmingAt = lastRound = roundLocation = null;
           window.__mjMonitor?.onLobbyRecovery?.();
@@ -202,24 +233,31 @@
       } else if (kind === 'response' && !injected && method === '.lq.Lobby.startUnifiedMatch') {
         try {responseFields(payload);} catch (error) {externalQueue = null; problem = error.message;}
       }
-      if (owned?.cancelRequested && live.connected && !owned.submitting && !owned.cancelling) cancel();
+      if (owned?.cancelRequested && live.connected && !owned.submitting && !owned.cancelling &&
+          (resumeAccount === null || loginVerified && noGameConfirmed)) cancel();
     } catch (error) {problem = `大厅协议解析失败：${error.message}`; problemGame = !!message.game;}
   }
 
   function snapshot(playerCount = 4, roundCount = 1) {
     const live = sync();
     if (!transport?.isUnity?.() || !protocol()) return result('loading', '等待 Unity 游戏客户端加载', {clientLoading:true});
+    if (problem) return result('blocked', problem);
+    if (resumeAccount !== null && validId(live.accountId) && live.accountId !== resumeAccount)
+      return result('blocked', '恢复后登录账号已变化，请手动重新开启');
     if (!live.connected) return result('login', '等待大厅连接，请先在游戏窗口登录');
     if (!validId(live.accountId)) return result('login', '请先在游戏窗口登录');
-    if (problem) return result('blocked', problem);
+    if (resumeAccount !== null && (!loginVerified || !noGameConfirmed && !live.gameConnected))
+      return result('reconnecting', '等待官方登录确认当前对局', {recoveryStalled:true});
     if (recoveryWaiting || (playing || roundKey || confirmingAt !== null) && !live.gameConnected)
       return result('reconnecting', '牌局连接已中断，等待自动恢复', {recoverable:true});
     if (enteringAt !== null) {
-      if (clock() - enteringAt > 30000) return result('blocked', '匹配已成功，但客户端未能进入对局，请检查游戏界面');
+      if (clock() - enteringAt > 30000) return resumeAccount === null ?
+        result('blocked', '匹配已成功，但客户端未能进入对局，请检查游戏界面') :
+        result('reconnecting', '等待官方客户端恢复进行中的对局', {recoveryStalled:true});
       return result('matching', '匹配成功，等待客户端进入对局');
     }
-    if (confirmingAt !== null && clock() - confirmingAt > 30000)
-      return result('blocked', '已确认下一小局，但未收到开局通知，请检查游戏界面');
+    if (confirmationWaiting || confirmingAt !== null && clock() - confirmingAt > 30000)
+      return result('reconnecting', '下一小局确认结果未知，等待权威开局，暂不重复确认', {recoveryStalled:true});
     if (roundKey) return result('settlement', '准备进入下一小局', {actionKey:roundKey, action:'confirm'});
     if (playing) return result('playing', '对局进行中');
     if (owned || externalQueue) {
@@ -233,7 +271,7 @@
     if (busy) return result('loading', '正在刷新段位与金币');
     if (![1, 2].includes(roundCount)) return result('blocked', '无法识别场次，请选择东风或南风');
     if (refreshNeeded || !account)
-      return result('lobby', '准备刷新段位与金币', {action:'refresh', actionKey:`refresh:${identity}:${generation}:${roundCount}`});
+      return result('lobby', '准备刷新段位与金币', {recoveryReady:loginVerified && noGameConfirmed, action:'refresh', actionKey:`refresh:${identity}:${generation}:${roundCount}`});
     if (account.roomId) return result('blocked', '请先退出当前房间并返回大厅');
     if (account.frozen) return result('blocked', '账号当前无法匹配，请检查游戏提示');
     const rank = playerCount === 3 ? account.level3 : account.level;
@@ -253,7 +291,7 @@
     if (!version) return result('blocked', '尚未取得当前客户端版本，请重新登录后开启');
     const modeId = room[playerCount === 3 ? 3 : 2][roundCount - 1];
     return result('lobby', `准备匹配${room[1]} · ${mode}${wind}`, {
-      action:'match', actionKey:`match:${identity}:${generation}:${playerCount}:${roundCount}:${modeId}:${rank}:${account.gold}`,
+      recoveryReady:loginVerified && noGameConfirmed, action:'match', actionKey:`match:${identity}:${generation}:${playerCount}:${roundCount}:${modeId}:${rank}:${account.gold}`,
       modeId, sid:`1:${modeId}`, version, roomName:room[1],
     });
   }
@@ -311,6 +349,7 @@
     const state = snapshot(), binding = identity, sessionId = transport?.snapshot().gameSessionId;
     if (state.phase !== 'settlement' || !actionKey || state.actionKey !== actionKey || state.action !== 'confirm')
       return {ok:false, recoverable:true, reason:'结算状态已经变化，取消本次操作'};
+    confirmation = terminalIdentity; confirmationUnknown = !terminalIdentity;
     roundKey = null;
     try {
       const {payload} = await transport.request('.lq.FastTest.confirmNewRound', new Uint8Array(), {game:true});
@@ -329,7 +368,8 @@
     if (!owned) {refreshNeeded = true; generation++; return {ok:true};}
     owned.cancelRequested = true;
     if (validId(live.accountId) && owned.accountId !== live.accountId) {owned = null; return {ok:true};}
-    if (!live.connected || owned.submitting || owned.cancelling) return {ok:true, pending:true};
+    if (!live.connected || owned.submitting || owned.cancelling ||
+        resumeAccount !== null && (!loginVerified || !noGameConfirmed)) return {ok:true, pending:true};
     const queue = owned, binding = identity; queue.cancelling = true;
     transport.request('.lq.Lobby.cancelUnifiedMatch', protocol().encode([[1, queue.sid]]), {game:false})
       .then(({payload}) => {responseFields(payload); sync(); if (owned === queue) {owned = null; generation++;}})
@@ -344,6 +384,33 @@
     return {ok:true, pending:true};
   }
 
-  window.__mjLobby = window.__mjUnityLobby = {snapshot, start, finish, cancel, onEvent};
+  function checkpoint() {
+    sync();
+    if (externalQueue) throw new Error('手动匹配队列状态未知，不能自动重载');
+    if (confirmationUnknown) throw new Error('无法确认已提交结算的稳定牌局标识');
+    return {confirmation, owned:owned ? {accountId:owned.accountId, sid:owned.sid, modeId:owned.modeId} : null};
+  }
+  function restoreCheckpoint(value, accountId) {
+    if (!value || !validId(accountId) || value.confirmation !== null && typeof value.confirmation !== 'string')
+      throw new Error('恢复结算去重信息无效');
+    if (value.confirmation !== null) {
+      const key = JSON.parse(value.confirmation);
+      if (!Array.isArray(key) || key.length !== 7 || key[0] !== accountId ||
+          typeof key[1] !== 'string' || !key[1] || !key.slice(2,5).every(Number.isInteger) ||
+          !['ActionHule','ActionNoTile','ActionLiuJu'].includes(key[5]) || !Number.isInteger(key[6]))
+        throw new Error('恢复结算标识无效');
+    }
+    const queue = value.owned;
+    if (queue && (queue.accountId !== accountId || !validId(queue.modeId) || queue.sid !== `1:${queue.modeId}`))
+      throw new Error('恢复匹配队列信息无效');
+    const live = sync();
+    if (validId(live.accountId) && live.accountId !== accountId) throw new Error('恢复后登录账号已变化');
+    resumeAccount = accountId; confirmation = value.confirmation; confirmationUnknown = false;
+    owned = queue ? {...queue, at:clock(), submitting:false, cancelling:false, cancelRequested:true} : null;
+    refreshNeeded = true;
+    if (owned && loginVerified && noGameConfirmed) cancel();
+  }
+  window.__mjLobby = window.__mjUnityLobby = {snapshot, start, finish, cancel, onEvent, checkpoint, restoreCheckpoint,
+    beginIntent() { resumeAccount = null; }};
   sync();
 })();

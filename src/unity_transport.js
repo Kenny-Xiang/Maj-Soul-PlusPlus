@@ -5,6 +5,7 @@
   const delivered = new WeakSet(), encoder = new TextEncoder(), decoder = new TextDecoder();
   const selected = new Map();
   let sequence = 0, nextId = 60000, sending = null, lastAccountId = null, stopped = false;
+  let progress = 0, fault = '', lastClose = null;
   const loginMethods = ['.lq.Lobby.login', '.lq.Lobby.emailLogin', '.lq.Lobby.oauth2Login', '.lq.Lobby.fastLogin'];
   const first = (map, field, fallback = 0) => map.get(field)?.[0] ?? fallback;
   const str = (map, field) => map.has(field) ? decoder.decode(first(map, field)) : null;
@@ -31,6 +32,10 @@
   const errorCode = payload => {const f = core.fields(payload); return f.has(1) ? first(core.fields(first(f, 1)), 1) : 0;};
   const latest = game => selected.get(game) || [...sockets].filter(meta => meta.game === game).at(-1);
   const ready = meta => !!(meta?.authenticated && meta.socket.readyState === 1);
+  const validAccount = id => Number.isInteger(id) && id > 0 && id <= 0xffffffff;
+  const closeReason = value => typeof value === 'string' ? value.replace(/[\x00-\x1f\x7f]/g, ' ')
+    .replace(/\b(access[_ -]?token|connect[_ -]?token|token|password|authorization|cookie|account[_ ]?id|game[_ ]?uuid)\b.*/gi,
+      '$1=[redacted]').slice(0, 256) : '';
   const connectionError = message => Object.assign(new Error(message), {recoverable:true});
   function interrupt(meta, message) {
     for (const [id, request] of meta.pending) if (request.injected) {
@@ -42,7 +47,9 @@
     const lobby = latest(false), game = latest(true);
     return {connected:ready(lobby), gameConnected:ready(game),
       lobbySessionId:lobby?.id ?? null, gameSessionId:game?.id ?? null,
-      accountId:ready(lobby) ? lobby.accountId : null};
+      accountId:ready(lobby) ? lobby.accountId : null, lastAccountId,
+      gameIdentity:game?.gameIdentity ?? null, gameAccountId:game?.accountId ?? null,
+      progress, stalled:!!(lobby?.stalled || game?.stalled), fault, close:lastClose};
   }
   function emit(meta, packet) {
     for (const listener of listeners) {
@@ -58,18 +65,31 @@
     throw new Error('连接请求编号已耗尽，请重新连接');
   }
   function identify(meta, request, payload) {
-    if (errorCode(payload)) return;
     if (selected.get(meta.game)?.id > meta.id) return;
+    const authentication = loginMethods.includes(request.method) || request.method === '.lq.FastTest.authGame';
+    if (authentication && meta.authRequest !== request) return;
+    const code = errorCode(payload);
+    if (code) {
+      if (authentication || ['.lq.FastTest.syncGame', '.lq.FastTest.enterGame'].includes(request.method))
+        fault = `服务器拒绝连接恢复（${code}），请检查游戏提示`;
+      return;
+    }
     if (loginMethods.includes(request.method)) {
-      meta.authenticated = true;
-      if (request.method !== '.lq.Lobby.fastLogin') lastAccountId = first(core.fields(payload), 2, null);
-      meta.accountId = lastAccountId;
+      const fast = request.method === '.lq.Lobby.fastLogin', response = core.fields(payload);
+      meta.accountId = fast ? lastAccountId : first(response, 2, null);
+      meta.authenticated = validAccount(meta.accountId);
+      if (!meta.authenticated) {fault = '登录回应缺少可信账号身份，请在游戏窗口重新登录'; return;}
+      lastAccountId = meta.accountId;
+      const game = selected.get(true);
+      if (!response.has(fast ? 2 : 4) && game && !ready(game)) game.stalled = false;
     } else if (request.method === '.lq.FastTest.authGame') {
       meta.accountId = core.authAccount(request.payload); meta.authenticated = !!meta.accountId;
+      meta.gameIdentity = str(core.fields(request.payload), 3);
       const lobby = selected.get(false);
       if (ready(lobby) && lobby.accountId !== meta.accountId) meta.authenticated = false;
     }
-    if (meta.authenticated && (loginMethods.includes(request.method) || request.method === '.lq.FastTest.authGame')) {
+    if (meta.authenticated && authentication) {
+      meta.wasAuthenticated = true; meta.stalled = false; meta.ended = false; progress++;
       for (const other of sockets) if (other !== meta && (other.game === meta.game ||
           !meta.game && meta.accountId && other.accountId !== meta.accountId)) {
         other.authenticated = false;
@@ -92,7 +112,9 @@
       meta.pending.delete(env.id);
       if (request.injected) {meta.retired.add(env.id); clearTimeout(request.timer);}
       try {identify(meta, request, env.data);} catch (_) { /* An invalid response remains visible to its owner. */ }
-      emit(meta, {direction:'in', kind:'response', method:request.method, payload:env.data,
+      const obsoleteAuth = (loginMethods.includes(request.method) || request.method === '.lq.FastTest.authGame') &&
+        meta.authRequest !== request;
+      if (!obsoleteAuth) emit(meta, {direction:'in', kind:'response', method:request.method, payload:env.data,
         requestPayload:request.payload, injected:request.injected});
       if (request.injected) {
         try {
@@ -108,7 +130,18 @@
         deliver(meta, event, data.buffer);
       } else deliver(meta, event);
     } else {
-      if (env.kind === 1) emit(meta, {direction:'in', kind:'notify', method:env.name, payload:env.data, injected:false});
+      if (env.kind === 1) {
+        if (meta.game && latest(true) === meta) {
+          let ended = env.name === '.lq.NotifyGameEndResult';
+          if (env.name === '.lq.ActionPrototype') {
+            try {ended = !!core.action(env.data).matchEnd;} catch (_) { /* The collector owns parse errors. */ }
+          }
+          if (ended) {meta.ended = true; meta.stalled = false;}
+        }
+        if (latest(meta.game) === meta && ['.lq.NotifyAccountLogout', '.lq.NotifyAnotherLogin', '.lq.NotifyGameTerminate'].includes(env.name))
+          fault = env.name === '.lq.NotifyGameTerminate' ? '对局已终止，请检查游戏提示' : '账号已退出或在其他设备登录';
+        emit(meta, {direction:'in', kind:'notify', method:env.name, payload:env.data, injected:false});
+      }
       deliver(meta, event);
     }
   }
@@ -143,8 +176,9 @@
         {method:env.name, payload:env.data, clientId:env.id, injected:false};
       if (injected || id !== env.id) meta.modified = true;
       if (!injected) meta.pending.set(id, request);
-      if (loginMethods.includes(env.name) || env.name === '.lq.FastTest.authGame')
-        meta.authenticated = false;
+      if (loginMethods.includes(env.name) || env.name === '.lq.FastTest.authGame') {
+        meta.authenticated = false; meta.authRequest = request;
+      }
       const wire = id === env.id ? data : bytes.slice();
       if (id !== env.id) {wire[1] = id & 255; wire[2] = id >> 8;}
       try {Reflect.apply(meta.originalSend, this, [wire]);}
@@ -154,11 +188,19 @@
         interrupt(meta, '客户端正在恢复连接，等待权威牌局状态');
       emit(meta, {direction:'out', kind:'request', method:env.name, payload:env.data, injected});
     };
-    meta.close = () => {
+    meta.close = event => {
+      const close = {game:meta.game, code:Number.isInteger(event.code) ? event.code : null,
+        reason:closeReason(event.reason), wasClean:!!event.wasClean};
+      if (latest(meta.game) === meta) {
+        if (meta.wasAuthenticated && !meta.ended) meta.stalled = true;
+        lastClose = close;
+      }
+      window.__mjMonitor?.reportRecoveryDiagnostic?.({phase:'socket-close', ...close});
       meta.authenticated = false;
       interrupt(meta, '连接已关闭，等待自动重新连接');
       meta.pending.clear();
-      emit(meta, {direction:'in', kind:'close', method:'', payload:new Uint8Array(), injected:false});
+      emit(meta, {direction:'in', kind:'close', method:'', payload:new Uint8Array(), injected:false,
+        code:close.code, reason:close.reason, wasClean:close.wasClean});
       if (stopped) detach(meta);
     };
     socket.addEventListener('message', meta.message);
@@ -181,6 +223,7 @@
       entry.timer = setTimeout(() => {
         if (meta.pending.get(id) !== entry) return;
         meta.pending.delete(id); meta.retired.add(id);
+        meta.stalled = true;
         reject(connectionError('等待服务器确认超时，等待权威状态恢复，暂不重复操作'));
       }, 10000);
       try {sending = {meta, bytes:frame}; meta.socket.send(frame);}
@@ -202,6 +245,8 @@
   }
   window.__mjProtocol = {fields:core.fields, action:core.action, encode, first, str};
   window.__mjUnityTransport = {snapshot, request,
+    markProgress() {const game = latest(true); if (ready(game)) game.stalled = false;},
+    markEnded() {const game = latest(true); if (game) {game.ended = true; game.stalled = false;}},
     isUnity:() => !!(window.unityInstance || typeof window.createUnityInstance === 'function' ||
       window.document?.getElementById('unity-canvas')),
     onMessage(listener) {listeners.add(listener); return () => listeners.delete(listener);},

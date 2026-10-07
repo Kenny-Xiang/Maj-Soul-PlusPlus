@@ -7,6 +7,13 @@
   let lastLogState = '';
   let clientLoadingSince = null, initialRoundSince = null;
   let recovery = null;
+  let revision = 0, fault = null, frozen = null, resumeAccount = null, restoring = false, progress = 0, lastProgress = '';
+  const recoverySession = () => window.__mjMonitor?.session || null;
+  function intent(source) {
+    window.__mjMonitor?.reportAutomationIntent?.({source, session:recoverySession(), revision,
+      enabled, playerCount, roundCount});
+  }
+  function changedIntent(source = 'user') { revision++; frozen = null; intent(source); }
   let pace = 1, observed = null, threatVersion = 0, handledThreat = 0, continuation = null, lastWindow = null;
   const now = () => performance.now();
   // Initial pacing parameters, not a fit to human play. Sample once per window.
@@ -104,42 +111,46 @@
   }
   function pause(reason) {
     const wasEnabled = enabled;
+    fault = reason;
     enabled = false; pending = null; clientLoadingSince = initialRoundSince = null; continuation = null; lastWindow = null;
-    status('paused', reason);
+    status('paused', reason); changedIntent('pause');
     if (wasEnabled) cancelMatch();
   }
   function setEnabled(value) {
     if (stopped) return;
     if (!value) {
+      fault = null; resumeAccount = null; restoring = false;
       const wasEnabled = enabled;
       enabled = false; pending = null; clientLoadingSince = initialRoundSince = null; continuation = null; lastWindow = null;
-      status('idle', '已关闭 · 手动操作');
+      status('idle', '已关闭 · 手动操作'); changedIntent();
       if (wasEnabled) cancelMatch();
       return;
     }
-    if (enabled) return;
-    if (cancelling !== null) { status('waiting', '正在取消上一轮匹配，请稍后开启'); return; }
+    if (enabled) { changedIntent(); return; }
+    if (cancelling !== null) { status('waiting', '正在取消上一轮匹配，请稍后开启'); changedIntent(); return; }
     if (window.__mjUnityTransport?.isUnity() && window.__mjUnityActions?.snapshot().pending) {
-      status('waiting', '等待上次操作确认，请稍后开启'); return;
+      status('waiting', '等待上次操作确认，请稍后开启'); changedIntent(); return;
     }
+    fault = null; resumeAccount = null; restoring = false;
+    window.__mjUnityLobby?.beginIntent?.();
     enabled = true; pending = null; submitted = null; clientLoadingSince = initialRoundSince = null;
     pace = .95 + Math.random() * .1; handledThreat = threatVersion;
     if (current && !current.sent) { restartTiming(current, now()); lastWindow = current; }
-    status('waiting', '已开启 · 检查当前对局');
+    status('waiting', '已开启 · 检查当前对局'); changedIntent();
     tick();
   }
   function setPlayerCount(value) {
-    if (![3, 4].includes(value) || value === playerCount) return;
+    if (![3, 4].includes(value)) return;
     playerCount = value;
     // An existing queue belongs to its selected mode; the next queue uses this preference.
     pending = null;
-    status(phase, '模式已更新 · 下一场生效');
+    status(phase, '模式已更新 · 下一场生效'); changedIntent();
   }
   function setRoundCount(value) {
-    if (![1, 2].includes(value) || value === roundCount) return;
+    if (![1, 2].includes(value)) return;
     roundCount = value;
     pending = null;
-    status(phase, '场次已更新 · 下一场生效');
+    status(phase, '场次已更新 · 下一场生效'); changedIntent();
   }
   function onEvent(event) {
     if (stopped || !['turn', 'status', 'error'].includes(event.kind)) return;
@@ -147,6 +158,7 @@
     if (nextRecovery !== undefined) recovery = nextRecovery;
     else if (event.phase === 'disconnected') recovery = {status:'waiting', reason:'connection'};
     if (event.reset) recovery = null;
+    if (event.phase === 'ended' || event.state?.phase === 'ended') window.__mjUnityTransport?.markEnded?.();
     if (recovery?.status === 'waiting') {
       submitted = null; continuation = lastWindow = null; initialRoundSince = null;
     }
@@ -156,6 +168,14 @@
       observed = continuation = lastWindow = null; threatVersion = handledThreat = 0;
     }
     if (event.kind === 'turn') {
+      if (event.state.handComplete && event.state.historyComplete && !event.state.recovery) {
+        const live = window.__mjUnityTransport?.snapshot?.();
+        const key = JSON.stringify([live?.gameIdentity || event.state.gameId || event.session,
+          event.state.round, event.state.lastStep, event.state.phase]);
+        if (key !== lastProgress) {
+          lastProgress = key; progress++; window.__mjUnityTransport?.markProgress?.();
+        }
+      }
       observe(event);
       const windowKey = JSON.stringify([event.session, event.state]);
       const sameWindow = previous?.windowKey === windowKey;
@@ -173,10 +193,10 @@
           (!event.state.handComplete || !event.state.historyComplete) && recovery?.status !== 'waiting') {
         pause('已暂停：牌局基线不完整，需恢复后重新开启');
       }
-    } else if (enabled && (event.kind === 'error' || event.phase === 'stopped')) {
+    } else if (event.kind === 'error' || event.phase === 'stopped') {
       pause('已暂停：连接或牌局解析异常');
     }
-    if (enabled && recovery?.status === 'failed') pause(`已暂停：${recovery.reason}`);
+    if (recovery?.status === 'failed') pause(`已暂停：${recovery.reason}`);
     if (enabled && recovery?.status === 'waiting')
       status('reconnecting', '正在重新连接并恢复牌局 · 自动打牌保持开启');
   }
@@ -190,6 +210,7 @@
     }
   }
   function onInput() {
+    if (frozen && !executing) { pause('已暂停：重载准备期间客户端提交了新操作'); return; }
     if (enabled && !executing && recovery?.status !== 'waiting' && !current?.expired && !budgetExceeded(current?.advice)) {
       const client = current && window.__mjUnityActions?.snapshot(current.state);
       if (!Number.isFinite(client?.remainingMs) || client.remainingMs > 0)
@@ -239,11 +260,21 @@
         cancelling = null; status('paused', '自动已关闭；取消匹配未确认，请在游戏中检查');
       } else cancelMatch();
     }
-    if (!enabled) return;
+    if (!enabled || frozen) return;
     try {
       const lobby = window.__mjLobby?.snapshot(playerCount, roundCount);
       if (!lobby) { pause('已暂停：大厅控制器未就绪'); return; }
       if (lobby.phase !== 'playing') initialRoundSince = null;
+      const live = window.__mjUnityTransport?.snapshot?.();
+      if (live?.fault) { pause(`已暂停：${live.fault}`); return; }
+      if (resumeAccount !== null) {
+        if (live?.accountId && live.accountId !== resumeAccount) {pause('已暂停：恢复后登录账号已变化'); return;}
+        if (!live?.connected || live.accountId !== resumeAccount) {
+          status('reconnecting', '恢复后等待同一账号重新登录'); return;
+        }
+        if (lobby.recoveryReady || live.gameConnected && current?.state.handComplete &&
+            current.state.historyComplete && !current.state.recovery) restoring = false;
+      }
       if (lobby.phase === 'blocked') { pause(lobby.message || '已暂停：当前界面不支持自动操作'); return; }
       if (recovery?.status === 'failed') {pause(`已暂停：${recovery.reason}`); return;}
       if (recovery?.status === 'waiting') {
@@ -332,9 +363,69 @@
     } catch (error) { pause(`已暂停：${error.message}`); }
   }
   function manual(event) {
-    if (!enabled || !event.isTrusted || event.composedPath().some(element => element.id === 'mj-statistics-overlay')) return;
-    pause('已暂停：手动接管');
+    if (!event.isTrusted || event.composedPath().some(element => element.id === 'mj-statistics-overlay')) return;
+    if (enabled) pause('已暂停：手动接管');
+    else { revision++; frozen = null; intent('user'); }
   }
+  function recoverySnapshot() {
+    const live = window.__mjUnityTransport?.snapshot?.() || {};
+    const lobby = window.__mjLobby?.snapshot?.(playerCount, roundCount);
+    const problem = fault || live.fault || (lobby?.phase === 'blocked' ? lobby.message : null);
+    if (restoring && live.connected && live.accountId === resumeAccount &&
+        (lobby?.recoveryReady || live.gameConnected && current?.state.handComplete &&
+          current.state.historyComplete && !current.state.recovery)) restoring = false;
+    return {session:recoverySession(), revision, enabled, playerCount, roundCount,
+      stalled:!!(restoring || recovery?.status === 'waiting' || live.stalled || lobby?.recoveryStalled),
+      progress:progress + (live.progress || 0), phase, fault:problem || null};
+  }
+  window.__mjRecovery = {
+    snapshot:recoverySnapshot,
+    onClientAction() { if (frozen) pause('已暂停：重载准备期间客户端提交了新操作'); },
+    prepare(session, expectedRevision, nonce) {
+      const value = recoverySnapshot();
+      if (!nonce || stopped || !value.enabled || !value.stalled || value.fault ||
+          value.session !== session || revision !== expectedRevision || frozen && frozen !== nonce)
+        return {...value, prepared:false, reason:'恢复意图或页面状态已变化'};
+      try {
+        const live = window.__mjUnityTransport?.snapshot?.() || {};
+        const accountId = resumeAccount || live.accountId || live.lastAccountId;
+        if (!Number.isInteger(accountId) || accountId <= 0) throw new Error('无法确认恢复账号');
+        const actions = window.__mjUnityActions?.checkpoint?.();
+        const lobby = window.__mjUnityLobby?.checkpoint?.();
+        if (!actions || !lobby) throw new Error('恢复去重控制器未就绪');
+        frozen = nonce; pending = null;
+        return {...value, prepared:true, nonce, checkpoint:{enabled:true, playerCount, roundCount,
+          accountId, actions, lobby}};
+      } catch (error) { return {...value, prepared:false, reason:error.message}; }
+    },
+    cancel(nonce) { if (frozen === nonce) frozen = null; return recoverySnapshot(); },
+    restore(checkpoint, session, expectedRevision, nonce) {
+      const value = recoverySnapshot();
+      if (!nonce || stopped || enabled || value.fault || session !== value.session ||
+          expectedRevision !== 0 || revision !== 0 || !checkpoint?.enabled ||
+          ![3,4].includes(checkpoint.playerCount) || ![1,2].includes(checkpoint.roundCount) ||
+          !Number.isInteger(checkpoint.accountId) || checkpoint.accountId <= 0)
+        return {...value, restored:false, reason:'页面已被操作或恢复凭据无效'};
+      try {
+        if (!window.__mjUnityActions?.restoreCheckpoint || !window.__mjUnityLobby?.restoreCheckpoint)
+          throw new Error('恢复去重控制器未就绪');
+        window.__mjUnityActions.restoreCheckpoint(checkpoint.actions);
+        window.__mjUnityLobby.restoreCheckpoint(checkpoint.lobby, checkpoint.accountId);
+        playerCount = checkpoint.playerCount; roundCount = checkpoint.roundCount;
+        resumeAccount = checkpoint.accountId; restoring = true; enabled = true; revision++;
+        current = pending = submitted = lastWindow = continuation = null;
+        status('reconnecting', '正在恢复自动打牌 · 等待完整牌局与新建议'); intent('restore');
+        return {...recoverySnapshot(), restored:true};
+      } catch (error) { pause(`已暂停：恢复检查失败：${error.message}`);
+        return {...recoverySnapshot(), restored:false, reason:error.message}; }
+    },
+    fail(session, expectedRevision, reason) {
+      const value = recoverySnapshot();
+      if (value.session === session && revision === expectedRevision && enabled && !value.fault)
+        pause(`已暂停：${reason}`);
+      return recoverySnapshot();
+    },
+  };
   const timer = setInterval(tick, 100);
   addEventListener('pointerdown', manual, true);
   addEventListener('keydown', manual, true);
@@ -343,5 +434,5 @@
       setEnabled(false); stopped = true; clearInterval(timer);
       removeEventListener('pointerdown', manual, true); removeEventListener('keydown', manual, true);
     }};
-  status('idle', '待机');
+  status('idle', '待机'); intent('init');
 })();

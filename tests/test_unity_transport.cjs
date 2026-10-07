@@ -383,3 +383,108 @@ test('late game authentication for a previous account cannot create a usable gam
   assert.equal(h.api.snapshot().accountId,99);
   assert.equal(h.api.snapshot().gameConnected,false);
 });
+
+test('recovery telemetry counts proven authentication, retains game identity and records close details', async () => {
+  const h=setup(), lobby=h.connect();
+  assert.equal(h.api.snapshot().progress,0);
+  await h.login(lobby,81);
+  const game=h.connect(true), auth=h.protocol.encode([[1,81],[3,'recovery-fixture']]);
+  game.socket.send(h.frame(2,19,'.lq.FastTest.authGame',auth));
+  assert.equal(h.api.snapshot().progress,1,'socket opens and requests are not recovery progress');
+  game.socket.receive(h.frame(3,19).buffer); await h.flush();
+  assert.equal(h.api.snapshot().progress,2);
+  assert.equal(h.api.snapshot().gameIdentity,'recovery-fixture');
+  assert.equal(h.api.snapshot().gameAccountId,81);
+  game.socket.readyState=3;
+  game.socket.dispatchEvent(Object.assign(new Event('close'),{code:1006,reason:'fixture interruption',wasClean:false}));
+  const snapshot=h.api.snapshot();
+  assert.equal(snapshot.stalled,true); assert.equal(snapshot.gameIdentity,'recovery-fixture');
+  assert.equal(snapshot.lastAccountId,81); assert.equal(snapshot.progress,2);
+  assert.deepEqual(JSON.parse(JSON.stringify(snapshot.close)),{game:true,code:1006,reason:'fixture interruption',wasClean:false});
+  await h.advance(600000); assert.equal(h.api.snapshot().progress,2);
+});
+
+test('an unknown RPC outcome marks recovery stalled, while auth rejection remains a hard fault', async () => {
+  const h=setup(), c=h.connect(); await h.login(c,81);
+  const request=h.api.request('.lq.Lobby.startUnifiedMatch',h.protocol.encode([[1,'1:2']]));
+  const rejected=assert.rejects(request,error=>error.recoverable===true);
+  await h.advance(10001); await rejected;
+  assert.equal(h.api.snapshot().stalled,true);
+  const current=h.connect(); await h.login(current,81);
+  assert.equal(h.api.snapshot().stalled,false);
+  current.socket.send(h.frame(2,30,'.lq.Lobby.oauth2Login'));
+  current.socket.receive(h.frame(3,30,'',h.protocol.encode([[1,h.protocol.encode([[1,1004]])]])).buffer);
+  await h.flush();
+  assert.match(h.api.snapshot().fault,/1004/);
+  current.socket.close(); assert.match(h.api.snapshot().fault,/1004/);
+});
+
+test('late failures and closes from replaced sockets cannot poison current recovery telemetry', async () => {
+  const h=setup(), old=h.connect(); await h.login(old,81);
+  old.socket.send(h.frame(2,30,'.lq.Lobby.oauth2Login'));
+  const current=h.connect(); await h.login(current,81);
+  const progress=h.api.snapshot().progress;
+  old.socket.receive(h.frame(3,30,'',h.protocol.encode([[1,h.protocol.encode([[1,1004]])]])).buffer);
+  old.socket.close(); await h.flush();
+  assert.equal(h.api.snapshot().fault,''); assert.equal(h.api.snapshot().stalled,false);
+  assert.equal(h.api.snapshot().progress,progress);
+});
+
+test('credible game progress clears uncertainty only on an authenticated game connection', async () => {
+  const h=setup(), game=h.connect(true); await h.login(game,81,true);
+  const operation=h.api.request('.lq.FastTest.inputOperation',h.protocol.encode([[1,1],[3,'1m']]));
+  const rejected=assert.rejects(operation,error=>error.recoverable===true);
+  await h.advance(10001); await rejected;
+  assert.equal(h.api.snapshot().stalled,true);
+  const progress=h.api.snapshot().progress;
+  h.api.markProgress(); assert.equal(h.api.snapshot().stalled,false);
+  assert.equal(h.api.snapshot().progress,progress);
+  game.socket.close(); h.api.markProgress(); assert.equal(h.api.snapshot().stalled,true);
+});
+
+test('only a confirmed no-game login clears old game disconnection and identity-less login is rejected', async () => {
+  const h=setup(), game=h.connect(true); await h.login(game,81,true); game.socket.close();
+  const lobby=h.connect();
+  lobby.socket.send(h.frame(2,20,'.lq.Lobby.login'));
+  lobby.socket.receive(h.frame(3,20,'',h.protocol.encode([[2,81],[4,h.protocol.encode([[3,'active-fixture']])]])).buffer);
+  await h.flush(); assert.equal(h.api.snapshot().stalled,true);
+  await h.login(lobby,81); assert.equal(h.api.snapshot().stalled,false);
+  const unknown=setup(), fresh=unknown.connect();
+  fresh.socket.send(unknown.frame(2,20,'.lq.Lobby.fastLogin'));
+  fresh.socket.receive(unknown.frame(3,20).buffer); await unknown.flush();
+  assert.equal(unknown.api.snapshot().connected,false); assert.match(unknown.api.snapshot().fault,/身份/);
+  assert.equal(unknown.api.snapshot().progress,0);
+});
+
+test('out-of-order authentication callbacks on one socket cannot replace the latest identity or error state', async () => {
+  for (const failure of [true,false]) {
+    const h=setup(), lobby=h.connect();
+    lobby.socket.send(h.frame(2,20,'.lq.Lobby.login'));
+    lobby.socket.send(h.frame(2,21,'.lq.Lobby.login'));
+    lobby.socket.receive(h.frame(3,21,'',h.protocol.encode([[2,81]])).buffer); await h.flush();
+    const responses=h.events.filter(event=>event.kind==='response').length;
+    lobby.socket.receive(h.frame(3,20,'',failure ? h.protocol.encode([[1,h.protocol.encode([[1,1004]])]]) : h.protocol.encode([[2,99]])).buffer);
+    await h.flush();
+    assert.equal(h.api.snapshot().accountId,81); assert.equal(h.api.snapshot().fault,'');
+    assert.equal(h.api.snapshot().progress,1);
+    assert.equal(h.events.filter(event=>event.kind==='response').length,responses);
+    assert.equal(lobby.unity.length,2,'official client still receives both of its own responses');
+  }
+});
+
+test('normal game completion is not a lost connection and close diagnostics remove credential text', async () => {
+  for (const kind of ['notification','collector']) {
+    const h=setup(), game=h.connect(true); await h.login(game,81,true);
+    const diagnostics=[]; h.window.__mjMonitor={reportRecoveryDiagnostic:value=>diagnostics.push(value)};
+    if(kind==='notification') {
+      game.socket.receive(h.frame(1,null,'.lq.NotifyGameEndResult').buffer); await h.flush();
+    } else h.api.markEnded();
+    game.socket.readyState=3;
+    game.socket.dispatchEvent(Object.assign(new Event('close'),{code:1000,reason:'closed; access_token=fixture-secret; cookie=second-secret',wasClean:true}));
+    assert.equal(h.api.snapshot().stalled,false);
+    assert.equal(diagnostics.length,1); assert.equal(diagnostics[0].phase,'socket-close');
+    assert.equal(diagnostics[0].reason.includes('fixture-secret'),false);
+    assert.equal(diagnostics[0].reason.includes('second-secret'),false);
+    assert.equal(h.api.snapshot().close.reason.includes('fixture-secret'),false);
+  }
+});

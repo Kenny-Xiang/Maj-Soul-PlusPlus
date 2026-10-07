@@ -221,8 +221,10 @@ wrappedConstructor = new Proxy(NativeSocket, {construct(target, args, newTarget)
   return socket;
 }});
 window.WebSocket = wrappedConstructor;
-window.__mjMonitor = {version:'3.0.0', getSnapshot:snapshot, stop,
+window.__mjMonitor = {version:'3.0.0', session, getSnapshot:snapshot, stop,
   onLobbyRecovery:() => {if (running && state.recovery?.status === 'waiting') resetStatistics('waiting');},
+  reportRecoveryDiagnostic:value => {if (running) publish({kind:'recovery_diagnostic', ...value});},
+  reportAutomationIntent:value => {if (running) publish({kind:'automation_intent', ...value});},
   reportAutomation:value => Promise.resolve().then(() => {if (running) publish({kind:'automation', ...value});}),
   uninstall:() => {stop(); delete window.__mjMonitor;}};
 heartbeatTimer = setInterval(() => {

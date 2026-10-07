@@ -337,7 +337,8 @@ test('confirmation ACK waits for a real new round with a bounded timeout, and na
   h.api.onEvent({kind:'turn',state:{phase:'between_rounds'},action:{name:'ActionNoTile',step:99,matchEnd:false}});
   const result=h.api.finish(h.api.snapshot().actionKey);
   h.calls.at(-1).resolve({payload:encode([])}); await result;
-  h.advance(30001); assert.equal(h.api.snapshot().phase,'blocked');
+  h.advance(30001); assert.equal(h.api.snapshot().phase,'reconnecting');
+  assert.equal(h.api.snapshot().recoveryStalled,true);
   const g=harness();
   g.emit('.lq.FastTest.confirmNewRound',encode([]),{direction:'out',kind:'request',game:true});
   g.emit('.lq.FastTest.confirmNewRound',encode([[1,encode([[1,1004]])]]),{kind:'response',game:true});
@@ -650,4 +651,84 @@ test('a confirmed game end clears round deduplication even when later game authe
   }
   assert.notEqual(keys[0],keys[1]);
   assert.equal(h.calls.length,2);
+});
+
+test('reloaded queue waits for same-account login and cancellation acknowledgement before rematching',async()=>{
+  const h=harness();
+  assert.equal(typeof h.api.restoreCheckpoint,'function');
+  h.api.restoreCheckpoint({owned:{accountId:42,sid:'1:5',modeId:5},confirmation:null},42);
+  assert.equal(h.api.snapshot().phase,'reconnecting');assert.equal(h.calls.length,0);
+  h.emit('.lq.Lobby.oauth2Login',encode([[2,42],[3,account()]]),{kind:'response'});
+  assert.equal(h.api.snapshot().phase,'matching');assert.equal(h.calls.length,1);
+  assert.equal(h.calls[0].method,'.lq.Lobby.cancelUnifiedMatch');
+  h.advance(50000);assert.notEqual(h.api.snapshot().phase,'lobby');assert.equal(h.calls.length,1);
+  h.calls[0].resolve({payload:encode([])});await flush();
+  assert.equal(h.api.snapshot().phase,'lobby');assert.equal(h.api.snapshot().action,'refresh');
+});
+
+for (const name of ['ActionHule','ActionNoTile','ActionLiuJu']) test(`cross-page ${name} confirmation is deduplicated by account UUID round and terminal step`,async()=>{
+  const h=harness({gameConnected:true});h.live.gameIdentity='stable-game';
+  const terminal={name,step:99,matchEnd:false}, round={chang:0,ju:0,ben:0};
+  h.api.onEvent({kind:'turn',state:{phase:'between_rounds',round},action:terminal});
+  const first=h.api.finish(h.api.snapshot().actionKey);
+  h.calls.at(-1).resolve({payload:encode([])});await first;
+  const checkpoint=JSON.parse(JSON.stringify(h.api.checkpoint()));
+  assert.ok(checkpoint.confirmation.includes('stable-game'));
+  const next=harness({gameConnected:true});next.live.gameIdentity='stable-game';
+  next.api.restoreCheckpoint(checkpoint,42);
+  next.emit('.lq.Lobby.oauth2Login',encode([[2,42],[3,account()],[4,encode([[3,'stable-game']])]]),{kind:'response'});
+  next.emit('.lq.FastTest.authGame',encode([]),{kind:'response',game:true});
+  next.api.onEvent({kind:'turn',state:{phase:'between_rounds',round},action:terminal});
+  assert.equal(next.api.snapshot().actionKey,undefined);assert.equal(next.calls.length,0);
+  assert.equal(next.api.snapshot().recoveryStalled,true);
+  next.api.onEvent({kind:'turn',state:{phase:'between_rounds',round:{...round,ju:1}},action:terminal});
+  assert.equal(next.api.snapshot().action,'confirm');
+  const second=next.api.finish(next.api.snapshot().actionKey);next.calls[0].resolve({payload:encode([])});await second;
+  assert.equal(next.calls.length,1);
+});
+
+test('restored ownership cannot cancel or match under another account or uncertain game information',()=>{
+  const checkpoint={owned:{accountId:42,sid:'1:5',modeId:5},confirmation:null};
+  const h=harness();h.api.restoreCheckpoint(checkpoint,42);
+  h.live.accountId=99;h.live.lobbySessionId=3;
+  h.emit('.lq.Lobby.oauth2Login',encode([[2,99],[3,account(99)]]),{kind:'response'});
+  assert.equal(h.api.snapshot().phase,'blocked');assert.match(h.api.snapshot().message,/账号已变化/);
+  assert.equal(h.calls.length,0);
+  for(const game of [encode([]),encode([[3,'existing-game']])]) {
+    const g=harness();g.api.restoreCheckpoint(checkpoint,42);
+    g.emit('.lq.Lobby.oauth2Login',encode([[2,42],[4,game]]),{kind:'response'});
+    assert.notEqual(g.api.snapshot().phase,'lobby');assert.equal(g.calls.length,0);
+  }
+});
+
+test('manual queues and a confirmation without stable game identity cannot be exported for replay',async()=>{
+  const h=harness();h.emit('.lq.Lobby.startUnifiedMatch',encode([[1,'1:5']]),{direction:'out',kind:'request'});
+  assert.throws(()=>h.api.checkpoint(),/手动匹配/);
+  const g=harness({gameConnected:true});
+  g.api.onEvent({kind:'turn',state:{phase:'between_rounds'},action:{name:'ActionHule',step:9}});
+  const action=g.api.finish(g.api.snapshot().actionKey);g.calls[0].resolve({payload:encode([])});await action;
+  assert.throws(()=>g.api.checkpoint(),/稳定牌局标识/);
+});
+
+test('early native confirmation binds to the later collected terminal and a real new round releases it',()=>{
+  const h=harness({gameConnected:true});h.live.gameIdentity='stable-game';
+  h.emit('.lq.FastTest.confirmNewRound',encode([]),{direction:'out',kind:'request',game:true});
+  assert.throws(()=>h.api.checkpoint(),/稳定牌局标识/);
+  h.api.onEvent({kind:'turn',state:{phase:'between_rounds',round:{chang:0,ju:0,ben:0}},
+    action:{name:'ActionNoTile',step:99}});
+  assert.equal(h.api.snapshot().actionKey,undefined);assert.equal(h.calls.length,0);
+  assert.ok(h.api.checkpoint().confirmation.includes('stable-game'));
+  h.api.onEvent({kind:'turn',state:{phase:'playing',round:{chang:0,ju:1,ben:0}},
+    action:{name:'ActionNewRound',chang:0,ju:1,ben:0,step:0}});
+  assert.equal(h.api.checkpoint().confirmation,null);
+});
+
+test('restored between-round snapshot keeps unknown confirmation waiting without repeating it',()=>{
+  const h=harness({gameConnected:true});h.live.gameIdentity='stable-game';
+  h.api.restoreCheckpoint({owned:null,confirmation:JSON.stringify([42,'stable-game',0,0,0,'ActionNoTile',99])},42);
+  h.emit('.lq.Lobby.oauth2Login',encode([[2,42],[4,encode([[3,'stable-game']])]]),{kind:'response'});
+  h.emit('.lq.FastTest.authGame',encode([]),{kind:'response',game:true});
+  h.api.onEvent({kind:'turn',state:{phase:'between_rounds',round:{chang:0,ju:0,ben:0}},action:{name:'GameRestore',step:99}});
+  assert.equal(h.api.snapshot().recoveryStalled,true);assert.equal(h.api.snapshot().actionKey,undefined);
+  assert.equal(h.calls.length,0);
 });

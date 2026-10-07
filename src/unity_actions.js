@@ -6,7 +6,7 @@
   if (location.hostname !== 'game.maj-soul.com' || window.__mjUnityActions) return;
   const types = {discard:1, chi:2, pon:3, ankan:4, daiminkan:5, shouminkan:6,
     riichi:7, tsumo:8, ron:9, abort:10, kita:11};
-  let pending = null, submitted = null;
+  let pending = null, submitted = null, submittedStable = null;
   const now = () => performance.now();
   const check = (ok, message) => {if (!ok) throw new Error(message);};
   const reconnectError = message => Object.assign(new Error(message), {recoverable:true});
@@ -19,8 +19,20 @@
     'operations','operationDetails','operationTiming','forbiddenDiscards','riichi','riichiPending',
     'melds','rivers','north'].map(key => state[key]));
   // Recovery replaces timers and the connection, but does not create a new turn.
-  const submissionKey = state => JSON.stringify([state.gameId ?? null, state.selfSeat, state.playerCount,
-    state.round?.chang, state.round?.ju, state.round?.ben, state.lastStep]);
+  const validSubmission = key => Array.isArray(key) && key.length === 8 &&
+    Number.isInteger(key[0]) && key[0] > 0 && key[0] <= 0xffffffff &&
+    typeof key[1] === 'string' && key[1].length > 0 && key[1].length <= 256 &&
+    [3,4].includes(key[3]) && key.slice(2).every(Number.isInteger) &&
+    key[2] >= 0 && key[2] < key[3] && key[4] >= 0 && key[5] >= 0 && key[5] < key[3] && key[6] >= 0 && key[7] >= 0;
+  function stableSubmission(state) {
+    const live = window.__mjUnityTransport?.snapshot?.() || {};
+    const key = [live.gameAccountId, live.gameIdentity, state?.selfSeat, state?.playerCount,
+      state?.round?.chang, state?.round?.ju, state?.round?.ben, state?.lastStep];
+    return validSubmission(key) ? key : null;
+  }
+  const localSubmission = state => [state.gameId ?? null, state.selfSeat, state.playerCount,
+    state.round?.chang, state.round?.ju, state.round?.ben, state.lastStep];
+  const submissionKey = state => JSON.stringify(stableSubmission(state) || localSubmission(state));
   const liveState = () => window.__mjMonitor?.getSnapshot()?.state;
   function offered(state) {
     const list = state.operationDetails;
@@ -48,7 +60,9 @@
       check(transport.snapshot().gameConnected, '牌局连接尚未认证或已断开');
       check(state.recovery?.status !== 'waiting', '等待服务器恢复完整牌局状态');
       check(!pending, '等待上次操作的回应和权威动作');
-      check(submitted !== submissionKey(state), '本次操作已经提交，等待权威状态推进，不能重复发送');
+      check(!submittedStable || stableSubmission(state), '等待恢复后的稳定牌局身份');
+      check(submitted !== JSON.stringify(submittedStable ? stableSubmission(state) : localSubmission(state)),
+        '本次操作已经提交，等待权威状态推进，不能重复发送');
       recoverable = false;
       check(inGame, '等待正在进行的对局');
       blocked = true;
@@ -156,7 +170,7 @@
     put('timeuse', 6, Math.floor((now() - state.operationTiming.receivedAt) / 1000));
     const bytes = window.__mjProtocol.encode(entries), key = submissionKey(state);
     check(snapshot(expected).canAct, '提交前牌局状态发生变化');
-    submitted = key;
+    submitted = key; submittedStable = stableSubmission(state);
     return new Promise((resolve, reject) => {
       const request = pending = {state, choice:JSON.parse(JSON.stringify(choice)), action, method, ack:false, echo:false, finish};
       const timer = setTimeout(() => finish(reconnectError('操作回应或权威动作确认超时；等待权威状态推进，暂不重复操作')),
@@ -177,7 +191,7 @@
     });
   }
   function onEvent(packet) {
-    if (packet.phase === 'ended' || packet.state?.phase === 'ended') submitted = null;
+    if (packet.phase === 'ended' || packet.state?.phase === 'ended') submitted = submittedStable = null;
     const request = pending;
     if (!request) return;
     if (packet.phase === 'disconnected' || packet.recovery?.status === 'waiting' ||
@@ -217,5 +231,15 @@
     if (!confirmed) request.finish(new Error('权威牌局动作已推进，但未确认本次建议操作；请核对牌局'));
     else {request.echo = true; request.finish();}
   }
-  window.__mjUnityActions = {snapshot, execute, onEvent};
+  function checkpoint() {
+    check(submitted === null || submittedStable, '旧操作缺少稳定牌局身份，无法安全自动恢复');
+    return {submitted:submittedStable && [...submittedStable]};
+  }
+  function restoreCheckpoint(saved) {
+    check(saved && (saved.submitted === null || validSubmission(saved.submitted)) && !pending && submitted === null,
+      '自动恢复操作记录无效');
+    submittedStable = saved.submitted && [...saved.submitted];
+    submitted = submittedStable && JSON.stringify(submittedStable);
+  }
+  window.__mjUnityActions = {snapshot, execute, onEvent, checkpoint, restoreCheckpoint};
 })();

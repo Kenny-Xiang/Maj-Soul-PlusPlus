@@ -7,7 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const core = require('../src/core.cjs');
 const read = name => fs.readFileSync(path.join(__dirname, '../src', name), 'utf8');
-async function setup(players = 4, early = false, roundCount = 1) {
+async function setup(players = 4, early = false, roundCount = 1, pristine = false) {
   let time = 0, timerId = 0;
   const timers = new Map(), intervals = new Map(), listeners = new Map(), packets = [], statuses = [];
   class Socket extends EventTarget {
@@ -73,7 +73,8 @@ async function setup(players = 4, early = false, roundCount = 1) {
   const lobby = connect();
   lobby.send(frame(2, 1, '.lq.Lobby.login', encode([[11, 'current-native-client-version']])));
   await reply(lobby, encode([[2,11], [3,account()]]));
-  const api = window.__mjAutoplay; api.setPlayerCount(players); api.setRoundCount(roundCount);
+  const api = window.__mjAutoplay;
+  if (!pristine) {api.setPlayerCount(players); api.setRoundCount(roundCount);}
   return {window, api, lobby, packets, statuses, advance, feed, frame, reply, replyAccount, action, connect, encode, first, fields, str, account,
     async background(ms) {time += ms; window.__mjBackground.pulse(); await flush();},
     manual() {listeners.get('pointerdown')?.({isTrusted:true,composedPath:()=>[]});},
@@ -685,4 +686,96 @@ for (const invalid of [
   const {h,game,advice}=await budgetFixture();
   advice(invalid);await h.advance(5000);
   assert.equal(h.api.getStatus().enabled,false);assert.equal(game.sent.length,1);
+});
+
+test('whole injected stack carries one uncertain operation through controlled page recovery without resending', async()=>{
+  const {h,e,auth,opening,operation,old,previous}=await reconnectFixture(true);
+  h.api.setPlayerCount(3);h.api.setRoundCount(2);
+  old.readyState=3;old.dispatchEvent(new Event('close'));await h.advance(0);
+  const bridge=h.window.__mjRecovery, observed=bridge.snapshot();
+  assert.equal(observed.stalled,true);
+  for(let i=0;i<6;i++) await h.advance(10000);
+  assert.equal(bridge.snapshot().progress,observed.progress,'page heartbeats cannot renew the recovery window');
+  const prepared=bridge.prepare(observed.session,observed.revision,'controlled-navigation');
+  assert.equal(prepared.prepared,true);
+  assert.deepEqual(JSON.parse(JSON.stringify(prepared.checkpoint.actions.submitted)),
+    [11,'reconnect-test-match',0,4,0,0,0,0]);
+  assert.equal(Object.hasOwn(prepared.checkpoint,'hand'),false);
+  const fresh=await setup(4,false,1,true), next=fresh.window.__mjRecovery;
+  assert.equal(next.snapshot().revision,0);assert.equal(next.snapshot().enabled,false);
+  const restored=next.restore(JSON.parse(JSON.stringify(prepared.checkpoint)),next.snapshot().session,0,'controlled-navigation');
+  assert.equal(restored.restored,true);assert.equal(fresh.api.getStatus().playerCount,3);
+  assert.equal(fresh.api.getStatus().roundCount,2);
+  const game=fresh.connect(true);
+  game.send(fresh.frame(2,2,'.lq.FastTest.authGame',e([[1,11],[3,'reconnect-test-match']])));
+  await fresh.reply(game,auth);
+  game.send(fresh.frame(2,3,'.lq.FastTest.syncGame'));
+  await fresh.reply(game,e([[3,1],[4,e([[2,e([[1,0],[2,'ActionNewRound'],[3,e(opening)]])]])]]));
+  assert.equal(fresh.window.__mjMonitor.getSnapshot().state.handComplete,true);
+  assert.equal(fresh.window.__mjMonitor.getSnapshot().state.historyComplete,false,'replay still needs a contiguous live boundary');
+  assert.equal(fresh.window.__mjMonitor.getSnapshot().state.canAct,false);
+  fresh.api.onAdvice({adviceKey:`${previous.session}:${previous.serial}`,advice:{status:'ready',best:{action:'discard',tile:'1z'}}});
+  await fresh.advance(3000);assert.equal(game.sent.length,2);
+  assert.equal(fresh.api.getStatus().enabled,true);
+  await fresh.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z']]);
+  await fresh.action(game,'ActionDealTile',2,[[1,0],[2,'2z'],[3,68],[4,operation]]);
+  assert.equal(fresh.window.__mjMonitor.getSnapshot().state.historyComplete,true);
+  await fresh.advance(1000);assert.equal(game.sent.length,2,'a current legal window still requires new advice');
+  fresh.advice({action:'discard',tile:'2z'});await fresh.advance(5000);
+  assert.equal(game.sent.length,3);assert.equal(fresh.last(game).name,'.lq.FastTest.inputOperation');
+  assert.equal(fresh.str(fresh.fields(fresh.last(game).data),3),'2z');
+  await fresh.reply(game);await fresh.action(game,'ActionDiscardTile',3,[[1,0],[2,'2z'],[5,1]]);
+  await fresh.advance(1000);assert.equal(game.sent.length,3);assert.equal(next.snapshot().stalled,false);
+  assert.ok(fresh.packets.some(packet=>packet.kind==='automation_intent'&&packet.source==='restore'));
+  assert.ok(h.packets.some(packet=>packet.kind==='recovery_diagnostic'&&packet.phase==='socket-close'));
+});
+
+test('whole injected stack suppresses an old round confirmation even after same-round replay on a new page',async()=>{
+  const {h,e,auth,opening,old}=await reconnectFixture();
+  await h.action(old,'ActionDiscardTile',1,[[1,0],[2,'1z']]);
+  await h.action(old,'ActionNoTile',2,[]);await h.advance(100);await h.advance(3000);
+  assert.equal(h.last(old).name,'.lq.FastTest.confirmNewRound');
+  old.readyState=3;old.dispatchEvent(new Event('close'));await h.advance(0);
+  const state=h.window.__mjRecovery.snapshot();
+  const prepared=h.window.__mjRecovery.prepare(state.session,state.revision,'round-navigation');
+  assert.equal(prepared.prepared,true);
+  const fresh=await setup(4,false,1,true), bridge=fresh.window.__mjRecovery;
+  assert.equal(bridge.restore(JSON.parse(JSON.stringify(prepared.checkpoint)),bridge.snapshot().session,0,'round-navigation').restored,true);
+  const game=fresh.connect(true);game.send(fresh.frame(2,2,'.lq.FastTest.authGame',e([[1,11],[3,'reconnect-test-match']])));
+  await fresh.reply(game,auth);
+  // A same-round ActionNewRound cannot erase the carried terminal identity.
+  await fresh.action(game,'ActionNewRound',0,opening);
+  await fresh.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z']]);
+  await fresh.action(game,'ActionNoTile',2,[]);
+  await fresh.advance(100);await fresh.advance(3000);
+  assert.equal(game.sent.length,1);assert.equal(bridge.snapshot().stalled,true);
+  const following=opening.map(([field,value])=>[field,field===3?1:value]);
+  await fresh.action(game,'ActionNewRound',0,following);
+  await fresh.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z']]);
+  await fresh.action(game,'ActionNoTile',2,[]);await fresh.advance(100);await fresh.advance(3000);
+  assert.equal(game.sent.length,2);assert.equal(fresh.last(game).name,'.lq.FastTest.confirmNewRound');
+});
+
+test('whole injected stack cancels an uncertain old queue after page recovery before creating a new queue',async()=>{
+  const h=await setup(3,false,2), e=h.encode;
+  h.api.setEnabled(true);await h.advance(3000);await h.replyAccount();
+  await h.advance(100);await h.advance(3000);
+  assert.equal(h.last(h.lobby).name,'.lq.Lobby.startUnifiedMatch');
+  assert.equal(h.str(h.fields(h.last(h.lobby).data),1),'1:22');
+  h.lobby.readyState=3;h.lobby.dispatchEvent(new Event('close'));await h.advance(0);
+  const value=h.window.__mjRecovery.snapshot();
+  const prepared=h.window.__mjRecovery.prepare(value.session,value.revision,'queue-navigation');
+  assert.equal(prepared.prepared,true);assert.equal(prepared.checkpoint.lobby.owned.sid,'1:22');
+  const fresh=await setup(4,false,1,true), bridge=fresh.window.__mjRecovery;
+  assert.equal(bridge.restore(JSON.parse(JSON.stringify(prepared.checkpoint)),bridge.snapshot().session,0,'queue-navigation').restored,true);
+  assert.equal(fresh.last(fresh.lobby).name,'.lq.Lobby.cancelUnifiedMatch');
+  assert.equal(fresh.str(fresh.fields(fresh.last(fresh.lobby).data),1),'1:22');
+  await fresh.advance(5000);assert.equal(fresh.lobby.sent.length,2,'no refresh or second start before cancellation ACK');
+  await fresh.reply(fresh.lobby);await fresh.advance(100);await fresh.advance(3000);
+  assert.equal(fresh.last(fresh.lobby).name,'.lq.Lobby.fetchAccountInfo');
+  await fresh.replyAccount();await fresh.advance(100);await fresh.advance(3000);
+  assert.equal(fresh.last(fresh.lobby).name,'.lq.Lobby.startUnifiedMatch');
+  assert.equal(fresh.str(fresh.fields(fresh.last(fresh.lobby).data),1),'1:22');
+  assert.equal(fresh.lobby.sent.filter(bytes=>core.envelope(bytes).name==='.lq.Lobby.startUnifiedMatch').length,1);
+  await fresh.reply(fresh.lobby);
 });

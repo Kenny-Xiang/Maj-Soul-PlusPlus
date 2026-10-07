@@ -7,6 +7,8 @@ import signal
 import sys
 import time
 
+from autoplay_recovery import AutoplayRecovery
+
 ROOT = Path(__file__).resolve().parent
 DATA = Path.home() / "Library/Application Support/Maj-Soul++"
 
@@ -31,8 +33,8 @@ class BackgroundActivity:
             return
         self.resume_request = None
         if session != self.session:
-            self.release()
             if self.session is not None:
+                self.release()
                 self.retired_sessions.add(self.session)
             self.session = session
         if not enabled:
@@ -79,23 +81,32 @@ class BackgroundActivity:
         self.session = None
         self.release()
 
-    def navigation_started(self, navigation):
+    def navigation_started(self, navigation, preserve_activity=False):
         self.navigation = navigation
-        self.resume_request = None
+        self.resume_request = self.pulse_request = None
         self.accepting = False
-        self.release()
+        if not preserve_activity:
+            self.release()
 
-    def page_committed(self, navigation=None):
+    def page_committed(self, navigation=None, preserve_activity=False):
         if navigation != self.navigation:
             return
-        self.reset_page()
+        if preserve_activity:
+            if self.session is not None:
+                self.retired_sessions.add(self.session)
+            self.session = self.navigation = self.resume_request = self.pulse_request = None
+        else:
+            self.reset_page()
         self.accepting = True
 
-    def navigation_failed(self, view, navigation):
+    def navigation_failed(self, view, navigation, resume_activity=True):
         if navigation != self.navigation:
             return
         self.navigation = None
         self.accepting = True
+        if not resume_activity:
+            self.resume_request = None
+            return
         request = self.resume_request = object()
         session = self.session
 
@@ -116,7 +127,8 @@ class BackgroundActivity:
             completed(None, error)
 
     def pulse(self, view, now, occluded):
-        if self.token is None or not occluded or self.pulse_request is not None or now - self.last_pulse < .25:
+        if (not self.accepting or self.token is None or not occluded or
+                self.pulse_request is not None or now - self.last_pulse < .25):
             return
         request = self.pulse_request = object()
         self.last_pulse = now
@@ -227,6 +239,8 @@ def main():
     background = BackgroundActivity(NSProcessInfo.processInfo(),
         NSActivityUserInitiatedAllowingIdleSystemSleep | NSActivityIdleSystemSleepDisabled,
         getattr(WebKit, "WKInactiveSchedulingPolicyNone", None), log.write)
+    recovery = AutoplayRecovery(log.write, lambda enabled:
+        background.update(view, recovery.session, True) if enabled else background.release())
 
     class Delegate(NSObject):
         def userContentController_didReceiveScriptMessage_(self, controller, message):
@@ -235,9 +249,9 @@ def main():
                 return
             try:
                 event = json.loads(str(message.body()))
+                if event['kind'] == 'automation_intent' and message.webView() == view:
+                    recovery.on_intent(event)
                 log.accept(event)
-                if event['kind'] == 'automation' and message.webView() == view:
-                    background.update(view, event.get('session'), event.get('enabled'))
                 if event['kind'] == 'turn':
                     advice_target[0] = message.webView()
                     advisor.submit(f"{event['session']}:{event['serial']}", event['state'])
@@ -251,30 +265,38 @@ def main():
 
         def webView_didFailProvisionalNavigation_withError_(self, view, navigation, error):
             if view == window.contentView():
-                background.navigation_failed(view, navigation)
+                controlled = recovery.navigation_failed(view, navigation)
+                background.navigation_failed(view, navigation, resume_activity=not controlled)
             if error.code() != -999:
                 advisor.invalidate()
                 log.write(f"[页面加载失败] {error.localizedDescription()}")
 
+        def webView_didFailNavigation_withError_(self, view, navigation, error):
+            self.webView_didFailProvisionalNavigation_withError_(view, navigation, error)
+
         def webView_didStartProvisionalNavigation_(self, view, navigation):
             if view == window.contentView():
-                background.navigation_started(navigation)
+                controlled = recovery.navigation_started(navigation)
+                background.navigation_started(navigation, preserve_activity=controlled)
                 advisor.invalidate()
                 advice_target[0] = None
 
         def webView_didCommitNavigation_(self, view, navigation):
             if view == window.contentView():
-                background.page_committed(navigation)
+                controlled = recovery.page_committed(navigation)
+                background.page_committed(navigation, preserve_activity=controlled)
 
         def webViewWebContentProcessDidTerminate_(self, view):
             advisor.invalidate()
             if view == window.contentView():
+                recovery.close()
                 background.reset_page()
                 advice_target[0] = None
             log.write("[页面进程已退出] 监听中断，请关闭窗口后重新启动程序。")
 
         def windowWillClose_(self, notification):
             if notification.object() is window:
+                recovery.close()
                 background.reset_page()
                 advisor.close()
                 log.write("游戏窗口已关闭，监测结束。")
@@ -348,6 +370,7 @@ def main():
     view.loadRequest_(NSURLRequest.requestWithURL_(NSURL.URLWithString_("https://game.maj-soul.com/1/")))
     app.activateIgnoringOtherApps_(True)
     def deliver_advice(timer):
+        recovery.tick(view)
         background.pulse(view, time.monotonic(), not bool(window.occlusionState() & AppKit.NSWindowOcclusionStateVisible))
         packet = advisor.take_result()
         if packet and advice_target[0] is not None:
@@ -361,6 +384,7 @@ def main():
     try:
         app.run()
     finally:
+        recovery.close()
         background.reset_page()
         timer.invalidate()
         advisor.close()

@@ -7,11 +7,12 @@ const source = fs.readFileSync(path.join(__dirname, '../src/autoplay.js'), 'utf8
 
 function setup(random = () => .5) {
   let time = 0, tick;
-  const actions = [], starts = [], finishes = [], statuses = [], listeners = new Map();
+  const actions = [], starts = [], finishes = [], statuses = [], intents = [], listeners = new Map();
   let cancels = 0, randomCalls = 0;
   const lobby = {phase:'playing', message:'playing'};
   const client = {available:true, canAct:true, remainingMs:10000};
   const window = {
+    __mjMonitor:{session:'session',reportAutomationIntent:value=>intents.push(value)},
     __mjStatsOverlay:{updateAutomation:s=>statuses.push(s)},
     __mjLobby:{snapshot:()=>lobby,
       start:(count,key,roundCount)=>{starts.push({count,key,roundCount}); return {ok:true};},
@@ -40,7 +41,7 @@ function setup(random = () => .5) {
   function advice(serial=1, value={status:'ready',best:{action:'discard',tile:'7z'}}) {
     api.onAdvice({kind:'advice',adviceKey:`session:${serial}`,advice:value});
   }
-  return {window,api,lobby,client,actions,starts,finishes,statuses,listeners,turn,advice,
+  return {window,api,lobby,client,actions,starts,finishes,statuses,intents,listeners,turn,advice,
     advance(ms){time+=ms;tick?.();},tick(){tick?.();},get cancels(){return cancels;},
     get now(){return time;},get randomCalls(){return randomCalls;},
     finishAction(count=1){for (let i=0;i<200 && actions.length<count;i++) {time+=100;tick?.();}assert.equal(actions.length,count);}};
@@ -606,4 +607,134 @@ test('a game reset clears unconsumed threats even when the next game reuses its 
   s.turn(3,{lastStep:0,lastAction:action,operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}},action);
   s.advice(3,comparedAdvice());s.tick();
   assert.equal(s.api.getStatus().timing.category,'clear');
+});
+
+// A live heartbeat is deliberately not recovery progress. The native supervisor
+// can now distinguish this incident from normal waiting for an opponent.
+test('recovery snapshot remains stalled despite continuing heartbeat and repeated status callbacks', () => {
+  const s=setup();s.turn();s.advice();s.api.setEnabled(true);
+  s.api.onEvent({kind:'status',phase:'disconnected',recovery:{status:'waiting',reason:'connection'}});
+  assert.ok(s.window.__mjRecovery, 'native recovery bridge must exist');
+  const before=s.window.__mjRecovery.snapshot();
+  for(let i=0;i<60;i++) {
+    s.api.onEvent({kind:'heartbeat',phase:'disconnected'});
+    s.api.onEvent({kind:'status',phase:'disconnected',recovery:{status:'waiting',reason:'connection'}});
+    s.advance(10000);
+  }
+  const after=s.window.__mjRecovery.snapshot();
+  assert.equal(after.enabled,true);assert.equal(after.stalled,true);
+  assert.equal(after.progress,before.progress);assert.equal(s.actions.length,0);
+  s.turn(2,{lastStep:4,operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});
+  assert.equal(s.window.__mjRecovery.snapshot().stalled,false);
+  assert.ok(s.window.__mjRecovery.snapshot().progress>after.progress);
+  s.advance(1000);assert.equal(s.actions.length,0);s.advice(2);s.finishAction();
+});
+
+function recoverySetup() {
+  const s=setup(), checkpoints=[];
+  const transport={connected:true,gameConnected:true,accountId:42,lastAccountId:42,progress:1,stalled:false};
+  s.window.__mjUnityTransport={snapshot:()=>transport,isUnity:()=>true};
+  s.window.__mjUnityActions.checkpoint=()=>({submitted:null});
+  s.window.__mjUnityActions.restoreCheckpoint=value=>checkpoints.push(['actions',value]);
+  s.window.__mjUnityLobby={checkpoint:()=>({owned:null,confirmation:null}),
+    restoreCheckpoint:(value,account)=>checkpoints.push(['lobby',value,account])};
+  return {...s,transport,checkpoints,bridge:s.window.__mjRecovery};
+}
+function prepareRecovery(s) {
+  s.api.setPlayerCount(3);s.api.setRoundCount(2);s.api.setEnabled(true);
+  s.api.onEvent({kind:'status',phase:'disconnected',recovery:{status:'waiting',reason:'connection'}});
+  const value=s.bridge.snapshot();
+  const prepared=s.bridge.prepare(value.session,value.revision,'one-shot');
+  assert.equal(prepared.prepared,true);return prepared;
+}
+
+test('prepare freezes actions and validates each explicit user intent including repeated off',()=>{
+  const s=recoverySetup();s.turn();s.advice();const prepared=prepareRecovery(s);
+  assert.deepEqual(JSON.parse(JSON.stringify(prepared.checkpoint)),{enabled:true,playerCount:3,roundCount:2,
+    accountId:42,actions:{submitted:null},lobby:{owned:null,confirmation:null}});
+  s.turn(2,{lastStep:4});s.advice(2);s.advance(3000);assert.equal(s.actions.length,0);
+  s.bridge.cancel('wrong');s.tick();assert.equal(s.actions.length,0);
+  s.bridge.cancel('one-shot');s.tick();assert.equal(s.actions.length,1);
+  s.api.setEnabled(false);const revision=s.bridge.snapshot().revision;s.api.setEnabled(false);
+  assert.equal(s.bridge.snapshot().revision,revision+1);
+  assert.equal(s.intents.at(-1).enabled,false);assert.equal(s.intents.at(-1).source,'user');
+  assert.equal(s.bridge.prepare('session',prepared.revision,'old').prepared,false);
+});
+
+test('only an untouched new document restores selected modes and waits for login complete state and fresh advice',()=>{
+  const previous=recoverySetup(), prepared=prepareRecovery(previous), fresh=recoverySetup();
+  assert.equal(fresh.bridge.snapshot().enabled,false);assert.equal(fresh.intents[0].source,'init');
+  fresh.transport.connected=false;fresh.transport.accountId=null;
+  assert.equal(fresh.bridge.restore(prepared.checkpoint,'session',0,'one-shot').restored,true);
+  assert.equal(fresh.checkpoints.length,2);assert.equal(fresh.api.getStatus().playerCount,3);
+  assert.equal(fresh.api.getStatus().roundCount,2);assert.equal(fresh.intents.at(-1).source,'restore');
+  fresh.turn();fresh.advice();fresh.advance(3000);assert.equal(fresh.actions.length,0);
+  fresh.transport.connected=true;fresh.transport.accountId=42;
+  fresh.turn(2,{lastStep:4,operationTiming:{receivedAt:fresh.now,timeFixed:10000,timeAdd:10000}});
+  fresh.api.onAdvice({adviceKey:'session:1',advice:{status:'ready',best:{action:'discard',tile:'7z'}}});
+  fresh.advance(3000);assert.equal(fresh.actions.length,0);fresh.advice(2);fresh.tick();
+  assert.equal(fresh.actions.length,1);assert.equal(fresh.bridge.restore(prepared.checkpoint,'session',0,'one-shot').restored,false);
+  const ordinary=setup();ordinary.advance(60000);assert.equal(ordinary.api.getStatus().enabled,false);
+});
+
+test('off manual touch mode edits and fatal errors all reject a late document restore',()=>{
+  const checkpoint=prepareRecovery(recoverySetup()).checkpoint;
+  for(const touch of [s=>s.api.setEnabled(false),s=>s.api.setPlayerCount(4),s=>s.api.setRoundCount(1),
+    s=>s.listeners.get('pointerdown')({isTrusted:true,composedPath:()=>[]}),
+    s=>s.api.onEvent({kind:'error',message:'bad frame'})]) {
+    const s=recoverySetup();touch(s);
+    assert.equal(s.bridge.restore(checkpoint,'session',0,'one-shot').restored,false);
+    assert.equal(s.checkpoints.length,0);assert.equal(s.api.getStatus().enabled,false);
+  }
+  const s=recoverySetup();assert.equal(s.bridge.restore(checkpoint,'wrong-page',0,'one-shot').restored,false);
+});
+
+test('late native failure cannot overwrite a user stop or fatal error, and client sends revoke prepared credentials',()=>{
+  for(const action of [s=>s.api.onInput(),s=>s.bridge.onClientAction()]) {
+    const s=recoverySetup(), prepared=prepareRecovery(s);action(s);
+    assert.equal(s.api.getStatus().enabled,false);assert.ok(s.bridge.snapshot().revision>prepared.revision);
+    assert.equal(s.intents.at(-1).source,'pause');
+  }
+  const s=recoverySetup(), prepared=prepareRecovery(s);s.api.setEnabled(false);
+  s.bridge.fail('session',prepared.revision,'old timeout');assert.match(s.api.getStatus().message,/已关闭/);
+  const e=recoverySetup();prepareRecovery(e);e.api.onEvent({kind:'error',message:'invalid'});
+  const before=e.api.getStatus().message;e.bridge.fail('session',e.bridge.snapshot().revision,'max retries');
+  assert.equal(e.api.getStatus().message,before);
+  const t=recoverySetup(), p=prepareRecovery(t);t.bridge.fail('session',p.revision,'恢复已达次数上限');
+  assert.equal(t.api.getStatus().enabled,false);assert.match(t.api.getStatus().message,/次数上限/);
+});
+
+test('missing stable replay guard or changed account fails closed without carrying hand or advice',()=>{
+  const s=recoverySetup();s.window.__mjUnityActions.checkpoint=()=>{throw new Error('missing UUID');};
+  s.api.setEnabled(true);s.api.onEvent({kind:'status',phase:'disconnected'});
+  const value=s.bridge.snapshot(), result=s.bridge.prepare(value.session,value.revision,'one-shot');
+  assert.equal(result.prepared,false);assert.match(result.reason,/UUID/);
+  const checkpoint=prepareRecovery(recoverySetup()).checkpoint, fresh=recoverySetup();
+  fresh.bridge.restore(checkpoint,'session',0,'one-shot');fresh.transport.accountId=99;fresh.tick();
+  assert.equal(fresh.api.getStatus().enabled,false);assert.match(fresh.api.getStatus().message,/账号已变化/);
+  assert.equal(fresh.actions.length,0);
+});
+
+test('a controlled new page with no authentication remains stalled while ordinary startup does not',()=>{
+  const checkpoint=prepareRecovery(recoverySetup()).checkpoint, s=recoverySetup();
+  s.transport.connected=false;s.transport.gameConnected=false;s.transport.accountId=null;s.transport.lastAccountId=null;
+  s.lobby.phase='login';
+  assert.equal(s.bridge.snapshot().stalled,false);
+  s.bridge.restore(checkpoint,'session',0,'one-shot');
+  const first=s.bridge.snapshot();assert.equal(first.stalled,true);
+  s.advance(60000);assert.equal(s.bridge.snapshot().stalled,true);
+  assert.equal(s.bridge.snapshot().progress,first.progress);assert.equal(s.api.getStatus().enabled,true);
+  const retry=s.bridge.prepare(first.session,first.revision,'second-reload');
+  assert.equal(retry.prepared,true);assert.equal(retry.checkpoint.accountId,42);s.bridge.cancel('second-reload');
+  s.transport.connected=true;s.transport.accountId=42;s.transport.progress++;
+  s.lobby.phase='lobby';s.lobby.recoveryReady=true;s.tick();
+  assert.equal(s.bridge.snapshot().stalled,false);assert.ok(s.bridge.snapshot().progress>first.progress);
+});
+
+test('explicit enable after a restored account mismatch creates fresh user intent',()=>{
+  const checkpoint=prepareRecovery(recoverySetup()).checkpoint,s=recoverySetup();let begins=0;
+  s.window.__mjUnityLobby.beginIntent=()=>begins++;
+  s.bridge.restore(checkpoint,'session',0,'one-shot');s.transport.accountId=99;s.tick();
+  assert.equal(s.api.getStatus().enabled,false);s.api.setEnabled(true);
+  assert.equal(begins,1);assert.equal(s.api.getStatus().enabled,true);
 });
