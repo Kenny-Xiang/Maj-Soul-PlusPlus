@@ -96,12 +96,12 @@ def unseen_counts(state):
     return tuple(physical)
 
 
-def _improvements(counts, remaining, special):
+def _improvement_indices(counts, remaining, special):
     cache = TABLES.get()
     available = tuple(i for i, n in enumerate(remaining) if n)
     key = ("improvements", counts, special, available)
     if cache is not None and key in cache:
-        return [{"tile": TILES[i], "count": remaining[i]} for i in cache[key] if remaining[i]]
+        return cache[key]
     current = shanten(counts, special)
     indices = []
     for index in available:
@@ -111,9 +111,19 @@ def _improvements(counts, remaining, special):
         trial[index] += 1
         if shanten(tuple(trial), special) < current:
             indices.append(index)
+    result = tuple(indices)
     if cache is not None:
-        cache[key] = tuple(indices)
-    return [{"tile": TILES[i], "count": remaining[i]} for i in indices if remaining[i]]
+        cache[key] = result
+    return result
+
+
+def _improvements(counts, remaining, special):
+    return [{"tile": TILES[i], "count": remaining[i]}
+            for i in _improvement_indices(counts, remaining, special)]
+
+
+def _ukeire(counts, remaining, special):
+    return sum(remaining[i] for i in _improvement_indices(counts, remaining, special))
 
 
 def _structural_waits(counts, special, players, meld_counts=None):
@@ -318,7 +328,7 @@ def _future_value(hand, state, counts, special, tsumo=False):
         return _uncached_future_value(hand, state, counts, special, tsumo)
     seat = state["selfSeat"]
     round_ = state.get("round") or {}
-    key = ("future", tuple(sorted(hand)), counts, special, tsumo, seat, state["playerCount"],
+    key = ("future", tuple(sorted(hand)), counts, special, seat, state["playerCount"],
            tuple((m["type"], tuple(m["tiles"])) for m in state["melds"][seat]),
            bool(state.get("replacementWin", False)),
            bool(state.get("riichi", [False] * 4)[seat]),
@@ -327,11 +337,15 @@ def _future_value(hand, state, counts, special, tsumo=False):
            state.get("riichiSticks", 0), state.get("north", [0] * 4)[seat],
            tuple(state.get("doras", [])), tuple(vars(OPTIONS).items()))
     if key not in cache:
-        cache[key] = _uncached_future_value(hand, state, counts, special, tsumo)
-    return cache[key]
+        cache[key] = _future_values(hand, state, counts, special)
+    return cache[key][bool(tsumo)]
 
 
 def _uncached_future_value(hand, state, counts, special, tsumo=False):
+    return _future_values(hand, state, counts, special)[bool(tsumo)]
+
+
+def _future_values(hand, state, counts, special):
     """Conservative actor-specific projection, not a completed-hand score.
 
     Unknown closed ron routes receive no income; this does not claim later
@@ -344,9 +358,10 @@ def _uncached_future_value(hand, state, counts, special, tsumo=False):
     closed = all(m["type"] == 3 for m in melds)
     all_tiles = hand + [t for m in melds for t in m["tiles"]]
     full = counts34(all_tiles)
-    cfg = _evaluation_config(state, tsumo=tsumo)
+    cfg = _evaluation_config(state)
     if special and Shanten.calculate_shanten_for_kokushi_hand(counts) == shanten(counts, special) <= 2:
-        return _points(13, 0, cfg, players, yakuman=True), 1.
+        return tuple((_points(13, 0, _evaluation_config(state, tsumo), players, yakuman=True), 1.)
+                     for tsumo in (False, True))
     value_han = sum(full[i] >= 3 for i in (31, 32, 33, cfg.player_wind, cfg.round_wind))
     simple = all(i < 27 and i % 9 not in (0, 8) for i, n in enumerate(full) if n)
     value_han += int(simple)
@@ -358,13 +373,15 @@ def _uncached_future_value(hand, state, counts, special, tsumo=False):
     # Menzen tsumo licenses only self-draw, and adds one han to known yaku.
     # An unidentified closed ron route is omitted conservatively; do not
     # turn a self-draw yaku or dora alone into projected ron eligibility.
-    value_han += int(closed and tsumo)
-    yaku_factor = float(bool(value_han))
     doras = [_dora_index(t, players) for t in state.get("doras", [])]
     bonus = sum(full[i] for i in doras) + sum(t[0] == "0" for t in all_tiles)
     bonus += state.get("north", [0] * 4)[seat] * (1 + doras.count(30))
-    estimated = _points(max(1, value_han) + bonus, 30, cfg, players)
-    return estimated, yaku_factor
+    values = []
+    for tsumo in (False, True):
+        han = value_han + int(closed and tsumo)
+        estimated = _points(max(1, han) + bonus, 30, _evaluation_config(state, tsumo), players)
+        values.append((estimated, float(bool(han))))
+    return tuple(values)
 
 
 def _visible_yakuman_payment(state, enemy):
@@ -802,7 +819,7 @@ def _same_shanten_improvement(candidate, cache):
     current = shanten(counts, special)
     if current < 0 or not sum(remaining):
         return 0.
-    ukeire = sum(tile["count"] for tile in _improvements(counts, remaining, special))
+    ukeire = _ukeire(counts, remaining, special)
     gain = 0
     for draw, weight in enumerate(remaining):
         _check_search()
@@ -823,8 +840,7 @@ def _same_shanten_improvement(candidate, cache):
             trial[discard] -= 1
             trial = tuple(trial)
             if shanten(trial, special) == current:
-                best = max(best, sum(tile["count"] for tile in
-                                     _improvements(trial, unseen, special)))
+                best = max(best, _ukeire(trial, unseen, special))
         gain += weight * (best - ukeire)
     cache[key] = gain / sum(remaining)
     return cache[key]
@@ -1431,7 +1447,8 @@ def _ready_policy(hand, state, remaining, opponents, events, waits, locked=False
     return result
 
 
-def _coarse_policy(hand, state, remaining, opponents, events, sh, ukeire, value, yaku_factor, *, ron=None):
+def _coarse_policy(hand, state, remaining, opponents, events, sh, ukeire, value, yaku_factor, *, ron=None,
+                   average=None):
     """Projected progress beyond one shanten, with paid future discards.
 
     This coarse push policy does not invent safe retreat or precise future
@@ -1439,7 +1456,8 @@ def _coarse_policy(hand, state, remaining, opponents, events, sh, ukeire, value,
     """
     _check_search()
     ron_value, ron_factor = (value, yaku_factor) if ron is None else ron
-    _, _, average = _policy_risks((), state, remaining, opponents)
+    if average is None:
+        _, _, average = _policy_risks((), state, remaining, opponents)
     unseen = max(1, sum(remaining))
     survival, payments, fees = _policy_environment(state, opponents)
     cache = TABLES.get()

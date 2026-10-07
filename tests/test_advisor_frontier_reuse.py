@@ -59,7 +59,7 @@ class FrontierReuseTests(unittest.TestCase):
                 ukeire = sum(t['count'] for t in advisor._improvements(counts, remaining, True))
                 args = snapshot['hand'], snapshot, remaining, [], (0, 1, 0)
                 expected = leaf_policy(*args)
-                with patch.object(advisor, '_improvements', wraps=advisor._improvements) as improve:
+                with patch.object(advisor, '_ukeire', wraps=advisor._ukeire) as improve:
                     actual = leaf_policy(*args, shape=(counts, sh, ukeire))
                 self.assertEqual(actual, expected)
                 self.assertEqual(improve.call_count, regular_rechecks)

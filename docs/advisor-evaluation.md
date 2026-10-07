@@ -1536,12 +1536,14 @@ desktop replacement, and a new online playing session are outside this run.
 
 [Machine-readable results](benchmarks/advisor-inference-20261006.json) include
 per-case timings, source and fixture hashes, runner hashes, baseline provenance,
-all worker results, and complete-equivalence summaries. To reproduce the 89
-committed cases with the same backend baseline on this performance branch:
+all worker results, and complete-equivalence summaries. To rerun against the
+same backend baseline with the current committed corpus (the recorded run used
+89 committed cases):
 
 ```sh
 .venv/bin/python scripts/advisor_inference_benchmark.py \
   --baseline cd3c22199713dc524d6377071d201a06919075cb \
+  --legacy-timeout-reference \
   --artifacts build/advisor-inference-verification
 ```
 
@@ -1550,3 +1552,131 @@ an independent checkout before benchmarking. `--live` accepts an optional local
 public-state fixture export. `--baseline-results` reuses only a matching complete
 baseline artifact directory and records that provenance explicitly. The runner
 saves both source snapshots, its own scripts, full raw results, inputs and hashes.
+
+## Action latency and repeated leaf inputs (2026-10-07)
+
+This optimization is based on the autoplay branch at
+`92e26dfc1a64d832ea64db13216de3025e4374bf`. A recorded discard/North-extraction
+window exhausted its 2,000 ms wall budget after 2,000.4 ms. The autoplay fix preserved the
+enabled switch after that timeout; it did not make the calculation faster or
+retry the same window. Current offline replays of the original calculation
+finish in a few hundred milliseconds. The historical log lacks worker CPU and
+scheduling measurements, so the cause of the live slowdown remains unconfirmed.
+
+The search still evaluates every offered action at the same depth, with the
+same two-second budget. Structural improvements share indices internally and
+read the actual remaining counts when summing ukeire; public tile lists remain
+fresh and ordered. Future ron and tsumo projections share their shape/yaku/dora
+scan, then retain separate payment configurations and menzen-tsumo eligibility.
+Each physical first-draw branch also reuses the average future discard risk
+for identical opponent safety sets. It does not reuse that average across
+different draws or extend decision-local caches across advice calls.
+
+The single worker defers explicitly non-actionable playing snapshots for 100 ms
+and coalesces newer updates during that interval. Action windows start without
+this delay. Every new state still invalidates the previous state, including a
+non-actionable state that closes an older action window. A submitted game input
+now sends a keyed invalidation to the native worker immediately. An old key
+cannot cancel a newer task; no stale or partly evaluated result is published.
+
+Task diagnostics are separate from the advisor's result and score fields:
+
+| JSONL record/field | Meaning |
+|---|---|
+| `advisor_timing.queueMs` | Native submission to calculation start, or to cancellation if it never starts. |
+| `coalesceMs` | The deliberate display-only delay within `queueMs`; do not add it again. |
+| `calculateWallMs`, `calculateCpuMs` | Actual elapsed time and worker-thread CPU time during calculation. |
+| `deliveryWaitMs` | Calculation finish to UI retrieval or discard. |
+| `cancelToFinishMs` | Cancellation request to calculation finish; null for an unstarted or uncancelled task. |
+| `outcome`, `stage` | Delivered/superseded/invalidated/closed and queued/running/completed. `delivered` ends at native retrieval, not at JavaScript execution. |
+| `advisor_delivery.publishToAdviceMs` | Browser publication of the current snapshot to the delivery callback, using only the browser clock. |
+| `advisor_delivery.operationToAdviceMs` | Original live operation receipt to the callback, when a valid browser receipt timestamp exists. |
+| `advisor_delivery.current` | Whether the callback still belongs to the current, open advice window. Old/closed windows have no current-window durations. |
+
+All records join on `adviceKey`. No JavaScript/Python clock subtraction is used.
+The UI thread drains a bounded 128-record worker queue even when the computation
+was cancelled and no advice was published. Records can be lost during a long UI
+stall or immediate shutdown. The native delivery callback passes only the advice
+key; the browser computes receipt durations and logs them through the bridge.
+Submission/cancellation precedes synchronous turn
+logging. Neither these timings nor the optimization prove an App Nap cause or a
+universal wall-time bound under system load.
+
+The new committed corpus includes three minimal public snapshots from the slow
+sequence (1600, 1643, 1661), without account, game or session identifiers or
+transport metadata.
+The benchmark defaults to the unchanged two-second budget in both performance
+and complete-output diagnostics. Only an explicit `--legacy-timeout-reference`
+allows the old 120-second reference for the two earlier timeout fixtures;
+baseline reuse checks this setting as well as source, runner, fixture and
+environment fingerprints.
+
+```sh
+.venv/bin/python scripts/advisor_inference_benchmark.py \
+  --baseline 92e26dfc1a64d832ea64db13216de3025e4374bf \
+  --artifacts build/advisor-latency-verification
+```
+
+Optional `--live` cases participate in both ranked-prefix and full-ranking
+public/private equivalence checks. Fresh-process timings exclude imports and
+startup. Actual-worker timings include snapshot copying and dispatch, but not
+WebKit delivery. Functional scheduling tests verify coalescing, immediate
+action priority, cancellation and keyed invalidation with controlled events;
+they are not a live game-load performance benchmark.
+
+The measured run used 92 committed cases and two optional local public snapshots
+(1610, 1654), with one warmup and three measured passes per version. The warm
+versions ran serially; each designated cold sample used a fresh interpreter,
+alternating version order over three samples. All measurements and equivalence
+runs kept the two-second budget; no baseline artifacts were reused.
+
+| Measurement (ms) | Baseline | Optimized | Reduction |
+|---|---:|---:|---:|
+| Warm median, all 94 cases / 282 samples per version | 282.9 | 245.1 | 13.4% |
+| Warm P95, all cases | 722.8 | 689.3 | 4.6% |
+| Warm maximum, all cases | 924.1 | 886.5 | 4.1% |
+| Serial 1643 warm median, 3 samples | 331.8 | 300.2 | 9.5% |
+| Serial 1643 fresh-process median, 3 samples | 286.9 | 250.5 | 12.7% |
+
+The optimized cold sweep completed all 94 cases with a maximum of 812.0 ms.
+The 22 actual-worker cases all returned their expected status and stopped their
+worker threads; submit-to-result median/P95/maximum were 611.3/648.6/827.7 ms.
+There were no timeouts, samples over one second, or inconsistent repeated
+outputs in the recorded performance runs. These are sample results, not a
+guarantee under foreground, hidden-window or reconnect load.
+
+Both ranked-prefix and full-ranking diagnostics compared **94 cases / 945
+candidates** each. Public outputs (excluding only `elapsedMs`), list order,
+recommendations, explanations and unrounded internal numerical fields were
+exactly equal, with zero numerical changes and zero maximum absolute error.
+The two historical timeout fixtures are reported separately but are included
+in those totals, and completed under the same two-second budget.
+
+After freezing the measurement sources, the branch was rebased onto the new
+background-window fix at `f27931487e967372c414ec700942f45ba327a62d`. The measured
+advisor and worker modules remain byte-identical. Only `autoplay.js`,
+`background.js` and `monitor.py` differ from the measured tree; the integration
+retains background activity and sends newly completed advice before the hidden
+page pulse. The final bridge and background behavior is validated separately
+from the inference measurements. The default reproduction command above runs
+the 92 committed cases; the reported 94-case aggregate also needs the optional
+local inputs.
+
+[Machine-readable results](benchmarks/advisor-latency-20261007.json) preserve
+the measured source hashes, runner/fixture fingerprints, integration source
+hash, unchanged backend hashes, per-case cold and slow-sequence timings, worker
+envelopes and complete equivalence summaries. Original game logs are not
+committed.
+
+Validation for this change: 451 source advisor/worker/benchmark tests passed;
+the measured backend and these tests were unchanged by the subsequent rebase.
+On the integrated tree, 303 Node tests and 24 Python bridge/background-activity
+tests passed. The application built successfully and passed strict deep code
+signature verification. Its frozen advisor suite collected 435 tests: 431
+passed and four source-only benchmark-runner checks were skipped by design.
+
+Native WebKit replay and overlay checks remain unverified in this execution
+environment: replay received no events (`AssertionError: []`) and the overlay
+check reported `WKErrorDomain Code=5`. The unchanged upstream `f279314` source
+failed in the same way with the same fixtures. No online game or hidden-window
+reconnect performance session was run, and no installed application was replaced.

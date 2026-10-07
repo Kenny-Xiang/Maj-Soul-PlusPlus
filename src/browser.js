@@ -10,6 +10,7 @@ const gameIds = new Map();
 let running = true, sequence = 0, serial = 0, activeSocket = null;
 let received = 0, errors = 0, turns = 0, connectedAt = 0;
 let heartbeatTimer, wrappedConstructor;
+let adviceRequest = null;
 const gamePath = url => /^\/game-gateway(?:[-/]|$)/.test(new URL(url).pathname);
 function snapshot() {
   return JSON.parse(JSON.stringify({running, received, errors, turns, connectedAt,
@@ -17,7 +18,11 @@ function snapshot() {
 }
 function publish(event) {
   const packet = {session, serial:++serial, time:new Date().toISOString(), ...event};
-  if (packet.kind === 'turn') window.__mjStatsOverlay?.expectAdvice?.(`${session}:${packet.serial}`);
+  if (packet.kind === 'turn') {
+    adviceRequest = {key:`${session}:${packet.serial}`, publishedAt:performance.now(),
+      receivedAt:packet.state.operationTiming?.receivedAt};
+    window.__mjStatsOverlay?.expectAdvice?.(adviceRequest.key);
+  } else if (packet.kind === 'status' || packet.kind === 'error') adviceRequest = null;
   window.__mjUnityActions?.onEvent(packet);
   window.__mjUnityLobby?.onEvent?.(packet);
   window.__mjAutoplay?.onEvent(packet);
@@ -27,6 +32,11 @@ function publish(event) {
 function status(message) {publish({kind:'status', message, phase:state.phase, recovery:state.recovery});}
 function closeDecisionWindow() {
   window.__mjStatsOverlay?.invalidateAdvice();
+  if (adviceRequest) {
+    const key = adviceRequest.key;
+    adviceRequest = null;
+    publish({kind:'advice_invalidated', adviceKey:key});
+  }
   state.canAct = state.canDiscard = state.canDoubleRiichi = false; state.lastAction = null;
   state.operations = []; state.operationDetails = []; state.forbiddenDiscards = [];
   state.operationTiming = null;
@@ -222,6 +232,19 @@ wrappedConstructor = new Proxy(NativeSocket, {construct(target, args, newTarget)
 }});
 window.WebSocket = wrappedConstructor;
 window.__mjMonitor = {version:'3.0.0', getSnapshot:snapshot, stop,
+  onAdvice:packet => {
+    if (!running) return;
+    const now = performance.now();
+    const current = packet.adviceKey === adviceRequest?.key;
+    const elapsed = current ? now - adviceRequest.publishedAt : null;
+    const receivedAt = current ? adviceRequest.receivedAt : null;
+    // Both durations stay in the browser's clock domain; native queue/CPU
+    // timings are separate records joined by the immutable advice key.
+    publish({kind:'advisor_delivery', adviceKey:packet.adviceKey, current,
+      ...(current ? {publishToAdviceMs:Math.max(0,elapsed)} : {}),
+      ...(Number.isFinite(receivedAt) && receivedAt >= 0 && receivedAt <= now ?
+        {operationToAdviceMs:now - receivedAt} : {})});
+  },
   onLobbyRecovery:() => {if (running && state.recovery?.status === 'waiting') resetStatistics('waiting');},
   reportAutomation:value => Promise.resolve().then(() => {if (running) publish({kind:'automation', ...value});}),
   uninstall:() => {stop(); delete window.__mjMonitor;}};

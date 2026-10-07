@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from advisor import advise, unseen_counts
+from advisor import _action_choices, _legal_discards, advise, unseen_counts
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -72,6 +72,26 @@ class AdvisorBenchmarkTests(unittest.TestCase):
             with self.subTest(case=case["id"]):
                 self.assertEqual(log_export.public_state(case["state"]), case["state"])
                 self.assertGreaterEqual(min(unseen_counts(case["state"])), 0)
+
+    def test_latency_snapshots_keep_public_inputs_and_all_legal_candidates(self):
+        cases = comparison.load_cases(ROOT / "tests/fixtures/advisor_latency_cases.json")
+        self.assertEqual({case["id"] for case in cases},
+                         {f"live-latency-serial-{serial}" for serial in (1600, 1643, 1661)})
+        for case in cases:
+            with self.subTest(case=case["id"]):
+                snapshot = deepcopy(case["state"])
+                self.assertEqual(log_export.public_state(snapshot), snapshot)
+                self.assertGreaterEqual(min(unseen_counts(snapshot)), 0)
+                choices, warnings = _action_choices(snapshot)
+                self.assertEqual(warnings, [])
+                expected = {f"discard:{tile}" for tile in _legal_discards(snapshot)}
+                expected.update(choice["actionId"] for choice in choices)
+                advice = advise(snapshot, ranked_limit=3)
+                self.assertEqual(advice["status"], case["expectedStatus"], advice)
+                self.assertEqual({candidate["actionId"] for candidate in advice["candidates"]}, expected)
+                self.assertEqual(advice["rankedCandidateCount"], 3)
+                self.assertEqual(advice["best"], advice["candidates"][0])
+                self.assertEqual(snapshot, case["state"])
 
     def test_log_export_selects_current_windows_and_removes_private_metadata(self):
         snapshot = deepcopy(comparison.load_cases(comparison.FIXTURES)[0]["state"])

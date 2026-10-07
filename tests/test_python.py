@@ -5,10 +5,13 @@ import io
 import json
 from pathlib import Path
 import tempfile
+from threading import Event, current_thread
 import unittest
+from unittest.mock import Mock
 
+from advice_worker import AdviceWorker
 from terminal_stats import TerminalLog, format_turn
-from monitor import overlay_update
+from monitor import accept_event, deliver_advice, overlay_update
 
 ROOT = Path(__file__).resolve().parent
 
@@ -19,10 +22,90 @@ class OutputTests(unittest.TestCase):
         script = overlay_update({'kind': 'advice', 'adviceKey': 'session:42', 'advice': advice})
         self.assertIn('window.__mjStatsOverlay?.update(', script)
         self.assertIn('window.__mjAutoplay?.onAdvice(', script)
-        payload = json.loads(script.split('window.__mjAutoplay?.onAdvice(', 1)[1][:-2])
+        payload = json.loads(script.split('window.__mjAutoplay?.onAdvice(', 1)[1].split(');', 1)[0])
         self.assertEqual(payload['adviceKey'], 'session:42')
         self.assertEqual(payload['advice'], advice)
+        self.assertIn('window.__mjMonitor?.onAdvice?.(', script)
+        receipt = json.loads(script.split('window.__mjMonitor?.onAdvice?.(', 1)[1][:-2])
+        self.assertEqual(receipt, {'adviceKey': 'session:42'})
         self.assertNotIn('__mjAutoplay', overlay_update({'kind': 'status', 'phase': 'waiting'}))
+
+    def test_advisor_is_submitted_or_invalidated_before_event_log_writes(self):
+        calls = []
+        advisor = Mock()
+        advisor.submit.side_effect = lambda key, state: calls.append(('submit', key, state))
+        advisor.invalidate.side_effect = lambda *args: calls.append(('invalidate', *args))
+        log = Mock()
+        log.accept.side_effect = lambda event: calls.append(('log', event['kind']))
+        accept_event(advisor, log, {'kind': 'turn', 'session': 's', 'serial': 2, 'state': {'canAct': True}})
+        self.assertEqual(calls, [('submit', 's:2', {'canAct': True}), ('log', 'turn')])
+        for kind in ('status', 'error', 'advice_invalidated'):
+            calls.clear()
+            event = {'kind': kind, 'adviceKey': 's:2'}
+            accept_event(advisor, log, event)
+            invalidate = ('invalidate', 's:2') if kind == 'advice_invalidated' else ('invalidate',)
+            self.assertEqual(calls, [invalidate, ('log', kind)])
+            if kind == 'advice_invalidated':
+                self.assertIsNone(overlay_update(event))
+        calls.clear()
+        accept_event(advisor, log, {'kind': 'advisor_delivery'})
+        self.assertEqual(calls, [('log', 'advisor_delivery')])
+
+    def test_ui_timer_drains_cancellation_diagnostics_without_delivering_stale_advice(self):
+        started, release = Event(), Event()
+        calculation_threads = []
+
+        def calculate(state):
+            calculation_threads.append(current_thread())
+            started.set()
+            self.assertTrue(release.wait(3))
+            return {'status': 'ready'}
+
+        worker = AdviceWorker(calculate)
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                log = TerminalLog(folder)
+                worker.submit('old', {})
+                self.assertTrue(started.wait(3))
+                accept_event(worker, log, {'kind': 'advice_invalidated', 'session': 's', 'serial': 1,
+                                           'adviceKey': 'old'})
+                release.set()
+                with worker.condition:
+                    self.assertTrue(worker.condition.wait_for(lambda: worker.active is None, 3))
+                view = Mock()
+                deliver_advice(worker, view, log)
+                view.evaluateJavaScript_completionHandler_.assert_not_called()
+                records = list(map(json.loads, log.json_path.read_text().splitlines()))
+                self.assertEqual([r['kind'] for r in records], ['advice_invalidated', 'advisor_timing'])
+                self.assertEqual(records[1]['outcome'], 'invalidated')
+                self.assertNotEqual(calculation_threads, [current_thread()])
+                self.assertEqual(worker.take_diagnostics(), [])
+        finally:
+            worker.close()
+            release.set()
+            worker.thread.join(3)
+
+    def test_ui_timer_delivers_the_original_advice_and_logs_packet_timing(self):
+        advice = {'status': 'ready', 'elapsedMs': 12.3, 'candidates': [{'score': 9.8}]}
+        worker = AdviceWorker(lambda state: advice)
+        try:
+            with tempfile.TemporaryDirectory() as folder:
+                log = TerminalLog(folder)
+                worker.submit('s:8', {})
+                with worker.condition:
+                    self.assertTrue(worker.condition.wait_for(lambda: worker.completed is not None, 3))
+                view = Mock()
+                deliver_advice(worker, view, log)
+                records = list(map(json.loads, log.json_path.read_text().splitlines()))
+                self.assertEqual([r['kind'] for r in records], ['advice', 'advisor_timing'])
+                self.assertEqual(records[0]['advice'], advice)
+                self.assertEqual(records[0]['diagnostics'], {k: v for k, v in records[1].items() if k != 'kind'})
+                script = view.evaluateJavaScript_completionHandler_.call_args.args[0]
+                payload = json.loads(script.split('window.__mjAutoplay?.onAdvice(', 1)[1].split(');', 1)[0])
+                self.assertEqual(payload, records[0])
+        finally:
+            worker.close()
+            worker.thread.join(3)
 
     def setUp(self):
         self.event = json.loads((ROOT / "fixtures/turn.json").read_text(encoding="utf-8"))

@@ -46,14 +46,14 @@ class InferenceBenchmarkReuseTests(unittest.TestCase):
             "environment": {"python": sys.version, "platform": platform.platform(),
                             "mahjong": importlib.metadata.version("mahjong")},
             "method": {"budgetSeconds": 2, "rankedLimitBothVersions": 3,
-                       "warmupPasses": 1, "measuredPasses": 3},
+                       "warmupPasses": 1, "measuredPasses": 3, "legacyTimeoutReference": False},
             "runnerSha256": {name: hashlib.sha256((ROOT / "scripts" / name).read_bytes()).hexdigest()
                              for name in ("advisor_compare.py", "advisor_inference_benchmark.py")},
         }
         self.baseline_name = f"cold-{benchmark.COLD_IDS[0]}-1-baseline.json"
         benchmark.save(self.reuse / self.baseline_name, {"measurement": "synthetic baseline"})
 
-    def run_reuse(self, previous, output, accepted):
+    def run_reuse(self, previous, output, accepted, rejected_pattern="runner"):
         benchmark.save(self.reuse / "summary.json", previous)
 
         def snapshot(repo, destination, ref):
@@ -82,7 +82,7 @@ class InferenceBenchmarkReuseTests(unittest.TestCase):
                 self.assertEqual((output / self.baseline_name).read_bytes(),
                                  (self.reuse / self.baseline_name).read_bytes())
             else:
-                with self.assertRaisesRegex(ValueError, "runner"):
+                with self.assertRaisesRegex(ValueError, rejected_pattern):
                     benchmark.main()
                 run_version.assert_not_called()
                 self.assertFalse((output / self.baseline_name).exists())
@@ -106,6 +106,17 @@ class InferenceBenchmarkReuseTests(unittest.TestCase):
                 else:
                     del previous["runnerSha256"][name]
                 self.run_reuse(previous, self.directory / str(name), accepted=False)
+
+    def test_extended_or_unknown_diagnostic_budget_cannot_be_reused_as_two_seconds(self):
+        for value in (True, None):
+            with self.subTest(legacy_timeout_reference=value):
+                previous = deepcopy(self.previous)
+                if value is None:
+                    del previous["method"]["legacyTimeoutReference"]
+                else:
+                    previous["method"]["legacyTimeoutReference"] = value
+                self.run_reuse(previous, self.directory / f"budget-{value}", accepted=False,
+                               rejected_pattern="settings")
 
 
 if __name__ == "__main__":

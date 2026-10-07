@@ -9,7 +9,7 @@ from copy import deepcopy
 from advisor_routes import _scoring_context, route_targets, seven_pair_targets, target_policy
 
 
-def leaf_policy(hand, state, remaining, opponents, events, discard=None, *, shape=None):
+def leaf_policy(hand, state, remaining, opponents, events, discard=None, *, shape=None, average=None):
     """A common coarse leaf, with physical targets for dominant seven pairs."""
     import advisor as a
 
@@ -28,10 +28,11 @@ def leaf_policy(hand, state, remaining, opponents, events, discard=None, *, shap
     if chiitoi:
         sh = a.shanten(counts, False)
     if chiitoi or shape is None:
-        ukeire = sum(t['count'] for t in a._improvements(counts, remaining, shape_special))
+        ukeire = a._ukeire(counts, remaining, shape_special)
     value, factor = a._future_value(hand, state, counts, shape_special, tsumo=True)
     ron = a._future_value(hand, state, counts, shape_special)
-    _, _, average = a._policy_risks((), state, remaining, opponents)
+    if average is None:
+        _, _, average = a._policy_risks((), state, remaining, opponents)
     survival, payments, fees = a._policy_environment(state, opponents)
     cache = a.TABLES.get()
     cache = {} if cache is None else cache
@@ -39,7 +40,7 @@ def leaf_policy(hand, state, remaining, opponents, events, discard=None, *, shap
            sum(remaining), average, survival, payments, fees)
     if key not in cache:
         cache[key] = a._coarse_policy(hand, state, remaining, opponents,
-                                     events, sh, ukeire, value, factor, ron=ron)
+                                     events, sh, ukeire, value, factor, ron=ron, average=average)
     outcome = cache[key]
     if chiitoi:
         pair_outcome, _ = target_policy(hand, state, remaining, opponents, events, discard,
@@ -107,7 +108,10 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
         selected_route = None
         priced_discards = {}
         discard_states = {}
-        unchanged = sum(t['count'] for t in a._improvements(counts, unseen, special))
+        # The physical draw pool is fixed only inside this draw branch. Passed
+        # discards can still change each riichi opponent's future safety.
+        averages = {}
+        unchanged = a._ukeire(counts, unseen, special)
         detail['unchangedNextUkeire'] += mass / root_pool * unchanged
         # A non-ready hand cannot self-draw on this first draw. Future choices
         # include every physical discard; red and ordinary fives stay distinct.
@@ -118,17 +122,17 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
             priced_discards[tile] = (danger, loss)
             future = [{**o, 'safe': o['safe'] | {a.tile_index(tile)} if o['riichi'] else o['safe']}
                       for o in opponents]
+            safety = tuple((o['seat'], o['riichi'], frozenset(o['safe']), o['tenpai']) for o in future)
             # Root A then B and root B then A can reach exactly the same
             # future hand. Keep both passed discards for furiten and safety.
             key = ('finite-continuation', continuation_context, tuple(sorted(nxt_hand)), unseen,
-                   own_river | {a.tile_index(tile)}, red_pool,
-                   tuple((o['seat'], o['riichi'], frozenset(o['safe']), o['tenpai']) for o in future))
+                   own_river | {a.tile_index(tile)}, red_pool, safety)
             if key in cache:
                 nxt_counts, sh, ukeire, continuation = cache[key]
             else:
                 nxt_counts = a.counts34(nxt_hand)
                 sh = a.shanten(nxt_counts, special)
-                ukeire = sum(t['count'] for t in a._improvements(nxt_counts, unseen, special))
+                ukeire = a._ukeire(nxt_counts, unseen, special)
                 if sh == 0:
                     waits, _ = a._wait_values(nxt_hand, nxt_counts, unseen, drawn, tile, special)
                     continuation = a._ready_policy(nxt_hand, drawn, unseen, future, suffix, waits)[0]
@@ -140,8 +144,10 @@ def finite_policy(hand, state, remaining, opponents, events, discard=None):
                 else:
                     # Every distance has the same leaf contract. Unknown open yaku
                     # never acquires the old .3 income simply by moving backwards.
+                    if safety not in averages:
+                        averages[safety] = a._policy_risks((), drawn, unseen, future)[2]
                     continuation = leaf_policy(nxt_hand, drawn, unseen, future, suffix, tile,
-                                               shape=(nxt_counts, sh, ukeire))
+                                               shape=(nxt_counts, sh, ukeire), average=averages[safety])
                 continuation = a._policy_residual(continuation, survival, *payments)
                 cache[key] = nxt_counts, sh, ukeire, continuation
             discard_states[tile] = nxt_hand, nxt_counts, sh, ukeire

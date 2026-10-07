@@ -1,0 +1,1687 @@
+{
+  "artifacts": "inference-optimized",
+  "sources": {
+    "baseline": {
+      "ref": "92e26dfc1a64d832ea64db13216de3025e4374bf",
+      "commit": "92e26dfc1a64d832ea64db13216de3025e4374bf",
+      "sourceSha256": "9c2dbcc0aa49ea29256da77a4930d8b06d1f35a41d9d08aa185a598bc1d540a1",
+      "sourceChanges": []
+    },
+    "current": {
+      "ref": "working-tree",
+      "commit": "92e26dfc1a64d832ea64db13216de3025e4374bf",
+      "sourceSha256": "a90d05d37156d1c5a3bbd72093db05a98e3ce56e578114f68c95c5978a695edc",
+      "sourceChanges": [
+        " M src/advice_worker.py",
+        " M src/advisor.py",
+        " M src/advisor_continuation.py",
+        " M src/browser.js",
+        " M src/monitor.py"
+      ]
+    }
+  },
+  "fixtures": [
+    {
+      "path": "tests/fixtures/advisor_cases.json",
+      "sha256": "188161c7c7db6a2fe1f6d34b4e699ea84826f67331fadd55e7fc78e6051fe4f7",
+      "caseCount": 24
+    },
+    {
+      "path": "tests/fixtures/advisor_threat_cases.json",
+      "sha256": "83eab6ec338d88cef751dc313f9670ff45dcaabafff053c2722db9a96dedf141",
+      "caseCount": 19
+    },
+    {
+      "path": "tests/fixtures/advisor_phase_cases.json",
+      "sha256": "6039caca3a81584b618dc480f14670cdcc64e6b8a2df2f54a5ab5ed4587477c7",
+      "caseCount": 6
+    },
+    {
+      "path": "tests/fixtures/advisor_performance_logged_cases.json",
+      "sha256": "08fafb2b80db66dc5d386cf2b5a67e3a84dde9124661748c87d9f6d081117e44",
+      "caseCount": 5
+    },
+    {
+      "path": "tests/fixtures/advisor_policy_logged_cases.json",
+      "sha256": "51aeaced0d33c1805c2ed1181c25e565b2f4a11b9cba874f24c08df856a5ba62",
+      "caseCount": 8
+    },
+    {
+      "path": "tests/fixtures/advisor_route_cases.json",
+      "sha256": "9c821d6d5deb3af88ec89f5da7a9b34875601968004226bda478f89a15a743cc",
+      "caseCount": 11
+    },
+    {
+      "path": "tests/fixtures/advisor_timeout_cases.json",
+      "sha256": "fee66e4c4c2dc26914431b98a943e34b95c5f78d21950d51456787a62faf6e25",
+      "caseCount": 2
+    },
+    {
+      "path": "tests/fixtures/advisor_rank_cases.json",
+      "sha256": "bc26d18f604adedee9c8b5ddc3f059c6456a441fed85bd8f9cb93b6ad4f7a503",
+      "caseCount": 14
+    },
+    {
+      "path": "tests/fixtures/advisor_latency_cases.json",
+      "sha256": "b54437a06298bd016cfaa31273d54026b28d232a30d124805d801927447b6c04",
+      "caseCount": 3
+    },
+    {
+      "path": "latency-public-additional.json",
+      "sha256": "9ec0191642c318c59a7c1d001fb26dd839639c346755ce339f274b861d87839e",
+      "caseCount": 2
+    },
+    {
+      "path": "fixtures.json",
+      "sha256": "df7d5d29f847a7c5dff9cd9e1e99c6211d89a255c9ffb80b8bc2ab8bf85efa77",
+      "caseCount": 94
+    }
+  ],
+  "baselineReuse": null,
+  "runnerSha256": {
+    "advisor_inference_benchmark.py": "206ff49b2822b3fee6b866501c0e14f220c574df3778c2581b37effa5429aa07",
+    "advisor_compare.py": "123235770ab612b4441e2f43f446f60b7a0ad188a34fa15c79a12319aafa1bdc"
+  },
+  "environment": {
+    "python": "3.12.15 (main, Oct  3 2026, 00:54:33) [Clang 22.1.3 ]",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "mahjong": "2.0.0"
+  },
+  "method": {
+    "budgetSeconds": 2,
+    "rankedLimitBothVersions": 3,
+    "warmupPasses": 1,
+    "legacyTimeoutReference": false,
+    "baselineExecution": "measured in this run",
+    "baselineRunSource": "inference-optimized",
+    "measuredPasses": 3,
+    "coldRepeatsPerCase": 3,
+    "coldOrder": [
+      {
+        "case": "pon-red-choices",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "pon-red-choices",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "pon-red-choices",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "pon-red-choices",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "pon-red-choices",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "pon-red-choices",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "one-shanten-followup-risk",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "shouminkan-red",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-578",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-timeout-serial-1017",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1600",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1600",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1600",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1600",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1600",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1600",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1643",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1643",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1643",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1643",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1643",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1643",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1661",
+        "repeat": 1,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1661",
+        "repeat": 1,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1661",
+        "repeat": 2,
+        "version": "baseline",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1661",
+        "repeat": 2,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1661",
+        "repeat": 3,
+        "version": "current",
+        "reused": false
+      },
+      {
+        "case": "live-latency-serial-1661",
+        "repeat": 3,
+        "version": "baseline",
+        "reused": false
+      }
+    ],
+    "currentColdAllPasses": 1,
+    "actualWorker": "Every designated cold-start case and rank-policy fixture runs once in a fresh current-source process using default AdviceWorker; includes its actual cancellation callback and default ranked prefix 3; submit-to-result includes deepcopy and thread dispatch, excludes imports and UI timer/rendering; worker envelope fields are preserved separately from advisor output",
+    "timing": "perf_counter around advise only; imports and process startup excluded",
+    "processes": "fresh interpreter for every cold sample, each warm version, and each diagnostic version",
+    "equivalence": "independent diagnostic runs; ignore only elapsedMs; compare all numerical fields at full precision with stated tolerances; actions/order/explanations/all nonnumeric values exact",
+    "numericTolerance": {
+      "absolute": 1e-08,
+      "relative": 1e-12,
+      "rule": "math.isclose: abs(delta) <= max(absolute, relative * max(abs(values)))"
+    },
+    "legacyTimeoutReferences": "Disabled; baseline and current diagnostics both retain the 2-second budget",
+    "p95": "nearest rank",
+    "caseCounts": {
+      "public": 92,
+      "rank": 14,
+      "live": 2,
+      "all": 94
+    }
+  },
+  "currentColdAll": {
+    "all": {
+      "count": 94,
+      "medianMs": 270.68272949691163,
+      "p95Ms": 615.4867079967516,
+      "maxMs": 812.0408749964554,
+      "caseCount": 94,
+      "timeoutCount": 0,
+      "over1000MsCount": 0,
+      "over1000MsCaseIds": [],
+      "warmupTimeoutCount": 0,
+      "inconsistentCaseIds": []
+    },
+    "rank": {
+      "count": 14,
+      "medianMs": 602.2255415009568,
+      "p95Ms": 615.4867079967516,
+      "maxMs": 615.4867079967516,
+      "caseCount": 14,
+      "timeoutCount": 0,
+      "over1000MsCount": 0,
+      "over1000MsCaseIds": [],
+      "warmupTimeoutCount": 0,
+      "inconsistentCaseIds": []
+    },
+    "latency": {
+      "count": 3,
+      "medianMs": 242.5323749994277,
+      "p95Ms": 266.5989999950398,
+      "maxMs": 266.5989999950398,
+      "caseCount": 3,
+      "timeoutCount": 0,
+      "over1000MsCount": 0,
+      "over1000MsCaseIds": [],
+      "warmupTimeoutCount": 0,
+      "inconsistentCaseIds": []
+    },
+    "live": {
+      "count": 2,
+      "medianMs": 231.62008299914305,
+      "p95Ms": 262.9450829990674,
+      "maxMs": 262.9450829990674,
+      "caseCount": 2,
+      "timeoutCount": 0,
+      "over1000MsCount": 0,
+      "over1000MsCaseIds": [],
+      "warmupTimeoutCount": 0,
+      "inconsistentCaseIds": []
+    }
+  },
+  "actualWorkerCurrent": {
+    "cases": {
+      "pon-red-choices": {
+        "caseId": "pon-red-choices",
+        "submitToResultMs": 596.9902500000899,
+        "advisorElapsedMs": 595.1,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:pon-red-choices",
+          "diagnostics": {
+            "adviceKey": "benchmark:pon-red-choices",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.052,
+            "calculateWallMs": 596.9,
+            "calculateCpuMs": 595.521,
+            "deliveryWaitMs": 0.027,
+            "cancelToFinishMs": null,
+            "totalMs": 596.979,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "one-shanten-followup-risk": {
+        "caseId": "one-shanten-followup-risk",
+        "submitToResultMs": 612.3632500020904,
+        "advisorElapsedMs": 606.8,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:one-shanten-followup-risk",
+          "diagnostics": {
+            "adviceKey": "benchmark:one-shanten-followup-risk",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.053,
+            "calculateWallMs": 612.259,
+            "calculateCpuMs": 610.205,
+            "deliveryWaitMs": 0.041,
+            "cancelToFinishMs": null,
+            "totalMs": 612.353,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "shouminkan-red": {
+        "caseId": "shouminkan-red",
+        "submitToResultMs": 648.5872090051998,
+        "advisorElapsedMs": 645.8,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:shouminkan-red",
+          "diagnostics": {
+            "adviceKey": "benchmark:shouminkan-red",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.053,
+            "calculateWallMs": 648.49,
+            "calculateCpuMs": 645.05,
+            "deliveryWaitMs": 0.034,
+            "cancelToFinishMs": null,
+            "totalMs": 648.577,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "live-timeout-serial-578": {
+        "caseId": "live-timeout-serial-578",
+        "submitToResultMs": 621.681874996284,
+        "advisorElapsedMs": 619.0,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:live-timeout-serial-578",
+          "diagnostics": {
+            "adviceKey": "benchmark:live-timeout-serial-578",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.066,
+            "calculateWallMs": 621.57,
+            "calculateCpuMs": 618.876,
+            "deliveryWaitMs": 0.032,
+            "cancelToFinishMs": null,
+            "totalMs": 621.668,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "live-timeout-serial-1017": {
+        "caseId": "live-timeout-serial-1017",
+        "submitToResultMs": 827.7276669978164,
+        "advisorElapsedMs": 824.2,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:live-timeout-serial-1017",
+          "diagnostics": {
+            "adviceKey": "benchmark:live-timeout-serial-1017",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.067,
+            "calculateWallMs": 827.603,
+            "calculateCpuMs": 824.344,
+            "deliveryWaitMs": 0.043,
+            "cancelToFinishMs": null,
+            "totalMs": 827.713,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "live-latency-serial-1600": {
+        "caseId": "live-latency-serial-1600",
+        "submitToResultMs": 278.43366600427544,
+        "advisorElapsedMs": 276.0,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:live-latency-serial-1600",
+          "diagnostics": {
+            "adviceKey": "benchmark:live-latency-serial-1600",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.106,
+            "calculateWallMs": 278.292,
+            "calculateCpuMs": 276.727,
+            "deliveryWaitMs": 0.026,
+            "cancelToFinishMs": null,
+            "totalMs": 278.424,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "live-latency-serial-1643": {
+        "caseId": "live-latency-serial-1643",
+        "submitToResultMs": 245.5276250038878,
+        "advisorElapsedMs": 244.2,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:live-latency-serial-1643",
+          "diagnostics": {
+            "adviceKey": "benchmark:live-latency-serial-1643",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.055,
+            "calculateWallMs": 245.436,
+            "calculateCpuMs": 245.002,
+            "deliveryWaitMs": 0.026,
+            "cancelToFinishMs": null,
+            "totalMs": 245.517,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "live-latency-serial-1661": {
+        "caseId": "live-latency-serial-1661",
+        "submitToResultMs": 195.37045800097985,
+        "advisorElapsedMs": 194.4,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:live-latency-serial-1661",
+          "diagnostics": {
+            "adviceKey": "benchmark:live-latency-serial-1661",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.061,
+            "calculateWallMs": 195.254,
+            "calculateCpuMs": 194.817,
+            "deliveryWaitMs": 0.035,
+            "cancelToFinishMs": null,
+            "totalMs": 195.351,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-opponent-riichi-defense-third-late": {
+        "caseId": "rank-opponent-riichi-defense-third-late",
+        "submitToResultMs": 639.9687500015716,
+        "advisorElapsedMs": 633.3,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-opponent-riichi-defense-third-late",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-opponent-riichi-defense-third-late",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.053,
+            "calculateWallMs": 639.86,
+            "calculateCpuMs": 637.868,
+            "deliveryWaitMs": 0.042,
+            "cancelToFinishMs": null,
+            "totalMs": 639.955,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-opponent-riichi-defense-last-late": {
+        "caseId": "rank-opponent-riichi-defense-last-late",
+        "submitToResultMs": 626.923750001879,
+        "advisorElapsedMs": 620.2,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-opponent-riichi-defense-last-late",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-opponent-riichi-defense-last-late",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.05,
+            "calculateWallMs": 626.809,
+            "calculateCpuMs": 625.195,
+            "deliveryWaitMs": 0.051,
+            "cancelToFinishMs": null,
+            "totalMs": 626.91,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-opponent-riichi-defense-third-early": {
+        "caseId": "rank-opponent-riichi-defense-third-early",
+        "submitToResultMs": 627.3576250023325,
+        "advisorElapsedMs": 620.2,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-opponent-riichi-defense-third-early",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-opponent-riichi-defense-third-early",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.052,
+            "calculateWallMs": 627.265,
+            "calculateCpuMs": 625.305,
+            "deliveryWaitMs": 0.031,
+            "cancelToFinishMs": null,
+            "totalMs": 627.348,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-opponent-riichi-defense-saint-third-late": {
+        "caseId": "rank-opponent-riichi-defense-saint-third-late",
+        "submitToResultMs": 630.2831249995506,
+        "advisorElapsedMs": 623.9,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-opponent-riichi-defense-saint-third-late",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-opponent-riichi-defense-saint-third-late",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.053,
+            "calculateWallMs": 630.175,
+            "calculateCpuMs": 628.046,
+            "deliveryWaitMs": 0.04,
+            "cancelToFinishMs": null,
+            "totalMs": 630.268,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-one-shanten-followup-risk-third-late": {
+        "caseId": "rank-one-shanten-followup-risk-third-late",
+        "submitToResultMs": 617.1908329997677,
+        "advisorElapsedMs": 611.5,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-one-shanten-followup-risk-third-late",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-one-shanten-followup-risk-third-late",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.046,
+            "calculateWallMs": 617.089,
+            "calculateCpuMs": 614.746,
+            "deliveryWaitMs": 0.045,
+            "cancelToFinishMs": null,
+            "totalMs": 617.18,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-one-shanten-followup-risk-last-late": {
+        "caseId": "rank-one-shanten-followup-risk-last-late",
+        "submitToResultMs": 616.6184159956174,
+        "advisorElapsedMs": 610.9,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-one-shanten-followup-risk-last-late",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-one-shanten-followup-risk-last-late",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.054,
+            "calculateWallMs": 616.519,
+            "calculateCpuMs": 614.86,
+            "deliveryWaitMs": 0.032,
+            "cancelToFinishMs": null,
+            "totalMs": 616.605,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-one-shanten-followup-risk-third-early": {
+        "caseId": "rank-one-shanten-followup-risk-third-early",
+        "submitToResultMs": 612.3071249967325,
+        "advisorElapsedMs": 606.6,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-one-shanten-followup-risk-third-early",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-one-shanten-followup-risk-third-early",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.05,
+            "calculateWallMs": 612.205,
+            "calculateCpuMs": 610.673,
+            "deliveryWaitMs": 0.041,
+            "cancelToFinishMs": null,
+            "totalMs": 612.296,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-one-shanten-followup-risk-saint-third-late": {
+        "caseId": "rank-one-shanten-followup-risk-saint-third-late",
+        "submitToResultMs": 610.2060000048368,
+        "advisorElapsedMs": 605.2,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-one-shanten-followup-risk-saint-third-late",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-one-shanten-followup-risk-saint-third-late",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.052,
+            "calculateWallMs": 610.1,
+            "calculateCpuMs": 608.038,
+            "deliveryWaitMs": 0.041,
+            "cancelToFinishMs": null,
+            "totalMs": 610.192,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-closed-tsumo-only-tenpai-third-late": {
+        "caseId": "rank-closed-tsumo-only-tenpai-third-late",
+        "submitToResultMs": 349.9717500017141,
+        "advisorElapsedMs": 348.4,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-closed-tsumo-only-tenpai-third-late",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-closed-tsumo-only-tenpai-third-late",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.053,
+            "calculateWallMs": 349.885,
+            "calculateCpuMs": 348.587,
+            "deliveryWaitMs": 0.024,
+            "cancelToFinishMs": null,
+            "totalMs": 349.962,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-closed-tsumo-only-tenpai-last-late": {
+        "caseId": "rank-closed-tsumo-only-tenpai-last-late",
+        "submitToResultMs": 344.6672080026474,
+        "advisorElapsedMs": 343.4,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-closed-tsumo-only-tenpai-last-late",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-closed-tsumo-only-tenpai-last-late",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.048,
+            "calculateWallMs": 344.584,
+            "calculateCpuMs": 343.496,
+            "deliveryWaitMs": 0.029,
+            "cancelToFinishMs": null,
+            "totalMs": 344.66,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-closed-tsumo-only-tenpai-third-early": {
+        "caseId": "rank-closed-tsumo-only-tenpai-third-early",
+        "submitToResultMs": 350.3909589999239,
+        "advisorElapsedMs": 348.8,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-closed-tsumo-only-tenpai-third-early",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-closed-tsumo-only-tenpai-third-early",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.057,
+            "calculateWallMs": 350.293,
+            "calculateCpuMs": 349.287,
+            "deliveryWaitMs": 0.03,
+            "cancelToFinishMs": null,
+            "totalMs": 350.381,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-closed-tsumo-only-tenpai-saint-third-late": {
+        "caseId": "rank-closed-tsumo-only-tenpai-saint-third-late",
+        "submitToResultMs": 347.3210410011234,
+        "advisorElapsedMs": 345.7,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-closed-tsumo-only-tenpai-saint-third-late",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-closed-tsumo-only-tenpai-saint-third-late",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.051,
+            "calculateWallMs": 347.225,
+            "calculateCpuMs": 346.366,
+            "deliveryWaitMs": 0.033,
+            "cancelToFinishMs": null,
+            "totalMs": 347.31,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-ordinary-efficiency": {
+        "caseId": "rank-ordinary-efficiency",
+        "submitToResultMs": 167.9952089980361,
+        "advisorElapsedMs": 167.2,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-ordinary-efficiency",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-ordinary-efficiency",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.043,
+            "calculateWallMs": 167.917,
+            "calculateCpuMs": 167.553,
+            "deliveryWaitMs": 0.025,
+            "cancelToFinishMs": null,
+            "totalMs": 167.985,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      },
+      "rank-sanma-kita": {
+        "caseId": "rank-sanma-kita",
+        "submitToResultMs": 222.08583299652673,
+        "advisorElapsedMs": 220.8,
+        "expectedStatus": "ready",
+        "status": "ready",
+        "received": true,
+        "workerStopped": true,
+        "statusPass": true,
+        "timeout": false,
+        "over1000Ms": false,
+        "rankedCandidateCount": 3,
+        "envelope": {
+          "kind": "advice",
+          "adviceKey": "benchmark:rank-sanma-kita",
+          "diagnostics": {
+            "adviceKey": "benchmark:rank-sanma-kita",
+            "mode": "action",
+            "outcome": "delivered",
+            "stage": "completed",
+            "coalesceMs": 0.0,
+            "queueMs": 0.064,
+            "calculateWallMs": 221.979,
+            "calculateCpuMs": 221.598,
+            "deliveryWaitMs": 0.034,
+            "cancelToFinishMs": null,
+            "totalMs": 222.077,
+            "status": "ready",
+            "reason": null
+          }
+        }
+      }
+    },
+    "latency": {
+      "count": 22,
+      "medianMs": 611.2565625007846,
+      "p95Ms": 648.5872090051998,
+      "maxMs": 827.7276669978164
+    },
+    "timeoutCount": 0,
+    "over1000MsCount": 0,
+    "allStatusPass": true
+  },
+  "warm": {
+    "baseline": {
+      "all": {
+        "count": 282,
+        "medianMs": 282.8530420010793,
+        "p95Ms": 722.8166249988135,
+        "maxMs": 924.1087080008583,
+        "caseCount": 94,
+        "timeoutCount": 0,
+        "over1000MsCount": 0,
+        "over1000MsCaseIds": [],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      },
+      "rank": {
+        "count": 42,
+        "medianMs": 575.0041464962123,
+        "p95Ms": 749.5956249986193,
+        "maxMs": 793.9277500045137,
+        "caseCount": 14,
+        "timeoutCount": 0,
+        "over1000MsCount": 0,
+        "over1000MsCaseIds": [],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      },
+      "latency": {
+        "count": 9,
+        "medianMs": 326.4546669961419,
+        "p95Ms": 333.08033399953274,
+        "maxMs": 333.08033399953274,
+        "caseCount": 3,
+        "timeoutCount": 0,
+        "over1000MsCount": 0,
+        "over1000MsCaseIds": [],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      },
+      "live": {
+        "count": 6,
+        "medianMs": 269.32031249816646,
+        "p95Ms": 320.25037499988684,
+        "maxMs": 320.25037499988684,
+        "caseCount": 2,
+        "timeoutCount": 0,
+        "over1000MsCount": 0,
+        "over1000MsCaseIds": [],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      }
+    },
+    "current": {
+      "all": {
+        "count": 282,
+        "medianMs": 245.059062497603,
+        "p95Ms": 689.2882499960251,
+        "maxMs": 886.4982910017716,
+        "caseCount": 94,
+        "timeoutCount": 0,
+        "over1000MsCount": 0,
+        "over1000MsCaseIds": [],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      },
+      "rank": {
+        "count": 42,
+        "medianMs": 544.0485834988067,
+        "p95Ms": 711.0529999990831,
+        "maxMs": 789.2945410058019,
+        "caseCount": 14,
+        "timeoutCount": 0,
+        "over1000MsCount": 0,
+        "over1000MsCaseIds": [],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      },
+      "latency": {
+        "count": 9,
+        "medianMs": 291.856124997139,
+        "p95Ms": 301.1253750009928,
+        "maxMs": 301.1253750009928,
+        "caseCount": 3,
+        "timeoutCount": 0,
+        "over1000MsCount": 0,
+        "over1000MsCaseIds": [],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      },
+      "live": {
+        "count": 6,
+        "medianMs": 245.57174949950422,
+        "p95Ms": 309.19400000129826,
+        "maxMs": 309.19400000129826,
+        "caseCount": 2,
+        "timeoutCount": 0,
+        "over1000MsCount": 0,
+        "over1000MsCaseIds": [],
+        "warmupTimeoutCount": 0,
+        "inconsistentCaseIds": []
+      }
+    }
+  },
+  "cold": {
+    "baseline": {
+      "pon-red-choices": {
+        "count": 3,
+        "medianMs": 631.2135000043781,
+        "p95Ms": 631.9898750007269,
+        "maxMs": 631.9898750007269,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "one-shanten-followup-risk": {
+        "count": 3,
+        "medianMs": 628.2604590014671,
+        "p95Ms": 628.3297080008197,
+        "maxMs": 628.3297080008197,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "shouminkan-red": {
+        "count": 3,
+        "medianMs": 655.0477920027333,
+        "p95Ms": 659.700124997471,
+        "maxMs": 659.700124997471,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-timeout-serial-578": {
+        "count": 3,
+        "medianMs": 638.0140839974047,
+        "p95Ms": 638.9972079996369,
+        "maxMs": 638.9972079996369,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-timeout-serial-1017": {
+        "count": 3,
+        "medianMs": 845.4323330006446,
+        "p95Ms": 846.184333000565,
+        "maxMs": 846.184333000565,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-latency-serial-1600": {
+        "count": 3,
+        "medianMs": 285.9930409977096,
+        "p95Ms": 290.5762090013013,
+        "maxMs": 290.5762090013013,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-latency-serial-1643": {
+        "count": 3,
+        "medianMs": 286.8811669977731,
+        "p95Ms": 290.81324999424396,
+        "maxMs": 290.81324999424396,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-latency-serial-1661": {
+        "count": 3,
+        "medianMs": 219.34474999579834,
+        "p95Ms": 221.30304100573994,
+        "maxMs": 221.30304100573994,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      }
+    },
+    "current": {
+      "pon-red-choices": {
+        "count": 3,
+        "medianMs": 595.8219169988297,
+        "p95Ms": 598.1623330008006,
+        "maxMs": 598.1623330008006,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "one-shanten-followup-risk": {
+        "count": 3,
+        "medianMs": 601.8499999991036,
+        "p95Ms": 603.5694580059499,
+        "maxMs": 603.5694580059499,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "shouminkan-red": {
+        "count": 3,
+        "medianMs": 630.7505000004312,
+        "p95Ms": 630.9742090015789,
+        "maxMs": 630.9742090015789,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-timeout-serial-578": {
+        "count": 3,
+        "medianMs": 608.9857080005459,
+        "p95Ms": 609.1825000039535,
+        "maxMs": 609.1825000039535,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-timeout-serial-1017": {
+        "count": 3,
+        "medianMs": 802.4484589986969,
+        "p95Ms": 804.3821669998579,
+        "maxMs": 804.3821669998579,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-latency-serial-1600": {
+        "count": 3,
+        "medianMs": 269.49354200041853,
+        "p95Ms": 271.69095799763454,
+        "maxMs": 271.69095799763454,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-latency-serial-1643": {
+        "count": 3,
+        "medianMs": 250.5011250032112,
+        "p95Ms": 251.1055419963668,
+        "maxMs": 251.1055419963668,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      },
+      "live-latency-serial-1661": {
+        "count": 3,
+        "medianMs": 193.44725000701146,
+        "p95Ms": 193.52299999445677,
+        "maxMs": 193.52299999445677,
+        "timeoutCount": 0,
+        "over1000MsCount": 0
+      }
+    }
+  },
+  "equivalence": {
+    "equivalence-prefix": {
+      "caseCount": 92,
+      "completeCaseCount": 92,
+      "candidateCount": 938,
+      "incomplete": [],
+      "baselineDiagnosticBudgetSeconds": 2,
+      "currentDiagnosticBudgetSeconds": 2,
+      "public": {
+        "numericChanged": 0,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 0.0,
+        "equalWithinTolerance": true,
+        "exactValueEquality": true,
+        "mismatchIds": []
+      },
+      "private": {
+        "numericChanged": 0,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 0.0,
+        "equalWithinTolerance": true,
+        "exactValueEquality": true,
+        "mismatchIds": []
+      },
+      "timeouts": {
+        "baseline": 0,
+        "current": 0
+      }
+    },
+    "equivalence-full": {
+      "caseCount": 92,
+      "completeCaseCount": 92,
+      "candidateCount": 938,
+      "incomplete": [],
+      "baselineDiagnosticBudgetSeconds": 2,
+      "currentDiagnosticBudgetSeconds": 2,
+      "public": {
+        "numericChanged": 0,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 0.0,
+        "equalWithinTolerance": true,
+        "exactValueEquality": true,
+        "mismatchIds": []
+      },
+      "private": {
+        "numericChanged": 0,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 0.0,
+        "equalWithinTolerance": true,
+        "exactValueEquality": true,
+        "mismatchIds": []
+      },
+      "timeouts": {
+        "baseline": 0,
+        "current": 0
+      }
+    },
+    "equivalence-timeout-reference-prefix": {
+      "caseCount": 2,
+      "completeCaseCount": 2,
+      "candidateCount": 7,
+      "incomplete": [],
+      "baselineDiagnosticBudgetSeconds": 2,
+      "currentDiagnosticBudgetSeconds": 2,
+      "public": {
+        "numericChanged": 0,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 0.0,
+        "equalWithinTolerance": true,
+        "exactValueEquality": true,
+        "mismatchIds": []
+      },
+      "private": {
+        "numericChanged": 0,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 0.0,
+        "equalWithinTolerance": true,
+        "exactValueEquality": true,
+        "mismatchIds": []
+      },
+      "timeouts": {
+        "baseline": 0,
+        "current": 0
+      }
+    },
+    "equivalence-timeout-reference-full": {
+      "caseCount": 2,
+      "completeCaseCount": 2,
+      "candidateCount": 7,
+      "incomplete": [],
+      "baselineDiagnosticBudgetSeconds": 2,
+      "currentDiagnosticBudgetSeconds": 2,
+      "public": {
+        "numericChanged": 0,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 0.0,
+        "equalWithinTolerance": true,
+        "exactValueEquality": true,
+        "mismatchIds": []
+      },
+      "private": {
+        "numericChanged": 0,
+        "numericMismatch": 0,
+        "stringMismatch": 0,
+        "otherMismatch": 0,
+        "maxAbsError": 0.0,
+        "equalWithinTolerance": true,
+        "exactValueEquality": true,
+        "mismatchIds": []
+      },
+      "timeouts": {
+        "baseline": 0,
+        "current": 0
+      }
+    }
+  },
+  "fixtureAvailability": {
+    "committedCases": 92,
+    "optionalLocalCases": 2,
+    "optionalLocalIds": [
+      "live-latency-serial-1610",
+      "live-latency-serial-1654"
+    ],
+    "note": "Optional local inputs contain only public state; no original game logs are committed."
+  },
+  "warmLatencyCases": {
+    "baseline": {
+      "live-latency-serial-1600": {
+        "samplesMs": [
+          312.3948329957784,
+          330.0779170021997,
+          329.0444160011248
+        ],
+        "count": 3,
+        "medianMs": 329.0444160011248,
+        "p95Ms": 330.0779170021997,
+        "maxMs": 330.0779170021997
+      },
+      "live-latency-serial-1643": {
+        "samplesMs": [
+          326.4546669961419,
+          331.78904200030956,
+          333.08033399953274
+        ],
+        "count": 3,
+        "medianMs": 331.78904200030956,
+        "p95Ms": 333.08033399953274,
+        "maxMs": 333.08033399953274
+      },
+      "live-latency-serial-1661": {
+        "samplesMs": [
+          238.49854199943366,
+          235.17516600259114,
+          243.14112499996554
+        ],
+        "count": 3,
+        "medianMs": 238.49854199943366,
+        "p95Ms": 243.14112499996554,
+        "maxMs": 243.14112499996554
+      },
+      "live-latency-serial-1610": {
+        "samplesMs": [
+          315.399332997913,
+          313.6187079944648,
+          320.25037499988684
+        ],
+        "count": 3,
+        "medianMs": 315.399332997913,
+        "p95Ms": 320.25037499988684,
+        "maxMs": 320.25037499988684
+      },
+      "live-latency-serial-1654": {
+        "samplesMs": [
+          220.6533750068047,
+          219.16875000169966,
+          225.02191700186813
+        ],
+        "count": 3,
+        "medianMs": 220.6533750068047,
+        "p95Ms": 225.02191700186813,
+        "maxMs": 225.02191700186813
+      }
+    },
+    "current": {
+      "live-latency-serial-1600": {
+        "samplesMs": [
+          290.51916600292316,
+          291.856124997139,
+          299.1180000026361
+        ],
+        "count": 3,
+        "medianMs": 291.856124997139,
+        "p95Ms": 299.1180000026361,
+        "maxMs": 299.1180000026361
+      },
+      "live-latency-serial-1643": {
+        "samplesMs": [
+          301.1253750009928,
+          296.62850000022445,
+          300.23466699640267
+        ],
+        "count": 3,
+        "medianMs": 300.23466699640267,
+        "p95Ms": 301.1253750009928,
+        "maxMs": 301.1253750009928
+      },
+      "live-latency-serial-1661": {
+        "samplesMs": [
+          206.48050000454532,
+          181.23175000073388,
+          196.51995899766916
+        ],
+        "count": 3,
+        "medianMs": 196.51995899766916,
+        "p95Ms": 206.48050000454532,
+        "maxMs": 206.48050000454532
+      },
+      "live-latency-serial-1610": {
+        "samplesMs": [
+          309.19400000129826,
+          292.5382079993142,
+          299.29829200409586
+        ],
+        "count": 3,
+        "medianMs": 299.29829200409586,
+        "p95Ms": 309.19400000129826,
+        "maxMs": 309.19400000129826
+      },
+      "live-latency-serial-1654": {
+        "samplesMs": [
+          198.60529099969426,
+          183.5761670008651,
+          197.0730410030228
+        ],
+        "count": 3,
+        "medianMs": 197.0730410030228,
+        "p95Ms": 198.60529099969426,
+        "maxMs": 198.60529099969426
+      }
+    }
+  },
+  "integration": {
+    "baseCommit": "f27931487e967372c414ec700942f45ba327a62d",
+    "sourceSha256": "93e4ae9078e8cc2d4336a66f0436ff892aa9d71c4cccd3881f5a242ac78047ab",
+    "sourceDifferencesFromMeasuredSnapshot": [
+      "autoplay.js",
+      "background.js",
+      "monitor.py"
+    ],
+    "unchangedMeasuredBackendSha256": {
+      "advice_worker.py": "c69487e25d31cde213c8e60c339bbab19441a8ad002c159b72919fcf4461247d",
+      "advisor.py": "10644ccd68291a4bec417efaeeb0be59ce10b5c47b98423a3765bce557d51fc7",
+      "advisor_continuation.py": "1112a3f0f164ccffa451f6634ec59646d6b84bcf7617d717b208351d76e68260",
+      "advisor_policy.py": "fb813733ec4e12d249066fb607f4cde242397df445456675a999512e8b5a2ee4",
+      "advisor_rank.py": "02eab3b41b043e5e31122ec01a688fffbda65a9644bcccf9aef9e6cc9855447d",
+      "advisor_rank_policy.py": "66d7a2000227b071b653aab8069c8b863ac119ad44f11f419ae70f4c530cbee0",
+      "advisor_routes.py": "bcd6197182d6fbae8516dbe7fc7c516312d52b93153369753c1ea847600c3c0d",
+      "advisor_settlement.py": "52a2778311f58ba532bdd743968a731bdf5ae7c1bbee185b2b9d5354be030a42",
+      "advisor_shanten.py": "db5efc3f88b879d41927658df9d5bcc170e516fb2773edfc543ca9c2c2904ec2"
+    },
+    "note": "After measurement, rebased onto the background-window fix. Only autoplay.js, background.js and monitor.py differ from the measured tree. All advisor and worker modules are byte-identical; combined bridge/background tests are recorded separately in the evaluation document. These timings exclude WebKit and background-game execution."
+  }
+}

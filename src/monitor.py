@@ -155,6 +155,8 @@ def overlay_update(event):
                   "advice": event.get("advice", {"status": "computing", "message": "正在评估当前牌局…"})}
     elif event["kind"] == "advice":
         packet = {"kind": "advice", "adviceKey": event["adviceKey"], "advice": event["advice"]}
+        if 'diagnostics' in event:
+            packet['diagnostics'] = event['diagnostics']
     elif event["kind"] in ("status", "error"):
         phase = event.get("phase")
         labels = {"waiting": "等待对局 · 发牌及场上动作后自动更新", "connected": "已连接牌局 · 等待最新统计",
@@ -169,7 +171,32 @@ def overlay_update(event):
     script = "window.__mjStatsOverlay?.update(" + payload + ");"
     if packet['kind'] == 'advice':
         script += "window.__mjAutoplay?.onAdvice(" + payload + ");"
+        receipt = json.dumps({'adviceKey': packet['adviceKey']})
+        script += "window.__mjMonitor?.onAdvice?.(" + receipt + ");"
     return script
+
+
+def accept_event(advisor, log, event):
+    # Start/cancel computation before synchronous log formatting and disk writes.
+    if event['kind'] == 'turn':
+        advisor.submit(f"{event['session']}:{event['serial']}", event['state'])
+    elif event['kind'] == 'advice_invalidated':
+        advisor.invalidate(event.get('adviceKey'))
+    elif event['kind'] in ('status', 'error'):
+        advisor.invalidate()
+    log.accept(event)
+
+
+def deliver_advice(advisor, view, log):
+    """Called only by the UI timer; worker diagnostics also drain without advice."""
+    packet = advisor.take_result()
+    if packet and view is not None:
+        view.evaluateJavaScript_completionHandler_(overlay_update(packet), None)
+    records = ([packet] if packet else []) + advisor.take_diagnostics()
+    if records:
+        with log.json_path.open('a', encoding='utf-8') as file:
+            for record in records:
+                file.write(json.dumps(record, ensure_ascii=False) + '\n')
 
 
 def main():
@@ -235,14 +262,11 @@ def main():
                 return
             try:
                 event = json.loads(str(message.body()))
-                log.accept(event)
-                if event['kind'] == 'automation' and message.webView() == view:
-                    background.update(view, event.get('session'), event.get('enabled'))
                 if event['kind'] == 'turn':
                     advice_target[0] = message.webView()
-                    advisor.submit(f"{event['session']}:{event['serial']}", event['state'])
-                elif event['kind'] in ('status', 'error'):
-                    advisor.invalidate()
+                accept_event(advisor, log, event)
+                if event['kind'] == 'automation' and message.webView() == view:
+                    background.update(view, event.get('session'), event.get('enabled'))
                 update = overlay_update(event)
                 if update:
                     message.webView().evaluateJavaScript_completionHandler_(update, None)
@@ -347,15 +371,10 @@ def main():
     window, view = make_window(config, "Maj-Soul++")
     view.loadRequest_(NSURLRequest.requestWithURL_(NSURL.URLWithString_("https://game.maj-soul.com/1/")))
     app.activateIgnoringOtherApps_(True)
-    def deliver_advice(timer):
+    def native_tick(timer):
+        deliver_advice(advisor, advice_target[0], log)
         background.pulse(view, time.monotonic(), not bool(window.occlusionState() & AppKit.NSWindowOcclusionStateVisible))
-        packet = advisor.take_result()
-        if packet and advice_target[0] is not None:
-            # WebKit calls stay on the UI thread; slow or superseded work never blocks it.
-            advice_target[0].evaluateJavaScript_completionHandler_(overlay_update(packet), None)
-            with log.json_path.open('a', encoding='utf-8') as file:
-                file.write(json.dumps(packet, ensure_ascii=False) + '\n')
-    timer = NSTimer.scheduledTimerWithTimeInterval_repeats_block_(0.05, True, deliver_advice)
+    timer = NSTimer.scheduledTimerWithTimeInterval_repeats_block_(0.05, True, native_tick)
     signal.signal(signal.SIGINT, lambda signum, frame: app.terminate_(None))
     signal.signal(signal.SIGTERM, lambda signum, frame: app.terminate_(None))
     try:
