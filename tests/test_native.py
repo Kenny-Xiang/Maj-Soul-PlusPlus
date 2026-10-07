@@ -100,15 +100,29 @@ print(json.dumps({'test':'complete hand → native bridge → background advisor
                   'recommended':ready['advice']['best']['tile'],'elapsed_ms':ready['advice'].get('elapsedMs'),
                   'old_advice_rejected_after_discard':True},ensure_ascii=False))
 
-def await_advice(status):
+def turn_for_advice(packet):
+ matches=[p for p in packets if p.get('kind')=='turn' and
+          f"{p['session']}:{p['serial']}"==packet['adviceKey']]
+ assert len(matches)==1,(packet, matches)
+ return matches[0]
+
+def await_advice_result(status):
  deadline=time.time()+10
  while time.time()<deadline:
   NSRunLoop.currentRunLoop().runUntilDate_(NSDate.dateWithTimeIntervalSinceNow_(.02))
   packet=advisor.take_result()
   if packet:
    evaluate(overlay_update(packet))
-   if packet['advice']['status']==status:return packet['advice']
+   if packet['advice']['status']==status:
+    turn_for_advice(packet)
+    deliveries=[p for p in packets if p.get('kind')=='advisor_delivery' and
+                p.get('adviceKey')==packet['adviceKey']]
+    assert deliveries and deliveries[-1]['current'],(packet,deliveries)
+    assert deliveries[-1]['publishToAdviceMs']>=0,deliveries[-1]
+    return packet
  raise AssertionError((status,packets[-2:]))
+def await_advice(status):
+ return await_advice_result(status)['advice']
 def operation(choices):
  return num(1,0)+b''.join(blob(2,num(1,kind)+b''.join(string(2,t) for t in combinations))
                          for kind,combinations in choices)
@@ -155,6 +169,9 @@ after_call=await_advice('ready')
 assert after_call['best']['action']=='discard',after_call
 assert after_call['best']['tile'] not in ('5z',),after_call
 evaluate(overlay_update({'kind':'advice','adviceKey':'stale-call','advice':call}))
+stale_delivery=next(p for p in reversed(packets) if p.get('kind')=='advisor_delivery' and
+                    p.get('adviceKey')=='stale-call')
+assert not stale_delivery['current'] and 'publishToAdviceMs' not in stale_delivery,stale_delivery
 assert evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.best-tile').textContent").startswith('打 ')
 
 # Removing tiles for a kan/kita refreshes analysis before the replacement draw.
@@ -163,8 +180,9 @@ start_hand(kan_hand,[(1,[]),(4,['1m|1m|1m|1m'])],0)
 kan=await_advice('ready')
 assert any(c['action']=='ankan' for c in kan['candidates']),kan
 feed(action_frame('ActionAnGangAddGang',1,num(1,0)+num(2,3)+string(3,'1m')))
-after_kan=await_advice('analysis')
-assert len(packets[-1]['state']['hand'])==10,packets[-1]
+after_kan=await_advice_result('analysis')
+kan_turn=turn_for_advice(after_kan)
+assert len(kan_turn['state']['hand'])==10,kan_turn
 feed(action_frame('ActionDealTile',2,num(1,0)+string(2,'9s')+num(3,59)+blob(4,operation([(1,[])]))))
 assert await_advice('ready')['best']['action']=='discard'
 
@@ -175,8 +193,10 @@ feed(action_frame('ActionDealTile',1,num(1,0)+string(2,kita_hand[-1])+num(3,59)+
 kita=await_advice('ready')
 assert any(c['action']=='kita' for c in kita['candidates']),kita
 feed(action_frame('ActionBaBei',2,num(1,0)))
-assert await_advice('analysis')['best']['action']=='wait'
-assert packets[-1]['state']['north'][0]==1 and len(packets[-1]['state']['hand'])==13,packets[-1]
+after_kita=await_advice_result('analysis')
+assert after_kita['advice']['best']['action']=='wait'
+kita_turn=turn_for_advice(after_kita)
+assert kita_turn['state']['north'][0]==1 and len(kita_turn['state']['hand'])==13,kita_turn
 feed(action_frame('ActionDealTile',3,num(1,0)+string(2,'2p')+num(3,58)+blob(4,operation([(1,[])]))))
 assert await_advice('ready')['best']['action']=='discard'
 advisor.close()
