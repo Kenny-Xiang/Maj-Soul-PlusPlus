@@ -62,7 +62,7 @@ class AutoplayRecovery:
                 return
             self.revision = revision
             return  # Completion must also prove that this exact restore succeeded.
-        was_enabled = self.enabled
+        was_enabled = self.enabled or self.suspended is not None
         self.revision = revision
         self.close()
         self.enabled = enabled
@@ -73,7 +73,7 @@ class AutoplayRecovery:
     def navigation_started(self, navigation):
         if self.ticket and navigation == self.navigation:
             return True
-        previous = (navigation, self.session, self.revision) if self.enabled else None
+        previous = (navigation, self.session, self.revision) if self.enabled or self.suspended else None
         self.close()
         self.suspended = previous
         return False
@@ -91,9 +91,9 @@ class AutoplayRecovery:
             return True
         if self.suspended and self.suspended[0] == navigation:
             _, session, revision = self.suspended
-            self.suspended = None
 
             def resumed(value):
+                self.suspended = None
                 if (isinstance(value, dict) and value.get('session') == session == self.session and
                         value.get('revision') == revision == self.revision and
                         value.get('enabled') is True and not value.get('fault')):

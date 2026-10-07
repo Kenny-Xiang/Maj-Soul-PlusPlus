@@ -242,6 +242,46 @@ class RecoveryTests(unittest.TestCase):
         self.assertFalse(self.recovery.enabled)
         self.assertFalse(self.activity[-1])
 
+    def test_replaced_ordinary_navigation_retains_original_watchdog_intent(self):
+        self.recovery.attempts = 2
+        first, second = object(), object()
+        self.recovery.navigation_started(first)
+        self.recovery.navigation_started(second)
+        self.assertFalse(self.recovery.navigation_failed(self.view, first))
+        self.assertEqual(self.view.calls, [], 'the superseded navigation must not query the current page')
+        self.assertTrue(self.recovery.navigation_failed(self.view, second))
+        self.reply(self.snapshot())
+        self.assertTrue(self.recovery.enabled)
+        self.assertTrue(self.activity[-1])
+        self.assertEqual(self.recovery.attempts, 2)
+
+    def test_new_navigation_during_resume_query_uses_only_the_newest_page_query(self):
+        self.recovery.attempts = 2
+        first, second = object(), object()
+        self.recovery.navigation_started(first)
+        self.assertTrue(self.recovery.navigation_failed(self.view, first))
+        old_callback = self.view.calls[-1][1]
+        self.recovery.navigation_started(second)
+        self.assertTrue(self.recovery.navigation_failed(self.view, second))
+        current_request = self.recovery.pending
+        old_callback(self.snapshot(), None)
+        self.assertIs(self.recovery.pending, current_request)
+        self.assertFalse(self.recovery.enabled)
+        self.reply(self.snapshot())
+        self.assertTrue(self.recovery.enabled)
+        self.assertTrue(self.activity[-1])
+        self.assertEqual(self.recovery.attempts, 2)
+
+    def test_mode_change_during_suspended_navigation_does_not_replenish_attempts(self):
+        self.recovery.attempts = 2
+        self.recovery.navigation_started(object())
+        self.intent('user', True, 2)
+        self.assertTrue(self.recovery.enabled)
+        self.assertEqual(self.recovery.attempts, 2, 'temporary native suspension is not a user off/on cycle')
+        self.intent('user', False, 3)
+        self.intent('user', True, 4)
+        self.assertEqual(self.recovery.attempts, 0, 'a real explicit off/on cycle starts a new budget')
+
     def test_old_page_mode_change_after_new_init_revokes_old_preferences(self):
         navigation = self.prepare()
         self.recovery.navigation_started(navigation)
