@@ -52,6 +52,8 @@ def advisor_state():
       const a=document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.advice');
       const panel=a.closest('.panel'),rect=panel.getBoundingClientRect();
       const game=panel.querySelector('.game').getBoundingClientRect();
+      const controls=panel.querySelector('.automation').getBoundingClientRect();
+      const recording=panel.querySelector('.recording').getBoundingClientRect();
       return {hidden:a.hidden,text:a.textContent,best:a.querySelector('.best-tile')?.textContent || '',
         images:a.querySelectorAll('img').length,
         alternatives:[...a.querySelectorAll('.alternatives')].map(element=>element.textContent),
@@ -60,6 +62,8 @@ def advisor_state():
         progress:a.querySelector('.progress')?.textContent || '',
         chips:[...a.querySelectorAll('.tile-chip')].map(element=>element.textContent),
         metricCount:a.querySelectorAll('.metric-value').length,
+        controlsRight:controls.right,recordingLeft:recording.left,
+        controlsBottom:controls.bottom,gameTop:game.top,
         bottom:rect.bottom,fontSize:getComputedStyle(panel).fontSize,
         clickTarget:document.elementFromPoint(game.left+3,game.top+3)?.id};
     })())'''))
@@ -208,6 +212,7 @@ info = advisor_state()
 assert info['best'] == '立直 · 打 中' and len(info['alternatives']) == 2, info
 assert info['alternativeActions'][0] == '打 中', info
 assert float(info['fontSize'].removesuffix('px')) >= 12 and info['bottom'] <= 380, info
+assert info['controlsRight'] < info['recordingLeft'] and info['controlsBottom'] <= info['gameTop'], info
 assert info['clickTarget'] == 'underlay', info
 assert '行动建议' in evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.textContent")
 action_cases = [

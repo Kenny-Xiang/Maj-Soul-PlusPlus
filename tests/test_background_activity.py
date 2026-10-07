@@ -204,6 +204,59 @@ class BackgroundActivityTests(unittest.TestCase):
         self.activity.pulse(self.view, 2, True)
         self.assertEqual(len(self.view.scripts), 2)
 
+    def test_controlled_navigation_holds_same_activity_until_restored_user_turns_off(self):
+        self.activity.update(self.view, 'old', True)
+        token = self.activity.token
+        self.activity.pulse(self.view, 0, True)
+        old_pulse = self.view.scripts[-1][1]
+        navigation = object()
+        self.activity.navigation_started(navigation, preserve_activity=True)
+        self.assertIs(self.activity.token, token)
+        self.activity.pulse(self.view, 1, True)
+        self.assertEqual(len(self.view.scripts), 1, 'suspend pulse during navigation')
+        self.activity.page_committed(navigation, preserve_activity=True)
+        self.activity.update(self.view, 'new', True)
+        self.assertIs(self.activity.token, token)
+        self.assertEqual(self.process.ended, [])
+        self.assertEqual(len(self.process.started), 1)
+        self.activity.pulse(self.view, 2, True)
+        new_request = self.activity.pulse_request
+        old_pulse(None, None)
+        self.assertIs(self.activity.pulse_request, new_request)
+        self.activity.update(self.view, 'old', False)
+        self.assertIs(self.activity.token, token, 'retired page cannot revoke a consumed recovery')
+        self.activity.update(self.view, 'new', False)
+        self.assertIsNone(self.activity.token)
+        self.assertEqual(self.process.ended, [token])
+        self.assertEqual(self.view.prefs.policy, 1)
+
+    def test_user_off_during_controlled_load_releases_preserved_activity(self):
+        self.activity.update(self.view, 'old', True)
+        token = self.activity.token
+        navigation = object()
+        self.activity.navigation_started(navigation, preserve_activity=True)
+        # AutoplayRecovery.close invokes release directly, including while
+        # provisional navigation rejects ordinary activity update messages.
+        self.activity.release()
+        self.activity.page_committed(navigation)
+        self.activity.update(self.view, 'new', False)
+        self.assertEqual(self.process.ended, [token])
+        self.assertEqual(len(self.process.started), 1)
+        self.assertIsNone(self.activity.token)
+
+    def test_failed_controlled_reload_cannot_reacquire_from_old_page_status(self):
+        self.activity.update(self.view, 'old', True)
+        token = self.activity.token
+        navigation = object()
+        self.activity.navigation_started(navigation, preserve_activity=True)
+        # The recovery supervisor revokes intent before dispatching its
+        # best-effort page pause. Its failure must not start an enabled query.
+        self.activity.release()
+        self.activity.navigation_failed(self.view, navigation, resume_activity=False)
+        self.assertEqual(self.view.scripts, [])
+        self.assertEqual(self.process.ended, [token])
+        self.assertIsNone(self.activity.token)
+
     def test_pulse_failure_is_observable_and_does_not_permanently_block_delivery(self):
         self.activity.update(self.view, 'page', True)
         self.activity.pulse(self.view, 0, True)

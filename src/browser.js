@@ -223,6 +223,7 @@ function stop() {
   core.setMatch(state, null);
   for (const meta of sockets.values()) detach(meta);
   if (window.WebSocket === wrappedConstructor) window.WebSocket = NativeSocket;
+  window.__mjUnityTransport?.stop();
   state.phase = 'stopped'; state.recovery = null; console.log('[雀魂监听] 页面监听已停止');
 }
 wrappedConstructor = new Proxy(NativeSocket, {construct(target, args, newTarget) {
@@ -231,7 +232,7 @@ wrappedConstructor = new Proxy(NativeSocket, {construct(target, args, newTarget)
   return socket;
 }});
 window.WebSocket = wrappedConstructor;
-window.__mjMonitor = {version:'3.0.0', getSnapshot:snapshot, stop,
+window.__mjMonitor = {version:'3.0.0', session, getSnapshot:snapshot, stop,
   onAdvice:packet => {
     if (!running) return;
     const now = performance.now();
@@ -246,6 +247,8 @@ window.__mjMonitor = {version:'3.0.0', getSnapshot:snapshot, stop,
         {operationToAdviceMs:now - receivedAt} : {})});
   },
   onLobbyRecovery:() => {if (running && state.recovery?.status === 'waiting') resetStatistics('waiting');},
+  reportRecoveryDiagnostic:value => {if (running) publish({kind:'recovery_diagnostic', ...value});},
+  reportAutomationIntent:value => {if (running) publish({kind:'automation_intent', ...value});},
   reportAutomation:value => Promise.resolve().then(() => {if (running) publish({kind:'automation', ...value});}),
   uninstall:() => {stop(); delete window.__mjMonitor;}};
 heartbeatTimer = setInterval(() => {
