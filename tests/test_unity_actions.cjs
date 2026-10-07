@@ -328,6 +328,8 @@ test('a final-hand win retains its authoritative echo across collector reset unt
   const event = {name:'ActionHule',step:13,matchEnd:true,hules:[{seat:0,zimo:true}]};
   core.apply(h.state,event);
   assert.equal(h.state.phase,'ended'); assert.equal(h.state.match,null);
+  h.api.onEvent({kind:'status',phase:'ended'});
+  assert.equal(h.api.snapshot().pending,true,'the collector publishes a phase change before its terminal action echo');
   h.echo(event,{state:plain(h.state)});
   Object.assign(h.state,core.emptyState(),{phase:'ended'});
   h.api.onEvent({kind:'status',phase:'ended',reset:true});
@@ -335,6 +337,24 @@ test('a final-hand win retains its authoritative echo across collector reset unt
   h.ack(); assert.equal((await p).action,'tsumo');
   assert.equal(h.api.snapshot().pending,false);
 });
+
+for (const acknowledged of [false,true])
+  test(`notification-only end releases a ${acknowledged?'acknowledged':'unacknowledged'} request without confirming its action`, async () => {
+    const h=setup();h.state.operationTiming.timeAdd=90000;
+    const pending=h.run({action:'discard',tile:'1m'});
+    const rejected=assert.rejects(pending,error=>error.recoverable===true && /已结束.*未.*确认/.test(error.message));
+    if (acknowledged) {h.ack();await Promise.resolve();}
+    h.api.onEvent({kind:'status',phase:'ended',reset:true});
+    assert.equal(h.api.snapshot().pending,false);
+    assert.equal(h.api.checkpoint().submitted,null);
+    assert.equal(h.timers.size,0);
+    await rejected;
+    h.state.gameId='next-game';
+    const next=h.run({action:'discard',tile:'1m'});
+    h.ack(0);await Promise.resolve();
+    assert.equal(h.api.snapshot().pending,true,'a late old ACK cannot complete the next game request');
+    h.ack(1);h.echo({name:'ActionDiscardTile',seat:0,tile:'1m',moqie:false});await next;
+  });
 
 test('recovery preserves an unknown submitted turn despite new timing, and only a new authoritative turn can act',async()=>{
   const h=setup(), old=h.run({action:'discard',tile:'1m'});
@@ -364,4 +384,41 @@ test('same-socket recovery interrupts pending work and new game identity does no
   const next=h.run({action:'discard',tile:'1m'});
   h.ack(1); h.echo({name:'ActionDiscardTile',seat:0,tile:'1m',moqie:false});
   assert.equal((await next).ok,true); assert.equal(h.sent.length,2);
+});
+
+test('a controlled reload blocks the same UUID round and step even when page game IDs change',async()=>{
+  const previous=setup();
+  previous.window.__mjUnityTransport.snapshot=()=>({gameConnected:true,gameIdentity:'stable-fixture',gameAccountId:81});
+  const pending=previous.run({action:'discard',tile:'1m'});
+  const rejected=assert.rejects(pending,/连接/); previous.disconnect(); await rejected;
+  const checkpoint=plain(previous.api.checkpoint());
+  assert.deepEqual(checkpoint,{submitted:[81,'stable-fixture',0,4,0,0,0,12]});
+  const restored=setup(); restored.state.gameId='game-1';
+  restored.api.restoreCheckpoint(checkpoint);
+  assert.equal(restored.api.snapshot().canAct,false,'unproven UUID cannot release a restored guard');
+  restored.window.__mjUnityTransport.snapshot=()=>({gameConnected:true,gameIdentity:'stable-fixture',gameAccountId:81});
+  assert.throws(()=>restored.run({action:'discard',tile:'1m'}),/已经提交/);
+  assert.equal(restored.sent.length,0);
+  restored.state.lastStep=14;
+  const next=restored.run({action:'discard',tile:'2m'});
+  restored.ack(); restored.echo({name:'ActionDiscardTile',seat:0,tile:'2m',moqie:false,step:15}); await next;
+});
+
+test('a stable checkpoint does not conflate another game or a later round with repeated steps',async()=>{
+  for (const changed of ['game','round']) {
+    const h=setup();
+    h.api.restoreCheckpoint({submitted:[81,'old-fixture',0,4,0,0,0,12]});
+    h.window.__mjUnityTransport.snapshot=()=>({gameConnected:true,gameIdentity:changed==='game'?'new-fixture':'old-fixture',gameAccountId:81});
+    if(changed==='round') h.state.round.ben=1;
+    const pending=h.run({action:'discard',tile:'1m'});
+    h.ack(); h.echo({name:'ActionDiscardTile',seat:0,tile:'1m',moqie:false}); await pending;
+  }
+});
+
+test('checkpoint preparation fails closed for a submitted turn without proven stable identity',async()=>{
+  const h=setup(), pending=h.run({action:'discard',tile:'1m'});
+  assert.throws(()=>h.api.checkpoint(),/身份/);
+  const rejected=assert.rejects(pending,/连接/); h.disconnect(); await rejected;
+  assert.throws(()=>h.api.checkpoint(),/身份/);
+  assert.throws(()=>setup().api.restoreCheckpoint({submitted:[81,'fixture',0,4,0,0,0,-1]}),/恢复/);
 });

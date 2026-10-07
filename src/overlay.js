@@ -19,7 +19,7 @@
       color:#c6f4df; border-color:#91ccb3; background:rgba(70,145,115,.25); }
     .automation button:focus-visible { outline:2px solid #ffdfa0; outline-offset:2px; }
     .automation-mode-label, .automation-next { color:#bacbd9; font-size:.9em; }
-    .automation-status { color:#c7d4e2; overflow-wrap:anywhere; min-width:0; }
+    .automation-status { color:#c7d4e2; overflow-wrap:anywhere; min-width:0; font-variant-numeric:tabular-nums; }
     .automation-status[data-phase="paused"], .automation-status[data-phase="unavailable"] { color:#ffe1a4; }
     .heading, .columns { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); column-gap:28px; }
     .heading { margin-bottom:4px; font-weight:600; }
@@ -70,6 +70,8 @@
       .tile-list { gap:2px; }
     }
   </style><section class="panel" aria-label="最新牌局统计">
+    <div class="heading"><span class="label">Maj-Soul++ · 牌局统计</span><span class="label">行动建议</span></div>
+    <div class="columns"><div class="statistics">
     <div class="automation" aria-label="自动打牌控制">
       <button type="button" class="automation-toggle" role="switch" aria-checked="false">自动打牌：关闭</button>
       <span class="automation-mode-label">对局模式</span>
@@ -81,8 +83,7 @@
       <span class="automation-next">下场生效</span>
       <span class="automation-status" role="status" aria-live="polite">待机</span>
     </div>
-    <div class="heading"><span class="label">Maj-Soul++ · 牌局统计</span><span class="label">行动建议</span></div>
-    <div class="columns"><div class="game"></div><div class="recording">
+    <div class="game"></div></div><div class="recording">
       <div class="advice" aria-live="polite" hidden></div>
       <div class="caption">等待对局 · 发牌及场上动作后自动更新</div><div class="details"></div>
     </div></div></section>`;
@@ -94,23 +95,33 @@
   const automationEast = shadow.querySelector('.automation-east'), automationSouth = shadow.querySelector('.automation-south');
   const automationStatus = shadow.querySelector('.automation-status');
   let automationEnabled = false;
+  let automationView = '';
   let adviceKey = null, expectedAdviceKey = null;
   function updateAutomation(status) {
     if (!status) return;
     automationEnabled = status.enabled === true;
+    const label = `自动打牌：${automationEnabled ? '开启' : '关闭'}`;
+    const message = status.message || (automationEnabled ? '等待行动' : '待机');
+    const phase = status.phase || 'idle';
+    const signature = JSON.stringify([automationEnabled, status.playerCount === 3, status.roundCount === 2, phase, message]);
+    if (signature === automationView) return;
+    automationView = signature;
+    const geometryChanged = automationToggle.textContent !== label ||
+      automationStatus.textContent.replace(/\d/g, '0') !== message.replace(/\d/g, '0');
     automationToggle.setAttribute('aria-checked', String(automationEnabled));
-    automationToggle.textContent = `自动打牌：${automationEnabled ? '开启' : '关闭'}`;
+    automationToggle.textContent = label;
     automationFour.setAttribute('aria-pressed', String(status.playerCount !== 3));
     automationThree.setAttribute('aria-pressed', String(status.playerCount === 3));
     automationEast.setAttribute('aria-pressed', String(status.roundCount !== 2));
     automationSouth.setAttribute('aria-pressed', String(status.roundCount === 2));
-    automationStatus.dataset.phase = status.phase || 'idle';
-    automationStatus.textContent = status.message || (automationEnabled ? '等待行动' : '待机');
-    fit();
+    automationStatus.dataset.phase = phase;
+    automationStatus.textContent = message;
+    if (geometryChanged) fit();
   }
   function changeAutomation(method, value) {
     const controller = window.__mjAutoplay;
     if (typeof controller?.[method] !== 'function') {
+      automationView = '';
       automationStatus.dataset.phase = 'unavailable';
       automationStatus.textContent = '自动打牌暂不可用';
       fit();

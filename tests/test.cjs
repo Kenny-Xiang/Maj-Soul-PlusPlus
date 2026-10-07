@@ -945,6 +945,51 @@ test('native listener preserves socket sends and fully detaches on uninstall', a
   assert.equal(posts.length, before);
 });
 
+for (const injected of ['none', 'acknowledged', 'pending']) test(`collector uninstall coordinates transport shutdown (${injected})`, async () => {
+  const posts = [], sent = [], received = [], timers = new Set();
+  class Socket extends EventTarget {
+    constructor(url) {super(); this.url = url; this.readyState = 1;}
+    send(data) {sent.push(data);}
+  }
+  const window = {WebSocket:Socket, webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
+  const context = vm.createContext({window, core, location:{hostname:'game.maj-soul.com',href:'https://game.maj-soul.com/1/'},
+    TextEncoder, TextDecoder, performance, Uint8Array, ArrayBuffer, Blob, URL, MessageEvent,
+    setTimeout:fn=>{timers.add(fn);return fn;}, clearTimeout:fn=>timers.delete(fn),
+    setInterval:fn=>{timers.add(fn);return fn;}, clearInterval:fn=>timers.delete(fn), console:{log(){}}});
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../src/unity_transport.js'), 'utf8'), context);
+  vm.runInContext(collectorCode, context);
+  const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
+  game.addEventListener('message', event=>received.push(core.envelope(new Uint8Array(event.data))));
+  const feed = async data => {
+    game.dispatchEvent(new MessageEvent('message', {data:data.buffer}));
+    await new Promise(setImmediate);
+  };
+  game.send(rpcFrame(2, 7, '.lq.FastTest.authGame', num(1,23)));
+  await feed(rpcFrame(3, 7, '', []));
+  let work, wireId;
+  if (injected !== 'none') {
+    work = window.__mjUnityTransport.request('.lq.FastTest.confirmNewRound', new Uint8Array());
+    wireId = core.envelope(sent.at(-1)).id;
+    if (injected === 'acknowledged') {await feed(rpcFrame(3, wireId, '', [])); await work;}
+  }
+  window.__mjMonitor.uninstall();
+  assert.equal(window.WebSocket, Socket);
+  if (injected === 'pending') await assert.rejects(work, /已停止/);
+  assert.equal(timers.size, 0);
+  const before = sent.length;
+  await assert.rejects(window.__mjUnityTransport.request('.lq.FastTest.confirmNewRound', new Uint8Array()), /已停止/);
+  assert.equal(sent.length, before);
+  if (injected === 'pending') {
+    const count = received.length;
+    await feed(rpcFrame(3, wireId, '', []));
+    assert.equal(received.length, count, 'a late automation ACK never reaches Unity');
+    game.send(rpcFrame(2, wireId, '.lq.FastTest.heartbeat', []));
+    const remapped = core.envelope(sent.at(-1)).id;
+    await feed(rpcFrame(3, remapped, '', []));
+    assert.equal(received.at(-1).id, wireId, 'native IDs remain correlated after shutdown');
+  } else assert.equal(game.send, Socket.prototype.send);
+});
+
 test('browser correlates authGame separately from restore and clears stale rank metadata', async () => {
   const posts = [], sent = [];
   let invalidations = 0;
