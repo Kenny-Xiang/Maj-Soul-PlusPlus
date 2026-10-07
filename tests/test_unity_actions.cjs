@@ -95,6 +95,57 @@ test('drawn duplicates use moqie and locked riichi never discards a different ph
   h.ack(); await p;
 });
 
+test('dealer opening discard and riichi use hand discard even for the initial lastDraw tile', async () => {
+  for (const players of [3,4]) for (const action of ['discard','riichi']) for (const step of [0,1]) {
+    const cards = ['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','7z','0p'];
+    const ops = [{type:1,combination:[]}, ...(action === 'riichi' ? [{type:7,combination:['5p']}] : [])];
+    const h = setup({hand:cards,players,ops});
+    core.apply(h.state,{name:'ActionNewRound',step,selfSeat:0,ju:0,chang:0,ben:1,
+      hand:cards,scores:Array(players).fill(35000),doras:['1p'],left:players === 3 ? 54 : 69,
+      operationDetails:ops,operations:ops.map(op => op.type),operationTiming:{timeFixed:8000,timeAdd:20000,receivedAt:0}});
+    assert.equal(h.state.lastDraw,'0p');
+    const p = h.run({action,tile:'0p'}), wireMoqie = first(h,5);
+    h.ack(); h.echo({name:'ActionDiscardTile',step:step+1,seat:0,tile:'0p',moqie:false,riichi:action === 'riichi'});
+    await p;
+    assert.equal(wireMoqie,0); assert.equal(decodeTile(h),'0p');
+    assert.throws(() => h.run({action,tile:'0p'}),/已经提交/);
+  }
+});
+
+test('dealer opening kita uses a dealt north while a subsequent drawn north keeps moqie', async () => {
+  for (const opening of [true,false]) {
+    const h = setup({players:3,hand:[...hand.slice(0,13),'4z'],ops:[{type:11,combination:[]}],
+      lastAction:{name:opening ? 'ActionNewRound' : 'ActionDealTile',seat:0,tile:'4z',step:12}});
+    const p = h.run({action:'kita'}), wireMoqie = first(h,5);
+    await confirm(h,p,{name:'ActionBaBei',seat:0,moqie:!opening});
+    assert.equal(wireMoqie,Number(!opening));
+  }
+});
+
+test('opening confirmation still rejects another physical tile, seat, riichi, step or moqie', async () => {
+  for (const mismatch of [{tile:'5p'},{seat:1},{riichi:true},{step:14},{moqie:true}]) {
+    const h = setup({hand:[...hand.slice(0,12),'5p','0p'],
+      lastAction:{name:'ActionNewRound',seat:0,tile:'0p',step:12}});
+    const p = h.run({action:'discard',tile:'0p'});
+    h.ack(); h.echo({name:'ActionDiscardTile',seat:0,tile:'0p',moqie:false,riichi:false,...mismatch});
+    await assert.rejects(p,/未确认|不连续/);
+    assert.equal(h.sent.length,1);
+  }
+});
+
+test('normal draws still require the submitted moqie in discard, riichi and kita echoes', async () => {
+  for (const action of ['discard','riichi','kita']) {
+    const h = setup({players:3,hand:[...hand.slice(0,13),'4z'],
+      ops:[{type:1,combination:[]},{type:7,combination:['4z']},{type:11,combination:[]}]});
+    const p = h.run({action,tile:'4z'});
+    assert.equal(first(h,5),1);
+    h.ack(); h.echo({name:action === 'kita' ? 'ActionBaBei' : 'ActionDiscardTile',seat:0,tile:'4z',
+      moqie:false,riichi:action === 'riichi'});
+    await assert.rejects(p,/未确认/);
+    assert.equal(h.sent.length,1);
+  }
+});
+
 test('riichi follows the offered physical/family declaration and requires a riichi discard echo', async () => {
   // Official MJPai.Distance ignores the red flag in both LiqiSelect and Action_LiQi.
   for (const offered of ['0p','5p']) for (const tile of ['0p','5p']) {

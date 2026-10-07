@@ -12,6 +12,8 @@
   const reconnectError = message => Object.assign(new Error(message), {recoverable:true});
   const validTile = tile => typeof tile === 'string' && /^(?:[0-9][mps]|[1-7]z)$/.test(tile);
   const family = tile => tile.replace(/^0/, '5');
+  // The dealer's 14th dealt tile is lastDraw for hand analysis, not a wire draw.
+  const isDrawn = (state, tile) => state.lastAction?.name !== 'ActionNewRound' && tile === state.lastDraw;
   const sameTiles = (a, b) => Array.isArray(a) && Array.isArray(b) &&
     JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
   const fingerprint = state => JSON.stringify(['phase','gameId','selfSeat','playerCount','round','match',
@@ -129,7 +131,7 @@
           check(!locked && detail.combination.some(tile => validTile(tile) &&
             family(tile) === family(choice.tile)), '建议立直弃牌未经服务端许可');
         }
-        put('tile', 3, choice.tile); put('moqie', 5, choice.tile === state.lastDraw);
+        put('tile', 3, choice.tile); put('moqie', 5, isDrawn(state, choice.tile));
       } else if (['chi','pon','daiminkan'].includes(action)) {
         const last = state.lastAction, river = state.rivers?.[choice.fromSeat]?.at(-1);
         check(!locked && reaction && last?.name === 'ActionDiscardTile' && last.step === state.lastStep &&
@@ -158,7 +160,7 @@
       } else if (action === 'kita') {
         check(!reaction && state.playerCount === 3 && state.hand.includes('4z'), '拔北需要三麻及手中北牌');
         check(!locked || state.lastDraw === '4z', '立直后只能拔本次摸到的北');
-        put('moqie', 5, state.lastDraw === '4z');
+        put('moqie', 5, isDrawn(state, '4z'));
       } else if (action === 'abort') {
         const terminals = new Set(state.hand.map(family).filter(tile => /^[19][mps]$|^[1-7]z$/.test(tile)));
         check(!reaction && !locked && terminals.size >= 9, '九种九牌的手牌条件不成立');
@@ -172,7 +174,8 @@
     check(snapshot(expected).canAct, '提交前牌局状态发生变化');
     submitted = key; submittedStable = stableSubmission(state);
     return new Promise((resolve, reject) => {
-      const request = pending = {state, choice:JSON.parse(JSON.stringify(choice)), action, method, ack:false, echo:false, finish};
+      const request = pending = {state, choice:JSON.parse(JSON.stringify(choice)), action, method,
+        moqie:payload.moqie, ack:false, echo:false, finish};
       const timer = setTimeout(() => finish(reconnectError('操作回应或权威动作确认超时；等待权威状态推进，暂不重复操作')),
         Math.min(60000, Math.max(10000, current.remainingMs + 5000)));
       function finish(error) {
@@ -221,7 +224,7 @@
     if (action === 'pass') confirmed = !event.unsupported && ['ActionDealTile','ActionDiscardTile','ActionChiPengGang',
       'ActionAnGangAddGang','ActionBaBei','ActionHule','ActionNoTile','ActionLiuJu'].includes(event.name);
     else if (action === 'discard' || action === 'riichi') confirmed = own && event.name === 'ActionDiscardTile' &&
-      event.tile === choice.tile && Boolean(event.riichi) === (action === 'riichi') && Boolean(event.moqie) === (choice.tile === state.lastDraw);
+      event.tile === choice.tile && Boolean(event.riichi) === (action === 'riichi') && Boolean(event.moqie) === request.moqie;
     else if (['chi','pon','daiminkan'].includes(action)) confirmed = own && event.name === 'ActionChiPengGang' &&
       event.type === ({chi:0,pon:1,daiminkan:2}[action]) && sameTiles(event.tiles, [...choice.consumed,choice.calledTile]) &&
       Array.isArray(event.froms) && event.froms.length === event.tiles.length &&
@@ -230,7 +233,7 @@
     else if (action === 'ankan' || action === 'shouminkan') confirmed = own && event.name === 'ActionAnGangAddGang' &&
       event.type === (action === 'ankan' ? 3 : 2) && validTile(event.tile) &&
       (action === 'ankan' ? family(event.tile) === family(choice.consumed[0]) : event.tile === choice.consumed[0]);
-    else if (action === 'kita') confirmed = own && event.name === 'ActionBaBei' && Boolean(event.moqie) === (state.lastDraw === '4z');
+    else if (action === 'kita') confirmed = own && event.name === 'ActionBaBei' && Boolean(event.moqie) === request.moqie;
     else if (action === 'abort') confirmed = own && event.name === 'ActionLiuJu' && event.type === 1;
     else confirmed = event.name === 'ActionHule' && event.hules?.some(h => h.seat === state.selfSeat && Boolean(h.zimo) === (action === 'tsumo'));
     if (!confirmed) request.finish(new Error('权威牌局动作已推进，但未确认本次建议操作；请核对牌局'));
