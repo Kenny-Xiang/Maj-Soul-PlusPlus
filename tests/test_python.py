@@ -8,11 +8,22 @@ import tempfile
 import unittest
 
 from terminal_stats import TerminalLog, format_turn
+from monitor import overlay_update
 
 ROOT = Path(__file__).resolve().parent
 
 
 class OutputTests(unittest.TestCase):
+    def test_advice_is_delivered_to_automation_with_its_original_key(self):
+        advice = {'status': 'win', 'action': 'ron', 'message': '当前可荣和'}
+        script = overlay_update({'kind': 'advice', 'adviceKey': 'session:42', 'advice': advice})
+        self.assertIn('window.__mjStatsOverlay?.update(', script)
+        self.assertIn('window.__mjAutoplay?.onAdvice(', script)
+        payload = json.loads(script.split('window.__mjAutoplay?.onAdvice(', 1)[1][:-2])
+        self.assertEqual(payload['adviceKey'], 'session:42')
+        self.assertEqual(payload['advice'], advice)
+        self.assertNotIn('__mjAutoplay', overlay_update({'kind': 'status', 'phase': 'waiting'}))
+
     def setUp(self):
         self.event = json.loads((ROOT / "fixtures/turn.json").read_text(encoding="utf-8"))
 
@@ -39,6 +50,15 @@ class OutputTests(unittest.TestCase):
             log.accept({"session": "test", "serial": 1, "kind": "heartbeat"})
             self.assertEqual(out.getvalue(), "")
             self.assertFalse(log.json_path.exists())
+
+    def test_automation_reason_is_logged_without_invalidating_the_advisor(self):
+        event = {'session':'test', 'serial':1, 'kind':'automation',
+                 'phase':'paused', 'enabled':False, 'message':'等待服务器确认超时'}
+        with tempfile.TemporaryDirectory() as folder:
+            log = TerminalLog(folder)
+            log.accept(event)
+            self.assertIn('[自动打牌] 等待服务器确认超时', log.text_path.read_text())
+            self.assertIsNone(overlay_update(event))
 
     def test_riichi_marker_follows_other_players_names(self):
         for players in (3, 4):

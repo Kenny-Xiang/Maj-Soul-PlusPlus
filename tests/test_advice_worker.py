@@ -214,8 +214,45 @@ class AdviceWorkerTests(unittest.TestCase):
         result = eventually(worker.take_result)
         self.assertEqual(result['advice']['status'], 'unavailable')
         self.assertIn('ValueError', result['advice']['error'])
+        self.assertIsNot(result['advice'].get('recoverable'), True)
         worker.submit('good', {'ok': True})
         self.assertEqual(eventually(worker.take_result)['advice']['status'], 'waiting')
+
+    def test_budget_marker_reaches_the_exact_window_without_retrying_or_partial_advice(self):
+        import advisor
+        from test_advisor import state
+
+        checks = 0
+
+        def expire():
+            nonlocal checks
+            checks += 1
+            raise advisor._SearchBudgetExceeded('test budget exhausted')
+
+        worker = AdviceWorker()
+        try:
+            with patch.object(advisor, '_check_search', side_effect=expire):
+                worker.submit('budget-window', state())
+                result = eventually(worker.take_result)
+            self.assertEqual(checks, 1, 'the same window is not automatically retried')
+            self.assertEqual(result['adviceKey'], 'budget-window')
+            self.assertEqual(result['advice']['status'], 'unavailable')
+            self.assertEqual(result['advice']['reason'], 'search_budget_exceeded')
+            self.assertTrue(result['advice']['recoverable'])
+            self.assertEqual(result['advice']['candidates'], [])
+            self.assertIsNone(result['advice']['best'])
+            script = overlay_update(result)
+            self.assertIn('"reason": "search_budget_exceeded"', script)
+            self.assertIn('"recoverable": true', script)
+            self.assertIsNone(worker.take_result())
+            worker.submit('next-window', {'phase': 'between_rounds'})
+            next_result = eventually(worker.take_result)
+            self.assertEqual(next_result['adviceKey'], 'next-window')
+            self.assertEqual(next_result['advice']['status'], 'waiting')
+        finally:
+            worker.close()
+            worker.thread.join(3)
+        self.assertFalse(worker.thread.is_alive())
 
     def test_overlay_packets_are_keyed_to_the_exact_turn(self):
         event = json.loads((Path(__file__).parent / 'fixtures/turn.json').read_text())

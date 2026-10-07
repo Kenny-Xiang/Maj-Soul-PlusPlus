@@ -34,6 +34,53 @@ const authResponse = ({category=2, modeId=12, mode=2, seats=[11,22,4000000007,44
 const rpcFrame = (kind, id, name, data) => new Uint8Array([kind,id & 255,id >> 8,
   ...str(1,name), ...bytes(2,data)]);
 
+test('the initial match-start notification waits for the first round without creating an incomplete playing state', () => {
+  const state = core.emptyState(); state.phase = 'connected'; state.selfSeat = 0;
+  core.applyRestore(state, core.restore(new Uint8Array()));
+  const start = core.action(core.envelope(actionFrame('ActionMJStart',0)).data);
+  assert.equal(core.apply(state,start),true);
+  assert.equal(state.phase,'connected'); assert.equal(state.lastStep,0);
+  assert.equal(state.baseline,null); assert.equal(state.canAct,false);
+  assert.equal(state.handComplete,false); assert.equal(state.historyComplete,false);
+  assert.equal(state.recovery,null, 'initial loading is not reconnect recovery');
+  assert.equal(core.apply(state,start),false, 'a duplicate start must not restart initialization');
+  core.apply(state,{name:'ActionNewRound',step:1,selfSeat:0,
+    hand:['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','7z','1z'],
+    scores:[25000,25000,25000,25000],chang:0,ju:0,ben:0,doras:['1p'],
+    operations:[1],operationDetails:[{type:1,combination:[]}]});
+  assert.equal(state.phase,'playing'); assert.equal(state.canAct,true);
+  assert.equal(state.baseline,'new_round'); assert.equal(state.historyComplete,true);
+});
+
+test('match-start cannot conceal an existing invalid baseline or missing prior actions', () => {
+  for (const changes of [{baseline:'snapshot_unverified'}, {lastStep:3}]) {
+    const state = Object.assign(core.emptyState(),changes);
+    core.apply(state,{name:'ActionMJStart',step:4});
+    assert.equal(state.phase,'playing'); assert.equal(state.handComplete,false);
+    assert.equal(state.historyComplete,false); assert.equal(state.canAct,false);
+  }
+});
+
+test('recorded operation timers keep their wire millisecond units and replay does not create a deadline', () => {
+  const event = decoded.find(e => e.name === 'ActionDealTile' && e.step === 66);
+  assert.deepEqual(event.operationTiming,{timeFixed:5000,timeAdd:20000});
+  const state = core.emptyState();
+  core.apply(state,{name:'ActionNewRound',step:0,selfSeat:0,hand:['1p'],scores:[25000,25000,25000,25000],
+    chang:0,ju:0,ben:0,operationDetails:[{type:1,combination:[]}],operations:[1],
+    operationTiming:event.operationTiming});
+  assert.equal(state.operationTiming,null);
+  core.apply(state,{...event,step:1,operationTiming:{...event.operationTiming,receivedAt:123}});
+  assert.equal(state.operationTiming.receivedAt,123);
+});
+
+test('winning and abortive-draw echoes preserve the exact seat and result type', () => {
+  const decode = frame => core.action(core.envelope(frame).data);
+  const win = decode(actionFrame('ActionHule',8,bytes(1,[...num(4,2),...num(5,1)])));
+  assert.deepEqual(win.hules,[{seat:2,zimo:true}]);
+  const draw = decode(actionFrame('ActionLiuJu',9,[...num(1,1),...num(3,2)]));
+  assert.equal(draw.type,1); assert.equal(draw.seat,2);
+});
+
 test('authGame resolves own seat by account id, reads the correct rank and omits private fields', () => {
   const account = 4000000007;
   assert.equal(core.authAccount(new Uint8Array([...num(1,account), ...str(2,'private-token'),
@@ -519,6 +566,7 @@ test('restored replay resumes decisions only after the next continuous live acti
   assert.equal(state.handComplete,true);
   assert.equal(state.historyComplete,false);
   assert.equal(state.canAct,false);
+  assert.deepEqual(state.recovery,{status:'waiting',reason:'live'});
   assert.equal(core.apply(state,previous),false);
   assert.equal(core.apply(state,opening),false);
   assert.equal(state.historyComplete,false);
@@ -527,6 +575,7 @@ test('restored replay resumes decisions only after the next continuous live acti
   assert.equal(state.canAct,true);
   assert.equal(state.canDiscard,true);
   assert.equal(state.warning,'');
+  assert.equal(state.recovery,null);
   const reference = core.emptyState();
   for (const event of [opening,previous,next]) core.apply(reference,event);
   assert.deepEqual({...state,baseline:reference.baseline},reference);
@@ -534,7 +583,7 @@ test('restored replay resumes decisions only after the next continuous live acti
 
 test('authenticated restore retains rank and inferred seat without reopening replayed operations', () => {
   const auth = core.authGame(authResponse(),4000000007), state = core.emptyState();
-  Object.assign(state,{match:auth.match,selfSeat:auth.selfSeat});
+  Object.assign(state,{match:auth.match,selfSeat:auth.selfSeat,gameId:'game-1'});
   const opening = {name:'ActionNewRound',step:0,
     hand:['1p','1p','2p','3p','4p','5p','6p','7p','8p','9p','1s','1s','1z'],
     scores:Array(4).fill(25000),doras:['1m'],left:69,chang:1,ju:3,ben:0};
@@ -546,6 +595,7 @@ test('authenticated restore retains rank and inferred seat without reopening rep
   assert.equal(state.round.isFinal,true);
   assert.equal(state.round.isExtension,false);
   assert.equal(state.handComplete,true);
+  assert.equal(state.gameId,'game-1');
   assert.equal(state.historyComplete,false);
   assert.equal(state.canAct,false);
   assert.deepEqual(state.operations,[]);
@@ -605,6 +655,7 @@ test('invalid restored replay or live continuation never enables decisions', asy
       assert.equal(state.historyComplete,false);
       assert.equal(state.canAct,false);
       assert.equal(state.canDiscard,false);
+      assert.equal(state.recovery.status,'failed');
     });
   }
   const snapshot = core.emptyState();
@@ -613,6 +664,54 @@ test('invalid restored replay or live continuation never enables decisions', asy
   core.apply(snapshot,next);
   assert.equal(snapshot.historyComplete,false);
   assert.equal(snapshot.canAct,false);
+  assert.deepEqual(snapshot.recovery,{status:'waiting',reason:'snapshot'});
+});
+
+test('complete terminal recovery permits round settlement without opening a decision', () => {
+  for (const name of ['ActionHule','ActionNoTile','ActionLiuJu']) {
+    const state = Object.assign(core.emptyState(),{gameId:'game-1',recovery:{status:'waiting',reason:'restore'}});
+    const opening = {name:'ActionNewRound',step:0,selfSeat:0,hand:['1p'],
+      scores:[25000,25000,25000,25000],doras:[],chang:0,ju:0,ben:0};
+    core.applyRestore(state,{actions:[opening,{name,step:1,matchEnd:false}],step:2});
+    assert.equal(state.phase,'between_rounds');
+    assert.equal(state.recovery,null);
+    assert.equal(state.gameId,'game-1');
+    assert.equal(state.canAct,false); assert.equal(state.operationTiming,null);
+    core.applyRestore(state,{actions:[opening,{name,step:3,matchEnd:false}],step:4});
+    assert.equal(state.recovery.status,'failed', 'terminal actions cannot repair a replay gap');
+  }
+});
+
+test('a continuous live action cannot bypass a newer in-flight restore', () => {
+  const state = core.emptyState();
+  core.applyRestore(state,{actions:[{name:'ActionNewRound',step:0,selfSeat:0,hand:['1p'],
+    scores:Array(4).fill(25000),chang:0,ju:0,ben:0}],step:1});
+  state.recovery = {status:'waiting',reason:'restore'};
+  core.apply(state,{name:'ActionDealTile',step:1,seat:0,tile:'2p',selfSeat:0,
+    operations:[1],operationDetails:[{type:1,combination:[]}],
+    operationTiming:{timeFixed:5000,timeAdd:20000,receivedAt:9000}});
+  assert.equal(state.historyComplete,false); assert.equal(state.canAct,false);
+  assert.deepEqual(state.recovery,{status:'waiting',reason:'restore'});
+});
+
+test('snapshot recovery waits for a new round and empty recovery retains its waiting state', () => {
+  const state = Object.assign(core.emptyState(),{gameId:'game-1',recovery:{status:'waiting',reason:'restore'}});
+  core.applyRestore(state,{actions:[],step:0});
+  assert.deepEqual(state.recovery,{status:'waiting',reason:'restore'});
+  core.applyRestore(state,{actions:[],step:5,snapshot:{selfSeat:0,hand:['1p'],doras:[],left:40,
+    chang:0,ju:0,ben:0,players:Array.from({length:4},()=>({score:25000,discards:[],melds:[]}))}});
+  assert.deepEqual(state.recovery,{status:'waiting',reason:'snapshot'});
+  assert.equal(state.gameId,'game-1');
+  core.apply(state,{name:'ActionDealTile',step:6,seat:0,tile:'2p',selfSeat:0,
+    operations:[1],operationDetails:[{type:1,combination:[]}],
+    operationTiming:{timeFixed:5000,timeAdd:20000,receivedAt:8000}});
+  assert.equal(state.canAct,false);
+  assert.deepEqual(state.recovery,{status:'waiting',reason:'snapshot'});
+  core.apply(state,{name:'ActionNewRound',step:0,selfSeat:0,hand:['2p'],scores:Array(4).fill(25000),
+    chang:0,ju:1,ben:0,operations:[1],operationDetails:[{type:1,combination:[]}],
+    operationTiming:{timeFixed:5000,timeAdd:20000,receivedAt:9000}});
+  assert.equal(state.recovery,null); assert.equal(state.canAct,true);
+  assert.equal(state.operationTiming.receivedAt,9000); assert.equal(state.gameId,'game-1');
 });
 
 test('reconnected socket restores advice with a fresh key after continuous live actions', async () => {
@@ -623,14 +722,14 @@ test('reconnected socket restores advice with a fresh key after continuous live 
   }
   const window = {WebSocket:Socket, __mjStatsOverlay:{invalidateAdvice(){},expectAdvice(key){keys.push(key);}},
     webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,performance,
     Uint8Array,ArrayBuffer,Blob,URL,setInterval:fn=>fn,clearInterval(){},console:{log(){}}});
   const feed = async (socket,frame) => {
     socket.dispatchEvent(new MessageEvent('message',{data:frame.buffer}));
     await new Promise(setImmediate);
   };
   const authenticate = async (socket,id) => {
-    socket.send(rpcFrame(2,id,'.lq.FastTest.authGame',num(1,11)));
+    socket.send(rpcFrame(2,id,'.lq.FastTest.authGame',[...num(1,11),...str(3,'private-reconnect-game')]));
     await feed(socket,rpcFrame(3,id,'',authResponse({modeId:24,mode:12,seats:[11,22,4000000007]})));
     assert.equal(window.__mjMonitor.getSnapshot().state.match.modeId,24);
   };
@@ -640,10 +739,14 @@ test('reconnected socket restores advice with a fresh key after continuous live 
   await authenticate(old,40);
   await feed(old,actionFrame('ActionNewRound',0,opening));
   assert.equal(posts.at(-1).state.canAct,true);
+  assert.equal(posts.at(-1).state.recovery,null);
+  const originalGameId = posts.at(-1).state.gameId;
+  assert.equal(typeof originalGameId,'string');
   const originalKey = keys.at(-1);
   old.dispatchEvent(new Event('close'));
   assert.equal(window.__mjMonitor.getSnapshot().state.canAct,false);
   assert.equal(window.__mjMonitor.getSnapshot().state.match,null);
+  assert.equal(posts.at(-1).recovery.status,'waiting');
   const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-new');
   assert.equal(window.__mjMonitor.getSnapshot().state.match,null);
   await authenticate(game,41);
@@ -655,6 +758,9 @@ test('reconnected socket restores advice with a fresh key after continuous live 
   assert.equal(posts.at(-1).state.handComplete,true);
   assert.equal(posts.at(-1).state.historyComplete,false);
   assert.equal(posts.at(-1).state.canAct,false);
+  assert.deepEqual(posts.at(-1).state.recovery,{status:'waiting',reason:'live'});
+  assert.equal(posts.at(-1).state.gameId,originalGameId);
+  assert.equal(posts.at(-1).state.operationTiming,null);
   assert.equal(posts.at(-1).state.match.modeId,24);
   assert.equal(posts.at(-1).state.selfSeat,0);
   assert.equal(posts.at(-1).state.round.isFinal,false);
@@ -670,12 +776,59 @@ test('reconnected socket restores advice with a fresh key after continuous live 
   assert.equal(latest.state.canAct,true);
   assert.equal(latest.state.canDiscard,true);
   assert.equal(latest.state.warning,'');
+  assert.equal(latest.state.recovery,null);
   assert.equal(latest.state.match.modeId,24);
   assert.equal(keys.at(-1),`${latest.session}:${latest.serial}`);
   assert.notEqual(keys.at(-1),originalKey);
   assert.notEqual(keys.at(-1),restoredKey);
   assert.equal(window.__mjMonitor.getSnapshot().errors,0);
+  assert.doesNotMatch(JSON.stringify(posts),/private-reconnect-game/);
   window.__mjMonitor.uninstall();
+});
+
+test('an authenticated lobby with no active game clears only pending recovery and publishes a waiting reset', async () => {
+  const posts = [];
+  class Socket extends EventTarget {
+    constructor(url) {super(); this.url=url; this.readyState=1;}
+    send() {}
+  }
+  const window = {WebSocket:Socket,webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,performance,
+    Uint8Array,ArrayBuffer,Blob,URL,setInterval:fn=>fn,clearInterval(){},console:{log(){}}});
+  const monitor = window.__mjMonitor;
+  const initialPosts = posts.length;
+  monitor.onLobbyRecovery();
+  assert.equal(posts.length,initialPosts, 'ordinary initial loading is untouched');
+  const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway');
+  const feed = async frame => {
+    game.dispatchEvent(new MessageEvent('message',{data:frame.buffer}));
+    await new Promise(setImmediate);
+  };
+  await feed(actionFrame('ActionNewRound',0,[...str(4,'1p'),...Array(4).fill(0).flatMap(()=>num(6,25000)),
+    ...bytes(7,[...num(1,0),...bytes(2,num(1,1))])]));
+  const playing = JSON.stringify(monitor.getSnapshot()), playingPosts = posts.length;
+  monitor.onLobbyRecovery();
+  assert.equal(JSON.stringify(monitor.getSnapshot()),playing);
+  assert.equal(posts.length,playingPosts, 'an active game cannot be reset by this callback');
+  game.dispatchEvent(new Event('close'));
+  assert.equal(monitor.getSnapshot().state.recovery.status,'waiting');
+  monitor.onLobbyRecovery();
+  const reset = monitor.getSnapshot();
+  assert.deepEqual(JSON.parse(JSON.stringify(reset.state)),{...core.emptyState(),phase:'waiting',warning:''});
+  assert.equal(reset.turns,0); assert.equal(reset.received,0); assert.equal(reset.errors,0);
+  assert.equal(posts.at(-1).phase,'waiting'); assert.equal(posts.at(-1).reset,true);
+  assert.equal(posts.at(-1).recovery,null);
+  const afterReset = posts.length;
+  monitor.onLobbyRecovery(); assert.equal(posts.length,afterReset, 'repeated lobby evidence cannot reset twice');
+  const next = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-next');
+  next.dispatchEvent(new MessageEvent('message',{data:new Uint8Array([1,255]).buffer}));
+  await new Promise(setImmediate);
+  assert.equal(monitor.getSnapshot().state.recovery.status,'failed');
+  const failed = JSON.stringify(monitor.getSnapshot()), failedPosts = posts.length;
+  monitor.onLobbyRecovery();
+  assert.equal(JSON.stringify(monitor.getSnapshot()),failed);
+  assert.equal(posts.length,failedPosts, 'real parse errors must not be hidden by lobby recovery');
+  monitor.uninstall();
 });
 
 test('replaced sockets cannot apply delayed frames or errors to the active connection', async t => {
@@ -693,7 +846,7 @@ test('replaced sockets cannot apply delayed frames or errors to the active conne
       }
       const posts = [];
       const window = {WebSocket:Socket,webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-      vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+      vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,performance,
         Uint8Array,ArrayBuffer,Blob,URL,setInterval:fn=>fn,clearInterval(){},console:{log(){}}});
       const old = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-old');
       old.dispatchEvent(new MessageEvent('message',{data:new DelayedBlob([Buffer.from(frames[0].hex,'hex')])}));
@@ -729,6 +882,37 @@ test('collector requires the native bridge and leaves unsupported pages untouche
   assert.equal(unrelated.reason, 'not game page');
 });
 
+test('collector sends authoritative windows and manual operation invalidation to automation', async () => {
+  const events = [], inputs = [], sent = [];
+  let stopped = false;
+  class Socket extends EventTarget {
+    constructor(url) {super();this.url=url;this.readyState=1;}
+    send(data) {sent.push(data);}
+  }
+  const window = {WebSocket:Socket, __mjAutoplay:{onEvent:e=>events.push(e),
+    onInput:()=>inputs.push(true),stop:()=>{stopped=true;}},
+    webkit:{messageHandlers:{mjStatistics:{postMessage(){}}}}};
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,performance,
+    Uint8Array,ArrayBuffer,Blob,URL,setInterval:()=>0,clearInterval(){},console:{log(){}}});
+  const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
+  const opening = actionFrame('ActionNewRound',0,[...num(2,0),
+    ...Array(14).fill('1p').flatMap(tile=>str(4,tile)),
+    ...Array(4).fill(25000).flatMap(score=>num(6,score)),
+    ...bytes(7,[...num(1,0),...bytes(2,num(1,1))])]);
+  game.dispatchEvent(new MessageEvent('message',{data:opening.buffer}));
+  await new Promise(setImmediate);
+  const turn = events.find(e=>e.kind==='turn');
+  assert.equal(turn.state.canAct,true);assert.equal(turn.state.lastStep,0);
+  assert.ok(turn.session);assert.ok(Number.isInteger(turn.serial));
+  const request=rpcFrame(2,1,'.lq.FastTest.inputOperation',[]);game.send(request);
+  assert.equal(inputs.length,1);assert.equal(sent[0],request);
+  assert.equal(window.__mjMonitor.getSnapshot().state.canAct,false);
+  assert.equal(turn.state.canAct,true); // The published window is an immutable snapshot.
+  game.dispatchEvent(new Event('close'));
+  assert.equal(events.at(-1).phase,'disconnected');
+  window.__mjMonitor.stop();assert.equal(stopped,true);
+});
+
 test('native listener preserves socket sends and fully detaches on uninstall', async () => {
   const posts = [], sent = [], timers = new Set();
   class Socket extends EventTarget {
@@ -736,7 +920,7 @@ test('native listener preserves socket sends and fully detaches on uninstall', a
     send(...args) {sent.push({socket:this,args}); return 'original-result';}
   }
   const window = {WebSocket:Socket, webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder,performance, Uint8Array, ArrayBuffer, Blob, URL,
     setInterval:fn=>{timers.add(fn);return fn;}, clearInterval:fn=>timers.delete(fn), console:{log(){}}};
   vm.runInNewContext(collectorCode, sandbox);
   const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
@@ -761,6 +945,51 @@ test('native listener preserves socket sends and fully detaches on uninstall', a
   assert.equal(posts.length, before);
 });
 
+for (const injected of ['none', 'acknowledged', 'pending']) test(`collector uninstall coordinates transport shutdown (${injected})`, async () => {
+  const posts = [], sent = [], received = [], timers = new Set();
+  class Socket extends EventTarget {
+    constructor(url) {super(); this.url = url; this.readyState = 1;}
+    send(data) {sent.push(data);}
+  }
+  const window = {WebSocket:Socket, webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
+  const context = vm.createContext({window, core, location:{hostname:'game.maj-soul.com',href:'https://game.maj-soul.com/1/'},
+    TextEncoder, TextDecoder, performance, Uint8Array, ArrayBuffer, Blob, URL, MessageEvent,
+    setTimeout:fn=>{timers.add(fn);return fn;}, clearTimeout:fn=>timers.delete(fn),
+    setInterval:fn=>{timers.add(fn);return fn;}, clearInterval:fn=>timers.delete(fn), console:{log(){}}});
+  vm.runInContext(fs.readFileSync(path.join(__dirname, '../src/unity_transport.js'), 'utf8'), context);
+  vm.runInContext(collectorCode, context);
+  const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
+  game.addEventListener('message', event=>received.push(core.envelope(new Uint8Array(event.data))));
+  const feed = async data => {
+    game.dispatchEvent(new MessageEvent('message', {data:data.buffer}));
+    await new Promise(setImmediate);
+  };
+  game.send(rpcFrame(2, 7, '.lq.FastTest.authGame', num(1,23)));
+  await feed(rpcFrame(3, 7, '', []));
+  let work, wireId;
+  if (injected !== 'none') {
+    work = window.__mjUnityTransport.request('.lq.FastTest.confirmNewRound', new Uint8Array());
+    wireId = core.envelope(sent.at(-1)).id;
+    if (injected === 'acknowledged') {await feed(rpcFrame(3, wireId, '', [])); await work;}
+  }
+  window.__mjMonitor.uninstall();
+  assert.equal(window.WebSocket, Socket);
+  if (injected === 'pending') await assert.rejects(work, /已停止/);
+  assert.equal(timers.size, 0);
+  const before = sent.length;
+  await assert.rejects(window.__mjUnityTransport.request('.lq.FastTest.confirmNewRound', new Uint8Array()), /已停止/);
+  assert.equal(sent.length, before);
+  if (injected === 'pending') {
+    const count = received.length;
+    await feed(rpcFrame(3, wireId, '', []));
+    assert.equal(received.length, count, 'a late automation ACK never reaches Unity');
+    game.send(rpcFrame(2, wireId, '.lq.FastTest.heartbeat', []));
+    const remapped = core.envelope(sent.at(-1)).id;
+    await feed(rpcFrame(3, remapped, '', []));
+    assert.equal(received.at(-1).id, wireId, 'native IDs remain correlated after shutdown');
+  } else assert.equal(game.send, Socket.prototype.send);
+});
+
 test('browser correlates authGame separately from restore and clears stale rank metadata', async () => {
   const posts = [], sent = [];
   let invalidations = 0;
@@ -770,16 +999,16 @@ test('browser correlates authGame separately from restore and clears stale rank 
   }
   const window = {WebSocket:Socket,__mjStatsOverlay:{invalidateAdvice(){invalidations++;}},
     webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,
+  vm.runInNewContext(collectorCode,{window,location:{hostname:'game.maj-soul.com'},TextDecoder,performance,
     Uint8Array,ArrayBuffer,Blob,URL,setInterval:()=>0,clearInterval(){},console:{log(){}}});
   const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
   const receive = async (socket, data) => {
     socket.dispatchEvent(new MessageEvent('message',{data:data.buffer}));
     await new Promise(setImmediate);
   };
-  const authenticate = (socket,id) => {
+  const authenticate = (socket,id,uuid='private-game-uuid') => {
     const request = rpcFrame(2,id,'.lq.FastTest.authGame',[...num(1,4000000007),
-      ...str(2,'private-token'),...str(3,'private-game-uuid')]);
+      ...str(2,'private-token'),...str(3,uuid)]);
     assert.equal(socket.send(request),'original'); assert.equal(sent.at(-1),request);
   };
   const state = () => window.__mjMonitor.getSnapshot().state;
@@ -788,6 +1017,9 @@ test('browser correlates authGame separately from restore and clears stale rank 
   await receive(game,reply(41));
   assert.equal(state().match,null);
   await receive(game,reply(42));
+  const originalGameId = state().gameId;
+  assert.equal(originalGameId,'game-1');
+  assert.equal(state().recovery,null);
   assert.equal(state().match.levelId,10403); assert.equal(state().selfSeat,2);
   assert.equal(state().lastStep,null); assert.equal(state().phase,'connected');
   assert.equal(posts.filter(p=>p.kind==='turn').length,0);
@@ -797,10 +1029,21 @@ test('browser correlates authGame separately from restore and clears stale rank 
   assert.equal(state().round.isFinal,true); assert.equal(state().match.modeId,12);
   assert.equal(state().selfSeat,2);
   game.send(rpcFrame(2,43,'.lq.FastTest.syncGame',[]));
+  assert.deepEqual(JSON.parse(JSON.stringify(state().recovery)),{status:'waiting',reason:'restore'});
+  assert.equal(state().canAct,false); assert.equal(state().lastAction,null);
+  assert.equal(posts.at(-1).recovery.status,'waiting', 'same-socket sync closes the old window before its response');
+  await receive(game,actionFrame('ActionNewRound',1,[...num(1,1),...num(2,3),...num(3,1),...str(4,'1p'),
+    ...Array(4).fill(0).flatMap(()=>num(6,25000)),...bytes(7,[...num(1,2),...bytes(2,num(1,1))])]));
+  assert.equal(state().canAct,false, 'a queued new round cannot reopen a window while sync is in flight');
+  assert.equal(state().operationTiming,null);
+  assert.equal(state().recovery.reason,'restore');
   await receive(game,rpcFrame(3,43,'',[...num(3,1)]));
   assert.equal(state().match.modeId,12); assert.equal(state().canAct,false);
   // A second game authenticating on the same socket invalidates the previous game.
   authenticate(game,44);
+  assert.equal(state().gameId,null, 'identity is bound only by a successful authentication');
+  assert.equal(state().recovery.reason,'authentication');
+  assert.equal(posts.at(-1).recovery.reason,'authentication');
   assert.equal(state().match,null); assert.equal(state().round,null);
   await receive(game,rpcFrame(3,44,'',authResponse({category:1})));
   assert.equal(state().match,null);
@@ -811,6 +1054,7 @@ test('browser correlates authGame separately from restore and clears stale rank 
   authenticate(game,46); authenticate(game,47);
   await receive(game,reply(46)); assert.equal(state().match,null);
   await receive(game,reply(47)); assert.equal(state().match.modeId,12);
+  assert.equal(state().gameId,originalGameId);
   // A newly opened connection clears the old match before receiving any actions.
   const previousInvalidations = invalidations;
   const next = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-next');
@@ -834,9 +1078,10 @@ test('browser correlates authGame separately from restore and clears stale rank 
   authenticate(next,52); await receive(next,reply(52));
   next.dispatchEvent(new Event('close')); assert.equal(state().match,null);
   const final = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-final');
-  authenticate(final,53); await receive(final,reply(53));
+  authenticate(final,53,'private-new-game'); await receive(final,reply(53));
+  assert.notEqual(state().gameId,originalGameId, 'a different authenticated game has a different opaque identity');
   window.__mjMonitor.stop(); assert.equal(state().match,null);
-  assert.doesNotMatch(JSON.stringify(posts),/4000000007|private-token|private-game-uuid|private-nickname|accountId/);
+  assert.doesNotMatch(JSON.stringify(posts),/4000000007|private-token|private-game-uuid|private-new-game|private-nickname|accountId/);
 });
 
 test('sending a decision clears stale advice immediately and preserves the original RPC unchanged', async () => {
@@ -848,7 +1093,7 @@ test('sending a decision clears stale advice immediately and preserves the origi
   }
   const window = {WebSocket:Socket, __mjStatsOverlay:{invalidateAdvice(){invalidations++;}},
     webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder,performance, Uint8Array, ArrayBuffer, Blob, URL,
     setInterval:fn=>fn, clearInterval(){}, console:{log(){}}};
   vm.runInNewContext(collectorCode,sandbox);
   const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
@@ -892,7 +1137,7 @@ test('parse errors, disconnection and stopping all close an active decision wind
     }
     const window = {WebSocket:Socket, __mjStatsOverlay:{invalidateAdvice(){}},
       webkit:{messageHandlers:{mjStatistics:{postMessage(){}}}}};
-    const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+    const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder,performance, Uint8Array, ArrayBuffer, Blob, URL,
       setInterval:fn=>fn, clearInterval(){}, console:{log(){}}};
     vm.runInNewContext(collectorCode,sandbox);
     const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');
@@ -923,7 +1168,7 @@ test('native bridge publishes every action and one initial deal without requirin
     send(data) {sent.push(data); return 'ok';}
   }
   const window = {WebSocket:Socket, webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+  const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder,performance, Uint8Array, ArrayBuffer, Blob, URL,
     setInterval:fn=>{timers.add(fn);return fn;}, clearInterval:fn=>timers.delete(fn), console:{log(){}}};
   const code = collectorCode;
   const installed = vm.runInNewContext(code, sandbox);
@@ -984,7 +1229,7 @@ test('whole-match end resets all live statistics once and next match starts at u
         send(data) {sent.push(data);}
       }
       const window = {WebSocket:Socket, webkit:{messageHandlers:{mjStatistics:{postMessage:raw=>posts.push(JSON.parse(raw))}}}};
-      const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder, Uint8Array, ArrayBuffer, Blob, URL,
+      const sandbox = {window, location:{hostname:'game.maj-soul.com'}, TextDecoder,performance, Uint8Array, ArrayBuffer, Blob, URL,
         setInterval:fn=>{timers.add(fn);return fn;}, clearInterval:fn=>timers.delete(fn), console:{log(){}}};
       vm.runInNewContext(collectorCode,sandbox);
       const game = new window.WebSocket('wss://sample.maj-soul.com/game-gateway-zone');

@@ -5,16 +5,155 @@ import os
 from pathlib import Path
 import signal
 import sys
+import time
+
+from autoplay_recovery import AutoplayRecovery
 
 ROOT = Path(__file__).resolve().parent
 DATA = Path.home() / "Library/Application Support/Maj-Soul++"
 
 
+class BackgroundActivity:
+    """Keep user-enabled automation active; restore native policies when it ends."""
+    def __init__(self, process, options, active_policy, write):
+        self.process, self.options, self.active_policy, self.write = process, options, active_policy, write
+        self.token = self.preferences = self.previous_policy = None
+        self.session = None
+        self.retired_sessions = set()
+        self.accepting = True
+        self.navigation = self.resume_request = None
+        self.pulse_request = None
+        self.last_pulse = float('-inf')
+        self.pulse_error = None
+
+    def update(self, view, session, enabled):
+        if not self.accepting or not isinstance(session, str) or not session or type(enabled) is not bool:
+            return
+        if session in self.retired_sessions:
+            return
+        self.resume_request = None
+        if session != self.session:
+            if self.session is not None:
+                self.release()
+                self.retired_sessions.add(self.session)
+            self.session = session
+        if not enabled:
+            self.release()
+            return
+        if self.token is not None:
+            return
+        self.token = self.process.beginActivityWithOptions_reason_(self.options, "Maj-Soul++ 自动打牌")
+        preferences = view.configuration().preferences()
+        policy_enabled = False
+        if (self.active_policy is not None and hasattr(preferences, "inactiveSchedulingPolicy") and
+                hasattr(preferences, "setInactiveSchedulingPolicy_")):
+            try:
+                self.previous_policy = preferences.inactiveSchedulingPolicy()
+                self.preferences = preferences
+                preferences.setInactiveSchedulingPolicy_(self.active_policy)
+                policy_enabled = True
+            except Exception as error:
+                self.write(f"[后台活动] WebKit 调度策略设置失败：{error}")
+        self.write("[后台活动] 已启用原生活动；允许锁屏和显示器休眠；" +
+                   ("WebKit 非活跃调度设为正常" if policy_enabled else "WebKit 非活跃调度策略不可用"))
+
+    def release(self):
+        token, preferences, previous = self.token, self.preferences, self.previous_policy
+        self.token = self.preferences = self.previous_policy = None
+        self.pulse_request = None
+        self.last_pulse = float('-inf')
+        self.pulse_error = None
+        try:
+            if preferences is not None:
+                preferences.setInactiveSchedulingPolicy_(previous)
+        except Exception as error:
+            self.write(f"[后台活动] WebKit 调度策略还原失败：{error}")
+        finally:
+            if token is not None:
+                self.process.endActivity_(token)
+                self.write("[后台活动] 已结束原生活动")
+
+    def reset_page(self):
+        self.accepting = False
+        self.navigation = self.resume_request = None
+        if self.session is not None:
+            self.retired_sessions.add(self.session)
+        self.session = None
+        self.release()
+
+    def navigation_started(self, navigation, preserve_activity=False):
+        self.navigation = navigation
+        self.resume_request = self.pulse_request = None
+        self.accepting = False
+        if not preserve_activity:
+            self.release()
+
+    def page_committed(self, navigation=None, preserve_activity=False):
+        if navigation != self.navigation:
+            return
+        if preserve_activity:
+            if self.session is not None:
+                self.retired_sessions.add(self.session)
+            self.session = self.navigation = self.resume_request = self.pulse_request = None
+        else:
+            self.reset_page()
+        self.accepting = True
+
+    def navigation_failed(self, view, navigation, resume_activity=True):
+        if navigation != self.navigation:
+            return
+        self.navigation = None
+        self.accepting = True
+        if not resume_activity:
+            self.resume_request = None
+            return
+        request = self.resume_request = object()
+        session = self.session
+
+        def completed(enabled, error):
+            if self.resume_request is not request or self.session != session:
+                return
+            self.resume_request = None
+            if error is not None:
+                self.write(f"[后台活动] 导航结束后无法确认自动状态：{error}")
+            else:
+                self.update(view, session, enabled is True)
+
+        try:
+            view.evaluateJavaScript_completionHandler_(
+                "location.protocol === 'https:' && location.hostname === 'game.maj-soul.com' && "
+                "window.__mjAutoplay?.getStatus().enabled === true;", completed)
+        except Exception as error:
+            completed(None, error)
+
+    def pulse(self, view, now, occluded):
+        if (not self.accepting or self.token is None or not occluded or
+                self.pulse_request is not None or now - self.last_pulse < .25):
+            return
+        request = self.pulse_request = object()
+        self.last_pulse = now
+
+        def completed(result, error):
+            if self.pulse_request is not request:
+                return
+            self.pulse_request = None
+            message = str(error) if error is not None else None
+            if message and message != self.pulse_error:
+                self.write(f"[后台活动] 后台调度未送达：{message}")
+            self.pulse_error = message
+
+        try:
+            view.evaluateJavaScript_completionHandler_("window.__mjBackground?.pulse();", completed)
+        except Exception as error:
+            completed(None, error)
+
+
 def collector_source():
     core = (ROOT / "core.cjs").read_text(encoding="utf-8")
     browser = (ROOT / "browser.js").read_text(encoding="utf-8")
+    transport = (ROOT / "unity_transport.js").read_text(encoding="utf-8")
     return ("(function(){'use strict';const core=(()=>{const module={exports:{}};\n"
-            + core + "\nreturn module.exports;})();\n" + browser + "\n})();")
+            + core + "\nreturn module.exports;})();\n" + transport + "\n" + browser + "\n})();")
 
 
 def overlay_update(event):
@@ -38,7 +177,11 @@ def overlay_update(event):
                   "text": event.get("message", "统计暂不可用") if event["kind"] == "error" else labels.get(phase, "等待最新统计")}
     else:
         return None
-    return "window.__mjStatsOverlay?.update(" + json.dumps(packet, ensure_ascii=False) + ");"
+    payload = json.dumps(packet, ensure_ascii=False)
+    script = "window.__mjStatsOverlay?.update(" + payload + ");"
+    if packet['kind'] == 'advice':
+        script += "window.__mjAutoplay?.onAdvice(" + payload + ");"
+    return script
 
 
 def main():
@@ -54,7 +197,8 @@ def main():
 
     import AppKit
     import fcntl
-    from Foundation import NSObject, NSURL, NSURLRequest, NSUUID, NSTimer
+    from Foundation import (NSObject, NSURL, NSURLRequest, NSUUID, NSTimer, NSProcessInfo,
+                            NSActivityUserInitiatedAllowingIdleSystemSleep, NSActivityIdleSystemSleepDisabled)
     from terminal_stats import TerminalLog
     from advice_worker import AdviceWorker
 
@@ -92,6 +236,11 @@ def main():
     log.write(f"文本记录：{log.text_path}\n结构化记录：{log.json_path}")
     advisor = AdviceWorker()
     advice_target = [None]
+    background = BackgroundActivity(NSProcessInfo.processInfo(),
+        NSActivityUserInitiatedAllowingIdleSystemSleep | NSActivityIdleSystemSleepDisabled,
+        getattr(WebKit, "WKInactiveSchedulingPolicyNone", None), log.write)
+    recovery = AutoplayRecovery(log.write, lambda enabled:
+        background.update(view, recovery.session, True) if enabled else background.release())
 
     class Delegate(NSObject):
         def userContentController_didReceiveScriptMessage_(self, controller, message):
@@ -100,6 +249,8 @@ def main():
                 return
             try:
                 event = json.loads(str(message.body()))
+                if event['kind'] == 'automation_intent' and message.webView() == view:
+                    recovery.on_intent(event)
                 log.accept(event)
                 if event['kind'] == 'turn':
                     advice_target[0] = message.webView()
@@ -113,16 +264,40 @@ def main():
                 print(f"[记录失败] {error}", file=sys.stderr, flush=True)
 
         def webView_didFailProvisionalNavigation_withError_(self, view, navigation, error):
+            if view == window.contentView():
+                controlled = recovery.navigation_failed(view, navigation)
+                background.navigation_failed(view, navigation, resume_activity=not controlled)
             if error.code() != -999:
                 advisor.invalidate()
                 log.write(f"[页面加载失败] {error.localizedDescription()}")
 
+        def webView_didFailNavigation_withError_(self, view, navigation, error):
+            self.webView_didFailProvisionalNavigation_withError_(view, navigation, error)
+
+        def webView_didStartProvisionalNavigation_(self, view, navigation):
+            if view == window.contentView():
+                controlled = recovery.navigation_started(navigation)
+                background.navigation_started(navigation, preserve_activity=controlled)
+                advisor.invalidate()
+                advice_target[0] = None
+
+        def webView_didCommitNavigation_(self, view, navigation):
+            if view == window.contentView():
+                controlled = recovery.page_committed(navigation)
+                background.page_committed(navigation, preserve_activity=controlled)
+
         def webViewWebContentProcessDidTerminate_(self, view):
             advisor.invalidate()
+            if view == window.contentView():
+                recovery.close()
+                background.reset_page()
+                advice_target[0] = None
             log.write("[页面进程已退出] 监听中断，请关闭窗口后重新启动程序。")
 
         def windowWillClose_(self, notification):
             if notification.object() is window:
+                recovery.close()
+                background.reset_page()
                 advisor.close()
                 log.write("游戏窗口已关闭，监测结束。")
                 app.terminate_(None)
@@ -184,12 +359,19 @@ def main():
     script = WebKit.WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly_(
         collector_source(), WebKit.WKUserScriptInjectionTimeAtDocumentStart, True)
     controller.addUserScript_(WebKit.WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly_(
+        (ROOT / "background.js").read_text(encoding="utf-8"), WebKit.WKUserScriptInjectionTimeAtDocumentStart, True))
+    controller.addUserScript_(WebKit.WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly_(
         (ROOT / "overlay.js").read_text(encoding="utf-8"), WebKit.WKUserScriptInjectionTimeAtDocumentStart, True))
     controller.addUserScript_(script)
+    for name in ('unity_actions.js', 'unity_lobby.js', 'autoplay.js'):
+        controller.addUserScript_(WebKit.WKUserScript.alloc().initWithSource_injectionTime_forMainFrameOnly_(
+            (ROOT / name).read_text(encoding='utf-8'), WebKit.WKUserScriptInjectionTimeAtDocumentStart, True))
     window, view = make_window(config, "Maj-Soul++")
     view.loadRequest_(NSURLRequest.requestWithURL_(NSURL.URLWithString_("https://game.maj-soul.com/1/")))
     app.activateIgnoringOtherApps_(True)
     def deliver_advice(timer):
+        recovery.tick(view)
+        background.pulse(view, time.monotonic(), not bool(window.occlusionState() & AppKit.NSWindowOcclusionStateVisible))
         packet = advisor.take_result()
         if packet and advice_target[0] is not None:
             # WebKit calls stay on the UI thread; slow or superseded work never blocks it.
@@ -199,9 +381,13 @@ def main():
     timer = NSTimer.scheduledTimerWithTimeInterval_repeats_block_(0.05, True, deliver_advice)
     signal.signal(signal.SIGINT, lambda signum, frame: app.terminate_(None))
     signal.signal(signal.SIGTERM, lambda signum, frame: app.terminate_(None))
-    app.run()
-    timer.invalidate()
-    advisor.close()
+    try:
+        app.run()
+    finally:
+        recovery.close()
+        background.reset_page()
+        timer.invalidate()
+        advisor.close()
 
 
 if __name__ == "__main__":

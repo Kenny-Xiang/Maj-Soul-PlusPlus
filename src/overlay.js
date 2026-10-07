@@ -1,4 +1,4 @@
-// Display only: game input passes through, and all values are inserted as text.
+// Game input passes through except for automation buttons; values are inserted as text.
 (() => {
   if (location.hostname !== 'game.maj-soul.com' || window.__mjStatsOverlay) return;
   const host = document.createElement('div');
@@ -11,6 +11,16 @@
     .panel { padding:10px 14px; border:1px solid rgba(210,230,255,.22); border-radius:12px;
       background:rgba(12,22,36,.64); color:#f4f7fc; box-shadow:0 4px 20px rgba(0,0,0,.18);
       font:13px/1.5 -apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif; }
+    .automation { display:flex; align-items:center; flex-wrap:wrap; gap:4px 7px; margin-bottom:6px; }
+    .automation button { pointer-events:auto; cursor:pointer; font:inherit; line-height:1.4;
+      color:#f4f7fc; background:rgba(185,217,249,.1); border:1px solid rgba(185,217,249,.3);
+      border-radius:5px; padding:2px 7px; }
+    .automation button[aria-checked="true"], .automation button[aria-pressed="true"] {
+      color:#c6f4df; border-color:#91ccb3; background:rgba(70,145,115,.25); }
+    .automation button:focus-visible { outline:2px solid #ffdfa0; outline-offset:2px; }
+    .automation-mode-label, .automation-next { color:#bacbd9; font-size:.9em; }
+    .automation-status { color:#c7d4e2; overflow-wrap:anywhere; min-width:0; font-variant-numeric:tabular-nums; }
+    .automation-status[data-phase="paused"], .automation-status[data-phase="unavailable"] { color:#ffe1a4; }
     .heading, .columns { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); column-gap:28px; }
     .heading { margin-bottom:4px; font-weight:600; }
     .label { color:#b9d9f9; white-space:nowrap; }
@@ -61,14 +71,70 @@
     }
   </style><section class="panel" aria-label="最新牌局统计">
     <div class="heading"><span class="label">Maj-Soul++ · 牌局统计</span><span class="label">行动建议</span></div>
-    <div class="columns"><div class="game"></div><div class="recording">
+    <div class="columns"><div class="statistics">
+    <div class="automation" aria-label="自动打牌控制">
+      <button type="button" class="automation-toggle" role="switch" aria-checked="false">自动打牌：关闭</button>
+      <span class="automation-mode-label">对局模式</span>
+      <button type="button" class="automation-four" aria-pressed="true">四麻</button>
+      <button type="button" class="automation-three" aria-pressed="false">三麻</button>
+      <span class="automation-mode-label">对局长度</span>
+      <button type="button" class="automation-east" aria-pressed="true">东风</button>
+      <button type="button" class="automation-south" aria-pressed="false">南风</button>
+      <span class="automation-next">下场生效</span>
+      <span class="automation-status" role="status" aria-live="polite">待机</span>
+    </div>
+    <div class="game"></div></div><div class="recording">
       <div class="advice" aria-live="polite" hidden></div>
       <div class="caption">等待对局 · 发牌及场上动作后自动更新</div><div class="details"></div>
     </div></div></section>`;
   const panel = shadow.querySelector('.panel'), caption = shadow.querySelector('.caption');
   const game = shadow.querySelector('.game'), details = shadow.querySelector('.details');
   const advice = shadow.querySelector('.advice');
+  const automationToggle = shadow.querySelector('.automation-toggle');
+  const automationFour = shadow.querySelector('.automation-four'), automationThree = shadow.querySelector('.automation-three');
+  const automationEast = shadow.querySelector('.automation-east'), automationSouth = shadow.querySelector('.automation-south');
+  const automationStatus = shadow.querySelector('.automation-status');
+  let automationEnabled = false;
+  let automationView = '';
   let adviceKey = null, expectedAdviceKey = null;
+  function updateAutomation(status) {
+    if (!status) return;
+    automationEnabled = status.enabled === true;
+    const label = `自动打牌：${automationEnabled ? '开启' : '关闭'}`;
+    const message = status.message || (automationEnabled ? '等待行动' : '待机');
+    const phase = status.phase || 'idle';
+    const signature = JSON.stringify([automationEnabled, status.playerCount === 3, status.roundCount === 2, phase, message]);
+    if (signature === automationView) return;
+    automationView = signature;
+    const geometryChanged = automationToggle.textContent !== label ||
+      automationStatus.textContent.replace(/\d/g, '0') !== message.replace(/\d/g, '0');
+    automationToggle.setAttribute('aria-checked', String(automationEnabled));
+    automationToggle.textContent = label;
+    automationFour.setAttribute('aria-pressed', String(status.playerCount !== 3));
+    automationThree.setAttribute('aria-pressed', String(status.playerCount === 3));
+    automationEast.setAttribute('aria-pressed', String(status.roundCount !== 2));
+    automationSouth.setAttribute('aria-pressed', String(status.roundCount === 2));
+    automationStatus.dataset.phase = phase;
+    automationStatus.textContent = message;
+    if (geometryChanged) fit();
+  }
+  function changeAutomation(method, value) {
+    const controller = window.__mjAutoplay;
+    if (typeof controller?.[method] !== 'function') {
+      automationView = '';
+      automationStatus.dataset.phase = 'unavailable';
+      automationStatus.textContent = '自动打牌暂不可用';
+      fit();
+      return;
+    }
+    controller[method](value);
+    updateAutomation(controller.getStatus?.());
+  }
+  automationToggle.addEventListener('click', () => changeAutomation('setEnabled', !automationEnabled));
+  automationFour.addEventListener('click', () => changeAutomation('setPlayerCount', 4));
+  automationThree.addEventListener('click', () => changeAutomation('setPlayerCount', 3));
+  automationEast.addEventListener('click', () => changeAutomation('setRoundCount', 1));
+  automationSouth.addEventListener('click', () => changeAutomation('setRoundCount', 2));
   function row(parent, className, text) {
     const element = document.createElement('div');
     element.className = className;
@@ -272,7 +338,7 @@
     parent.appendChild(host);
     fit();
   }
-  window.__mjStatsOverlay = {invalidateAdvice, expectAdvice, update(packet) {
+  window.__mjStatsOverlay = {invalidateAdvice, expectAdvice, updateAutomation, update(packet) {
     if (packet.kind === 'advice') {
       if (!adviceKey || packet.adviceKey !== adviceKey) return;
       renderAdvice(packet.advice);
@@ -314,6 +380,7 @@
     }
     mount();
   }};
+  updateAutomation(window.__mjAutoplay?.getStatus?.());
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, {once:true});
   else mount();
   addEventListener('resize', fit);

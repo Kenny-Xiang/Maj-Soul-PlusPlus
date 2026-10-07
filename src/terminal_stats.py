@@ -110,6 +110,8 @@ class TerminalLog:
             self.write(format_turn(event))
         elif kind in ("status", "error"):
             self.write(f"[{PHASES.get(event.get('phase'), kind)}] {clean(event.get('message'))}")
+        elif kind == "automation":
+            self.write(f"[自动打牌] {clean(event.get('message'))}")
         if kind != "heartbeat":
             with self.json_path.open("a", encoding="utf-8") as file:
                 file.write(json.dumps(event, ensure_ascii=False) + "\n")

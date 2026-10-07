@@ -1,0 +1,290 @@
+// Installed before the collector and Unity; core is supplied by the native host.
+(() => {
+  if (window.__mjUnityTransport || location.hostname !== 'game.maj-soul.com') return;
+  const NativeSocket = window.WebSocket, listeners = new Set(), sockets = new Set();
+  const delivered = new WeakSet(), encoder = new TextEncoder(), decoder = new TextDecoder();
+  const selected = new Map(), faults = new Map();
+  let sequence = 0, nextId = 60000, sending = null, lastAccountId = null, stopped = false;
+  let progress = 0, lastClose = null;
+  const loginMethods = ['.lq.Lobby.login', '.lq.Lobby.emailLogin', '.lq.Lobby.oauth2Login', '.lq.Lobby.fastLogin'];
+  const first = (map, field, fallback = 0) => map.get(field)?.[0] ?? fallback;
+  const str = (map, field) => map.has(field) ? decoder.decode(first(map, field)) : null;
+  function encode(entries) {
+    const output = [];
+    const uint = value => {
+      if (!Number.isSafeInteger(value) || value < 0) throw new Error('无效的协议整数');
+      do {const byte = value % 128; value = Math.floor(value / 128); output.push(byte | (value ? 128 : 0));} while (value);
+    };
+    for (const [field, value] of entries) {
+      if (!Number.isInteger(field) || field < 1) throw new Error('无效的协议字段');
+      if (typeof value === 'number' || typeof value === 'boolean') {uint(field * 8); uint(Number(value));}
+      else {
+        const bytes = typeof value === 'string' ? encoder.encode(value) : value;
+        if (!(bytes instanceof Uint8Array)) throw new Error('无效的协议数据');
+        uint(field * 8 + 2); uint(bytes.length);
+        for (const byte of bytes) output.push(byte);
+      }
+    }
+    return new Uint8Array(output);
+  }
+  const bytesOf = data => data instanceof ArrayBuffer ? new Uint8Array(data) :
+    ArrayBuffer.isView(data) ? new Uint8Array(data.buffer, data.byteOffset, data.byteLength) : null;
+  const errorCode = payload => {const f = core.fields(payload); return f.has(1) ? first(core.fields(first(f, 1)), 1) : 0;};
+  const latest = game => selected.get(game) || [...sockets].filter(meta => meta.game === game).at(-1);
+  const ready = meta => !!(!stopped && meta?.authenticated && meta.socket.readyState === 1);
+  const validAccount = id => Number.isInteger(id) && id > 0 && id <= 0xffffffff;
+  const closeReason = value => typeof value === 'string' ? value.replace(/[\x00-\x1f\x7f]/g, ' ')
+    .replace(/\b(access[_ -]?token|connect[_ -]?token|token|password|authorization|cookie|account[_ ]?id|game[_ ]?uuid)\b.*/gi,
+      '$1=[redacted]').slice(0, 256) : '';
+  const connectionError = message => Object.assign(new Error(message), {recoverable:true});
+  function interrupt(meta, message) {
+    for (const [id, request] of meta.pending) if (request.injected) {
+      meta.pending.delete(id); meta.retired.add(id); clearTimeout(request.timer);
+      request.reject(connectionError(message));
+    }
+  }
+  function snapshot() {
+    const lobby = latest(false), game = latest(true);
+    return {connected:ready(lobby), gameConnected:ready(game),
+      lobbySessionId:lobby?.id ?? null, gameSessionId:game?.id ?? null,
+      accountId:ready(lobby) ? lobby.accountId : null, lastAccountId,
+      gameIdentity:game?.gameIdentity ?? null, gameAccountId:game?.accountId ?? null,
+      progress, stalled:!!(lobby?.stalled || lobby?.readStalled || lobby?.queueStalled?.size || game?.stalled),
+      fault:[...faults.values()].at(-1) || '', close:lastClose};
+  }
+  function emit(meta, packet) {
+    for (const listener of listeners) {
+      try {listener({game:meta.game, sessionId:meta.id, ...packet});}
+      catch (error) {console.error('[自动打牌消息处理]', error.message);}
+    }
+  }
+  function allocate(meta) {
+    for (let i = 0; i < 65536; i++) {
+      const id = nextId; nextId = (nextId + 1) & 65535;
+      if (!meta.pending.has(id) && !meta.retired.has(id)) return id;
+    }
+    throw new Error('连接请求编号已耗尽，请重新连接');
+  }
+  function identify(meta, request, payload) {
+    if (stopped || meta.socket.readyState !== 1 || selected.get(meta.game)?.id > meta.id) return;
+    const authentication = loginMethods.includes(request.method) || request.method === '.lq.FastTest.authGame';
+    if (authentication && meta.authRequest !== request) return;
+    const code = errorCode(payload);
+    if (code) {
+      if (authentication || ['.lq.FastTest.syncGame', '.lq.FastTest.enterGame'].includes(request.method))
+        faults.set(`${meta.game}:${authentication ? 'auth' : 'recovery'}`,
+          `服务器拒绝连接恢复（${code}），请检查游戏提示`);
+      return;
+    }
+    if (request.method === '.lq.Lobby.fetchAccountInfo') meta.readStalled = false;
+    if (request.method === '.lq.Lobby.cancelUnifiedMatch') {
+      const sid = str(core.fields(request.payload), 1);
+      if (meta.queueStalled.get(sid) < request.order) meta.queueStalled.delete(sid);
+    }
+    if (loginMethods.includes(request.method)) {
+      const fast = request.method === '.lq.Lobby.fastLogin', response = core.fields(payload);
+      meta.accountId = fast ? lastAccountId : first(response, 2, null);
+      meta.authenticated = validAccount(meta.accountId);
+      if (!meta.authenticated) {faults.set(`${meta.game}:auth`, '登录回应缺少可信账号身份，请在游戏窗口重新登录'); return;}
+      lastAccountId = meta.accountId;
+      const game = selected.get(true);
+      if (!response.has(fast ? 2 : 4) && game && !ready(game)) game.stalled = false;
+    } else if (request.method === '.lq.FastTest.authGame') {
+      meta.accountId = core.authAccount(request.payload); meta.authenticated = !!meta.accountId;
+      meta.gameIdentity = str(core.fields(request.payload), 3);
+      const lobby = selected.get(false);
+      if (ready(lobby) && lobby.accountId !== meta.accountId) meta.authenticated = false;
+    }
+    if (meta.authenticated && authentication) {
+      faults.delete(`${meta.game}:auth`);
+      meta.wasAuthenticated = true; meta.stalled = false; meta.readStalled = false; meta.ended = false; progress++;
+      meta.queueStalled.clear();
+      for (const other of sockets) if (other !== meta && (other.game === meta.game ||
+          !meta.game && meta.accountId && other.accountId !== meta.accountId)) {
+        other.authenticated = false;
+        interrupt(other, '连接已更新，等待恢复后的牌局状态');
+      }
+      selected.set(meta.game, meta);
+    }
+  }
+  function deliver(meta, original, data = original.data) {
+    const event = new MessageEvent('message', {data, origin:original.origin, lastEventId:original.lastEventId});
+    delivered.add(event); meta.socket.dispatchEvent(event);
+  }
+  function receive(meta, event, bytes) {
+    let env;
+    try {env = core.envelope(bytes);} catch (_) {deliver(meta, event); return;}
+    if (!env) {deliver(meta, event); return;}
+    if (env.kind === 3) {
+      const request = meta.pending.get(env.id);
+      if (!request) {if (!meta.retired.has(env.id)) deliver(meta, event); return;}
+      meta.pending.delete(env.id);
+      if (request.injected) clearTimeout(request.timer);
+      try {identify(meta, request, env.data);} catch (_) { /* An invalid response remains visible to its owner. */ }
+      const obsoleteAuth = (loginMethods.includes(request.method) || request.method === '.lq.FastTest.authGame') &&
+        meta.authRequest !== request;
+      if (!obsoleteAuth) emit(meta, {direction:'in', kind:'response', method:request.method, payload:env.data,
+        requestPayload:request.payload, injected:request.injected});
+      if (request.injected) {
+        try {
+          const code = errorCode(env.data);
+          if (code) {const error = new Error(`服务器拒绝操作（${code}）`); error.code = code; throw error;}
+          request.resolve({payload:env.data});
+        } catch (error) {request.reject(error);}
+        return;
+      }
+      if (env.id !== request.clientId) {
+        const data = bytes.slice(); data[1] = request.clientId & 255; data[2] = request.clientId >> 8;
+        deliver(meta, event, data.buffer);
+      } else deliver(meta, event);
+    } else {
+      if (env.kind === 1) {
+        if (meta.game && latest(true) === meta) {
+          let ended = env.name === '.lq.NotifyGameEndResult';
+          if (env.name === '.lq.ActionPrototype') {
+            try {ended = !!core.action(env.data).matchEnd;} catch (_) { /* The collector owns parse errors. */ }
+          }
+          if (ended) {meta.ended = true; meta.stalled = false;}
+        }
+        if (latest(meta.game) === meta && ['.lq.NotifyAccountLogout', '.lq.NotifyAnotherLogin', '.lq.NotifyGameTerminate'].includes(env.name))
+          faults.set(`${meta.game}:session`, env.name === '.lq.NotifyGameTerminate' ? '对局已终止，请检查游戏提示' : '账号已退出或在其他设备登录');
+        emit(meta, {direction:'in', kind:'notify', method:env.name, payload:env.data, injected:false});
+      }
+      deliver(meta, event);
+    }
+  }
+  function attach(socket) {
+    const pathname = new URL(socket.url, location.href).pathname;
+    const game = /^\/game-gateway(?:[-/]|$)/.test(pathname);
+    if (!game && !/^\/gateway(?:[-/]|$)/.test(pathname)) return;
+    const meta = {socket, game, id:++sequence, authenticated:false, accountId:null,
+      pending:new Map(), retired:new Set(), queueStalled:new Map(), requestSequence:0, queue:Promise.resolve(), originalSend:socket.send,
+      ownSendDescriptor:Object.getOwnPropertyDescriptor(socket, 'send')};
+    sockets.add(meta);
+    meta.message = event => {
+      if (delivered.has(event)) return;
+      const bytes = bytesOf(event.data), blob = event.data instanceof Blob;
+      if (!bytes && !blob) return;
+      // The first listener consumes our replies and restores remapped native IDs before Unity sees them.
+      event.stopImmediatePropagation();
+      meta.queue = meta.queue.then(async () => receive(meta, event,
+        bytes || new Uint8Array(await event.data.arrayBuffer()))).catch(error => {
+        for (const request of meta.pending.values()) if (request.injected) request.reject(error);
+      });
+    };
+    meta.send = function(data) {
+      const bytes = bytesOf(data);
+      let env;
+      try {env = bytes && core.envelope(bytes);} catch (_) { /* Native non-Liqi traffic is unchanged. */ }
+      if (env?.kind !== 2) return Reflect.apply(meta.originalSend, this, arguments);
+      const injected = sending?.meta === meta && sending.bytes === data;
+      let id = env.id;
+      if (!injected && (meta.pending.has(id) || meta.retired.has(id))) id = allocate(meta);
+      const request = injected ? meta.pending.get(id) :
+        {method:env.name, payload:env.data, clientId:env.id, injected:false};
+      request.order = ++meta.requestSequence;
+      if (!injected) meta.pending.set(id, request);
+      if (loginMethods.includes(env.name) || env.name === '.lq.FastTest.authGame') {
+        meta.authenticated = false; meta.authRequest = request;
+      }
+      const wire = id === env.id ? data : bytes.slice();
+      if (id !== env.id) {wire[1] = id & 255; wire[2] = id >> 8;}
+      try {Reflect.apply(meta.originalSend, this, [wire]);}
+      catch (error) {meta.pending.delete(id); throw error;}
+      if (!injected && (loginMethods.includes(env.name) ||
+          ['.lq.FastTest.authGame', '.lq.FastTest.syncGame', '.lq.FastTest.enterGame'].includes(env.name)))
+        interrupt(meta, '客户端正在恢复连接，等待权威牌局状态');
+      emit(meta, {direction:'out', kind:'request', method:env.name, payload:env.data, injected});
+    };
+    meta.close = event => {
+      const close = {game:meta.game, code:Number.isInteger(event.code) ? event.code : null,
+        reason:closeReason(event.reason), wasClean:!!event.wasClean};
+      if (latest(meta.game) === meta) {
+        if (meta.wasAuthenticated && !meta.ended) meta.stalled = true;
+        lastClose = close;
+      }
+      window.__mjMonitor?.reportRecoveryDiagnostic?.({phase:'socket-close', ...close});
+      meta.authenticated = false;
+      interrupt(meta, '连接已关闭，等待自动重新连接');
+      emit(meta, {direction:'in', kind:'close', method:'', payload:new Uint8Array(), injected:false,
+        code:close.code, reason:close.reason, wasClean:close.wasClean});
+      release(meta);
+    };
+    socket.addEventListener('message', meta.message);
+    socket.addEventListener('close', meta.close);
+    socket.send = meta.send;
+  }
+  function request(method, payload, {game = method.startsWith('.lq.FastTest.')} = {}) {
+    if (stopped) return Promise.reject(new Error('自动控制连接已停止'));
+    const meta = latest(game);
+    if (!ready(meta)) return Promise.reject(connectionError('尚未取得已登录的游戏连接，等待自动重新连接'));
+    if (!(payload instanceof Uint8Array) || game !== method.startsWith('.lq.FastTest.') ||
+        !['.lq.Lobby.fetchAccountInfo', '.lq.Lobby.startUnifiedMatch', '.lq.Lobby.cancelUnifiedMatch',
+          '.lq.FastTest.inputOperation', '.lq.FastTest.inputChiPengGang', '.lq.FastTest.confirmNewRound'].includes(method))
+      return Promise.reject(new Error('不支持的自动操作请求'));
+    return new Promise((resolve, reject) => {
+      const id = allocate(meta), body = encode([[1, method], [2, payload]]);
+      const frame = new Uint8Array(3 + body.length); frame.set([2, id & 255, id >> 8]); frame.set(body, 3);
+      const entry = {method, payload, injected:true, resolve, reject};
+      meta.pending.set(id, entry);
+      entry.timer = setTimeout(() => {
+        if (meta.pending.get(id) !== entry) return;
+        meta.pending.delete(id); meta.retired.add(id);
+        let sid;
+        if (['.lq.Lobby.startUnifiedMatch', '.lq.Lobby.cancelUnifiedMatch'].includes(method)) {
+          try {sid = str(core.fields(payload), 1);} catch (_) { /* Invalid payload cannot prove a queue scope. */ }
+        }
+        if (method === '.lq.Lobby.fetchAccountInfo') meta.readStalled = true;
+        else if (sid) meta.queueStalled.set(sid, Math.max(meta.queueStalled.get(sid) || 0, entry.order));
+        else meta.stalled = true;
+        reject(connectionError('等待服务器确认超时，等待权威状态恢复，暂不重复操作'));
+      }, 10000);
+      try {sending = {meta, bytes:frame}; meta.socket.send(frame);}
+      catch (error) {clearTimeout(entry.timer); meta.pending.delete(id); meta.retired.add(id); reject(error);}
+      finally {sending = null;}
+    });
+  }
+  const wrapped = new Proxy(NativeSocket, {construct(target, args, newTarget) {
+    const socket = Reflect.construct(target, args, newTarget); attach(socket); return socket;
+  }});
+  window.WebSocket = wrapped;
+  function detach(meta) {
+    meta.socket.removeEventListener('message', meta.message);
+    meta.socket.removeEventListener('close', meta.close);
+    if (meta.socket.send === meta.send) {
+      if (meta.ownSendDescriptor) Object.defineProperty(meta.socket, 'send', meta.ownSendDescriptor);
+      else delete meta.socket.send;
+    }
+  }
+  function release(meta) {
+    if (latest(meta.game) === meta) selected.set(meta.game, {game:meta.game, id:meta.id,
+      authenticated:false, accountId:meta.accountId, gameIdentity:meta.gameIdentity,
+      stalled:meta.stalled || !!meta.queueStalled.size, readStalled:meta.readStalled, ended:meta.ended});
+    detach(meta); sockets.delete(meta);
+    // Messages received before close may still be decoding a Blob. Preserve their
+    // native ID mappings and unknown injected reply filtering until they drain.
+    meta.queue.then(() => {meta.pending.clear(); meta.retired.clear(); meta.queueStalled.clear(); meta.authRequest = null;});
+  }
+  window.__mjProtocol = {fields:core.fields, action:core.action, encode, first, str};
+  window.__mjUnityTransport = {snapshot, request,
+    markProgress() {const game = latest(true); if (ready(game)) game.stalled = false;},
+    markEnded() {const game = latest(true); if (game) {game.ended = true; game.stalled = false;}},
+    isUnity:() => !!(window.unityInstance || typeof window.createUnityInstance === 'function' ||
+      window.document?.getElementById('unity-canvas')),
+    onMessage(listener) {listeners.add(listener); return () => listeners.delete(listener);},
+    stop() {
+      stopped = true;
+      for (const meta of sockets) {
+        for (const [id, entry] of meta.pending) if (entry.injected) {
+          clearTimeout(entry.timer); meta.pending.delete(id); meta.retired.add(id);
+          entry.reject(new Error('自动控制连接已停止'));
+        }
+        // Keep filtering until physical close: a late automation reply must never reach Unity,
+        // and native requests already remapped still need their original IDs restored.
+        const remapped = [...meta.pending].some(([id, entry]) => !entry.injected && id !== entry.clientId);
+        if (!meta.retired.size && !remapped || meta.socket.readyState > 1) release(meta);
+      }
+      if (window.WebSocket === wrapped) window.WebSocket = NativeSocket;
+      listeners.clear();
+    }};
+})();

@@ -7,12 +7,19 @@ const vm = require('node:vm');
 const source = fs.readFileSync(path.join(__dirname, '../src/overlay.js'), 'utf8');
 
 class Element {
-  constructor() { this.children = []; this.style = {}; this.dataset = {}; this.className = ''; this.hidden = false; this.text = ''; }
+  constructor() {
+    this.children = []; this.style = {}; this.dataset = {}; this.className = ''; this.hidden = false; this.text = '';
+    this.attributes = {}; this.listeners = {}; this.layoutReads = 0;
+  }
+  setAttribute(name, value) { this.attributes[name] = value; if (name === 'class') this.className = value; }
+  getAttribute(name) { return this.attributes[name]; }
+  addEventListener(type, listener) { (this.listeners[type] ||= []).push(listener); }
+  click() { for (const listener of this.listeners.click || []) listener(); }
   appendChild(child) { this.children.push(child); return child; }
   replaceChildren() { this.children = []; this.text = ''; }
   set textContent(text) { this.replaceChildren(); this.text = text; }
   get textContent() { return this.text + this.children.map(child => child.textContent).join(''); }
-  getBoundingClientRect() { return {height: 200}; }
+  getBoundingClientRect() { this.layoutReads++; return {height: 200}; }
   querySelectorAll(selector) {
     return this.children.flatMap(child => [
       ...(child.className.split(' ').includes(selector.slice(1)) ? [child] : []),
@@ -24,18 +31,23 @@ class Element {
   set innerHTML(html) {
     // Only overlay's static template is parsed; dynamic values must use textContent.
     this.replaceChildren();
-    for (const match of html.matchAll(/<(?:div|section)[^>]*class="([^"]+)"[^>]*>/g)) {
-      const element = new Element(); element.className = match[1]; this.appendChild(element);
+    for (const match of html.matchAll(/<(div|section|span|button)\b([^>]*)>/g)) {
+      const element = new Element(); element.tagName = match[1].toUpperCase();
+      for (const attribute of match[2].matchAll(/([\w-]+)="([^"]*)"/g)) element.setAttribute(attribute[1], attribute[2]);
+      element.textContent = html.slice(match.index + match[0].length).split('<')[0].trim();
+      this.appendChild(element);
     }
   }
 }
 
-function overlay() {
-  const body = new Element(), context = {window: {}, location: {hostname: 'game.maj-soul.com'}, innerHeight: 760,
-    document: {body, readyState: 'complete', createElement: () => new Element(), addEventListener() {}}, addEventListener() {}};
+function overlay(autoplay) {
+  const events = new Map();
+  const body = new Element(), context = {window: {__mjAutoplay: autoplay}, location: {hostname: 'game.maj-soul.com'}, innerHeight: 760,
+    document: {body, readyState: 'complete', createElement: () => new Element(), addEventListener() {}},
+    addEventListener: (type, listener) => events.set(type, listener)};
   vm.runInNewContext(source, context);
   const root = body.children[0].shadowRoot, api = context.window.__mjStatsOverlay;
-  return {api, root, show(advice, text = normalText, key = 'test:1') {
+  return {api, root, events, window: context.window, show(advice, text = normalText, key = 'test:1') {
     api.expectAdvice(key); api.update({kind: 'turn', adviceKey: key, text, advice});
   }};
 }
@@ -46,6 +58,139 @@ const candidate = {action: 'discard', actionId: 'discard:7z', tile: '7z', shante
     '当前进攻：与弃和路线按同一终局净收益比较；新窗口重新评估', '听牌；有效未见牌 4 张',
     '对各家均有现物或实体枚数安全依据']};
 const result = best => ({status: 'ready', best, candidates: [best]});
+
+test('automation starts off in four-player east mode and missing controller cannot change it', () => {
+  const {root} = overlay();
+  const toggle = root.querySelector('.automation-toggle'), four = root.querySelector('.automation-four');
+  const three = root.querySelector('.automation-three');
+  const east = root.querySelector('.automation-east'), south = root.querySelector('.automation-south');
+  assert.equal(toggle.tagName, 'BUTTON');
+  assert.equal(toggle.getAttribute('type'), 'button');
+  assert.equal(toggle.getAttribute('role'), 'switch');
+  assert.equal(toggle.getAttribute('aria-checked'), 'false');
+  assert.equal(toggle.textContent, '自动打牌：关闭');
+  assert.equal(four.getAttribute('aria-pressed'), 'true');
+  assert.equal(three.getAttribute('aria-pressed'), 'false');
+  assert.equal(east.getAttribute('aria-pressed'), 'true');
+  assert.equal(south.getAttribute('aria-pressed'), 'false');
+  for (const button of [four, three, east, south]) {
+    assert.equal(button.tagName, 'BUTTON');
+    assert.equal(button.getAttribute('type'), 'button');
+  }
+  assert.match(root.querySelector('.automation-next').textContent, /下场生效/);
+  toggle.click(); three.click(); south.click();
+  assert.equal(toggle.getAttribute('aria-checked'), 'false');
+  assert.equal(four.getAttribute('aria-pressed'), 'true');
+  assert.equal(three.getAttribute('aria-pressed'), 'false');
+  assert.equal(east.getAttribute('aria-pressed'), 'true');
+  assert.equal(south.getAttribute('aria-pressed'), 'false');
+  assert.equal(root.querySelector('.automation-status').textContent, '自动打牌暂不可用');
+  assert.match(source, /\.automation button\s*\{\s*pointer-events:auto/);
+  assert.match(source, /\*\s*\{[^}]*pointer-events:none/);
+  assert.match(source, /button:focus-visible/);
+});
+
+test('automation buttons dispatch to a late controller and render only its accepted state', () => {
+  const {root, window, api} = overlay(), calls = [];
+  let status = {enabled:false, playerCount:4, roundCount:1, phase:'idle', message:'待机'};
+  window.__mjAutoplay = {
+    setEnabled(enabled) { calls.push(['enabled', enabled]); status = {...status, enabled, message:enabled ? '等待匹配' : '已停止'}; },
+    setPlayerCount(playerCount) { calls.push(['players', playerCount]); status = {...status, playerCount}; },
+    setRoundCount(roundCount) { calls.push(['rounds', roundCount]); status = {...status, roundCount}; },
+    getStatus() { return status; }
+  };
+  const toggle = root.querySelector('.automation-toggle'), four = root.querySelector('.automation-four');
+  const three = root.querySelector('.automation-three');
+  const east = root.querySelector('.automation-east'), south = root.querySelector('.automation-south');
+  toggle.click(); three.click(); south.click();
+  assert.equal(east.getAttribute('aria-pressed'), 'false');
+  assert.equal(south.getAttribute('aria-pressed'), 'true');
+  four.click(); east.click(); toggle.click();
+  assert.deepEqual(calls, [['enabled',true], ['players',3], ['rounds',2], ['players',4], ['rounds',1], ['enabled',false]]);
+  assert.equal(east.getAttribute('aria-pressed'), 'true');
+  assert.equal(south.getAttribute('aria-pressed'), 'false');
+  assert.equal(toggle.getAttribute('aria-checked'), 'false');
+  assert.equal(root.querySelector('.automation-status').textContent, '已停止');
+  api.updateAutomation({enabled:true, playerCount:3, roundCount:2, phase:'paused', message:'<img src="invalid"> 连接中断'});
+  assert.equal(toggle.getAttribute('aria-checked'), 'true');
+  assert.equal(toggle.textContent, '自动打牌：开启');
+  assert.equal(three.getAttribute('aria-pressed'), 'true');
+  assert.equal(four.getAttribute('aria-pressed'), 'false');
+  assert.equal(south.getAttribute('aria-pressed'), 'true');
+  assert.equal(east.getAttribute('aria-pressed'), 'false');
+  assert.equal(root.querySelector('.automation-status').textContent, '<img src="invalid"> 连接中断');
+  assert.equal(root.querySelector('.automation-status').dataset.phase, 'paused');
+  assert.equal(root.querySelector('.automation-status').getAttribute('aria-live'), 'polite');
+  window.__mjAutoplay.setEnabled = enabled => calls.push(['rejected', enabled]);
+  toggle.click();
+  assert.equal(toggle.getAttribute('aria-checked'), 'false', 'accepted controller state overrides optimistic UI changes');
+  window.__mjAutoplay.setRoundCount = roundCount => calls.push(['rejected-rounds', roundCount]);
+  south.click();
+  assert.equal(east.getAttribute('aria-pressed'), 'true', 'a rejected length change retains the accepted controller state');
+  assert.equal(south.getAttribute('aria-pressed'), 'false');
+});
+
+test('automation restores an installed controller status without enabling it implicitly', () => {
+  const {root} = overlay({getStatus: () => ({enabled:false, playerCount:3, roundCount:2, phase:'idle', message:'等待登录'})});
+  assert.equal(root.querySelector('.automation-toggle').getAttribute('aria-checked'), 'false');
+  assert.equal(root.querySelector('.automation-three').getAttribute('aria-pressed'), 'true');
+  assert.equal(root.querySelector('.automation-south').getAttribute('aria-pressed'), 'true');
+  assert.equal(root.querySelector('.automation-east').getAttribute('aria-pressed'), 'false');
+  assert.equal(root.querySelector('.automation-status').textContent, '等待登录');
+});
+
+test('automation timing updates avoid layout reads while visible changes and resize remain immediate', () => {
+  const status = {enabled:true, playerCount:4, roundCount:1, phase:'waiting', message:'等待行动'};
+  const {api, root, events} = overlay({getStatus: () => status});
+  const panel = root.querySelector('.panel'), before = panel.layoutReads;
+  for (let elapsedMs = 100; elapsedMs <= 1000; elapsedMs += 100) {
+    api.updateAutomation({...status, timing:{elapsedMs, targetMs:2000}});
+  }
+  assert.equal(panel.layoutReads, before, 'elapsed timing does not change any visible control');
+  api.updateAutomation({...status, phase:'paused'});
+  assert.equal(root.querySelector('.automation-status').dataset.phase, 'paused');
+  assert.equal(panel.layoutReads, before, 'phase changes color without changing geometry');
+  api.updateAutomation({...status, playerCount:3, roundCount:2});
+  assert.equal(root.querySelector('.automation-three').getAttribute('aria-pressed'), 'true');
+  assert.equal(root.querySelector('.automation-south').getAttribute('aria-pressed'), 'true');
+  assert.equal(panel.layoutReads, before, 'selected mode changes do not change button geometry');
+  api.updateAutomation({...status, phase:'delaying', message:'按建议操作 · 1.8 秒'});
+  const countdown = panel.layoutReads;
+  for (let tenth = 17; tenth >= 8; tenth--) {
+    const message = `按建议操作 · ${(tenth / 10).toFixed(1)} 秒`;
+    api.updateAutomation({...status, phase:'delaying', message});
+    assert.equal(root.querySelector('.automation-status').textContent, message, 'countdown remains current');
+  }
+  assert.equal(panel.layoutReads, countdown, 'equal-width countdown digits do not change geometry');
+  api.updateAutomation({...status, enabled:false, message:'已停止'});
+  assert.equal(root.querySelector('.automation-toggle').textContent, '自动打牌：关闭');
+  assert.equal(root.querySelector('.automation-status').textContent, '已停止');
+  assert.ok(panel.layoutReads > before, 'new text is fitted immediately');
+  const fitted = panel.layoutReads;
+  events.get('resize')();
+  assert.ok(panel.layoutReads > fitted, 'window resize still fits unchanged controls');
+});
+
+test('an unavailable control is restored by the next unchanged controller status', () => {
+  const status = {enabled:false, playerCount:4, roundCount:1, phase:'idle', message:'待机'};
+  const {api, root} = overlay({getStatus: () => status});
+  root.querySelector('.automation-south').click();
+  assert.equal(root.querySelector('.automation-status').textContent, '自动打牌暂不可用');
+  api.updateAutomation(status);
+  assert.equal(root.querySelector('.automation-status').textContent, '待机');
+  assert.equal(root.querySelector('.automation-status').dataset.phase, 'idle');
+});
+
+test('missing roundCount stays east and a controller without its setter cannot select south', () => {
+  const {root} = overlay({getStatus: () => ({enabled:false, playerCount:4, phase:'idle'})});
+  root.querySelector('.automation-south').click();
+  assert.equal(root.querySelector('.automation-east').getAttribute('aria-pressed'), 'true');
+  assert.equal(root.querySelector('.automation-south').getAttribute('aria-pressed'), 'false');
+  assert.equal(root.querySelector('.automation-status').textContent, '自动打牌暂不可用');
+  const restarted = overlay().root;
+  assert.equal(restarted.querySelector('.automation-east').getAttribute('aria-pressed'), 'true');
+  assert.equal(restarted.querySelector('.automation-south').getAttribute('aria-pressed'), 'false');
+});
 
 test('normal overlay keeps action and decision metrics without recording diagnostics', () => {
   const {show, root} = overlay(); show(result(candidate));

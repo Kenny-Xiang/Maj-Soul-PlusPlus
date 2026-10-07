@@ -1,4 +1,4 @@
-"""Offline WebKit check of overlay layout, literal text and click-through behavior."""
+"""Offline WebKit check of overlay layout, automation controls and click-through behavior."""
 import json
 from pathlib import Path
 import sys
@@ -51,6 +51,9 @@ def advisor_state():
     return json.loads(evaluate('''JSON.stringify((()=>{
       const a=document.getElementById('mj-statistics-overlay').shadowRoot.querySelector('.advice');
       const panel=a.closest('.panel'),rect=panel.getBoundingClientRect();
+      const game=panel.querySelector('.game').getBoundingClientRect();
+      const controls=panel.querySelector('.automation').getBoundingClientRect();
+      const recording=panel.querySelector('.recording').getBoundingClientRect();
       return {hidden:a.hidden,text:a.textContent,best:a.querySelector('.best-tile')?.textContent || '',
         images:a.querySelectorAll('img').length,
         alternatives:[...a.querySelectorAll('.alternatives')].map(element=>element.textContent),
@@ -59,8 +62,10 @@ def advisor_state():
         progress:a.querySelector('.progress')?.textContent || '',
         chips:[...a.querySelectorAll('.tile-chip')].map(element=>element.textContent),
         metricCount:a.querySelectorAll('.metric-value').length,
+        controlsRight:controls.right,recordingLeft:recording.left,
+        controlsBottom:controls.bottom,gameTop:game.top,
         bottom:rect.bottom,fontSize:getComputedStyle(panel).fontSize,
-        clickTarget:document.elementFromPoint(30,40)?.id};
+        clickTarget:document.elementFromPoint(game.left+3,game.top+3)?.id};
     })())'''))
 
 
@@ -85,6 +90,54 @@ recommendation['best'] = recommendation['candidates'][0]
 deadline = time.time() + 10
 while view.isLoading() and time.time() < deadline:
     NSRunLoop.currentRunLoop().runUntilDate_(NSDate.dateWithTimeIntervalSinceNow_(0.05))
+# Only the native buttons consume input. The controller can be installed after the overlay.
+automation = json.loads(evaluate('''JSON.stringify((()=>{
+  const host=document.getElementById('mj-statistics-overlay'),root=host.shadowRoot;
+  const toggle=root.querySelector('.automation-toggle'),four=root.querySelector('.automation-four');
+  const three=root.querySelector('.automation-three'),status=root.querySelector('.automation-status');
+  const east=root.querySelector('.automation-east'),south=root.querySelector('.automation-south');
+  const defaults={enabled:toggle.getAttribute('aria-checked'),four:four.getAttribute('aria-pressed'),
+    three:three.getAttribute('aria-pressed'),east:east.getAttribute('aria-pressed'),south:south.getAttribute('aria-pressed')};
+  toggle.click();south.click();
+  const unavailable={enabled:toggle.getAttribute('aria-checked'),east:east.getAttribute('aria-pressed'),
+    south:south.getAttribute('aria-pressed'),text:status.textContent};
+  let state={enabled:false,playerCount:4,roundCount:1,phase:'idle',message:'待机'},calls=[];
+  window.__mjAutoplay={
+    setEnabled(enabled){calls.push(['enabled',enabled]);state={...state,enabled,message:enabled?'等待匹配':'已停止'};},
+    setPlayerCount(playerCount){calls.push(['players',playerCount]);state={...state,playerCount};},
+    setRoundCount(roundCount){calls.push(['rounds',roundCount]);state={...state,roundCount};},
+    getStatus(){return state;}
+  };
+  toggle.click();three.click();south.click();
+  const active={enabled:toggle.getAttribute('aria-checked'),three:three.getAttribute('aria-pressed'),
+    east:east.getAttribute('aria-pressed'),south:south.getAttribute('aria-pressed')};
+  const controls=[toggle,four,three,east,south].map(button=>{
+    button.focus();const rect=button.getBoundingClientRect();
+    return {tag:button.tagName,tabIndex:button.tabIndex,focused:root.activeElement===button,
+      pointerEvents:getComputedStyle(button).pointerEvents,width:rect.width,height:rect.height,
+      hit:root.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2)===button};
+  });
+  const rect=status.getBoundingClientRect();
+  const statusTarget=document.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2)?.id;
+  window.__mjStatsOverlay.updateAutomation({...state,phase:'paused',message:'<img src="invalid"> 连接中断'});
+  const literal={text:status.textContent,images:root.querySelectorAll('img').length};
+  four.click();east.click();toggle.click();
+  south.blur();
+  return {defaults,unavailable,active,controls,statusTarget,literal,calls,
+    stopped:toggle.getAttribute('aria-checked')};
+})())'''))
+assert automation['defaults'] == {'enabled': 'false', 'four': 'true', 'three': 'false', 'east': 'true', 'south': 'false'}, automation
+assert automation['unavailable'] == {'enabled': 'false', 'east': 'true', 'south': 'false', 'text': '自动打牌暂不可用'}, automation
+assert automation['active'] == {'enabled': 'true', 'three': 'true', 'east': 'false', 'south': 'true'}, automation
+assert automation['calls'] == [['enabled', True], ['players', 3], ['rounds', 2], ['players', 4], ['rounds', 1], ['enabled', False]], automation
+assert automation['stopped'] == 'false' and automation['statusTarget'] == 'underlay', automation
+assert automation['literal'] == {'text': '<img src="invalid"> 连接中断', 'images': 0}, automation
+for control in automation['controls']:
+    assert control['width'] > 0 and control['height'] > 0, control
+    assert {key: value for key, value in control.items() if key not in ('width', 'height')} == {
+        'tag': 'BUTTON', 'tabIndex': 0, 'focused': True, 'pointerEvents': 'auto', 'hit': True}, control
+assert len(automation['controls']) == 5, automation
+assert len({(control['width'], control['height']) for control in automation['controls'][1:]}) == 1, automation
 event = json.loads((ROOT / 'fixtures/turn.json').read_text())
 # A full four-player river/meld layout exercises the largest normal output.
 event['state']['playerCount'] = 4
@@ -101,8 +154,16 @@ for width, height in [(1200, 760), (800, 600), (600, 400), (1200, 760)]:
       const h=document.getElementById('mj-statistics-overlay'),s=h.shadowRoot;
       const p=s.querySelector('.panel'),r=p.getBoundingClientRect();
       const game=s.querySelector('.game'),recording=s.querySelector('.recording');
+      const gameRect=game.getBoundingClientRect();
+      const modeButtons=['four','three','east','south'].map(mode=>{
+        const button=s.querySelector('.automation-'+mode),rect=button.getBoundingClientRect();
+        return {width:rect.width,height:rect.height,tabIndex:button.tabIndex,
+          visible:rect.left>=r.left&&rect.right<=r.right&&rect.top>=r.top&&rect.bottom<=r.bottom,
+          hit:s.elementFromPoint(rect.left+rect.width/2,rect.top+rect.height/2)===button};
+      });
       return {width:innerWidth,height:innerHeight,bottom:r.bottom,top:r.top,
-        clickTarget:document.elementFromPoint(30,40)?.id,images:s.querySelectorAll('img').length,
+        modeButtons,
+        clickTarget:document.elementFromPoint(gameRect.left+3,gameRect.top+3)?.id,images:s.querySelectorAll('img').length,
         containsWarning:s.textContent.includes('<img src="invalid">'),
         rows:s.querySelectorAll('.line').length,
         gameRight:game.getBoundingClientRect().right,recordingLeft:recording.getBoundingClientRect().left,
@@ -115,6 +176,11 @@ for width, height in [(1200, 760), (800, 600), (600, 400), (1200, 760)]:
     assert info['top'] >= 0 and info['rows'] >= 15, info
     assert info['gameRight'] < info['recordingLeft'], info
     assert info['recommendation'] == '打 中' and info['advisorBottom'] <= height / 2, info
+    for button in info['modeButtons']:
+        assert button['width'] > 0 and button['height'] > 0 and button['tabIndex'] == 0, info
+        assert button['visible'] and button['hit'], info
+    assert max(button['width'] for button in info['modeButtons']) - min(button['width'] for button in info['modeButtons']) < .01, info
+    assert max(button['height'] for button in info['modeButtons']) - min(button['height'] for button in info['modeButtons']) < .01, info
     for label in ['最新动作：', '本机座位：', '剩余牌：', '本人手牌：', '宝牌指示：', '分数：',
                   '座位0 弃牌', '座位1（已立直） 弃牌', '座位3 弃牌', '副露：', '拔北：', '已知牌计数']:
         assert label in info['gameText'] and label not in info['recordingText'], (label, info)
@@ -146,6 +212,7 @@ info = advisor_state()
 assert info['best'] == '立直 · 打 中' and len(info['alternatives']) == 2, info
 assert info['alternativeActions'][0] == '打 中', info
 assert float(info['fontSize'].removesuffix('px')) >= 12 and info['bottom'] <= 380, info
+assert info['controlsRight'] < info['recordingLeft'] and info['controlsBottom'] <= info['gameTop'], info
 assert info['clickTarget'] == 'underlay', info
 assert '行动建议' in evaluate("document.getElementById('mj-statistics-overlay').shadowRoot.textContent")
 action_cases = [
