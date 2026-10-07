@@ -261,12 +261,12 @@ for (const fault of ['step gap','invalid first deal'])
     assert.equal(h.api.getStatus().enabled,false, 'a later valid deal cannot override a safety pause');
   });
 
-async function reconnectFixture(inFlight = false) {
+async function reconnectFixture(inFlight = false, timeAdd = 20000) {
   const h=await setup(),e=h.encode,seats=[11,22,33,44];
   const auth=e([...seats.map(id=>[2,e([[1,id],[5,e([[1,10301]])]])]),
     ...seats.map(id=>[3,id]),[5,e([[1,2],[2,e([[1,1]])],[3,e([[2,8]])]])]]);
   const hand=['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','7z','1z'];
-  const operation=e([[1,0],[2,e([[1,1]])],[4,20000],[5,5000]]);
+  const operation=e([[1,0],[2,e([[1,1]])],[4,timeAdd],[5,5000]]);
   const opening=[[1,0],[2,0],[3,0],...hand.map(tile=>[4,tile]),
     ...seats.map(()=>[6,25000]),[7,operation],[13,69],[14,'1p']];
   const old=h.connect(true);old.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11],[3,'reconnect-test-match']])));
@@ -282,6 +282,66 @@ async function reconnectFixture(inFlight = false) {
   }
   return {h,e,seats,auth,hand,opening,operation,old,previous,oldInput,statusStart};
 }
+
+test('notification-only game end releases an acknowledged input before the settlement wait expires', async () => {
+  const {h,old}=await reconnectFixture(true,90000);
+  await h.reply(old);
+  assert.equal(h.window.__mjUnityActions.snapshot().pending,true,'an ACK alone does not confirm the discard');
+  await h.feed(old,h.frame(1,0,'.lq.NotifyGameEndResult'));
+  assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+  assert.equal(h.window.__mjUnityActions.checkpoint().submitted,null);
+  assert.equal(h.api.getStatus().enabled,true);
+  const before=h.lobby.sent.length;
+  await h.advance(44999);assert.equal(h.lobby.sent.length,before);
+  await h.advance(1);await h.advance(3000);
+  assert.equal(h.last(h.lobby).name,'.lq.Lobby.fetchAccountInfo');
+  assert.equal(h.api.getStatus().enabled,true);
+});
+
+test('disabled autoplay keeps cancelling an owned queue beyond transport timeouts without reopening its intent', async () => {
+  const h=await setup();
+  h.api.setEnabled(true);await h.advance(3000);await h.replyAccount();
+  await h.advance(100);await h.advance(3000);await h.reply(h.lobby);
+  h.api.setEnabled(false);
+  const cancellations=()=>h.lobby.sent.map(bytes=>core.envelope(bytes)).filter(message=>message.name==='.lq.Lobby.cancelUnifiedMatch');
+  assert.equal(cancellations().length,1);
+  await h.advance(5100);h.api.setEnabled(true);
+  assert.equal(h.api.getStatus().enabled,false,'unknown cancellation must block a fresh matching intent');
+  await h.advance(5000);await h.advance(100);
+  assert.equal(cancellations().length,2,'the same connection must retry after the first 10-second transport timeout');
+  await h.advance(10000);await h.advance(100);
+  assert.equal(cancellations().length,3);
+  assert.ok(cancellations().every(message=>h.str(h.fields(message.data),1)==='1:8'));
+  const statuses=h.statuses.length;
+  await h.reply(h.lobby);await h.advance(100);await h.advance(30000);
+  assert.equal(h.window.__mjUnityLobby.checkpoint().owned,null);
+  assert.equal(h.api.getStatus().enabled,false);
+  assert.match(h.api.getStatus().message,/已关闭.*手动/);
+  assert.equal(h.window.__mjUnityTransport.snapshot().stalled,false,'the acknowledged cancellation settles this queue uncertainty');
+  assert.ok(h.statuses.slice(statuses).every(status=>!status.enabled));
+  assert.equal(cancellations().length,3);
+  assert.equal(h.lobby.sent.filter(bytes=>core.envelope(bytes).name==='.lq.Lobby.startUnifiedMatch').length,1);
+  h.api.setEnabled(true);
+  assert.equal(h.api.getStatus().enabled,true);
+  assert.equal(h.window.__mjRecovery.snapshot().stalled,false,'a new explicit intent must not reload for the cancelled queue');
+  await h.advance(3000);
+  assert.equal(h.last(h.lobby).name,'.lq.Lobby.fetchAccountInfo');
+});
+
+for (const method of ['.lq.NotifyMatchTimeout','.lq.NotifyMatchFailed'])
+  test(`explicit re-enable recovers ${method} only after the owned queue is authoritatively cleared`, async () => {
+    const h=await setup();
+    h.api.setEnabled(true);await h.advance(3000);await h.replyAccount();
+    await h.advance(100);await h.advance(3000);await h.reply(h.lobby);
+    await h.feed(h.lobby,h.frame(1,0,method,h.encode([[1,'1:8']])));await h.advance(100);
+    assert.equal(h.api.getStatus().enabled,false);
+    assert.equal(h.window.__mjUnityLobby.checkpoint().owned,null);
+    h.api.setEnabled(true);await h.advance(3000);
+    assert.equal(h.api.getStatus().enabled,true);
+    assert.equal(h.last(h.lobby).name,'.lq.Lobby.fetchAccountInfo');
+    await h.replyAccount();await h.advance(100);await h.advance(3000);
+    assert.equal(h.last(h.lobby).name,'.lq.Lobby.startUnifiedMatch');
+  });
 
 for (const scenario of [
   {name:'closed socket before input',close:true,authenticate:true},

@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const {getEventListeners} = require('node:events');
 const core = require('../src/core.cjs');
 const source = fs.readFileSync(path.join(__dirname, '../src/unity_transport.js'), 'utf8');
 const collector = fs.readFileSync(path.join(__dirname, '../src/browser.js'), 'utf8');
@@ -130,6 +131,28 @@ test('server rejection is not counted as a successful injected operation', async
   assert.equal(c.unity.length, 0);
 });
 
+test('acknowledged injected and remapped native IDs can be reused without exhausting the connection', async () => {
+  const h = setup(), c = h.connect(); await h.login(c);
+  for (let index = 0; index < 65537; index++) {
+    const pending = h.api.request('.lq.Lobby.fetchAccountInfo', new Uint8Array());
+    if (!c.socket.sent.length) await pending;
+    h.acknowledge(c); await pending;
+    c.socket.sent.length = 0; h.events.length = 0;
+  }
+  assert.equal(c.unity.length, 0); assert.equal(h.timerCount, 0);
+  const pending = h.api.request('.lq.Lobby.fetchAccountInfo', new Uint8Array());
+  const injectedId = core.envelope(c.socket.sent[0]).id;
+  c.socket.send(h.frame(2, injectedId, '.lq.Lobby.fetchServerTime'));
+  const nativeId = core.envelope(c.socket.sent[1]).id;
+  h.acknowledge(c); h.acknowledge(c, 1); await pending; await h.flush();
+  for (const id of [injectedId, nativeId]) {
+    c.socket.send(h.frame(2, id, '.lq.Lobby.fetchServerTime'));
+    assert.equal(core.envelope(c.socket.sent.at(-1)).id, id);
+    h.acknowledge(c, c.socket.sent.length - 1); await h.flush();
+    assert.equal(core.envelope(c.unity.at(-1).bytes).id, id);
+  }
+});
+
 test('a native ID colliding with an in-flight injection is remapped only on the wire and restored for Unity', async () => {
   const h = setup(), c = h.connect(); await h.login(c);
   const pending = h.api.request('.lq.Lobby.startUnifiedMatch', new Uint8Array());
@@ -243,6 +266,19 @@ test('stop detaches a socket that never needed injected traffic or native remapp
   h.api.stop(); assert.equal(c.socket.send, h.Socket.prototype.send);
 });
 
+test('stop restores send after all injected and remapped requests have acknowledged', async () => {
+  const h = setup(), c = h.connect(); await h.login(c);
+  const pending = h.api.request('.lq.Lobby.fetchAccountInfo', new Uint8Array());
+  c.socket.send(h.frame(2, core.envelope(c.socket.sent[0]).id, '.lq.Lobby.fetchServerTime'));
+  h.acknowledge(c); h.acknowledge(c, 1); await pending; await h.flush();
+  h.api.stop(); assert.equal(c.socket.send, h.Socket.prototype.send);
+  assert.equal(getEventListeners(c.socket, 'message').length, 1);
+  assert.equal(getEventListeners(c.socket, 'close').length, 0);
+  assert.equal(h.api.snapshot().connected, false);
+  c.socket.close(); await h.flush();
+  assert.equal(h.api.snapshot().connected, false);
+});
+
 test('synchronous send failures reject the operation and clean its timeout', async () => {
   const h = setup(), c = h.connect(); await h.login(c);
   c.socket.sendError = new Error('test send failed');
@@ -335,17 +371,145 @@ test('real collector observes outgoing actions once while injected ACK never ent
   assert.equal(c.unity.length, 1); assert.equal(core.envelope(c.unity[0].bytes).id, 31);
 });
 
-test('network interruption is recoverable, retires the old request and cannot affect a replacement socket', async () => {
+test('network interruption filters already queued replies and cannot affect a replacement socket', async () => {
   const h=setup(), old=h.connect(); await h.login(old,81);
   const pending=h.api.request('.lq.Lobby.fetchAccountInfo',new Uint8Array());
   const rejected=assert.rejects(pending,error=>error.recoverable===true);
+  const reply=h.frame(3,core.envelope(old.socket.sent[0]).id);
+  let release;
+  class SlowBlob extends Blob {arrayBuffer() {return new Promise(resolve=>{release=resolve;});}}
+  old.socket.receive(new SlowBlob([reply])); await h.flush();
   old.socket.close(); await rejected;
   const current=h.connect(); await h.login(current,81);
   const session=h.api.snapshot().lobbySessionId;
-  h.acknowledge(old); await h.flush();
+  release(reply.buffer); await h.flush();
   assert.equal(old.unity.length,0);
   assert.equal(h.api.snapshot().lobbySessionId,session);
   assert.equal(h.api.snapshot().connected,true);
+});
+
+test('closed sockets release interception while retaining only recovery identity and queued native mappings', async () => {
+  const h=setup();
+  for(let index=0;index<20;index++) {
+    const game=h.connect(true); await h.login(game,81,true);
+    const session=h.api.snapshot().gameSessionId;
+    game.socket.close(); await h.flush();
+    assert.equal(game.socket.send,h.Socket.prototype.send);
+    assert.equal(getEventListeners(game.socket,'message').length,1);
+    assert.equal(getEventListeners(game.socket,'close').length,0);
+    assert.equal(h.api.snapshot().gameSessionId,session);
+    assert.equal(h.api.snapshot().gameAccountId,81);
+    assert.equal(h.api.snapshot().stalled,true);
+  }
+  const c=h.connect(); await h.login(c);
+  const pending=h.api.request('.lq.Lobby.fetchAccountInfo',new Uint8Array());
+  const rejected=assert.rejects(pending,/连接已关闭/);
+  const injectedId=core.envelope(c.socket.sent[0]).id;
+  c.socket.send(h.frame(2,injectedId,'.lq.Lobby.fetchServerTime'));
+  const nativeReply=h.frame(3,core.envelope(c.socket.sent[1]).id);
+  let release;
+  class SlowBlob extends Blob {arrayBuffer() {return new Promise(resolve=>{release=resolve;});}}
+  c.socket.receive(new SlowBlob([nativeReply])); await h.flush();
+  h.acknowledge(c); c.socket.close(); await rejected;
+  release(nativeReply.buffer); await h.flush();
+  assert.equal(c.unity.length,1);
+  assert.equal(core.envelope(c.unity[0].bytes).id,injectedId);
+  assert.equal(c.socket.send,h.Socket.prototype.send);
+});
+
+test('authentication queued before close cannot select or authenticate the closed socket', async () => {
+  const h=setup(), c=h.connect();
+  c.socket.send(h.frame(2,7,'.lq.Lobby.login'));
+  const reply=h.frame(3,7,'',h.protocol.encode([[2,81]]));
+  let release;
+  class SlowBlob extends Blob {arrayBuffer() {return new Promise(resolve=>{release=resolve;});}}
+  c.socket.receive(new SlowBlob([reply])); await h.flush();
+  c.socket.close(); release(reply.buffer); await h.flush();
+  assert.equal(h.api.snapshot().connected,false);
+  assert.equal(h.api.snapshot().progress,0);
+  assert.equal(h.api.snapshot().lastAccountId,null);
+  assert.equal(c.socket.send,h.Socket.prototype.send);
+  assert.equal(c.unity.length,1,'Unity still receives its queued response');
+});
+
+test('successful authentication clears only a resolved authentication fault for that connection role', async () => {
+  const h=setup(), lobby=h.connect();
+  const rejectAuth=async (connection,game=false) => {
+    connection.socket.send(h.frame(2,30,game?'.lq.FastTest.authGame':'.lq.Lobby.login',h.protocol.encode([[1,81]])));
+    connection.socket.receive(h.frame(3,30,'',h.protocol.encode([[1,h.protocol.encode([[1,1004]])]])).buffer);
+    await h.flush(); assert.match(h.api.snapshot().fault,/1004/);
+  };
+  await rejectAuth(lobby); await h.login(lobby,81);
+  assert.equal(h.api.snapshot().fault,'');
+  const game=h.connect(true); await rejectAuth(game,true); await h.login(lobby,81);
+  assert.match(h.api.snapshot().fault,/1004/,'lobby authentication cannot repair game authentication');
+  await h.login(game,81,true); assert.equal(h.api.snapshot().fault,'');
+  game.socket.send(h.frame(2,31,'.lq.FastTest.syncGame'));
+  game.socket.receive(h.frame(3,31,'',h.protocol.encode([[1,h.protocol.encode([[1,1005]])]])).buffer);
+  await h.flush(); await rejectAuth(game,true); await h.login(game,81,true);
+  assert.match(h.api.snapshot().fault,/1005/,'a separate recovery failure remains unresolved');
+});
+
+test('successful same-connection read retry clears only read timeout uncertainty', async () => {
+  for(const unknownMutation of [false,true]) {
+    const h=setup(), c=h.connect(); await h.login(c);
+    const read=h.api.request('.lq.Lobby.fetchAccountInfo',new Uint8Array());
+    const rejected=[assert.rejects(read,/超时/)];
+    if(unknownMutation) rejected.push(assert.rejects(h.api.request('.lq.Lobby.startUnifiedMatch',new Uint8Array()),/超时/));
+    await h.advance(10000); await Promise.all(rejected);
+    assert.equal(h.api.snapshot().stalled,true);
+    c.socket.send(h.frame(2,31,'.lq.Lobby.fetchServerTime'));
+    h.acknowledge(c,c.socket.sent.length-1); await h.flush();
+    assert.equal(h.api.snapshot().stalled,true,'unrelated successful reads do not prove retry recovery');
+    const failed=h.api.request('.lq.Lobby.fetchAccountInfo',new Uint8Array());
+    h.acknowledge(c,c.socket.sent.length-1,h.protocol.encode([[1,h.protocol.encode([[1,1004]])]]));
+    await assert.rejects(failed,/1004/); assert.equal(h.api.snapshot().stalled,true);
+    const retry=h.api.request('.lq.Lobby.fetchAccountInfo',new Uint8Array());
+    h.acknowledge(c,c.socket.sent.length-1); await retry; await h.flush();
+    assert.equal(h.api.snapshot().stalled,unknownMutation);
+    h.acknowledge(c,0); await h.flush();
+    assert.equal(c.unity.length,1,'timed-out injected response is still quarantined');
+  }
+});
+
+test('confirmed cancellation clears only uncertain matchmaking for the same connection and sid', async () => {
+  for(const other of ['', 'read', 'game']) {
+    const h=setup(), c=h.connect(); await h.login(c);
+    const sid=value=>h.protocol.encode([[1,value]]);
+    const rejected=[
+      assert.rejects(h.api.request('.lq.Lobby.startUnifiedMatch',sid('1:8')),/超时/),
+      assert.rejects(h.api.request('.lq.Lobby.cancelUnifiedMatch',sid('1:9')),/超时/),
+    ];
+    if(other==='read') rejected.push(assert.rejects(h.api.request('.lq.Lobby.fetchAccountInfo',new Uint8Array()),/超时/));
+    if(other==='game') {
+      const game=h.connect(true); await h.login(game,23,true);
+      rejected.push(assert.rejects(h.api.request('.lq.FastTest.inputOperation',new Uint8Array()),/超时/));
+    }
+    await h.advance(10000); await Promise.all(rejected);
+    for(const value of ['1:10','1:8','1:9']) {
+      const cancel=h.api.request('.lq.Lobby.cancelUnifiedMatch',sid(value));
+      h.acknowledge(c,c.socket.sent.length-1); await cancel; await h.flush();
+      assert.equal(h.api.snapshot().stalled,value!=='1:9'||!!other);
+    }
+    if(other==='read') {
+      const retry=h.api.request('.lq.Lobby.fetchAccountInfo',new Uint8Array());
+      h.acknowledge(c,c.socket.sent.length-1); await retry;
+    } else if(other==='game') h.api.markProgress();
+    assert.equal(h.api.snapshot().stalled,false);
+  }
+});
+
+test('an older native cancellation ACK cannot clear a newer unknown matchmaking request', async () => {
+  const h=setup(), c=h.connect(); await h.login(c);
+  const payload=h.protocol.encode([[1,'1:8']]);
+  c.socket.send(h.frame(2,31,'.lq.Lobby.cancelUnifiedMatch',payload));
+  const rejected=assert.rejects(h.api.request('.lq.Lobby.startUnifiedMatch',payload),/超时/);
+  await h.advance(10000); await rejected;
+  h.acknowledge(c,0); await h.flush();
+  assert.equal(h.api.snapshot().stalled,true);
+  const cancel=h.api.request('.lq.Lobby.cancelUnifiedMatch',payload);
+  h.acknowledge(c,c.socket.sent.length-1); await cancel;
+  assert.equal(h.api.snapshot().stalled,false);
 });
 
 test('native recovery on the same socket interrupts an unknown input and filters its late ACK', async () => {

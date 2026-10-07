@@ -191,9 +191,14 @@
     });
   }
   function onEvent(packet) {
-    if (packet.phase === 'ended' || packet.state?.phase === 'ended') submitted = submittedStable = null;
+    const ended = packet.phase === 'ended' || packet.state?.phase === 'ended';
+    if (ended) submitted = submittedStable = null;
     const request = pending;
     if (!request) return;
+    // A phase update can precede the final action; reset means no echo followed it.
+    if (ended && packet.kind === 'status' && packet.reset && !request.echo) {
+      request.finish(reconnectError('对局已结束，本次操作未获权威动作确认')); return;
+    }
     if (packet.phase === 'disconnected' || packet.recovery?.status === 'waiting' ||
         packet.state?.recovery?.status === 'waiting') {
       request.finish(reconnectError('连接正在恢复，操作结果未确认，等待权威状态推进')); return;

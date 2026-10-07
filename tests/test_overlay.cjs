@@ -9,7 +9,7 @@ const source = fs.readFileSync(path.join(__dirname, '../src/overlay.js'), 'utf8'
 class Element {
   constructor() {
     this.children = []; this.style = {}; this.dataset = {}; this.className = ''; this.hidden = false; this.text = '';
-    this.attributes = {}; this.listeners = {};
+    this.attributes = {}; this.listeners = {}; this.layoutReads = 0;
   }
   setAttribute(name, value) { this.attributes[name] = value; if (name === 'class') this.className = value; }
   getAttribute(name) { return this.attributes[name]; }
@@ -19,7 +19,7 @@ class Element {
   replaceChildren() { this.children = []; this.text = ''; }
   set textContent(text) { this.replaceChildren(); this.text = text; }
   get textContent() { return this.text + this.children.map(child => child.textContent).join(''); }
-  getBoundingClientRect() { return {height: 200}; }
+  getBoundingClientRect() { this.layoutReads++; return {height: 200}; }
   querySelectorAll(selector) {
     return this.children.flatMap(child => [
       ...(child.className.split(' ').includes(selector.slice(1)) ? [child] : []),
@@ -41,11 +41,13 @@ class Element {
 }
 
 function overlay(autoplay) {
+  const events = new Map();
   const body = new Element(), context = {window: {__mjAutoplay: autoplay}, location: {hostname: 'game.maj-soul.com'}, innerHeight: 760,
-    document: {body, readyState: 'complete', createElement: () => new Element(), addEventListener() {}}, addEventListener() {}};
+    document: {body, readyState: 'complete', createElement: () => new Element(), addEventListener() {}},
+    addEventListener: (type, listener) => events.set(type, listener)};
   vm.runInNewContext(source, context);
   const root = body.children[0].shadowRoot, api = context.window.__mjStatsOverlay;
-  return {api, root, window: context.window, show(advice, text = normalText, key = 'test:1') {
+  return {api, root, events, window: context.window, show(advice, text = normalText, key = 'test:1') {
     api.expectAdvice(key); api.update({kind: 'turn', adviceKey: key, text, advice});
   }};
 }
@@ -135,6 +137,48 @@ test('automation restores an installed controller status without enabling it imp
   assert.equal(root.querySelector('.automation-south').getAttribute('aria-pressed'), 'true');
   assert.equal(root.querySelector('.automation-east').getAttribute('aria-pressed'), 'false');
   assert.equal(root.querySelector('.automation-status').textContent, '等待登录');
+});
+
+test('automation timing updates avoid layout reads while visible changes and resize remain immediate', () => {
+  const status = {enabled:true, playerCount:4, roundCount:1, phase:'waiting', message:'等待行动'};
+  const {api, root, events} = overlay({getStatus: () => status});
+  const panel = root.querySelector('.panel'), before = panel.layoutReads;
+  for (let elapsedMs = 100; elapsedMs <= 1000; elapsedMs += 100) {
+    api.updateAutomation({...status, timing:{elapsedMs, targetMs:2000}});
+  }
+  assert.equal(panel.layoutReads, before, 'elapsed timing does not change any visible control');
+  api.updateAutomation({...status, phase:'paused'});
+  assert.equal(root.querySelector('.automation-status').dataset.phase, 'paused');
+  assert.equal(panel.layoutReads, before, 'phase changes color without changing geometry');
+  api.updateAutomation({...status, playerCount:3, roundCount:2});
+  assert.equal(root.querySelector('.automation-three').getAttribute('aria-pressed'), 'true');
+  assert.equal(root.querySelector('.automation-south').getAttribute('aria-pressed'), 'true');
+  assert.equal(panel.layoutReads, before, 'selected mode changes do not change button geometry');
+  api.updateAutomation({...status, phase:'delaying', message:'按建议操作 · 1.8 秒'});
+  const countdown = panel.layoutReads;
+  for (let tenth = 17; tenth >= 8; tenth--) {
+    const message = `按建议操作 · ${(tenth / 10).toFixed(1)} 秒`;
+    api.updateAutomation({...status, phase:'delaying', message});
+    assert.equal(root.querySelector('.automation-status').textContent, message, 'countdown remains current');
+  }
+  assert.equal(panel.layoutReads, countdown, 'equal-width countdown digits do not change geometry');
+  api.updateAutomation({...status, enabled:false, message:'已停止'});
+  assert.equal(root.querySelector('.automation-toggle').textContent, '自动打牌：关闭');
+  assert.equal(root.querySelector('.automation-status').textContent, '已停止');
+  assert.ok(panel.layoutReads > before, 'new text is fitted immediately');
+  const fitted = panel.layoutReads;
+  events.get('resize')();
+  assert.ok(panel.layoutReads > fitted, 'window resize still fits unchanged controls');
+});
+
+test('an unavailable control is restored by the next unchanged controller status', () => {
+  const status = {enabled:false, playerCount:4, roundCount:1, phase:'idle', message:'待机'};
+  const {api, root} = overlay({getStatus: () => status});
+  root.querySelector('.automation-south').click();
+  assert.equal(root.querySelector('.automation-status').textContent, '自动打牌暂不可用');
+  api.updateAutomation(status);
+  assert.equal(root.querySelector('.automation-status').textContent, '待机');
+  assert.equal(root.querySelector('.automation-status').dataset.phase, 'idle');
 });
 
 test('missing roundCount stays east and a controller without its setter cannot select south', () => {

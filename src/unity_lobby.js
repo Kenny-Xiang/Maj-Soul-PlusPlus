@@ -20,7 +20,7 @@
   let transport, identity = '', lastAccountId = null, generation = 0, account = null, refreshNeeded = true;
   let busy = null, owned = null, externalQueue = null, playing = false, enteringAt = null;
   let endedAt = null, roundKey = null, lastRound = null, roundEpoch = 0, roundLocation = null;
-  let confirmingAt = null, problem = '', problemGame = false, cancelError = '', gameConnection = '';
+  let confirmingAt = null, problem = '', problemGame = false, matchProblem = '', cancelError = '', gameConnection = '';
   let recoveryWaiting = false;
   let resumeAccount = null, loginVerified = false, noGameConfirmed = false;
   let roundCoordinates = null, terminalIdentity = null, confirmation = null, confirmationUnknown = false;
@@ -48,7 +48,7 @@
         enteringAt = endedAt = roundKey = confirmingAt = lastRound = roundLocation = null;
         recoveryWaiting = false;
       }
-      problem = ''; problemGame = false; cancelError = '';
+      problem = matchProblem = ''; problemGame = false; cancelError = '';
     }
     const nextGame = `${live.gameSessionId || 0}:${!!live.gameConnected}`;
     if (nextGame !== gameConnection) {
@@ -221,7 +221,7 @@
         if (owned?.sid !== sid && externalQueue !== sid) return;
         if (owned?.sid === sid) owned = null;
         if (externalQueue === sid) externalQueue = null;
-        problem = '匹配失败或超时，请重新开启自动打牌';
+        matchProblem = '匹配失败或超时，请重新开启自动打牌';
       } else if (['.lq.NotifyAccountLogout', '.lq.NotifyAnotherLogin'].includes(method)) {
         generation++; account = null; owned = externalQueue = null; busy = null;
         problem = '账号已退出或在其他设备登录';
@@ -241,7 +241,7 @@
   function snapshot(playerCount = 4, roundCount = 1) {
     const live = sync();
     if (!transport?.isUnity?.() || !protocol()) return result('loading', '等待 Unity 游戏客户端加载', {clientLoading:true});
-    if (problem) return result('blocked', problem);
+    if (problem || matchProblem) return result('blocked', problem || matchProblem);
     if (resumeAccount !== null && validId(live.accountId) && live.accountId !== resumeAccount)
       return result('blocked', '恢复后登录账号已变化，请手动重新开启');
     if (!live.connected) return result('login', '等待大厅连接，请先在游戏窗口登录');
@@ -411,6 +411,6 @@
     if (owned && loginVerified && noGameConfirmed) cancel();
   }
   window.__mjLobby = window.__mjUnityLobby = {snapshot, start, finish, cancel, onEvent, checkpoint, restoreCheckpoint,
-    beginIntent() { resumeAccount = null; }};
+    beginIntent() { resumeAccount = null; matchProblem = ''; }};
   sync();
 })();

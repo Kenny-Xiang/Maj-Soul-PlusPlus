@@ -328,6 +328,8 @@ test('a final-hand win retains its authoritative echo across collector reset unt
   const event = {name:'ActionHule',step:13,matchEnd:true,hules:[{seat:0,zimo:true}]};
   core.apply(h.state,event);
   assert.equal(h.state.phase,'ended'); assert.equal(h.state.match,null);
+  h.api.onEvent({kind:'status',phase:'ended'});
+  assert.equal(h.api.snapshot().pending,true,'the collector publishes a phase change before its terminal action echo');
   h.echo(event,{state:plain(h.state)});
   Object.assign(h.state,core.emptyState(),{phase:'ended'});
   h.api.onEvent({kind:'status',phase:'ended',reset:true});
@@ -335,6 +337,24 @@ test('a final-hand win retains its authoritative echo across collector reset unt
   h.ack(); assert.equal((await p).action,'tsumo');
   assert.equal(h.api.snapshot().pending,false);
 });
+
+for (const acknowledged of [false,true])
+  test(`notification-only end releases a ${acknowledged?'acknowledged':'unacknowledged'} request without confirming its action`, async () => {
+    const h=setup();h.state.operationTiming.timeAdd=90000;
+    const pending=h.run({action:'discard',tile:'1m'});
+    const rejected=assert.rejects(pending,error=>error.recoverable===true && /已结束.*未.*确认/.test(error.message));
+    if (acknowledged) {h.ack();await Promise.resolve();}
+    h.api.onEvent({kind:'status',phase:'ended',reset:true});
+    assert.equal(h.api.snapshot().pending,false);
+    assert.equal(h.api.checkpoint().submitted,null);
+    assert.equal(h.timers.size,0);
+    await rejected;
+    h.state.gameId='next-game';
+    const next=h.run({action:'discard',tile:'1m'});
+    h.ack(0);await Promise.resolve();
+    assert.equal(h.api.snapshot().pending,true,'a late old ACK cannot complete the next game request');
+    h.ack(1);h.echo({name:'ActionDiscardTile',seat:0,tile:'1m',moqie:false});await next;
+  });
 
 test('recovery preserves an unknown submitted turn despite new timing, and only a new authoritative turn can act',async()=>{
   const h=setup(), old=h.run({action:'discard',tile:'1m'});

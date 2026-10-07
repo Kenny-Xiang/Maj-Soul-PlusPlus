@@ -213,6 +213,7 @@ function stop() {
   core.setMatch(state, null);
   for (const meta of sockets.values()) detach(meta);
   if (window.WebSocket === wrappedConstructor) window.WebSocket = NativeSocket;
+  window.__mjUnityTransport?.stop();
   state.phase = 'stopped'; state.recovery = null; console.log('[雀魂监听] 页面监听已停止');
 }
 wrappedConstructor = new Proxy(NativeSocket, {construct(target, args, newTarget) {

@@ -295,6 +295,23 @@ test('unrelated manual cancel and timeout do not clear an existing queue',async(
   assert.equal(h.api.snapshot().phase,'matching');
 });
 
+for (const method of ['.lq.NotifyMatchTimeout','.lq.NotifyMatchFailed'])
+  test(`a new intent clears ${method} without clearing a later authentication or operation problem`,async()=>{
+    for (const fault of [null,'logout','operation']) {
+      const h=harness();await h.refresh();
+      const start=h.api.start(4,h.api.snapshot().actionKey);
+      h.calls.at(-1).resolve({payload:encode([])});await start;
+      h.emit(method,encode([[1,'1:5']]));
+      assert.equal(h.api.snapshot().phase,'blocked');
+      if (fault==='logout') h.emit('.lq.NotifyAccountLogout');
+      if (fault==='operation') h.emit('.lq.FastTest.confirmNewRound',encode([[1,encode([[1,1004]])]]),{kind:'response',game:true});
+      const before=h.api.snapshot().message;
+      h.api.beginIntent();
+      assert.equal(h.api.snapshot().phase,fault?'blocked':'lobby');
+      if (fault) assert.equal(h.api.snapshot().message,before);
+    }
+  });
+
 test('native confirm before collector delivery cannot re-arm the same round',async()=>{
   const h=harness({gameConnected:true}), plain=encode([[5,25000]]), keys=[132,94,78,66,57,162,31,96,28];
   const scrambled=plain.map((b,i)=>b^(((23^plain.length)+5*i+keys[i%9])&255));

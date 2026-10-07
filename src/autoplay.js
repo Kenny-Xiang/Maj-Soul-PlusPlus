@@ -101,8 +101,10 @@
       const result = window.__mjLobby?.cancel();
       if (result?.pending) cancelling ??= now();
       else {
+        const wasCancelling = cancelling !== null;
         cancelling = null;
         if (result?.ok === false) throw new Error(result.reason || '客户端拒绝取消');
+        if (wasCancelling && !fault) status('idle', '已关闭 · 手动操作');
       }
     } catch (error) {
       cancelling = null;
@@ -256,9 +258,9 @@
   function tick() {
     if (stopped) return;
     if (cancelling !== null) {
-      if (now() - cancelling >= 5000) {
-        cancelling = null; status('paused', '自动已关闭；取消匹配未确认，请在游戏中检查');
-      } else cancelMatch();
+      if (now() - cancelling >= 5000)
+        status('paused', '自动已关闭；取消匹配未确认，正在重试，请在游戏中检查');
+      cancelMatch();
     }
     if (!enabled || frozen) return;
     try {
