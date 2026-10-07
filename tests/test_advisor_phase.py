@@ -147,8 +147,9 @@ class PhaseRewardTests(unittest.TestCase):
                                                 passed_discard=best["tile"])
                 _, stock, _ = advisor._policy_risks(hand, snapshot, remaining, opponents)
                 self.assertEqual(len(stock), len(snapshot["hand"]) - 1)
-                self.assertCountEqual(stock, [advisor._danger(tile, remaining, opponents)[:2]
+                self.assertCountEqual([price[:2] for price in stock], [advisor._danger(tile, remaining, opponents)[:2]
                                              for tile in hand])
+                self.assertTrue(all(price[2] == 0. for price in stock))
         risk = next(r for r in threatened["best"]["opponentRisks"] if r["seat"] == 1)
         self.assertEqual(risk["probability"], 0)
 

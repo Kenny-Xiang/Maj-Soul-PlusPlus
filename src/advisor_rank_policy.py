@@ -1,8 +1,9 @@
 """Bounded rank-point preferences, not an estimated final-placement EV.
 
 Smooth the official placement rewards over score gaps, then compare symmetric
-4000-point transfers. The smoothing width, transfer size and weight bounds are
-unfitted policy choices. Opponent identity, match-ending probability, dealer
+4000-point transfers. Actual predicted discard payments then retain the
+receiving opponent's score. The smoothing width, transfer size and weight
+bounds are unfitted policy choices. Match-ending probability, dealer
 continuation and future score distributions are not inferred by this proxy.
 """
 from functools import lru_cache
@@ -63,7 +64,7 @@ def _context(match_values, levels, scores, seat, chang, ju):
     own = scores[seat]
     above, tied = sum(s > own for s in scores), sum(s == own for s in scores)
     return {'active': True, 'source': 'auth-game', 'objective': 'rank-points',
-            'method': 'bounded-rank-potential', 'profile': profile,
+            'method': 'bounded-rank-potential', 'lossMethod': 'bounded-rank-transfer', 'profile': profile,
             'rankRange': [above + 1, above + tied], 'dealer': ju == seat,
             'gapToFirst': max(scores) - own, 'gapAboveLast': own - min(scores),
             'remainingScheduledHands': remaining, 'smoothingPoints': scale,
@@ -94,3 +95,35 @@ def ranked_context(state):
     if not isinstance(levels, (list, tuple)) or any(level is not None and type(level) is not int for level in levels):
         return None
     return _context(values, tuple(levels), tuple(scores), seat, chang, ju)
+
+
+def loss_context(state):
+    """Immutable pricing inputs, also distinguishing hypothetical riichi costs."""
+    context = ranked_context(state)
+    if context is None:
+        return None
+    profile = context['profile']
+    return (tuple(state['scores'][:state['playerCount']]), state['selfSeat'],
+            tuple(profile['placementPoints']), profile['scoreDivisor'],
+            context['smoothingPoints'], context['probeGain'], context['riskWeight'])
+
+
+@lru_cache(maxsize=4096)
+def loss_adjustment(context, rival, payment):
+    """Signed point-scale preference, separate from the predicted cash payment.
+
+    Normalize the actual score transfer by the existing average gain probe.
+    This remains a bounded preference, not final-placement expected value.
+    """
+    if context is None or payment <= 0:
+        return 0.
+    scores, seat, rewards, divisor, scale, gain, old_weight = context
+    if gain <= 1e-10:
+        return 0.
+    after = list(scores)
+    after[seat] -= payment
+    after[rival] += payment
+    loss = (_potential(scores, seat, rewards, divisor, scale) -
+            _potential(after, seat, rewards, divisor, scale))
+    weight = max(.75, min(1.75, BASE_WEIGHT * loss / gain * PROBE_POINTS / payment))
+    return (old_weight - weight) * payment

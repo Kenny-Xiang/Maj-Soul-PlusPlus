@@ -96,7 +96,7 @@ class DefenseContinuationTests(unittest.TestCase):
         only_riichi = opponents[:1]
         stock, _, _ = advisor._defense_inputs(tiles("11m"), s, remaining, only_riichi)
         self.assertGreater(stock[0][0], 0.)
-        self.assertEqual(stock[1], (0., 0.))
+        self.assertEqual(stock[1], (0., 0., 0.))
         stock, _, _ = advisor._defense_inputs(tiles("11m"), s, remaining, opponents)
         self.assertGreater(stock[1][0], 0.)
         self.assertLess(stock[1][0], stock[0][0])

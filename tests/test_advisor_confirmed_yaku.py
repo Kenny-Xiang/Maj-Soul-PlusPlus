@@ -6,11 +6,10 @@ from test_advisor import state, tiles
 from test_advisor_actions import offered
 
 
-def position(snapshot, discard, *, open_call=False):
+def position(snapshot, discard):
     hand = snapshot["hand"].copy()
     hand.remove(discard)
-    return advisor._position(hand, snapshot, advisor.unseen_counts(snapshot), discard,
-                             open_call=open_call)
+    return advisor._position(hand, snapshot, advisor.unseen_counts(snapshot), discard)
 
 
 class ConfirmedCallYakuTests(unittest.TestCase):
@@ -25,8 +24,11 @@ class ConfirmedCallYakuTests(unittest.TestCase):
         snapshot["left"] = 8
         choice = advisor._action_choices(snapshot)[0][0]
         after = advisor._apply_choice(snapshot, choice)
-        hypothetical = position(after, "4s", open_call=True)
+        advice = advisor.advise(snapshot)
+        self.assertEqual(advice["status"], "ready")
+        hypothetical = next(c for c in advice["candidates"] if c["action"] == "pon")
         realized = position(after, "4s")
+        self.assertEqual(hypothetical["followupDiscard"], "4s")
         self.assertEqual(hypothetical["shanten"], 0)
         self.assertTrue(any("Toitoi" in wait["yaku"] for wait in hypothetical["winningTiles"]))
         self.assertGreater(hypothetical["winProbability"], 0)
@@ -40,7 +42,7 @@ class ConfirmedCallYakuTests(unittest.TestCase):
         snapshot = state("456p789s23s55z9m")
         snapshot["melds"][0] = [{"type": 0, "tiles": tiles("123m")}]
         snapshot["doras"] = ["2s"]
-        candidate = position(snapshot, "9m", open_call=True)
+        candidate = position(snapshot, "9m")
         self.assertEqual(candidate["shanten"], 0)
         self.assertEqual(candidate["yakuConfidence"], 0.)
         self.assertEqual(candidate["winProbability"], 0.)
@@ -49,22 +51,20 @@ class ConfirmedCallYakuTests(unittest.TestCase):
                             for wait in candidate["winningTiles"]))
         self.assertNotIn("破坏门清", " ".join(candidate["reasons"]))
 
-    def test_one_shanten_confirmed_yakuhai_is_not_penalized(self):
+    def test_one_shanten_confirmed_yakuhai_keeps_its_license(self):
         snapshot = state("456p78s23s55z1z9m")
         snapshot["melds"][0] = [{"type": 1, "tiles": tiles("666z")}]
-        hypothetical = position(snapshot, "9m", open_call=True)
-        realized = position(snapshot, "9m")
-        self.assertEqual(hypothetical["shanten"], 1)
-        self.assertEqual(hypothetical["yakuConfidence"], 1.)
-        self.assertNotIn("openNoYakuPenalty", hypothetical["scoreBreakdown"])
-        self.assertEqual(hypothetical["score"], realized["score"])
+        candidate = position(snapshot, "9m")
+        self.assertEqual(candidate["shanten"], 1)
+        self.assertEqual(candidate["yakuConfidence"], 1.)
+        self.assertNotIn("openNoYakuPenalty", candidate["scoreBreakdown"])
 
     def test_furiten_yaku_wait_retains_tsumo_license(self):
         snapshot = state("888s5s4s", players=3)
         snapshot["melds"][0] = [{"type": 1, "tiles": tiles(group)}
                                   for group in ("222p", "777s", "111s")]
         snapshot["rivers"][0] = [{"tile": "5s"}]
-        candidate = position(snapshot, "4s", open_call=True)
+        candidate = position(snapshot, "4s")
         self.assertTrue(candidate["furiten"])
         self.assertEqual(candidate["yakuConfidence"], 1.)
         self.assertTrue(all(wait["ronPoints"] == 0 for wait in candidate["winningTiles"]))
@@ -75,13 +75,11 @@ class ConfirmedCallYakuTests(unittest.TestCase):
         snapshot = state("456p78s23s55z1z9m")
         snapshot["melds"][0] = [{"type": 1, "tiles": tiles("666z")}]
         snapshot["left"] = 0
-        hypothetical = position(snapshot, "9m", open_call=True)
-        realized = position(snapshot, "9m")
-        self.assertEqual(hypothetical["shanten"], 1)
-        self.assertEqual(hypothetical["winProbability"], 0.)
-        self.assertEqual(hypothetical["yakuConfidence"], 1.)
-        self.assertEqual(hypothetical["score"], realized["score"])
-        self.assertFalse(any("缺少可确认役" in reason for reason in hypothetical["reasons"]))
+        candidate = position(snapshot, "9m")
+        self.assertEqual(candidate["shanten"], 1)
+        self.assertEqual(candidate["winProbability"], 0.)
+        self.assertEqual(candidate["yakuConfidence"], 1.)
+        self.assertFalse(any("缺少可确认役" in reason for reason in candidate["reasons"]))
 
 
 if __name__ == "__main__":

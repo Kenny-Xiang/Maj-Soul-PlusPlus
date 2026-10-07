@@ -45,14 +45,18 @@ class CallAdviceTests(unittest.TestCase):
         self.assertGreater(a["best"]["winProbability"], get_action(s, "pass")["winProbability"])
         self.assertGreater(a["best"]["expectedWinPoints"], 0)
 
-    def test_no_yaku_chi_is_rejected_in_favor_of_pass(self):
+    def test_no_yaku_chi_has_only_legal_draw_value_and_consistent_followup(self):
         s = offered("123m456p789s55z23s", 2, ["2s|3s"], "1s")
         a = advise(s)
-        self.assertEqual(a["best"]["action"], "pass")
-        chi = get_action(s, "chi")
+        self.assertEqual(a["status"], "ready")
+        chi = next(c for c in a["candidates"] if c["action"] == "chi")
         self.assertEqual(chi["winProbability"], 0)
         self.assertEqual(chi["expectedWinPoints"], 0)
         self.assertIn("无役", " ".join(chi["reasons"]))
+        after = _apply_choice(s, _action_choices(s)[0][0])
+        followup = _rank_candidates(_discards(after, unseen_counts(after)))[0]
+        self.assertEqual(chi["followupDiscard"], followup["tile"])
+        self.assertEqual(chi["score"], followup["score"])
 
     def test_chi_excludes_same_tile_and_suji_swap_discard(self):
         s = offered("3456m123p789s112z", 2, ["4m|5m"], "3m")

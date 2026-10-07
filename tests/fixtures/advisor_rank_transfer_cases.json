@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "id": "rank-transfer-last-place-recipient",
+      "tags": [
+        "rank-points",
+        "sanma",
+        "late-wall",
+        "opponent-riichi"
+      ],
+      "notes": "Synthetic public hand with a recent score-gap pattern. Equal-probability honor discards pay 8000 to last or 12000 to first; only the former drops self to last. No private hand or future result is used.",
+      "expectedStatus": "ready",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 1,
+        "playerCount": 3,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "1s",
+          "2s",
+          "3s",
+          "7s",
+          "8s",
+          "9s",
+          "4p",
+          "5p",
+          "1z",
+          "2z",
+          "3z"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "canDiscard": true,
+        "operations": [
+          1
+        ],
+        "forbiddenDiscards": [],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "2z"
+            }
+          ],
+          [],
+          [
+            {
+              "tile": "1z"
+            }
+          ],
+          []
+        ],
+        "north": [
+          1,
+          0,
+          1,
+          0
+        ],
+        "riichi": [
+          true,
+          false,
+          true,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "left": 0,
+        "doras": [],
+        "scores": [
+          25000,
+          38000,
+          40000
+        ],
+        "lastStep": 40,
+        "lastDraw": "3z",
+        "furiten": false,
+        "riichiSticks": 0,
+        "match": {
+          "source": "auth-game",
+          "category": 2,
+          "modeId": 21,
+          "room": 3,
+          "levelId": 20301,
+          "levelIds": [
+            20301,
+            20301,
+            20301
+          ],
+          "playerCount": 3,
+          "roundCount": 1
+        }
+      }
+    }
+  ]
+}

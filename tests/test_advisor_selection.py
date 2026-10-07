@@ -277,7 +277,7 @@ class FoldEligibilityTests(unittest.TestCase):
 
 
 class StrategyMetadataTests(unittest.TestCase):
-    def test_reachable_no_yaku_call_fold_does_not_pay_attack_route_penalty(self):
+    def test_reachable_no_yaku_call_can_choose_safe_fold(self):
         snapshot = offered("147m456p789s15z23s", 2, ["2s|3s"], "1s")
         snapshot["left"] = 4
         snapshot["riichi"] = [False, True, True, True]
@@ -295,21 +295,19 @@ class StrategyMetadataTests(unittest.TestCase):
         self.assertEqual(called["score"], round(called["policyComparison"]["fold"], 1))
         self.assertEqual(snapshot, original)
 
-    def test_open_call_attack_cost_is_compared_before_choosing_current_policy(self):
+    def test_current_policy_uses_the_same_terminal_utility_for_attack_and_fold(self):
         snapshot = state()
-        # These are reachable terminal masses and plausible payments: before
-        # the call-specific attack cost, attack is -1900 and pure fold -2100.
+        # These are reachable terminal masses and plausible payments:
+        # attack is -1900 and pure fold -2100 on their common utility scale.
         attack = selection.Outcome(win=.1, income=1000., deal=.3, loss=2000.,
                                    draw=.6, draw_income=-600.)
         fold = selection.Outcome(draw=1., draw_income=-2100.)
-        self.assertEqual(selection._select_current_policy(attack, fold, 0., 0., snapshot)[2], "attack")
         _, selected, mode, comparison = selection._select_current_policy(
-            attack, fold, 0., 0., snapshot, attack_penalty=500.)
-        self.assertEqual(mode, "fold")
-        self.assertAlmostEqual(comparison["attack"], -2400.)
+            attack, fold, 0., 0., snapshot)
+        self.assertEqual(mode, "attack")
+        self.assertAlmostEqual(comparison["attack"], -1900.)
         self.assertAlmostEqual(comparison["fold"], -2100.)
-        self.assertEqual(selected.win, 0)
-        self.assertEqual(selected.income, 0)
+        self.assertEqual(selected, attack)
 
     def test_current_root_fold_has_no_attack_tie_reward_or_future_fold_label(self):
         snapshot = state()
