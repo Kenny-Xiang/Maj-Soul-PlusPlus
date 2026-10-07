@@ -4,7 +4,7 @@ from PyInstaller.utils.hooks import copy_metadata
 
 root = Path(SPECPATH)
 datas = [(str(root / 'src' / name), '.') for name in
-         ('core.cjs', 'browser.js', 'overlay.js', 'autoplay.js',
+         ('core.cjs', 'browser.js', 'overlay.js', 'autoplay.js', 'background.js',
           'unity_transport.js', 'unity_actions.js', 'unity_lobby.js')]
 datas += copy_metadata('mahjong')
 datas += [(str(root / 'docs'), 'docs')]

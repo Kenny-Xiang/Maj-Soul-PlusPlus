@@ -278,7 +278,7 @@
       if (!turn || turn.state.phase === 'connected' && turn.state.baseline === null) {
         initialRoundSince ??= now();
         if (now() - initialRoundSince >= 30000)
-          pause('已暂停：30 秒内未收到完整开局信息，请检查游戏连接');
+          status('waiting', '开局信息加载较慢 · 自动保持开启，等待完整牌局信息');
         else status('waiting', '正在进入对局 · 等待开局牌局信息');
         return;
       }
@@ -338,7 +338,7 @@
   const timer = setInterval(tick, 100);
   addEventListener('pointerdown', manual, true);
   addEventListener('keydown', manual, true);
-  window.__mjAutoplay = {getStatus, setEnabled, setPlayerCount, setRoundCount, onEvent, onAdvice, onInput,
+  window.__mjAutoplay = {getStatus, setEnabled, setPlayerCount, setRoundCount, onEvent, onAdvice, onInput, tick,
     stop() {
       setEnabled(false); stopped = true; clearInterval(timer);
       removeEventListener('pointerdown', manual, true); removeEventListener('keydown', manual, true);

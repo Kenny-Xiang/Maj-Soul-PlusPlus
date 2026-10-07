@@ -62,7 +62,7 @@ function responseTime(advice, changes = {}, random) {
 const budgetExceeded = {status:'unavailable',reason:'search_budget_exceeded',recoverable:true,
   message:'前瞻计算超过时间预算，等待下一次局面',best:null,candidates:[]};
 
-for (const arrivalMs of [500,2000,8000,29000]) test(`initial round arriving after ${arrivalMs}ms resumes from its event, not a fixed five-second delay`, () => {
+for (const arrivalMs of [500,2000,8000,29000,31000,38*60000]) test(`initial round arriving after ${arrivalMs}ms resumes from its event, not a fixed five-second delay`, () => {
   const s=setup(); s.api.setEnabled(true);
   assert.match(s.api.getStatus().message,/等待开局牌局信息/);
   s.turn(1,{phase:'connected',baseline:null,handComplete:false,historyComplete:false,canAct:false});
@@ -73,21 +73,25 @@ for (const arrivalMs of [500,2000,8000,29000]) test(`initial round arriving afte
   s.advance(1); assert.equal(s.actions.length,1); assert.equal(s.api.getStatus().enabled,true);
 });
 
-test('initial round wait expires after 30 seconds, and repeated connected statuses do not extend it', () => {
+test('confirmed game loading stays enabled after 30 seconds and repeated connected statuses', () => {
   const s=setup(); s.api.setEnabled(true); s.advance(15000);
   s.turn(1,{phase:'connected',baseline:null,handComplete:false,historyComplete:false,canAct:false});
   s.api.onEvent({kind:'status',phase:'connected'}); s.advance(14999);
   assert.equal(s.api.getStatus().enabled,true); s.advance(1);
-  assert.equal(s.api.getStatus().enabled,false); assert.match(s.api.getStatus().message,/30 秒/);
-  s.turn(2); s.advice(2); s.advance(5000);
-  assert.equal(s.api.getStatus().enabled,false); assert.equal(s.actions.length,0);
+  assert.equal(s.api.getStatus().enabled,true); assert.match(s.api.getStatus().message,/加载.*自动保持开启/);
+  s.advance(38*60000);assert.equal(s.actions.length,0);assert.equal(s.cancels,0);
+  s.turn(2,{operationTiming:{receivedAt:s.now,timeFixed:10000,timeAdd:10000}});
+  s.advice(2);s.finishAction();assert.equal(s.api.getStatus().enabled,true);
 });
 
 test('initial waiting never suppresses an incomplete playing state or manual takeover', () => {
   for (const stop of [s=>s.turn(2,{handComplete:false,historyComplete:false,baseline:'new_round'}),
     s=>s.turn(2,{handComplete:false,historyComplete:false,baseline:'snapshot_unverified'}),
+    s=>s.api.onEvent({kind:'error',message:'invalid frame'}),
+    s=>s.api.setEnabled(false),
     s=>s.listeners.get('pointerdown')({isTrusted:true,composedPath:()=>[]})]) {
-    const s=setup(); s.api.setEnabled(true); s.advance(1000); stop(s);
+    const s=setup(); s.api.setEnabled(true); s.advance(38*60000);
+    assert.equal(s.api.getStatus().enabled,true);stop(s);
     assert.equal(s.api.getStatus().enabled,false);
     s.turn(3); s.advice(3); s.advance(5000);
     assert.equal(s.api.getStatus().enabled,false); assert.equal(s.actions.length,0);
@@ -401,6 +405,16 @@ test('stop detaches timers and input handlers and cannot be re-enabled', () => {
   const s=setup();s.turn();s.advice();s.api.setEnabled(true);s.api.stop();s.advance(10000);
   assert.equal(s.actions.length,0);assert.equal(s.listeners.size,0);s.api.setEnabled(true);
   assert.equal(s.api.getStatus().enabled,false);
+});
+
+test('native heartbeat ticks cannot act after automation is off or stopped', () => {
+  for (const stop of [s=>s.api.setEnabled(false),s=>s.api.stop()]) {
+    const s=setup();s.turn();s.advice();s.api.setEnabled(true);stop(s);
+    Object.assign(s.lobby,{phase:'lobby',actionKey:'heartbeat-queue'});
+    s.advance(5000);s.api.tick();s.advance(5000);s.api.tick();
+    assert.equal(s.api.getStatus().enabled,false);
+    assert.equal(s.actions.length,0);assert.equal(s.starts.length,0);
+  }
 });
 
 test('unidentified startup waits are bounded without timing out login or matching', () => {

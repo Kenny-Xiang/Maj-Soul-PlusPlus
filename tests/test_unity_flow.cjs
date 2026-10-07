@@ -16,7 +16,10 @@ async function setup(players = 4, early = false, roundCount = 1) {
     }
     send(data) {this.sent.push(new Uint8Array(data instanceof ArrayBuffer ? data : data.buffer, data.byteOffset || 0, data.byteLength).slice());}
   }
-  const window = {WebSocket:Socket, document:{getElementById:id => id === 'unity-canvas' ? {} : null},
+  const animationFrames = new Map();
+  const window = {WebSocket:Socket, document:{hidden:false, getElementById:id => id === 'unity-canvas' ? {} : null},
+    requestAnimationFrame:fn => {animationFrames.set(++timerId, fn); return timerId;},
+    cancelAnimationFrame:id => animationFrames.delete(id),
     __mjStatsOverlay:{updateAutomation:value => statuses.push(value), invalidateAdvice() {}, expectAdvice() {}},
     webkit:{messageHandlers:{mjStatistics:{postMessage:raw => packets.push(JSON.parse(raw))}}}};
   const math = Object.create(Math); math.random = () => .5;
@@ -26,6 +29,7 @@ async function setup(players = 4, early = false, roundCount = 1) {
     clearTimeout:id => timers.delete(id), setInterval:fn => {intervals.set(++timerId, fn); return timerId;},
     clearInterval:id => intervals.delete(id), addEventListener:(type,fn)=>listeners.set(type,fn),
     removeEventListener:type=>listeners.delete(type)});
+  vm.runInContext(read('background.js'), context);
   vm.runInContext(read('unity_transport.js'), context);
   vm.runInContext(`(() => {${read('browser.js')}\n})()`, context);
   for (const file of ['unity_actions.js','unity_lobby.js','autoplay.js'])
@@ -71,15 +75,17 @@ async function setup(players = 4, early = false, roundCount = 1) {
   await reply(lobby, encode([[2,11], [3,account()]]));
   const api = window.__mjAutoplay; api.setPlayerCount(players); api.setRoundCount(roundCount);
   return {window, api, lobby, packets, statuses, advance, feed, frame, reply, replyAccount, action, connect, encode, first, fields, str, account,
+    async background(ms) {time += ms; window.__mjBackground.pulse(); await flush();},
     manual() {listeners.get('pointerdown')?.({isTrusted:true,composedPath:()=>[]});},
     last(socket) {return core.envelope(socket.sent.at(-1));},
     advice(best) {const packet = packets.findLast(p => p.kind === 'turn');
       api.onAdvice({adviceKey:`${packet.session}:${packet.serial}`, advice:{status:'ready',best}});}};
 }
 
-for (const players of [4, 3]) for (const roundCount of [1, 2]) for (const switchQueued of [false, true])
-  test(`Unity ${players}-player ${roundCount === 1 ? 'East' : 'South'} flow matches, discards, confirms a round and rematches ${switchQueued ? 'in the other wind after changing a submitted queue' : 'in the same wind'} without Laya globals`, async () => {
+for (const background of [false, true]) for (const players of [4, 3]) for (const roundCount of [1, 2]) for (const switchQueued of [false, true])
+  test(`Unity ${players}-player ${roundCount === 1 ? 'East' : 'South'} flow matches, discards, confirms a round and rematches ${switchQueued ? 'in the other wind after changing a submitted queue' : 'in the same wind'} ${background ? 'with only native background pulses' : 'without Laya globals'}`, async () => {
   const h = await setup(players, false, roundCount), {encode:e, first, fields, str} = h;
+  if (background) {h.window.document.hidden = true; h.advance = h.background;}
   const mode = (players === 4 ? 7 : 20) + roundCount;
   const nextRoundCount = switchQueued ? 3 - roundCount : roundCount;
   const nextMode = (players === 4 ? 7 : 20) + nextRoundCount;
@@ -171,6 +177,62 @@ for (const players of [4, 3]) for (const roundCount of [1, 2]) for (const switch
     'automation diagnostics must not reorder native log events');
 });
 
+for (const scenario of [
+  {delay:31000}, {delay:38*60000}, {delay:38*60000,stop:'off'}, {delay:38*60000,stop:'manual'},
+]) test(`Unity initial loading keeps user intent through ${scenario.delay}ms${scenario.stop?' then '+scenario.stop:''}`, async () => {
+  const h=await setup(3,false,2),e=h.encode,game=h.connect(true),seats=[11,22,33];
+  game.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11],[3,'slow-initial-match']])));
+  await h.reply(game,e([...seats.map(id=>[2,e([[1,id],[7,e([[1,20301]])]])]),
+    ...seats.map(id=>[3,id]),[5,e([[1,2],[2,e([[1,12]])],[3,e([[2,22]])]])]]));
+  game.send(h.frame(2,3,'.lq.FastTest.enterGame'));await h.reply(game);
+  await h.action(game,'ActionMJStart',0,[]);
+  h.api.setEnabled(true);await h.advance(scenario.delay);
+  assert.equal(h.api.getStatus().enabled,true);
+  assert.match(h.api.getStatus().message,/加载.*自动保持开启/);
+  assert.equal(game.sent.length,2,'no input may be guessed while the complete first deal is missing');
+  assert.equal(h.window.__mjMonitor.getSnapshot().state.canAct,false);
+  if (scenario.stop==='off') h.api.setEnabled(false);
+  if (scenario.stop==='manual') h.manual();
+  const hand=['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','4z','1z'];
+  await h.action(game,'ActionNewRound',1,[[1,0],[2,0],[3,0],...hand.map(tile=>[4,tile]),
+    ...seats.map(()=>[6,35000]),[7,e([[1,0],[2,e([[1,1]])],[4,20000],[5,5000]])],[13,54],[14,'1p']]);
+  assert.equal(h.window.__mjMonitor.getSnapshot().state.canAct,true);
+  await h.advance(100);assert.equal(game.sent.length,2,'a complete deal still needs fresh advice');
+  h.advice({action:'discard',tile:'1z'});await h.advance(5000);
+  if (scenario.stop) {
+    assert.equal(h.api.getStatus().enabled,false);assert.equal(game.sent.length,2);return;
+  }
+  assert.equal(h.api.getStatus().enabled,true);assert.equal(game.sent.length,3);
+  assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
+  assert.equal(h.str(h.fields(h.last(game).data),3),'1z');
+  await h.reply(game);await h.action(game,'ActionDiscardTile',2,[[1,0],[2,'1z'],[5,1]]);
+  await h.advance(1000);assert.equal(game.sent.length,3);
+  assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+});
+
+test('native background pulses progress hidden Unity entry and autoplay with JS timers and native frames suspended', async () => {
+  const h=await setup(3),e=h.encode,game=h.connect(true),seats=[11,22,33];
+  game.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11],[3,'hidden-match']])));
+  await h.reply(game,e([...seats.map(id=>[2,e([[1,id],[7,e([[1,20301]])]])]),
+    ...seats.map(id=>[3,id]),[5,e([[1,2],[2,e([[1,11]])],[3,e([[2,21]])]])]]));
+  h.api.setEnabled(true); h.window.document.hidden=true;
+  h.window.requestAnimationFrame(() => game.send(h.frame(2,3,'.lq.FastTest.enterGame')));
+  // No advance(): all JS intervals, timeouts and native rAF delivery stay stopped.
+  await h.background(31000);
+  assert.equal(h.last(game).name,'.lq.FastTest.enterGame');
+  assert.equal(h.api.getStatus().enabled,true); await h.reply(game);
+  const hand=['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','4z','1z'];
+  await h.action(game,'ActionNewRound',1,[[1,0],[2,0],[3,0],...hand.map(tile=>[4,tile]),
+    ...seats.map(()=>[6,35000]),[7,e([[1,0],[2,e([[1,1]])],[4,20000],[5,5000]])],[13,54],[14,'1p']]);
+  await h.background(250); assert.equal(game.sent.length,2,'the background scheduler still requires advice');
+  h.advice({action:'discard',tile:'1z'}); await h.background(3000);
+  assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
+  assert.equal(game.sent.length,3); assert.equal(h.api.getStatus().enabled,true);
+  await h.reply(game); await h.action(game,'ActionDiscardTile',2,[[1,0],[2,'1z'],[5,1]]);
+  await h.background(3000); assert.equal(game.sent.length,3,'background pulses do not duplicate confirmed input');
+  assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+});
+
 for (const fault of ['step gap','invalid first deal'])
   test(`Unity initial loading allowance does not accept ${fault}`, async () => {
     const h = await setup(4), e = h.encode, game = h.connect(true), seats = [11,22,33,44];
@@ -178,6 +240,8 @@ for (const fault of ['step gap','invalid first deal'])
     await h.reply(game,e([...seats.map(id=>[2,e([[1,id],[5,e([[1,10301]])]])]),
       ...seats.map(id=>[3,id]), [5,e([[1,2],[2,e([[1,1]])],[3,e([[2,8]])]])]]));
     h.api.setEnabled(true);
+    await h.advance(38*60000);
+    assert.equal(h.api.getStatus().enabled,true,'long initial waiting cannot itself cancel automation');
     const hand = ['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','7z','1z'];
     const deal = cards => [[1,0],[2,0],[3,0],...cards.map(tile=>[4,tile]),
       ...seats.map(()=>[6,25000]),[7,e([[1,0],[2,e([[1,1]])],[4,20000],[5,5000]])],[13,69],[14,'1p']];
