@@ -145,12 +145,13 @@ for (const background of [false, true]) for (const players of [4, 3]) for (const
   assert.equal(game.sent.length,3, 'the first advised action is sent exactly once after the valid deal');
   assert.equal(h.last(game).name,'.lq.FastTest.inputOperation', JSON.stringify(h.api.getStatus()));
   assert.equal(str(fields(h.last(game).data),3),'1z');
+  assert.equal(first(fields(h.last(game).data),5),0,'the dealer opening tile is dealt, not a live draw');
   assert.equal(h.api.getStatus().enabled,true);
   // Acknowledgement is private to the adapter; Unity receives only the server's action.
   const seen = game.seen.length; await h.reply(game);
   assert.equal(game.seen.length,seen);
   assert.equal(h.window.__mjUnityActions.snapshot().pending,true);
-  await h.action(game,'ActionDiscardTile',2,[[1,0],[2,'1z'],[5,1]]);
+  await h.action(game,'ActionDiscardTile',2,[[1,0],[2,'1z'],[5,0]]);
   assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
   assert.equal(h.api.getStatus().enabled,true);
   await h.action(game,'ActionNoTile',3,[]);
@@ -206,9 +207,10 @@ for (const scenario of [
   assert.equal(h.api.getStatus().enabled,true);assert.equal(game.sent.length,3);
   assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
   assert.equal(h.str(h.fields(h.last(game).data),3),'1z');
-  await h.reply(game);await h.action(game,'ActionDiscardTile',2,[[1,0],[2,'1z'],[5,1]]);
+  await h.reply(game);await h.action(game,'ActionDiscardTile',2,[[1,0],[2,'1z'],[5,0]]);
   await h.advance(1000);assert.equal(game.sent.length,3);
   assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+  assert.equal(h.api.getStatus().enabled,true);
 });
 
 test('native background pulses progress hidden Unity entry and autoplay with JS timers and native frames suspended', async () => {
@@ -229,9 +231,10 @@ test('native background pulses progress hidden Unity entry and autoplay with JS 
   h.advice({action:'discard',tile:'1z'}); await h.background(3000);
   assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
   assert.equal(game.sent.length,3); assert.equal(h.api.getStatus().enabled,true);
-  await h.reply(game); await h.action(game,'ActionDiscardTile',2,[[1,0],[2,'1z'],[5,1]]);
+  await h.reply(game); await h.action(game,'ActionDiscardTile',2,[[1,0],[2,'1z'],[5,0]]);
   await h.background(3000); assert.equal(game.sent.length,3,'background pulses do not duplicate confirmed input');
   assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+  assert.equal(h.api.getStatus().enabled,true);
 });
 
 for (const fault of ['step gap','invalid first deal'])
@@ -487,7 +490,7 @@ test('a new game UUID can reuse a previously submitted step after reconnect', as
   assert.equal(game.sent.length,2);assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
   await h.feed(old,h.frame(3,oldInput.id,''));
   assert.equal(h.window.__mjUnityActions.snapshot().pending,true);
-  await h.reply(game);await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z'],[5,1]]);
+  await h.reply(game);await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z'],[5,0]]);
   assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
   assert.equal(h.api.getStatus().enabled,true);
 });
@@ -682,7 +685,7 @@ async function budgetFixture() {
   const packet=h.packets.findLast(p=>p.kind==='turn'),key=`${packet.session}:${packet.serial}`;
   const advice=(value,adviceKey=key)=>h.api.onAdvice({adviceKey,advice:value});
   return {h,e,game,key,advice,async nextWindow() {
-    await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z'],[5,1]]);
+    await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z'],[5,0]]);
     await h.action(game,'ActionDealTile',2,[[1,0],[2,'2z'],[3,53],[4,operation]]);
     assert.equal(h.window.__mjMonitor.getSnapshot().state.canAct,true);
   }};
@@ -696,7 +699,7 @@ test('Unity sanma South budget exhaustion waits and accepts fresh advice within 
   advice({status:'ready',best:{action:'discard',tile:'1z'}});await h.advance(3000);
   assert.equal(game.sent.length,2);assert.equal(h.last(game).name,'.lq.FastTest.inputOperation');
   assert.equal(h.str(h.fields(h.last(game).data),3),'1z');
-  await h.reply(game);await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z'],[5,1]]);
+  await h.reply(game);await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z'],[5,0]]);
   await h.advance(1000);assert.equal(game.sent.length,2);
   assert.equal(h.api.getStatus().enabled,true);
 });
