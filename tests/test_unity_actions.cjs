@@ -95,6 +95,58 @@ test('drawn duplicates use moqie and locked riichi never discards a different ph
   h.ack(); await p;
 });
 
+test('explicit policy source distinguishes hand and drawn copies of the same discard or riichi tile', async () => {
+  for (const action of ['discard','riichi']) for (const moqie of [false,true]) {
+    const h = setup({hand:[...hand.slice(0,12),'5p','5p'],
+      ops:[{type:1,combination:[]}, ...(action === 'riichi' ? [{type:7,combination:['5p']}] : [])]});
+    const p = h.run({action,tile:'5p',moqie});
+    assert.equal(first(h,5),Number(moqie));
+    await confirm(h,p,{name:'ActionDiscardTile',seat:0,tile:'5p',moqie,riichi:action === 'riichi'});
+  }
+});
+
+test('explicit north extraction preserves the selected physical source', async () => {
+  for (const moqie of [false,true]) {
+    const h = setup({players:3,hand:[...hand.slice(0,12),'4z','4z'],ops:[{type:11,combination:[]}]});
+    const p = h.run({action:'kita',consumed:['4z'],moqie});
+    assert.equal(first(h,5),Number(moqie));
+    await confirm(h,p,{name:'ActionBaBei',seat:0,moqie});
+  }
+});
+
+test('explicit physical sources reject impossible hand copies, wrong draw, opening draws and non-booleans', () => {
+  for (const action of ['discard','riichi','kita']) {
+    const tile = action === 'kita' ? '4z' : '5p';
+    const ops = [{type:1,combination:[]}, {type:7,combination:[tile]}, {type:11,combination:[]}];
+    const h = setup({players:3,hand:[...hand.slice(0,13),tile],ops});
+    for (const moqie of [false,1,'true',null]) assert.throws(() => h.run({action,tile,moqie}), /手切|标志/);
+    assert.equal(h.sent.length,0);
+    const opening = setup({players:3,hand:[...hand.slice(0,13),tile],ops,
+      lastAction:{name:'ActionNewRound',seat:0,tile,step:12}});
+    assert.throws(() => opening.run({action,tile,moqie:true}), /不是本次摸牌/);
+    assert.equal(opening.sent.length,0);
+  }
+  const red = setup({hand:[...hand.slice(0,12),'0p','5p']});
+  assert.throws(() => red.run({action:'discard',tile:'0p',moqie:true}), /不是本次摸牌/);
+});
+
+test('locked policy cannot hand discard or extract the old copy of the same drawn tile', () => {
+  for (const action of ['discard','kita']) for (const flag of ['riichi','riichiPending']) {
+    const h = setup({players:3,hand:[...hand.slice(0,12),'4z','4z'],
+      ops:[{type:1,combination:[]},{type:11,combination:[]}]});
+    h.state[flag][0] = true;
+    assert.throws(() => h.run({action,tile:'4z',moqie:false}), /立直后不能手切/);
+    assert.equal(h.sent.length,0);
+  }
+});
+
+test('same-tile policy hand discard is confirmed only by its explicit source echo', async () => {
+  const h = setup({hand:[...hand.slice(0,12),'5p','5p']});
+  const p = h.run({action:'discard',tile:'5p',moqie:false});
+  h.ack(); h.echo({name:'ActionDiscardTile',seat:0,tile:'5p',moqie:true});
+  await assert.rejects(p,/未确认/);
+});
+
 test('dealer opening discard and riichi use hand discard even for the initial lastDraw tile', async () => {
   for (const players of [3,4]) for (const action of ['discard','riichi']) for (const step of [0,1]) {
     const cards = ['1p','2p','3p','4p','5p','6p','1s','2s','3s','4s','5s','6s','7z','0p'];

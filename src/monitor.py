@@ -6,6 +6,7 @@ from pathlib import Path
 import signal
 import sys
 import time
+from zipfile import BadZipFile
 
 from autoplay_recovery import AutoplayRecovery
 
@@ -199,6 +200,24 @@ def accept_event(advisor, log, event):
     log.accept(event)
 
 
+def create_advice_worker(environ=None):
+    """Opt-in model slots; the normal installation has no ML dependency."""
+    from advice_worker import AdviceWorker
+    environ = os.environ if environ is None else environ
+    paths = {players: environ[f"MAJSOUL_POLICY_MODEL_{players}P"] for players in (3, 4)
+             if environ.get(f"MAJSOUL_POLICY_MODEL_{players}P")}
+    if not paths:
+        return AdviceWorker()
+    try:
+        from policy_model import PolicyAdvisor
+        return AdviceWorker(calculate=PolicyAdvisor(paths))
+    except (ImportError, OSError, ValueError, KeyError, TypeError, BadZipFile) as error:
+        message = f"策略模型未能加载：{error}"
+        return AdviceWorker(calculate=lambda state: {
+            "status": "unavailable", "kind": "policy", "message": message,
+            "candidates": [], "best": None})
+
+
 def deliver_advice(advisor, view, log):
     """Called only by the UI timer; worker diagnostics also drain without advice."""
     packet = advisor.take_result()
@@ -227,7 +246,6 @@ def main():
     from Foundation import (NSObject, NSURL, NSURLRequest, NSUUID, NSTimer, NSProcessInfo,
                             NSActivityUserInitiatedAllowingIdleSystemSleep, NSActivityIdleSystemSleepDisabled)
     from terminal_stats import TerminalLog
-    from advice_worker import AdviceWorker
 
     # A named persistent WebKit profile keeps this window's login separate from Safari.
     profile_id = "382523D9-074A-4A9B-8FA4-1BC45E1EDCE7"
@@ -261,7 +279,7 @@ def main():
     log.write("Maj-Soul++ · 开局发牌及每个场上动作后更新浮层")
     log.write("正在打开独立游戏窗口；采集器自动安装。首次请在新窗口登录。")
     log.write(f"文本记录：{log.text_path}\n结构化记录：{log.json_path}")
-    advisor = AdviceWorker()
+    advisor = create_advice_worker()
     advice_target = [None]
     background = BackgroundActivity(NSProcessInfo.processInfo(),
         NSActivityUserInitiatedAllowingIdleSystemSleep | NSActivityIdleSystemSleepDisabled,

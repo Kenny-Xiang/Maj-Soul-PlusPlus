@@ -403,4 +403,4 @@ function applyRestore(state, result) {
   }
 }
 
-module.exports = {fields, envelope, action, restore, authAccount, authGame, setMatch, emptyState, apply, applyRestore};
+module.exports = {fields, envelope, action, restore, authAccount, authGame, setMatch, emptyState, apply, applyRestore, rankedModes};

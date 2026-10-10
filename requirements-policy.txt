@@ -1,0 +1,2 @@
+# Optional deployment runtime. The default heuristic backend does not import NumPy.
+numpy==2.5.3

@@ -1,0 +1,153 @@
+{
+  "date": "2026-10-10",
+  "baseCommit": "3e7f57859cbe5994f4c24049f8f4657928d15aef",
+  "branch": "codex/majsoul-policy-model",
+  "purpose": "Pipeline verification only; one real game, no held-out performance or playing-strength claim.",
+  "environment": {
+    "python": "3.12.15",
+    "node": "26.11.0",
+    "torch": "2.14.1",
+    "numpy": "2.5.3",
+    "trainingDevice": "CPU",
+    "threads": 2
+  },
+  "features": {
+    "planes": 54,
+    "tiles": 34,
+    "globals": 56,
+    "candidate": 134,
+    "signature": "36dfc511791fa866b43dfcb9ebb4ffc359c9bc2db56cc5756cca20eb62d2d7ec"
+  },
+  "source": {
+    "provider": "Fat-pig-Cui/misc-code",
+    "commit": "198741f373edbf5dabe4dc6c7ce66305d5be43a6",
+    "format": "third-party public export of official Mahjong Soul replay JSON",
+    "bytes": 765156,
+    "sha256": "dfee868402e7f875a8eb21b39fbb5df6753ae2803362f84f0aa518c6b16d47a3",
+    "resultRecords": 828,
+    "subsequentUserInputs": 534,
+    "initialUserInputs": 4
+  },
+  "replayAudit": {
+    "gameId": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a",
+    "records": 828,
+    "rounds": 9,
+    "windows": 489,
+    "emitted": 486,
+    "labels": {
+      "accepted": 2,
+      "explicit": 484,
+      "inferred_pass": 0
+    },
+    "excluded": {
+      "censored_response": 3,
+      "missing_actor_operations": 17
+    }
+  },
+  "dataAudit": {
+    "inputs": [
+      {
+        "file": "four-player.samples.jsonl",
+        "sha256": "c3adfea231f9957601805b706910be8bd9af1911e1537df211e738b82fdeecdb"
+      }
+    ],
+    "duplicateSamples": 0,
+    "samples": 486,
+    "games": 1,
+    "actions": {
+      "discard": 384,
+      "pass": 64,
+      "pon": 15,
+      "riichi": 7,
+      "ron": 5,
+      "chi": 8,
+      "tsumo": 3
+    },
+    "labelSources": {
+      "explicit": 484,
+      "accepted": 2
+    }
+  },
+  "training": {
+    "purpose": "smoke",
+    "playerCount": 4,
+    "seed": 42,
+    "config": {
+      "channels": 64,
+      "blocks": 3,
+      "hidden": 256
+    },
+    "epochs": 10,
+    "batchSize": 64,
+    "learningRate": 0.001,
+    "weightDecay": 0.0001,
+    "parameterCount": 756545,
+    "gameSplit": {
+      "train": [
+        "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a"
+      ],
+      "validation": [],
+      "test": []
+    },
+    "elapsedSeconds": 4.4980573339998955,
+    "modelSha256": "4fba3f3a2d60129b1344c13e7c4ae2c9979ae4a257d911eaef995ae1d0e47447"
+  },
+  "trainingLoss": {
+    "firstEpoch": 2.001478499836392,
+    "lastEpoch": 1.5752612636903676
+  },
+  "validationMetrics": null,
+  "testMetrics": null,
+  "exportParity": {
+    "samples": 32,
+    "maxAbsError": 3.5762786865234375e-07,
+    "argmaxAgreement": true
+  },
+  "inference": {
+    "samples": 486,
+    "modelSha256": "4fba3f3a2d60129b1344c13e7c4ae2c9979ae4a257d911eaef995ae1d0e47447",
+    "runtime": "NumPy CPU",
+    "p50Ms": 0.37900000461377203,
+    "p95Ms": 0.4742500022985041,
+    "maxMs": 0.6765840080333874,
+    "allPredictionsLegal": true,
+    "scope": "warm offline prediction including candidate generation and encoding; excludes IPC/UI; may overlap source tests"
+  },
+  "checks": {
+    "node": {
+      "passed": 386,
+      "failed": 0
+    },
+    "python": {
+      "bridge": 14,
+      "backgroundActivity": 16,
+      "autoplayRecovery": 28,
+      "advisorWorkerBenchmark": 471,
+      "policy": 53,
+      "passed": 582,
+      "failed": 0
+    },
+    "dependencyCheck": "passed: no broken requirements",
+    "diffWhitespace": "passed",
+    "nativeWebKit": {
+      "status": "failed in restricted execution environment",
+      "currentError": "tests/test_native.py:39 AssertionError: [] with sandbox_extension errors",
+      "unmodifiedBaselineSameFailure": true,
+      "baselineCommit": "3e7f57859cbe5994f4c24049f8f4657928d15aef"
+    },
+    "nativeOverlay": {
+      "status": "failed / GUI unverified",
+      "error": "WKErrorDomain Code=5: JavaScript execution returned a result of an unsupported type",
+      "baselineOverlayCompared": false
+    },
+    "fullScriptExitCode": 1,
+    "testScope": "Full scripts/test.sh source stages passed; policy tests and bridge rerun after final load-error hardening, policy test rerun after adding held-out training smoke. Native checks did not pass."
+  },
+  "limitations": [
+    "No real three-player full game was validated.",
+    "Real sample has no kan, kita, or nine-terminals abort; these have synthetic action/replay regressions.",
+    "A complete real binary replay was not validated; protobuf decoder has synthetic regression coverage.",
+    "No model playing-strength evaluation, live gameplay, App packaging or desktop App replacement.",
+    "Inference timings are warm offline CPU measurements, excluding IPC/UI; source tests may have been running concurrently."
+  ]
+}

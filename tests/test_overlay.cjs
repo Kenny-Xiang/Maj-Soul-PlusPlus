@@ -59,6 +59,25 @@ const candidate = {action: 'discard', actionId: 'discard:7z', tile: '7z', shante
     '对各家均有现物或实体枚数安全依据']};
 const result = best => ({status: 'ready', best, candidates: [best]});
 
+test('policy recommendations show preference and exact choices without heuristic win metrics', () => {
+  const {root, show} = overlay();
+  const choices = [
+    {action:'discard', tile:'5p', moqie:false, policyProbability:.5},
+    {action:'discard', tile:'5p', moqie:true, policyProbability:.3},
+    {action:'pon', tile:'5p', calledTile:'5p', consumed:['0p','5p'], policyProbability:.2}
+  ];
+  show({status:'ready', kind:'policy', best:choices[0], candidates:choices});
+  assert.match(root.textContent, /模型偏好 50\.0%/);
+  assert.match(root.textContent, /手中牌/);
+  assert.match(root.textContent, /摸切/);
+  assert.match(root.textContent, /使用 赤5筒 5筒/);
+  assert.equal(root.querySelectorAll('.metrics').length, 0);
+  assert.doesNotMatch(root.textContent, /后续胡牌率|胡牌得点|放铳输点/);
+  show({status:'analysis', kind:'policy', best:{action:'tsumo'}, candidates:[{action:'tsumo', policyProbability:1}]});
+  assert.match(root.textContent, /样例模型 · 仅供验证/);
+  assert.match(root.textContent, /自摸/);
+});
+
 test('automation starts off in four-player east mode and missing controller cannot change it', () => {
   const {root} = overlay();
   const toggle = root.querySelector('.automation-toggle'), four = root.querySelector('.automation-four');
