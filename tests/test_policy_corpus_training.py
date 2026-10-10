@@ -1,0 +1,175 @@
+"""Streaming corpus training, provenance and split regressions."""
+from copy import deepcopy
+import hashlib
+import json
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+
+try:
+    import numpy as np
+    import torch
+    import zstandard
+except ImportError:
+    np = torch = zstandard = None
+
+from test_policy_model import visible_state
+
+
+@unittest.skipIf(torch is None, "optional policy training and zstandard dependencies are not installed")
+class CorpusTrainingTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        torch.set_num_threads(1)
+
+    def setUp(self):
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.root = Path(self.folder.name)
+
+    def write_game(self, identifier, count, compressed=True):
+        from policy_actions import legal_actions
+        from policy_features import RULESET
+        rows = []
+        for index in range(count):
+            state = visible_state()
+            state["left"] -= index
+            actions = legal_actions(state)
+            rows.append({"schemaVersion": 1, "ruleset": RULESET, "gameId": identifier,
+                         "roundId": "0", "decisionId": f"0:{index}", "seat": 0,
+                         "state": state, "action": actions[index % len(actions)], "labelSource": "accepted"})
+        data = "".join(json.dumps(row) + "\n" for row in rows).encode()
+        name = identifier + (".jsonl.zst" if compressed else ".jsonl")
+        if compressed:
+            data = zstandard.ZstdCompressor().compress(data)
+        (self.root / name).write_bytes(data)
+        return {"gameId": identifier, "path": name, "samples": count,
+                "sha256": hashlib.sha256(data).hexdigest()}
+
+    def manifest(self, count=6):
+        rows = [self.write_game(f"game-{i}", i % 3 + 2) for i in range(count)]
+        path = self.root / "manifest.jsonl"
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+        return path, rows
+
+    def test_compressed_and_plain_samples_have_identical_features(self):
+        from policy_training import read_samples
+        compressed = self.write_game("game-a", 3)
+        plain = self.write_game("game-a", 3, compressed=False)
+        first, first_audit = read_samples([self.root / compressed["path"]], 4)
+        second, second_audit = read_samples([self.root / plain["path"]], 4)
+        self.assertEqual(len(first), 3)
+        for lhs, rhs in zip(first, second):
+            for field in ("planes", "globals", "actions"):
+                np.testing.assert_array_equal(lhs[field], rhs[field])
+            self.assertEqual(lhs["target"], rhs["target"])
+        self.assertEqual(first_audit["inputs"][0]["sha256"], compressed["sha256"])
+        self.assertEqual(second_audit["inputs"][0]["sha256"], plain["sha256"])
+
+    def test_manifest_split_is_disjoint_deterministic_and_subset_is_explicit(self):
+        from policy_corpus_training import read_manifest
+        path, rows = self.manifest(40)
+        first, groups, audit = read_manifest(path, seed=42, max_games=30)
+        path.write_text("".join(json.dumps(row) + "\n" for row in reversed(rows)))
+        second, reversed_groups, _ = read_manifest(path, seed=42, max_games=30)
+        self.assertEqual(groups, reversed_groups)
+        self.assertEqual({name: len(values) for name, values in groups.items()},
+                         {"train": 24, "validation": 3, "test": 3})
+        combined = [identifier for values in groups.values() for identifier in values]
+        self.assertEqual(len(set(combined)), 30)
+        self.assertEqual(audit["manifestGames"], 40)
+        self.assertEqual(audit["selectedGames"], 30)
+        self.assertEqual(audit["maxGames"], 30)
+        self.assertEqual(first, second)
+        with self.assertRaisesRegex(ValueError, "three distinct games"):
+            read_manifest(path, seed=42, max_games=2)
+
+    def test_manifest_and_shard_identity_counts_and_hashes_are_enforced(self):
+        from policy_corpus_training import read_manifest, load_game
+        path, rows = self.manifest()
+        for changed in ([*rows, rows[0]], [{**rows[0], "path": "../outside.jsonl.zst"}, *rows[1:]],
+                        [{**rows[0], "samples": 0}, *rows[1:]],
+                        [{**rows[0], "sha256": "bad"}, *rows[1:]]):
+            path.write_text("".join(json.dumps(row) + "\n" for row in changed))
+            with self.assertRaises(ValueError):
+                read_manifest(path, 42)
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+        groups, _, _ = read_manifest(path, 42)
+        row = groups["train"][0]
+        for changed in ({**row, "gameId": "wrong-game"}, {**row, "samples": row["samples"] + 1},
+                        {**row, "sha256": "0" * 64}):
+            with self.assertRaises(ValueError):
+                load_game(changed, 4)
+
+    def test_metric_merge_weights_decisions_instead_of_games(self):
+        from policy_corpus_training import merge_metrics
+        from policy_training import CandidatePolicy, read_samples, evaluate
+        row = self.write_game("metrics", 4)
+        samples, _ = read_samples([self.root / row["path"]], 4)
+        samples = samples + [deepcopy(samples[0])]
+        samples[-1]["actions"] = samples[-1]["actions"][:1]
+        samples[-1]["target"] = 0
+        model = CandidatePolicy({"channels": 4, "blocks": 1, "hidden": 8})
+        direct = evaluate(model, samples, "cpu", 2)
+        merged = merge_metrics([evaluate(model, samples[:1], "cpu", 2),
+                                evaluate(model, samples[1:], "cpu", 2)])
+        for field in ("samples", "choices", "forced", "byAction", "macroActionAccuracy"):
+            self.assertEqual(merged[field], direct[field])
+        for field in ("choiceTop1", "choiceTop3", "choiceNll"):
+            self.assertAlmostEqual(merged[field], direct[field], places=6)
+
+    def test_streamed_training_exports_held_out_report_and_reads_one_game_at_a_time(self):
+        import policy_corpus_training as corpus
+        from policy_model import PolicyModel
+        path, _ = self.manifest()
+        output = self.root / "model.npz"
+        actual_read = corpus.read_samples
+        actual_batch = corpus.batch_tensors
+        calls, sizes = [], []
+
+        def read_one(paths, players):
+            self.assertEqual(len(paths), 1)
+            calls.append(paths[0])
+            return actual_read(paths, players)
+
+        def bounded_batch(samples, device):
+            sizes.append(len(samples))
+            self.assertLessEqual(len(samples), 2)
+            return actual_batch(samples, device)
+
+        with patch.object(corpus, "read_samples", side_effect=read_one), \
+                patch.object(corpus, "batch_tensors", side_effect=bounded_batch):
+            _, report = corpus.train_corpus(path, output, max_games=4, batch_size=2,
+                                             config={"channels": 4, "blocks": 1, "hidden": 8})
+        self.assertTrue(calls)
+        self.assertTrue(sizes)
+        self.assertEqual(report["purpose"], "behavior-cloning")
+        self.assertEqual(report["dataAudit"]["manifestGames"], 6)
+        self.assertEqual(report["dataAudit"]["selectedGames"], 4)
+        self.assertEqual(report["dataAudit"]["selectedGameCounts"], {"train": 2, "validation": 1, "test": 1})
+        self.assertEqual(report["bestEpoch"], 1)
+        self.assertTrue(report["exportParity"]["argmaxAgreement"])
+        self.assertLess(report["exportParity"]["maxAbsError"], 1e-4)
+        self.assertEqual(PolicyModel(output).metadata["purpose"], "behavior-cloning")
+        self.assertEqual(json.loads(output.with_suffix(".report.json").read_text()), report)
+        for name, values in report["metrics"].items():
+            self.assertEqual(values["samples"], report["dataAudit"]["partitions"][name]["samples"])
+            self.assertIsNotNone(values["choiceNll"])
+
+    def test_failed_export_parity_keeps_existing_model_and_removes_temporary(self):
+        import policy_corpus_training as corpus
+        path, _ = self.manifest(3)
+        output = self.root / "model.npz"
+        output.write_bytes(b"existing-model")
+        with patch.object(corpus, "verify_export", side_effect=ValueError("export parity failed")):
+            with self.assertRaisesRegex(ValueError, "export parity failed"):
+                corpus.train_corpus(path, output, batch_size=2,
+                                    config={"channels": 4, "blocks": 1, "hidden": 8})
+        self.assertEqual(output.read_bytes(), b"existing-model")
+        self.assertFalse(output.with_suffix(".report.json").exists())
+        self.assertEqual(list(self.root.glob(".policy-corpus-*.npz")), [])
+
+
+if __name__ == "__main__":
+    unittest.main()

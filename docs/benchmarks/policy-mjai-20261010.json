@@ -1,0 +1,393 @@
+{
+  "date": "2026-10-10",
+  "scope": "Public Mahjong Soul MJAI conversion and limited behavior-cloning validation, not official raw-record acquisition",
+  "dataset": {
+    "id": "nikketryhard/tenhou-houou-mjai",
+    "revision": "6450bb584cef43ede3b514df48e301a832c6818b",
+    "selectedArchive": "majsoul-throne-2026.tar",
+    "sha256": "86319ea7d42ff9ec6d877567ad83d1788c5840a49abaf672e6330d6132501f02",
+    "bytes": 170055680,
+    "roomEvidence": "archive publisher; individual player ranks not independently verified"
+  },
+  "acquisition": {
+    "requestedMinimumGames": 10000,
+    "uniqueCompleteGames": 23179,
+    "goalReached": true,
+    "archiveFiles": 23182,
+    "excludedSourceFiles": {
+      "missing_round_result": 3
+    },
+    "smallHands": 244242,
+    "events": 24666562,
+    "startDate": "2026-01-01",
+    "endDate": "2026-02-03",
+    "compressedGameBytes": 128501236,
+    "decodedGameBytes": 1246119725,
+    "manifestSha256": "341f6709130b72bc276a55e0b2a8b1469332c9464f92fd9604137346779d909d",
+    "roomEvidence": {
+      "room": "throne",
+      "source": "archive publisher",
+      "individualRanksVerified": false
+    },
+    "officialOperationLists": false,
+    "notes": [
+      "The raw audit target 23182 was the full archive size, not the user minimum.",
+      "duplicate_game_id on the resumed audit means already saved files, not duplicate original matches."
+    ]
+  },
+  "conversion": {
+    "targetGames": 10000,
+    "convertedGames": 10000,
+    "resumedGames": 0,
+    "goalReached": true,
+    "sourceGames": 23179,
+    "samples": 6174881,
+    "compressedBytes": 448130413,
+    "sourceManifestSha256": "341f6709130b72bc276a55e0b2a8b1469332c9464f92fd9604137346779d909d",
+    "converterSignature": "902eca4a7a25d5a26a0c4e6243fca59caa8391fbd43cb4e3bd7c26ffa70ff21f",
+    "engineVersion": "0.4.10",
+    "workers": 4,
+    "elapsedSeconds": 378.3895148330048,
+    "failedGames": [],
+    "actions": {
+      "discard": 4795534,
+      "pass": 1011496,
+      "pon": 118336,
+      "ankan": 4860,
+      "riichi": 76566,
+      "chi": 79265,
+      "ron": 51247,
+      "tsumo": 32483,
+      "abort": 1025,
+      "shouminkan": 3338,
+      "daiminkan": 731
+    },
+    "labelSources": {
+      "accepted": 5163385,
+      "inferred_pass": 1011496
+    },
+    "excludedWindows": {
+      "hand_suffix_after_kan": 9506,
+      "unfinished_window": 0,
+      "censored_response": 29795,
+      "declaration_without_window": 3776
+    },
+    "limitations": [
+      "Operation masks are reconstructed with riichienv, not official server masks.",
+      "Windows after any kan are excluded until the next hand.",
+      "Competing claims and unresolved responses are censored.",
+      "Four-player MJAI only; east/half match length is unknown.",
+      "Throne classification comes from the archive publisher, not individual rank metadata."
+    ]
+  },
+  "integrity": {
+    "games": 10000,
+    "samples": 6174881,
+    "manifestSha256": "ec85666561e6fbd915cac382f04677e8c4385f5b92f946f3e6463672421c183f",
+    "allShardHashesVerified": true,
+    "allAuditHashesVerified": true,
+    "allSourceLinksVerified": true,
+    "allDeclaredCountsAgree": true,
+    "uniqueGameIdsAndCompressedHashes": true,
+    "trainingReaderValidation": "100 sampled games, separately reported; not all games reread by trainer"
+  },
+  "independentTrainingReaderCheck": {
+    "games": 100,
+    "samples": 62255,
+    "selection": "SHA256(reader-check-v1:gameId), from frozen prefix containing 3387 games",
+    "allAccepted": true,
+    "allSourceAndSampleHashesMatched": true
+  },
+  "training": {
+    "purpose": "behavior-cloning",
+    "playerCount": 4,
+    "device": "cpu",
+    "epochs": 1,
+    "parameterCount": 756545,
+    "dataAudit": {
+      "manifest": "manifest.jsonl",
+      "manifestSha256": "ec85666561e6fbd915cac382f04677e8c4385f5b92f946f3e6463672421c183f",
+      "manifestGames": 10000,
+      "manifestSamples": 6174881,
+      "maxGames": 30,
+      "selectedGames": 30,
+      "selectedSamples": 19758,
+      "selectedGameCounts": {
+        "train": 24,
+        "validation": 3,
+        "test": 3
+      },
+      "partitions": {
+        "train": {
+          "games": 24,
+          "samples": 15782,
+          "actions": {
+            "discard": 12280,
+            "abort": 4,
+            "pass": 2614,
+            "pon": 288,
+            "tsumo": 76,
+            "riichi": 172,
+            "ron": 127,
+            "chi": 193,
+            "ankan": 16,
+            "shouminkan": 9,
+            "daiminkan": 3
+          },
+          "labelSources": {
+            "accepted": 13168,
+            "inferred_pass": 2614
+          },
+          "duplicateSamples": 0
+        },
+        "validation": {
+          "games": 3,
+          "samples": 1851,
+          "actions": {
+            "discard": 1459,
+            "pass": 282,
+            "chi": 26,
+            "pon": 39,
+            "ron": 14,
+            "riichi": 19,
+            "tsumo": 10,
+            "shouminkan": 1,
+            "ankan": 1
+          },
+          "labelSources": {
+            "accepted": 1569,
+            "inferred_pass": 282
+          },
+          "duplicateSamples": 0
+        },
+        "test": {
+          "games": 3,
+          "samples": 2125,
+          "actions": {
+            "discard": 1662,
+            "pon": 46,
+            "pass": 336,
+            "chi": 30,
+            "ron": 18,
+            "shouminkan": 1,
+            "riichi": 23,
+            "tsumo": 8,
+            "ankan": 1
+          },
+          "labelSources": {
+            "accepted": 1789,
+            "inferred_pass": 336
+          },
+          "duplicateSamples": 0
+        }
+      }
+    },
+    "metrics": {
+      "train": {
+        "samples": 15782,
+        "choices": 15132,
+        "forced": 650,
+        "choiceTop1": 0.48493259318001586,
+        "choiceTop3": 0.7446471054718478,
+        "choiceNll": 1.5389258546800015,
+        "byAction": {
+          "discard": {
+            "count": 11630,
+            "correct": 4411,
+            "accuracy": 0.37927773000859843
+          },
+          "abort": {
+            "count": 4,
+            "correct": 4,
+            "accuracy": 1.0
+          },
+          "pass": {
+            "count": 2614,
+            "correct": 2529,
+            "accuracy": 0.9674827850038256
+          },
+          "pon": {
+            "count": 288,
+            "correct": 134,
+            "accuracy": 0.4652777777777778
+          },
+          "tsumo": {
+            "count": 76,
+            "correct": 76,
+            "accuracy": 1.0
+          },
+          "riichi": {
+            "count": 172,
+            "correct": 45,
+            "accuracy": 0.2616279069767442
+          },
+          "ron": {
+            "count": 127,
+            "correct": 127,
+            "accuracy": 1.0
+          },
+          "chi": {
+            "count": 193,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "ankan": {
+            "count": 16,
+            "correct": 4,
+            "accuracy": 0.25
+          },
+          "shouminkan": {
+            "count": 9,
+            "correct": 8,
+            "accuracy": 0.8888888888888888
+          },
+          "daiminkan": {
+            "count": 3,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "macroActionAccuracy": 0.5647777353323487
+      },
+      "validation": {
+        "samples": 1851,
+        "choices": 1794,
+        "forced": 57,
+        "choiceTop1": 0.4938684503901895,
+        "choiceTop3": 0.7430323299888517,
+        "choiceNll": 1.5238910562690002,
+        "byAction": {
+          "discard": {
+            "count": 1402,
+            "correct": 561,
+            "accuracy": 0.40014265335235377
+          },
+          "pass": {
+            "count": 282,
+            "correct": 275,
+            "accuracy": 0.975177304964539
+          },
+          "chi": {
+            "count": 26,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "pon": {
+            "count": 39,
+            "correct": 19,
+            "accuracy": 0.48717948717948717
+          },
+          "ron": {
+            "count": 14,
+            "correct": 14,
+            "accuracy": 1.0
+          },
+          "riichi": {
+            "count": 19,
+            "correct": 5,
+            "accuracy": 0.2631578947368421
+          },
+          "tsumo": {
+            "count": 10,
+            "correct": 10,
+            "accuracy": 1.0
+          },
+          "shouminkan": {
+            "count": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "ankan": {
+            "count": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          }
+        },
+        "macroActionAccuracy": 0.680628593359247
+      },
+      "test": {
+        "samples": 2125,
+        "choices": 2052,
+        "forced": 73,
+        "choiceTop1": 0.49317738791423,
+        "choiceTop3": 0.7529239766081871,
+        "choiceNll": 1.5364229031248458,
+        "byAction": {
+          "discard": {
+            "count": 1589,
+            "correct": 633,
+            "accuracy": 0.39836375078665825
+          },
+          "pon": {
+            "count": 46,
+            "correct": 21,
+            "accuracy": 0.45652173913043476
+          },
+          "pass": {
+            "count": 336,
+            "correct": 326,
+            "accuracy": 0.9702380952380952
+          },
+          "chi": {
+            "count": 30,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "ron": {
+            "count": 18,
+            "correct": 18,
+            "accuracy": 1.0
+          },
+          "shouminkan": {
+            "count": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "riichi": {
+            "count": 23,
+            "correct": 5,
+            "accuracy": 0.21739130434782608
+          },
+          "tsumo": {
+            "count": 8,
+            "correct": 8,
+            "accuracy": 1.0
+          },
+          "ankan": {
+            "count": 1,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "macroActionAccuracy": 0.5602794321670016
+      }
+    },
+    "exportParity": {
+      "samples": 32,
+      "maxAbsError": 4.76837158203125e-07,
+      "argmaxAgreement": true
+    },
+    "modelSha256": "2d9a6bc2c484552eb914fbc1559d5a7ddc49e3aae76e0f3872b58249090635ba",
+    "elapsedSeconds": 27.794764250007574,
+    "limitations": [
+      "Behavior cloning predicts recorded choices, not optimal actions.",
+      "Only selected manifest games were trained; no playing-strength claim."
+    ]
+  },
+  "tests": {
+    "command": "PYTHONPATH=src .venv/bin/python -m unittest discover -s tests -p 'test_policy_*.py' -v",
+    "passed": 90,
+    "failed": 0
+  },
+  "deployment": {
+    "desktopAppReplaced": false,
+    "automaticPlayEnabled": false,
+    "full10000GameTrainingCompleted": false
+  },
+  "limitations": [
+    "Four-player MJAI only; no real three-player/kita data in this corpus.",
+    "Kan action retained; subsequent windows in the same hand excluded.",
+    "Reconstructed action masks are not original server operation lists.",
+    "30 selected games used for one training epoch; no playing-strength claim."
+  ]
+}

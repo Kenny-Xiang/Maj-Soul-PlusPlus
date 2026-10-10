@@ -1,0 +1,98 @@
+{
+  "date": "2026-10-10",
+  "requestedMinimumGames": 10000,
+  "newPublicOfficialFormatGames": 2,
+  "goalReached": false,
+  "format": "decoded official ResGameRecord JSON; not MJAI",
+  "rankedRoom": "Jade South, mode_id 12",
+  "newTrainingSamples": 862,
+  "sourceSamples": [
+    {
+      "gameId": "230921-0a39a19b-4820-4b40-9fda-dd5481d023e4",
+      "path": "230921-0a39a19b-4820-4b40-9fda-dd5481d023e4.response.json",
+      "format": "decoded-official-ResGameRecord-JSON",
+      "bytes": 488188,
+      "sha256": "c929fba0bb83c18a80f3496a26527c41c6a2841e6c8e6ec1c2eb64aa8f28d7e3",
+      "url": "https://raw.githubusercontent.com/0num4/vscode-devcontainer-test/c0a188685da2206684d94d270475c473635dbae8/cpp/parseGameRecordAndAnalyze_py/paifu/mahjongsoul_paifu_230921-0a39a19b-4820-4b40-9fda-dd5481d023e4.txt",
+      "sourceCommit": "c0a188685da2206684d94d270475c473635dbae8",
+      "modeId": 12,
+      "levelIds": [
+        10403,
+        10502,
+        10402,
+        10402
+      ],
+      "validation": "Official importer, replay extractor, and training reader passed",
+      "license": "no repository LICENSE found; no redistribution grant inferred",
+      "trainingSamples": 326,
+      "resultRecords": 528,
+      "extraction": {
+        "gameId": "230921-0a39a19b-4820-4b40-9fda-dd5481d023e4",
+        "records": 528,
+        "rounds": 5,
+        "windows": 326,
+        "emitted": 326,
+        "labels": {
+          "accepted": 1,
+          "explicit": 325,
+          "inferred_pass": 0
+        },
+        "excluded": {
+          "missing_actor_operations": 7
+        }
+      }
+    },
+    {
+      "gameId": "230921-2e8495ad-c9df-4b0f-9f10-dd354b9daeeb",
+      "path": "230921-2e8495ad-c9df-4b0f-9f10-dd354b9daeeb.response.json",
+      "format": "decoded-official-ResGameRecord-JSON",
+      "bytes": 820662,
+      "sha256": "5422f57784e3301969c902bc43cdb28e0550a118d18a1536730b547d28f38e75",
+      "url": "https://raw.githubusercontent.com/0num4/vscode-devcontainer-test/c0a188685da2206684d94d270475c473635dbae8/cpp/parseGameRecordAndAnalyze_py/paifu/mahjongsoul_paifu_230921-2e8495ad-c9df-4b0f-9f10-dd354b9daeeb.txt",
+      "sourceCommit": "c0a188685da2206684d94d270475c473635dbae8",
+      "modeId": 12,
+      "levelIds": [
+        10402,
+        10402,
+        10401,
+        10401
+      ],
+      "validation": "Official importer, replay extractor, and training reader passed",
+      "license": "no repository LICENSE found; no redistribution grant inferred",
+      "trainingSamples": 536,
+      "resultRecords": 849,
+      "extraction": {
+        "gameId": "230921-2e8495ad-c9df-4b0f-9f10-dd354b9daeeb",
+        "records": 849,
+        "rounds": 9,
+        "windows": 538,
+        "emitted": 536,
+        "labels": {
+          "accepted": 0,
+          "explicit": 536,
+          "inferred_pass": 0
+        },
+        "excluded": {
+          "censored_response": 2,
+          "missing_actor_operations": 15,
+          "input_without_window": 1
+        }
+      }
+    }
+  ],
+  "officialApiProbe": {
+    "requests": 1,
+    "authenticated": false,
+    "responseCode": 1004,
+    "meaning": "ERR_ACC_NOT_LOGIN",
+    "evidence": "../policy-bulk/research/anonymous-official/report.json"
+  },
+  "officialDownloadQueue": {
+    "gameIds": 23179,
+    "path": "requests/throne-2026-23179-uuids.txt",
+    "note": "An index only, not downloaded original-format records"
+  },
+  "status": "Waiting for an authenticated official session or a suitable public raw archive; user cannot manually log in now",
+  "noLoginCredentialsRead": true,
+  "noBulkOfficialRequestsStarted": true
+}

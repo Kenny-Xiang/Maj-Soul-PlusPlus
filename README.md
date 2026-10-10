@@ -75,6 +75,7 @@ open 'dist/Maj-Soul++.app'
 - [雀魂规则参考](docs/雀魂规则_Agent参考.md)
 - [离线评估说明（英文）](docs/advisor-evaluation.md)
 - [牌谱策略模型：训练、推理与接入](docs/policy-model.md)
+- [雀魂 MJAI 语料转换与流式训练](docs/policy-mjai.md)
 - [策略模型牌谱来源与导入格式（英文）](docs/policy-data-sources.md)
 
 `mahjong` 依赖许可证见 [mahjong-LICENSE.txt](docs/mahjong-LICENSE.txt)。

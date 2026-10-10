@@ -48,7 +48,15 @@ def read_samples(paths, players):
     samples, seen, duplicates, sources = [], {}, 0, []
     for path in map(Path, paths):
         sources.append({"file": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
-        with path.open() as handle:
+        if path.name.endswith(".jsonl.zst"):
+            try:
+                import zstandard
+            except ImportError as exc:
+                raise ImportError("Reading .jsonl.zst samples requires the optional zstandard package") from exc
+            handle = zstandard.open(path, "rt", encoding="utf-8")
+        else:
+            handle = path.open(encoding="utf-8")
+        with handle:
             for line_number, line in enumerate(handle, 1):
                 if not line.strip():
                     continue

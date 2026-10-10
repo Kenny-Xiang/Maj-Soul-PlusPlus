@@ -1,5 +1,8 @@
 # Policy replay import and public data provenance
 
+For bulk MJAI conversions, see the [corpus provenance below](#public-mahjong-soul-throne-mjai-corpus)
+and the [conversion and streaming-training guide](policy-mjai.md).
+
 `scripts/policy_fetch.py` imports Mahjong Soul `fetchGameRecord` exports into
 the replay extractor's input format. It uses Python's standard library only.
 It neither logs in nor reads browser sessions, cookies, account credentials,
@@ -163,3 +166,78 @@ python3 -m unittest discover -s tests -p test_policy_decoder_review.py -v
 
 The independent whole-game review test skips when the pinned public source
 has not been downloaded; it never performs a network request during testing.
+
+## Public Mahjong Soul Throne MJAI corpus
+
+The user accepted MJAI conversions of official Mahjong Soul games. We acquired
+the Mahjong Soul Throne shards from the public
+[nikketryhard/tenhou-houou-mjai dataset](https://huggingface.co/datasets/nikketryhard/tenhou-houou-mjai),
+pinned to revision `6450bb584cef43ede3b514df48e301a832c6818b`. The selected
+corpus uses `majsoul-throne-2026.tar`; Tenhou shards are not included. The
+[publisher's scraper documentation](https://github.com/NikkeTryHard/tenhou-to-mjai/blob/main/docs/majsoul-scraper.md)
+describes the Mahjong Soul source pipeline.
+
+| Archive | Bytes | SHA256 |
+| --- | --- | --- |
+| [majsoul-throne-2026.tar](https://huggingface.co/datasets/nikketryhard/tenhou-houou-mjai/resolve/6450bb584cef43ede3b514df48e301a832c6818b/majsoul-throne-2026.tar) | 170055680 | `86319ea7d42ff9ec6d877567ad83d1788c5840a49abaf672e6330d6132501f02` |
+| [majsoul-throne-2019.tar](https://huggingface.co/datasets/nikketryhard/tenhou-houou-mjai/resolve/6450bb584cef43ede3b514df48e301a832c6818b/majsoul-throne-2019.tar) | 54620160 | `c6e54d1b2cce000059573bb646201994986edf1bbf7d6b12d0726bad48dd9641` |
+
+Both archives match the publisher's LFS sizes and SHA256 values. The 2019
+archive was used for an additional compatibility probe; it is not counted in
+the selected training corpus. The 2026 archive contains 23,182 files, of which
+23,179 are unique structurally complete four-player matches. Three lack a
+round result and were excluded. The saved corpus has 244,242 rounds and
+24,666,562 events, dated 2026-01-01 through 2026-02-03 by game UUID.
+
+The room classification is publisher evidence, not independent verification
+of every player's rank. These MJAI files contain neither original official
+operation lists nor individual rank metadata. The dataset license label is
+`other`; its tooling license does not grant ownership of game records.
+The cache preserves the dataset card and its hash, archive hashes, member
+names, game UUIDs, compressed/decoded/canonical-event hashes, and exclusions.
+
+MJAI training masks are explicitly marked `riichienv-reconstructed`, with
+engine version `0.4.10`; they must not be described as original server masks.
+The MJAI adapter is separate from `policy_extract.cjs`, whose requirements
+for recorded official operations remain in force. Kan suffixes and uncertain
+response labels are excluded as documented in the conversion guide.
+
+All full games and weights stay under ignored `.local/`; the checked-in
+[validation summary](benchmarks/policy-mjai-20261010.json) contains aggregate
+counts and hashes only. No account session, credentials, or private replays
+were used to acquire this public corpus.
+
+## Additional original-format samples and bulk access status
+
+After the user separately requested at least 10,000 original-format games,
+two more public decoded `ResGameRecord` JSON files were downloaded from
+`0num4/vscode-devcontainer-test`, fixed commit
+`c0a188685da2206684d94d270475c473635dbae8`. They retain `head` and decoded
+`.lq.GameDetailRecords` instead of MJAI events. Both are ranked Jade South
+(`mode_id = 12`) with player level IDs preserved in the header.
+
+| Game | Source bytes | SHA256 | Verified training samples |
+| --- | --- | --- | --- |
+| [230921-0a39a19b-4820-4b40-9fda-dd5481d023e4](https://raw.githubusercontent.com/0num4/vscode-devcontainer-test/c0a188685da2206684d94d270475c473635dbae8/cpp/parseGameRecordAndAnalyze_py/paifu/mahjongsoul_paifu_230921-0a39a19b-4820-4b40-9fda-dd5481d023e4.txt) | 488188 | `c929fba0bb83c18a80f3496a26527c41c6a2841e6c8e6ec1c2eb64aa8f28d7e3` | 326 |
+| [230921-2e8495ad-c9df-4b0f-9f10-dd354b9daeeb](https://raw.githubusercontent.com/0num4/vscode-devcontainer-test/c0a188685da2206684d94d270475c473635dbae8/cpp/parseGameRecordAndAnalyze_py/paifu/mahjongsoul_paifu_230921-2e8495ad-c9df-4b0f-9f10-dd354b9daeeb.txt) | 820662 | `5422f57784e3301969c902bc43cdb28e0550a118d18a1536730b547d28f38e75` | 536 |
+
+The repository has no discovered LICENSE; no redistribution grant is inferred.
+Original files, normalized copies and extraction audits are under
+`.local/policy-official/public-samples/`. Both passed the official importer,
+replay extractor and training reader. Their metadata and verification are
+recorded in [the original-format status report](benchmarks/policy-official-20261010.json).
+
+**The 10,000-game original-format acquisition is not complete.** One normal
+unauthenticated query to the official `fetchGameRecord` endpoint returned
+`1004 / ERR_ACC_NOT_LOGIN`, with no header or record data, after a successful
+WebSocket and route handshake. No account credentials were read, and no
+bulk authenticated requests were started. The user approved manual CN login
+but could not perform it at this time. A queue of 23,179 public game UUIDs
+is saved under `.local/policy-official/requests/`; IDs alone are not acquired
+original records. The known MJAI corpus is not counted toward this target.
+
+Future retrieval should preserve both the full `ResGameRecord` response and
+any original body supplied through `data_url`. A body-only `GameDetailRecords`
+blob lacks the header needed to validate room, player levels and match rules.
+Even original records may omit some operation lists; download completeness
+and training-window coverage must be checked separately.
