@@ -1,8 +1,12 @@
-"""Native automation activity is bounded to the current page and user intent."""
+"""Display activity follows the app; automation activity follows user intent."""
+import ast
+from pathlib import Path
 import sys
 import unittest
+from unittest.mock import Mock
 
-from monitor import BackgroundActivity
+import monitor
+from monitor import BackgroundActivity, DisplayActivity
 
 
 class Process:
@@ -48,6 +52,79 @@ class View:
 
     def evaluateJavaScript_completionHandler_(self, source, completed):
         self.scripts.append((source, completed))
+
+
+class DisplayActivityTests(unittest.TestCase):
+    def test_start_and_release_hold_exactly_one_app_activity(self):
+        process, logs = Process(), []
+        display = DisplayActivity(process, 456, logs.append)
+        self.assertEqual(process.started, [])
+        display.start()
+        display.start()
+        self.assertEqual(len(process.started), 1)
+        self.assertEqual(process.started[0][1:], (456, "Maj-Soul++ 保持屏幕亮起"))
+        display.release()
+        display.release()
+        self.assertEqual(process.ended, [process.started[0][0]])
+        self.assertEqual(len(logs), 2)
+
+    def test_automation_stop_navigation_and_page_exit_do_not_release_display(self):
+        process, view = Process(), View()
+        display = DisplayActivity(process, 456, lambda _: None)
+        background = BackgroundActivity(process, 123, 2, lambda _: None)
+        display.start()
+        self.addCleanup(display.release)
+        self.addCleanup(background.release)
+        token = display.token
+        for stop in (lambda: background.update(view, background.session, False),
+                     lambda: background.navigation_started(object()), background.reset_page):
+            background.page_committed(background.navigation)
+            background.update(view, str(len(process.started)), True)
+            stop()
+            self.assertIsNone(background.token)
+            self.assertIs(display.token, token)
+            self.assertNotIn(token, process.ended)
+        display.release()
+        self.assertEqual(process.ended.count(token), 1)
+
+    def test_production_app_exit_paths_release_display_activity(self):
+        source = Path(monitor.__file__)
+        main = next(node for node in ast.parse(source.read_text()).body
+                    if isinstance(node, ast.FunctionDef) and node.name == 'main')
+        delegate = next(node for node in main.body if isinstance(node, ast.ClassDef) and node.name == 'Delegate')
+        terminate = next(node for node in delegate.body if isinstance(node, ast.FunctionDef)
+                         and node.name == 'applicationWillTerminate_')
+        bind_delegate = next(node for node in main.body if isinstance(node, ast.Expr)
+                             and isinstance(node.value, ast.Call) and isinstance(node.value.func, ast.Attribute)
+                             and node.value.func.attr == 'setDelegate_')
+        loop = main.body[-1]
+        self.assertIsInstance(loop, ast.Try)
+        for outcome in ('return', 'exception', 'terminate'):
+            with self.subTest(outcome=outcome):
+                process = Process()
+                display = DisplayActivity(process, 456, lambda _: None)
+                app, owner = Mock(), object()
+                namespace = {'display': display, 'app': app, 'delegate': owner,
+                             **{name: Mock() for name in ('recovery', 'background', 'timer', 'advisor')}}
+                exec(compile(ast.Module(body=[terminate, bind_delegate], type_ignores=[]), str(source), 'exec'), namespace)
+                app.setDelegate_.assert_called_once_with(owner)
+
+                def run():
+                    self.assertIsNotNone(display.token)
+                    if outcome == 'exception':
+                        raise RuntimeError('event loop failed')
+                    if outcome == 'terminate':
+                        namespace['applicationWillTerminate_'](owner, None)
+                        self.assertIsNone(display.token)
+
+                app.run.side_effect = run
+                code = compile(ast.Module(body=[loop], type_ignores=[]), str(source), 'exec')
+                if outcome == 'exception':
+                    with self.assertRaisesRegex(RuntimeError, 'event loop failed'):
+                        exec(code, namespace)
+                else:
+                    exec(code, namespace)
+                self.assertEqual(process.ended, [process.started[0][0]])
 
 
 class BackgroundActivityTests(unittest.TestCase):
