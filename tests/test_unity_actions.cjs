@@ -71,6 +71,60 @@ test('server operation deadlines are milliseconds, expire, and are never recreat
   assert.equal(h.sent.length,0);
 });
 
+test('native expiry uses the original window after submission clears live timing, without confirming the recommendation',async()=>{
+  for (const tile of ['1m','1z']) {
+    const h=setup(),expected=plain(h.state),p=h.run({action:'discard',tile:'1m'});
+    const rejected=assert.rejects(p,error=>error.recoverable===true && /未获确认/.test(error.message));
+    h.ack();h.advance(22800);
+    Object.assign(h.state,{canAct:false,canDiscard:false,operationTiming:null,lastAction:null,operations:[],operationDetails:[]});
+    assert.equal(h.api.onNativeInput(expected),true);
+    assert.equal(h.api.snapshot().pending,true,'the native send still needs a valid authoritative replacement');
+    assert.throws(()=>h.run({action:'discard',tile:'1m'}),/等待上次/);
+    h.echo({name:'ActionDiscardTile',seat:0,tile,moqie:tile==='1z'});await rejected;
+    assert.equal(h.api.snapshot().pending,false);
+    assert.throws(()=>h.run({action:'discard',tile:'1m'}),/已经提交/);
+  }
+});
+
+test('native expiry rejects a premature, unknown or different authoritative scope',async()=>{
+  for (const change of [h=>h.advance(22799),
+    (h,expected)=>{h.advance(22800);expected.operationTiming=null;},
+    (h,expected)=>{h.advance(22800);expected.operationTiming.receivedAt=30000;},
+    (h,expected)=>{h.advance(22800);expected.operationTiming.timeAdd=-1;},
+    (h,expected)=>{h.advance(22800);expected.lastStep++;},
+    (h,expected)=>{h.advance(22800);expected.round.ju++;},
+    (h,expected)=>{h.advance(22800);expected.selfSeat=1;},
+    (h,expected)=>{h.advance(22800);expected.gameId='other-game';},
+    h=>{h.advance(22800);h.state.historyComplete=false;},
+    h=>{h.advance(22800);h.state.recovery={status:'waiting'};}]) {
+    const h=setup(),expected=plain(h.state),p=h.run({action:'discard',tile:'1m'});
+    const rejected=assert.rejects(p,error=>error.recoverable!==true && /未确认/.test(error.message));
+    h.ack();change(h,expected);assert.equal(h.api.onNativeInput(expected),false);
+    h.echo({name:'ActionDiscardTile',seat:0,tile:'1z',moqie:true});await rejected;
+  }
+});
+
+test('verified native expiry keeps wrong seat, step, tile, riichi and moqie echoes fatal',async()=>{
+  for (const mismatch of [{seat:1},{step:14},{tile:'9m'},{riichi:true},{moqie:false}]) {
+    const h=setup(),expected=plain(h.state),p=h.run({action:'discard',tile:'1m'});
+    const rejected=assert.rejects(p,error=>error.recoverable!==true && /未确认|不连续/.test(error.message));
+    h.ack();h.advance(22800);assert.equal(h.api.onNativeInput(expected),true);
+    h.echo({name:'ActionDiscardTile',seat:0,tile:'1z',moqie:true,...mismatch});await rejected;
+  }
+});
+
+test('native expiry cannot suppress server rejection or an invalid authoritative baseline',async()=>{
+  for (const failure of ['server','round','history']) {
+    const h=setup(),expected=plain(h.state),p=h.run({action:'discard',tile:'1m'});
+    const rejected=assert.rejects(p,error=>error.recoverable!==true);
+    h.advance(22800);assert.equal(h.api.onNativeInput(expected),true);
+    if (failure==='server') h.sent[0].reject(new Error('服务器拒绝操作（1004）'));
+    else h.echo({name:'ActionDiscardTile',seat:0,tile:'1z',moqie:true},{state:{
+      round:failure==='round'?{chang:0,ju:1,ben:0}:plain(h.state.round),historyComplete:failure!=='history'}});
+    await rejected;
+  }
+});
+
 test('physical red fives remain distinct and discard waits for both accepted response and exact echo', async () => {
   const h = setup({hand:[...hand.slice(0,12),'0p','5p']});
   const promise = h.run({action:'discard',tile:'0p'});
