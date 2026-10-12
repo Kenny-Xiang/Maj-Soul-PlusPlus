@@ -17,7 +17,7 @@ function setup(random = () => .5) {
     __mjLobby:{snapshot:()=>lobby,
       start:(count,key,roundCount)=>{starts.push({count,key,roundCount}); return {ok:true};},
       cancel:()=>{cancels++;return {ok:true};}, finish:key=>{finishes.push(key);return {ok:true};}},
-    __mjUnityActions:{snapshot:()=>client, execute:(advice,state)=>{
+    __mjUnityActions:{snapshot:()=>client,onNativeInput:()=>client.remainingMs === 0, execute:(advice,state)=>{
       actions.push({advice,state,at:time}); window.__mjAutoplay.onInput(); return Promise.resolve({});
     }},
   };

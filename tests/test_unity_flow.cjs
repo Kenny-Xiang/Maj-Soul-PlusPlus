@@ -732,6 +732,77 @@ for (const expired of [false,true])
     assert.equal(h.api.getStatus().enabled,true);
   });
 
+async function nativeTimeoutFixture() {
+  const h=await setup(3,false,2),e=h.encode,seats=[22,33,11],game=h.connect(true);
+  game.send(h.frame(2,2,'.lq.FastTest.authGame',e([[1,11],[3,'native-timeout-match']])));
+  await h.reply(game,e([...seats.map(id=>[2,e([[1,id],[7,e([[1,20301]])]])]),
+    ...seats.map(id=>[3,id]),[5,e([[1,2],[2,e([[1,12]])],[3,e([[2,22]])]])]]));
+  const hand=['1p','2p','3p','4p','5p','6p','9p','1s','2s','3s','4s','5s','6s','6z'];
+  const operation=e([[1,2],[2,e([[1,1]])],[4,8000],[5,20000]]);
+  await h.action(game,'ActionNewRound',0,[[1,0],[2,2],[3,0],...hand.map(tile=>[4,tile]),
+    ...seats.map(()=>[6,35000]),[7,operation],[13,54],[14,'1p']]);
+  h.api.setEnabled(true);h.advice({action:'discard',tile:'9p'});await h.advance(2088);
+  assert.equal(h.str(h.fields(h.last(game).data),3),'9p');
+  return {h,e,game,operation,input:h.last(game)};
+}
+
+for (const acknowledged of [false,true]) for (const timersPaused of [false,true])
+  test(`Unity expired native fallback abandons an unconfirmed recommendation with ACK=${acknowledged}, paused timers=${timersPaused}`,async()=>{
+    const {h,e,game,operation,input}=await nativeTimeoutFixture();
+    if (acknowledged) await h.reply(game);
+    h.window.document.hidden=timersPaused;
+    await h[timersPaused?'background':'advance'](29577);
+    game.send(h.frame(2,8,'.lq.FastTest.inputOperation',e([[1,1],[3,'6z']])));
+    await h.reply(game);
+    assert.equal(h.api.getStatus().enabled,true,'deadline fallback must not revoke automation intent');
+    h.advice({action:'discard',tile:'9p'});await h.advance(1);
+    assert.equal(game.sent.length,3,'the expired window cannot be submitted again');
+    await h.action(game,'ActionDiscardTile',1,[[1,2],[2,'6z'],[5,0]]);
+    assert.equal(h.api.getStatus().enabled,true,'a different native discard is not our recommendation echo');
+    assert.equal(h.window.__mjUnityActions.snapshot().pending,false,'the recommendation remains unconfirmed');
+    await h.action(game,'ActionDealTile',2,[[1,2],[2,'3z'],[3,53],[4,operation]]);
+    h.advice({action:'discard',tile:'9p'});await h.advance(3000);
+    assert.equal(game.sent.length,4,'the next authoritative window may submit its new recommendation');
+    await h.feed(game,h.frame(3,input.id,'',new Uint8Array()));
+    assert.equal(h.window.__mjUnityActions.snapshot().pending,true,'an old ACK cannot complete the new action');
+    await h.reply(game);await h.action(game,'ActionDiscardTile',3,[[1,2],[2,'9p'],[5,0]]);
+    assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+    assert.equal(h.api.getStatus().enabled,true);
+    assert.ok(h.packets.every((packet,index) => !index || packet.serial > h.packets[index-1].serial),
+      'timeout diagnostics must not publish ahead of their authoritative turn');
+  });
+
+test('Unity native input before the original deadline still pauses an unconfirmed recommendation',async()=>{
+  const {h,e,game}=await nativeTimeoutFixture();await h.reply(game);
+  await h.advance(27999-2088);
+  game.send(h.frame(2,8,'.lq.FastTest.inputOperation',e([[1,1],[3,'6z']])));
+  await h.reply(game);
+  assert.equal(h.api.getStatus().enabled,false);
+  assert.match(h.api.getStatus().message,/游戏客户端已提交操作/);
+});
+
+for (const mismatch of ['seat','step'])
+  test(`Unity expired native fallback cannot excuse the wrong authoritative ${mismatch}`,async()=>{
+    const {h,e,game}=await nativeTimeoutFixture();await h.reply(game);
+    await h.advance(29577);
+    game.send(h.frame(2,8,'.lq.FastTest.inputOperation',e([[1,1],[3,'6z']])));
+    await h.reply(game);assert.equal(h.api.getStatus().enabled,true);
+    await h.action(game,'ActionDiscardTile',mismatch==='step'?2:1,[[1,mismatch==='seat'?0:2],[2,'6z'],[5,0]]);
+    assert.equal(h.api.getStatus().enabled,false);
+  });
+
+for (const stop of ['off','manual'])
+  test(`Unity expired native fallback cannot override ${stop} after submission`,async()=>{
+    const {h,e,game,operation}=await nativeTimeoutFixture();await h.reply(game);
+    await h.advance(29577);
+    if (stop==='off') h.api.setEnabled(false);else h.manual();
+    game.send(h.frame(2,8,'.lq.FastTest.inputOperation',e([[1,1],[3,'6z']])));
+    await h.reply(game);await h.action(game,'ActionDiscardTile',1,[[1,2],[2,'6z'],[5,0]]);
+    await h.action(game,'ActionDealTile',2,[[1,2],[2,'3z'],[3,53],[4,operation]]);
+    h.advice({action:'discard',tile:'9p'});await h.advance(3000);
+    assert.equal(h.api.getStatus().enabled,false);assert.equal(game.sent.length,3);
+  });
+
 for (const cancel of ['off','manual'])
   test(`Unity budget wait cannot override ${cancel} user intent`, async () => {
     const {h,game,advice,nextWindow}=await budgetFixture();

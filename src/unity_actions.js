@@ -36,6 +36,12 @@
     state.round?.chang, state.round?.ju, state.round?.ben, state.lastStep];
   const submissionKey = state => JSON.stringify(stableSubmission(state) || localSubmission(state));
   const liveState = () => window.__mjMonitor?.getSnapshot()?.state;
+  function remainingTime(state) {
+    const timing = state?.operationTiming;
+    return timing && [timing.timeFixed,timing.timeAdd].every(t => Number.isInteger(t) && t >= 0 && t <= 0xffffffff) &&
+      Number.isFinite(timing.receivedAt) && timing.receivedAt >= 0 && timing.receivedAt <= now() ?
+      Math.max(0, timing.timeFixed + timing.timeAdd - (now() - timing.receivedAt)) : null;
+  }
   function offered(state) {
     const list = state.operationDetails;
     check(Array.isArray(list) && list.length > 0, '缺少服务端合法操作');
@@ -75,11 +81,9 @@
         Number.isInteger(state.lastStep) && state.round, '缺少本人座位或当前局信息');
       check(Array.isArray(state.hand) && state.hand.every(validTile), '当前手牌编码不完整');
       offered(state);
-      const timing = state.operationTiming;
-      check(timing && [timing.timeFixed,timing.timeAdd].every(t => Number.isInteger(t) && t >= 0 && t <= 0xffffffff) &&
-        Number.isFinite(timing.receivedAt) && timing.receivedAt >= 0 && timing.receivedAt <= now(), '缺少服务端操作倒计时');
       // OptionalOperationList stores milliseconds; room-rule timer settings use seconds.
-      remainingMs = Math.max(0, timing.timeFixed + timing.timeAdd - (now() - timing.receivedAt));
+      remainingMs = remainingTime(state);
+      check(remainingMs !== null, '缺少服务端操作倒计时');
       check(remainingMs > 0, '本次操作已经超时');
       check(!expected || fingerprint(expected) === fingerprint(state), '建议所依据的牌局状态已过期');
       blocked = false;
@@ -193,6 +197,21 @@
       } catch (error) {finish(error);}
     });
   }
+  function onNativeInput(expected) {
+    const state = liveState();
+    // Sending a request clears the live decision window. Its immutable turn
+    // still owns the deadline, but only until the authoritative scope advances.
+    if (!expected || !state || expected.phase !== 'playing' || state.phase !== 'playing' ||
+        !expected.handComplete || !expected.historyComplete || !expected.canAct || expected.recovery ||
+        !state.handComplete || !state.historyComplete || state.recovery ||
+        JSON.stringify(localSubmission(expected)) !== JSON.stringify(localSubmission(state)) ||
+        remainingTime(expected) !== 0) return false;
+    if (pending && !pending.echo && submissionKey(pending.state) === submissionKey(expected))
+      pending.nativeExpired = true;
+    window.__mjMonitor?.reportActionDiagnostic?.({event:'native_timeout_fallback',source:'client',
+      step:expected.lastStep,pending:!!pending});
+    return true;
+  }
   function onEvent(packet) {
     const ended = packet.phase === 'ended' || packet.state?.phase === 'ended';
     if (ended) submitted = submittedStable = null;
@@ -220,6 +239,16 @@
       request.finish(new Error('权威动作不连续，操作结果未确认')); return;
     }
     const own = event.seat === state.selfSeat;
+    if (request.nativeExpired && own && state.canDiscard && event.name === 'ActionDiscardTile' &&
+        validTile(event.tile) && state.hand.includes(event.tile) && !event.riichi &&
+        Boolean(event.moqie) === isDrawn(state, event.tile) &&
+        !(state.forbiddenDiscards || []).some(tile => family(tile) === family(event.tile)) &&
+        (!(state.riichi?.[state.selfSeat] || state.riichiPending?.[state.selfSeat]) || event.tile === state.lastDraw)) {
+      window.__mjMonitor?.reportActionDiagnostic?.({event:'native_timeout_replacement',source:'client',
+        step:event.step,pending:true});
+      request.finish(reconnectError('本次操作已超时，客户端已弃牌；建议操作未获确认，等待新的权威操作窗口'));
+      return;
+    }
     let confirmed = false;
     if (action === 'pass') confirmed = !event.unsupported && ['ActionDealTile','ActionDiscardTile','ActionChiPengGang',
       'ActionAnGangAddGang','ActionBaBei','ActionHule','ActionNoTile','ActionLiuJu'].includes(event.name);
@@ -249,5 +278,5 @@
     submittedStable = saved.submitted && [...saved.submitted];
     submitted = submittedStable && JSON.stringify(submittedStable);
   }
-  window.__mjUnityActions = {snapshot, execute, onEvent, checkpoint, restoreCheckpoint};
+  window.__mjUnityActions = {snapshot, execute, onNativeInput, onEvent, checkpoint, restoreCheckpoint};
 })();

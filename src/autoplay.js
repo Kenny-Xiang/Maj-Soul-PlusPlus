@@ -214,8 +214,7 @@
   function onInput() {
     if (frozen && !executing) { pause('已暂停：重载准备期间客户端提交了新操作'); return; }
     if (enabled && !executing && recovery?.status !== 'waiting' && !current?.expired && !budgetExceeded(current?.advice)) {
-      const client = current && window.__mjUnityActions?.snapshot(current.state);
-      if (!Number.isFinite(client?.remainingMs) || client.remainingMs > 0)
+      if (!window.__mjUnityActions?.onNativeInput?.(current?.state))
         pause('已暂停：游戏客户端已提交操作');
     }
     if (current) current.sent = true;
