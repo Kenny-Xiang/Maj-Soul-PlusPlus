@@ -13,6 +13,24 @@ ROOT = Path(__file__).resolve().parent
 DATA = Path.home() / "Library/Application Support/Maj-Soul++"
 
 
+class DisplayActivity:
+    """Prevent idle display/system sleep for the lifetime of the app."""
+    def __init__(self, process, options, write):
+        self.process, self.options, self.write = process, options, write
+        self.token = None
+
+    def start(self):
+        if self.token is None:
+            self.token = self.process.beginActivityWithOptions_reason_(self.options, "Maj-Soul++ 保持屏幕亮起")
+            self.write("[屏幕常亮] 应用运行期间阻止自动熄屏和系统空闲睡眠")
+
+    def release(self):
+        if self.token is not None:
+            token, self.token = self.token, None
+            self.process.endActivity_(token)
+            self.write("[屏幕常亮] 已释放，恢复系统原有休眠策略")
+
+
 class BackgroundActivity:
     """Keep user-enabled automation active; restore native policies when it ends."""
     def __init__(self, process, options, active_policy, write):
@@ -54,7 +72,7 @@ class BackgroundActivity:
                 policy_enabled = True
             except Exception as error:
                 self.write(f"[后台活动] WebKit 调度策略设置失败：{error}")
-        self.write("[后台活动] 已启用原生活动；允许锁屏和显示器休眠；" +
+        self.write("[后台活动] 已启用自动打牌原生活动；" +
                    ("WebKit 非活跃调度设为正常" if policy_enabled else "WebKit 非活跃调度策略不可用"))
 
     def release(self):
@@ -225,7 +243,8 @@ def main():
     import AppKit
     import fcntl
     from Foundation import (NSObject, NSURL, NSURLRequest, NSUUID, NSTimer, NSProcessInfo,
-                            NSActivityUserInitiatedAllowingIdleSystemSleep, NSActivityIdleSystemSleepDisabled)
+                            NSActivityUserInitiatedAllowingIdleSystemSleep, NSActivityIdleSystemSleepDisabled,
+                            NSActivityIdleDisplaySleepDisabled)
     from terminal_stats import TerminalLog
     from advice_worker import AdviceWorker
 
@@ -263,6 +282,8 @@ def main():
     log.write(f"文本记录：{log.text_path}\n结构化记录：{log.json_path}")
     advisor = AdviceWorker()
     advice_target = [None]
+    display = DisplayActivity(NSProcessInfo.processInfo(),
+        NSActivityIdleDisplaySleepDisabled | NSActivityIdleSystemSleepDisabled, log.write)
     background = BackgroundActivity(NSProcessInfo.processInfo(),
         NSActivityUserInitiatedAllowingIdleSystemSleep | NSActivityIdleSystemSleepDisabled,
         getattr(WebKit, "WKInactiveSchedulingPolicyNone", None), log.write)
@@ -270,6 +291,9 @@ def main():
         background.update(view, recovery.session, True) if enabled else background.release())
 
     class Delegate(NSObject):
+        def applicationWillTerminate_(self, notification):
+            display.release()
+
         def userContentController_didReceiveScriptMessage_(self, controller, message):
             origin = message.frameInfo().securityOrigin()
             if not message.frameInfo().isMainFrame() or str(origin.protocol()) != "https" or str(origin.host()) != "game.maj-soul.com":
@@ -340,6 +364,7 @@ def main():
 
     delegate = Delegate.alloc().init()
     delegate.popups = []
+    app.setDelegate_(delegate)
 
     def make_window(config, title):
         style = (AppKit.NSWindowStyleMaskTitled | AppKit.NSWindowStyleMaskClosable
@@ -401,8 +426,10 @@ def main():
     signal.signal(signal.SIGINT, lambda signum, frame: app.terminate_(None))
     signal.signal(signal.SIGTERM, lambda signum, frame: app.terminate_(None))
     try:
+        display.start()
         app.run()
     finally:
+        display.release()
         recovery.close()
         background.reset_page()
         timer.invalidate()
