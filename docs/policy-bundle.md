@@ -38,6 +38,14 @@ MAJSOUL_POLICY_BUNDLE="$PWD/build/policy-models" \
 
 构建 Python 需要同时安装 `requirements-build.txt` 与 `requirements-policy.txt`；打包后的运行时仅需 NumPy，不包含训练所需的 PyTorch。产物位于 `dist/Maj-Soul++.app`。构建成功后应核对包内 `policy-models/manifest.json`、两套 NPZ 哈希、应用签名以及随包源代码，再决定安装。
 
+直接运行冻结应用的离线验收入口：
+
+```sh
+"dist/Maj-Soul++.app/Contents/MacOS/Maj-Soul++" --verify-policy
+```
+
+该入口忽略模型路径环境变量，强制加载包内两套实际权重。在固定可见局面上检查玩法槽位和 SHA256、完整合法候选及参数、首选动作、概率有限且归一，以及等待窗口不出建议；覆盖 17 条操作流程的 56 个窗口和全部 12 类候选动作。成功输出 `status: ok` 的 JSON，失败返回非零退出码。它不启动 GUI、不连接游戏、不读写游戏 profile，也不运行 Node 或 PyTorch；因此该验收不代表在线牌局、WebKit 显示和长时间后台运行已经验证。
+
 不设置 `MAJSOUL_POLICY_BUNDLE` 的普通构建保持原有规则推荐器。设置了该变量但资源校验失败，构建立即失败。现有 Python 路径仍默认 `.venv/bin/python`；`MAJSOUL_BUILD_PYTHON` 仅用于显式选用另一个构建环境。
 
 ## 运行时行为

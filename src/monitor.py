@@ -434,7 +434,16 @@ def main():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2 and sys.argv[1] in ("--verify-native", "--verify-overlay", "--verify-advisor"):
+    if len(sys.argv) == 2 and sys.argv[1] == "--verify-policy":
+        try:
+            from policy_verify import verify_policy
+            test_root = ROOT / "source/tests" if getattr(sys, "frozen", False) else ROOT.parent / "tests"
+            report = verify_policy(ROOT, test_root / "fixtures/policy_verify_windows.json")
+        except Exception as error:
+            print(json.dumps({"status": "error", "message": str(error)}, ensure_ascii=False), flush=True)
+            raise SystemExit(1)
+        print(json.dumps(report, ensure_ascii=False, allow_nan=False), flush=True)
+    elif len(sys.argv) == 2 and sys.argv[1] in ("--verify-native", "--verify-overlay", "--verify-advisor"):
         # Exercise the packaged runtime offline, without touching the game profile.
         import runpy
         test_root = ROOT / "source/tests" if getattr(sys, "frozen", False) else ROOT.parent / "tests"

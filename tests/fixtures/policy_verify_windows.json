@@ -1,0 +1,7371 @@
+{
+  "schemaVersion": 1,
+  "description": "Synthetic ActionPrototype wire frames decoded by the real browser/core collector; only its visible snapshots, without a server or hidden hands.",
+  "sourceSha256": {
+    "tests/test_policy_live_windows.py": "e719bb6810c0905969cbbaee442e9331a3483c8811a2796230e7847e486d99b7",
+    "tests/helpers/policy_live_windows.cjs": "f4359706f09d8bffe079c482f156389a5bb44d5aa73f379e74880aacaf47636d",
+    "src/browser.js": "f15d9e1e4a02473588b2f112890fc63124ca8cab35f1d12d1ec499fd873691a0",
+    "src/core.cjs": "de17c642e6bfc07452f5ea988b21a11bc4dea9d3f6a9a6631cd9a5632f48a89a",
+    "src/unity_transport.js": "ef8ba48c96243e93e59fc1a39746dabfb94b01fcc965ffad8b0d87ce44f87b96"
+  },
+  "windows": [
+    {
+      "scenario": "3p-draw",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": "3s",
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 0,
+          "tile": "3s",
+          "type": null,
+          "step": 0
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-draw",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 0,
+          "tile": "3s",
+          "type": null,
+          "step": 1
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "3s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-draw",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "9s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": "9s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "9s",
+          "type": null,
+          "step": 2
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "3s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [
+          1,
+          7,
+          8
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 7,
+            "combination": [
+              "9s"
+            ]
+          },
+          {
+            "type": 8,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-call-3",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 2,
+          "tile": null,
+          "type": null,
+          "step": 0
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-call-3",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 2,
+          "tile": "7z",
+          "type": null,
+          "step": 1
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          3,
+          9
+        ],
+        "operationDetails": [
+          {
+            "type": 3,
+            "combination": [
+              "7z|7z"
+            ]
+          },
+          {
+            "type": 9,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-call-3",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionChiPengGang",
+          "seat": 0,
+          "tile": null,
+          "type": 1,
+          "step": 2
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [
+                2,
+                0,
+                0
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": [
+              "7z"
+            ]
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [
+          "7z"
+        ],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-call-5",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 2,
+          "tile": null,
+          "type": null,
+          "step": 0
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-call-5",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 2,
+          "tile": "7z",
+          "type": null,
+          "step": 1
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          5,
+          9
+        ],
+        "operationDetails": [
+          {
+            "type": 5,
+            "combination": [
+              "7z|7z|7z"
+            ]
+          },
+          {
+            "type": 9,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-call-5",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionChiPengGang",
+          "seat": 0,
+          "tile": null,
+          "type": 2,
+          "step": 2
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 2,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [
+                2,
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-call-5",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "9s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 3,
+        "lastDraw": "9s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "9s",
+          "type": null,
+          "step": 3
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 2,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [
+                2,
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-ankan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": "1s",
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 0,
+          "tile": "1s",
+          "type": null,
+          "step": 0
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          1,
+          4
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 4,
+            "combination": [
+              "7z|7z|7z|7z"
+            ]
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-ankan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionAnGangAddGang",
+          "seat": 0,
+          "tile": "7z",
+          "type": 3,
+          "step": 1
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 3,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [],
+              "redAssumed": false
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-ankan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "9s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": "9s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "9s",
+          "type": null,
+          "step": 2
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 3,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [],
+              "redAssumed": false
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "5p",
+          "5p",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 2,
+          "tile": null,
+          "type": null,
+          "step": 0
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "5p",
+          "5p",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 2,
+          "tile": "5p",
+          "type": null,
+          "step": 1
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          3
+        ],
+        "operationDetails": [
+          {
+            "type": 3,
+            "combination": [
+              "5p|5p"
+            ]
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionChiPengGang",
+          "seat": 0,
+          "tile": null,
+          "type": 1,
+          "step": 2
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "5p",
+                "5p",
+                "5p"
+              ],
+              "froms": [
+                0,
+                0,
+                2
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": [
+              "5p"
+            ]
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [
+          "5p"
+        ],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 3,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 0,
+          "tile": "1p",
+          "type": null,
+          "step": 3
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            }
+          ],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "5p",
+                "5p",
+                "5p"
+              ],
+              "froms": [
+                0,
+                0,
+                2
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "0p"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 4,
+        "lastDraw": "0p",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "0p",
+          "type": null,
+          "step": 4
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            }
+          ],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "5p",
+                "5p",
+                "5p"
+              ],
+              "froms": [
+                0,
+                0,
+                2
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1,
+          6
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 6,
+            "combination": [
+              "0p|5p|5p|5p"
+            ]
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 5,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionAnGangAddGang",
+          "seat": 0,
+          "tile": "0p",
+          "type": 2,
+          "step": 5
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            }
+          ],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 2,
+              "tiles": [
+                "5p",
+                "5p",
+                "5p",
+                "0p"
+              ],
+              "froms": [
+                0,
+                0,
+                2
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "9s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 6,
+        "lastDraw": "9s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "9s",
+          "type": null,
+          "step": 6
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            }
+          ],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 2,
+              "tiles": [
+                "5p",
+                "5p",
+                "5p",
+                "0p"
+              ],
+              "froms": [
+                0,
+                0,
+                2
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-abort",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1m",
+          "9m",
+          "1p",
+          "9p",
+          "1s",
+          "9s",
+          "1z",
+          "2z",
+          "3z",
+          "4z",
+          "5z",
+          "6z",
+          "7z",
+          "1m"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": "1m",
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 0,
+          "tile": "1m",
+          "type": null,
+          "step": 0
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          1,
+          10
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 10,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-rob-ankan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 2,
+          "tile": null,
+          "type": null,
+          "step": 0
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-rob-ankan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionAnGangAddGang",
+          "seat": 2,
+          "tile": "7z",
+          "type": 3,
+          "step": 1
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [
+            {
+              "type": 3,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [],
+              "redAssumed": false
+            }
+          ],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          9
+        ],
+        "operationDetails": [
+          {
+            "type": 9,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-draw",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": "3s",
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 0,
+          "tile": "3s",
+          "type": null,
+          "step": 0
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-draw",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 0,
+          "tile": "3s",
+          "type": null,
+          "step": 1
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "3s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-draw",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "9s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": "9s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "9s",
+          "type": null,
+          "step": 2
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "3s",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [
+          1,
+          7,
+          8
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 7,
+            "combination": [
+              "9s"
+            ]
+          },
+          {
+            "type": 8,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-call-3",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 3,
+          "tile": null,
+          "type": null,
+          "step": 0
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-call-3",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 3,
+          "tile": "7z",
+          "type": null,
+          "step": 1
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          [
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          3,
+          9
+        ],
+        "operationDetails": [
+          {
+            "type": 3,
+            "combination": [
+              "7z|7z"
+            ]
+          },
+          {
+            "type": 9,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-call-3",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionChiPengGang",
+          "seat": 0,
+          "tile": null,
+          "type": 1,
+          "step": 2
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          [
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [
+                3,
+                0,
+                0
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": [
+              "7z"
+            ]
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [
+          "7z"
+        ],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-call-5",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 3,
+          "tile": null,
+          "type": null,
+          "step": 0
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-call-5",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 3,
+          "tile": "7z",
+          "type": null,
+          "step": 1
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          [
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          5,
+          9
+        ],
+        "operationDetails": [
+          {
+            "type": 5,
+            "combination": [
+              "7z|7z|7z"
+            ]
+          },
+          {
+            "type": 9,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-call-5",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionChiPengGang",
+          "seat": 0,
+          "tile": null,
+          "type": 2,
+          "step": 2
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          [
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [
+            {
+              "type": 2,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [
+                3,
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-call-5",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "9s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 3,
+        "lastDraw": "9s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "9s",
+          "type": null,
+          "step": 3
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          [
+            {
+              "tile": "7z",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [
+            {
+              "type": 2,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [
+                3,
+                0,
+                0,
+                0
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-call-2",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "3p",
+          "0p",
+          "1p",
+          "2p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 3,
+          "tile": null,
+          "type": null,
+          "step": 0
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-call-2",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "3p",
+          "0p",
+          "1p",
+          "2p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 3,
+          "tile": "4p",
+          "type": null,
+          "step": 1
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          [
+            {
+              "tile": "4p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          2,
+          9
+        ],
+        "operationDetails": [
+          {
+            "type": 2,
+            "combination": [
+              "3p|0p"
+            ]
+          },
+          {
+            "type": 9,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-call-2",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionChiPengGang",
+          "seat": 0,
+          "tile": null,
+          "type": 0,
+          "step": 2
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          [
+            {
+              "tile": "4p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [
+            {
+              "type": 0,
+              "tiles": [
+                "0p",
+                "3p",
+                "4p"
+              ],
+              "froms": [
+                0,
+                0,
+                3
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": [
+              "4p"
+            ]
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [
+          "4p"
+        ],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-ankan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "7z",
+          "7z",
+          "7z",
+          "7z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": "1s",
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 0,
+          "tile": "1s",
+          "type": null,
+          "step": 0
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          1,
+          4
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 4,
+            "combination": [
+              "7z|7z|7z|7z"
+            ]
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-ankan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionAnGangAddGang",
+          "seat": 0,
+          "tile": "7z",
+          "type": 3,
+          "step": 1
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 3,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [],
+              "redAssumed": false
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-ankan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "9s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": "9s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "9s",
+          "type": null,
+          "step": 2
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [
+            {
+              "type": 3,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [],
+              "redAssumed": false
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "5p",
+          "5p",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 3,
+          "tile": null,
+          "type": null,
+          "step": 0
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "5p",
+          "5p",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 3,
+          "tile": "5p",
+          "type": null,
+          "step": 1
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          3
+        ],
+        "operationDetails": [
+          {
+            "type": 3,
+            "combination": [
+              "5p|5p"
+            ]
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionChiPengGang",
+          "seat": 0,
+          "tile": null,
+          "type": 1,
+          "step": 2
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "5p",
+                "5p",
+                "5p"
+              ],
+              "froms": [
+                0,
+                0,
+                3
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": [
+              "5p"
+            ]
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [
+          "5p"
+        ],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 3,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionDiscardTile",
+          "seat": 0,
+          "tile": "1p",
+          "type": null,
+          "step": 3
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            }
+          ],
+          [],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "5p",
+                "5p",
+                "5p"
+              ],
+              "froms": [
+                0,
+                0,
+                3
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "0p"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 4,
+        "lastDraw": "0p",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "0p",
+          "type": null,
+          "step": 4
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            }
+          ],
+          [],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [
+            {
+              "type": 1,
+              "tiles": [
+                "5p",
+                "5p",
+                "5p"
+              ],
+              "froms": [
+                0,
+                0,
+                3
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1,
+          6
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 6,
+            "combination": [
+              "0p|5p|5p|5p"
+            ]
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 5,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionAnGangAddGang",
+          "seat": 0,
+          "tile": "0p",
+          "type": 2,
+          "step": 5
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            }
+          ],
+          [],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [
+            {
+              "type": 2,
+              "tiles": [
+                "5p",
+                "5p",
+                "5p",
+                "0p"
+              ],
+              "froms": [
+                0,
+                0,
+                3
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-shouminkan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "2p",
+          "3p",
+          "4p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "9s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 6,
+        "lastDraw": "9s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "9s",
+          "type": null,
+          "step": 6
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [
+            {
+              "tile": "1p",
+              "moqie": false,
+              "riichi": false,
+              "called": false,
+              "step": 3
+            }
+          ],
+          [],
+          [],
+          [
+            {
+              "tile": "5p",
+              "moqie": false,
+              "riichi": false,
+              "called": true,
+              "step": 1
+            }
+          ]
+        ],
+        "melds": [
+          [
+            {
+              "type": 2,
+              "tiles": [
+                "5p",
+                "5p",
+                "5p",
+                "0p"
+              ],
+              "froms": [
+                0,
+                0,
+                3
+              ]
+            }
+          ],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-abort",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1m",
+          "9m",
+          "1p",
+          "9p",
+          "1s",
+          "9s",
+          "1z",
+          "2z",
+          "3z",
+          "4z",
+          "5z",
+          "6z",
+          "7z",
+          "1m"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": "1m",
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 0,
+          "tile": "1m",
+          "type": null,
+          "step": 0
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          1,
+          10
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 10,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-rob-ankan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 3,
+          "tile": null,
+          "type": null,
+          "step": 0
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "4p-rob-ankan",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionAnGangAddGang",
+          "seat": 3,
+          "tile": "7z",
+          "type": 3,
+          "step": 1
+        },
+        "left": 69,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          25000,
+          25000,
+          25000,
+          25000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          [
+            {
+              "type": 3,
+              "tiles": [
+                "7z",
+                "7z",
+                "7z",
+                "7z"
+              ],
+              "froms": [],
+              "redAssumed": false
+            }
+          ]
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          9
+        ],
+        "operationDetails": [
+          {
+            "type": 9,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 4,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 3,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-kita-replacement",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "4z",
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": "4s",
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 0,
+          "tile": "4s",
+          "type": null,
+          "step": 0
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": true,
+        "canDoubleRiichi": true,
+        "operations": [
+          1,
+          11
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 11,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-kita-replacement",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionBaBei",
+          "seat": 0,
+          "tile": "4z",
+          "type": null,
+          "step": 1
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-kita-replacement",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s",
+          "4z"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 2,
+        "lastDraw": "4z",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "4z",
+          "type": null,
+          "step": 2
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1,
+          11
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          },
+          {
+            "type": 11,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-kita-replacement",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 3,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionBaBei",
+          "seat": 0,
+          "tile": "4z",
+          "type": null,
+          "step": 3
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          2,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": null,
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-kita-replacement",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s",
+          "9s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 4,
+        "lastDraw": "9s",
+        "lastAction": {
+          "name": "ActionDealTile",
+          "seat": 0,
+          "tile": "9s",
+          "type": null,
+          "step": 4
+        },
+        "left": 40,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          2,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": true,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          1
+        ],
+        "operationDetails": [
+          {
+            "type": 1,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 0,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-rob-kita",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 0,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionNewRound",
+          "seat": 2,
+          "tile": null,
+          "type": null,
+          "step": 0
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": false,
+        "canDiscard": false,
+        "noCallsYet": true,
+        "canDoubleRiichi": false,
+        "operations": [],
+        "operationDetails": [],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    },
+    {
+      "scenario": "3p-rob-kita",
+      "state": {
+        "phase": "playing",
+        "selfSeat": 0,
+        "hand": [
+          "1p",
+          "2p",
+          "3p",
+          "4p",
+          "5p",
+          "6p",
+          "7p",
+          "8p",
+          "9p",
+          "1s",
+          "2s",
+          "3s",
+          "4s"
+        ],
+        "handComplete": true,
+        "historyComplete": true,
+        "baseline": "new_round",
+        "lastStep": 1,
+        "lastDraw": null,
+        "lastAction": {
+          "name": "ActionBaBei",
+          "seat": 2,
+          "tile": "4z",
+          "type": null,
+          "step": 1
+        },
+        "left": 54,
+        "doras": [
+          "9m"
+        ],
+        "scores": [
+          35000,
+          35000,
+          35000
+        ],
+        "rivers": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "melds": [
+          [],
+          [],
+          [],
+          []
+        ],
+        "north": [
+          0,
+          0,
+          1,
+          0
+        ],
+        "riichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichi": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "doubleRiichiPending": [
+          false,
+          false,
+          false,
+          false
+        ],
+        "riichiStep": [
+          null,
+          null,
+          null,
+          null
+        ],
+        "riichiSticks": 0,
+        "furiten": false,
+        "canAct": true,
+        "canDiscard": false,
+        "noCallsYet": false,
+        "canDoubleRiichi": false,
+        "operations": [
+          9
+        ],
+        "operationDetails": [
+          {
+            "type": 9,
+            "combination": []
+          }
+        ],
+        "operationTiming": {
+          "timeFixed": 5000,
+          "timeAdd": 20000,
+          "receivedAt": 1000
+        },
+        "forbiddenDiscards": [],
+        "playerCount": 3,
+        "warning": "",
+        "round": {
+          "chang": 0,
+          "ju": 2,
+          "ben": 0
+        },
+        "match": null,
+        "gameId": null,
+        "recovery": null
+      }
+    }
+  ]
+}
