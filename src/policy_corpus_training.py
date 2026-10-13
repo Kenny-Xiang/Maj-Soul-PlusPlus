@@ -208,16 +208,18 @@ def verify_export(model, path, rows, players, device, encoded_cache=None):
     return {"samples": checked, "maxAbsError": error, "argmaxAgreement": matching}, deployed.sha256
 
 
-def supervised_loss(logits, targets, samples, action_weights, opportunity_weights=None):
+def supervised_loss(logits, targets, actions, action_weights, opportunity_weights=None):
     """Weight recorded full-candidate labels; keep every legal negative example."""
     losses = nn.functional.cross_entropy(logits, targets, reduction="none")
-    opportunity_weights = opportunity_weights or {}
-    values = []
-    for sample in samples:
-        opportunity = max([1.] + [value for action, value in opportunity_weights.items()
-                                 if np.any(sample["actions"][:, ACTIONS.index(action)])])
-        values.append(action_weights.get(sample["action"], 1.) * opportunity)
-    weights = losses.new_tensor(values)
+    types = actions[:, :, :len(ACTIONS)]
+    weights = torch.ones_like(losses)
+    if opportunity_weights:
+        opportunity = losses.new_tensor([opportunity_weights.get(action, 1.) for action in ACTIONS])
+        weights = (types * opportunity).amax(dim=(1, 2)).clamp_min(1.)
+    if action_weights:
+        labels = losses.new_tensor([action_weights.get(action, 1.) for action in ACTIONS])
+        recorded = types[torch.arange(len(targets), device=targets.device), targets]
+        weights = weights * (recorded * labels).sum(dim=1)
     return (losses * weights).sum() / weights.sum()
 
 
@@ -318,7 +320,7 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
                 batch = [training[index] for index in decision_order[start:start + batch_size]]
                 planes, globals_, actions, mask, targets = batch_tensors(batch, device)
                 optimizer.zero_grad(set_to_none=True)
-                loss = supervised_loss(model(planes, globals_, actions, mask), targets, batch,
+                loss = supervised_loss(model(planes, globals_, actions, mask), targets, actions,
                                        action_weights, opportunity_weights)
                 if not torch.isfinite(loss):
                     raise ValueError("non-finite training loss")

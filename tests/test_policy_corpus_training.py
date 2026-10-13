@@ -324,12 +324,18 @@ class CorpusTrainingTests(unittest.TestCase):
 
     def test_weighted_loss_keeps_negative_examples_and_complete_candidate_targets(self):
         from policy_corpus_training import supervised_loss
+        from policy_features import ACTIONS
         logits = torch.tensor([[0., 1., 2.], [1., 2., 0.]], requires_grad=True)
         targets = torch.tensor([2, 0])
-        samples = [{"action": "daiminkan"}, {"action": "pass"}]
+        actions = torch.zeros(2, 3, len(ACTIONS))
+        for row in range(2):
+            for column, action in enumerate(("pass", "pon", "daiminkan")):
+                actions[row, column, ACTIONS.index(action)] = 1
         losses = torch.nn.functional.cross_entropy(logits, targets, reduction="none")
-        torch.testing.assert_close(supervised_loss(logits, targets, samples, {}), losses.mean())
-        weighted = supervised_loss(logits, targets, samples, {"daiminkan": 4.})
+        ones = torch.ones_like(losses)
+        torch.testing.assert_close(supervised_loss(logits, targets, actions, {}),
+                                   (losses * ones).sum() / ones.sum(), rtol=0, atol=0)
+        weighted = supervised_loss(logits, targets, actions, {"daiminkan": 4.})
         torch.testing.assert_close(weighted, (4 * losses[0] + losses[1]) / 5)
         weighted.backward()
         self.assertGreater(float(logits.grad[1].abs().sum()), 0)
@@ -345,13 +351,42 @@ class CorpusTrainingTests(unittest.TestCase):
         logits = torch.tensor([[0., 1.], [1., 0.], [0., 2.]], requires_grad=True)
         targets = torch.tensor([0, 1, 0])
         losses = torch.nn.functional.cross_entropy(logits, targets, reduction="none")
-        result = supervised_loss(logits, targets, samples, {}, {"daiminkan": 4.})
+        actions = torch.as_tensor(np.stack([sample["actions"] for sample in samples]))
+        result = supervised_loss(logits, targets, actions, {}, {"daiminkan": 4.})
         torch.testing.assert_close(result, (4 * losses[0] + 4 * losses[1] + losses[2]) / 9)
         result.backward()
         self.assertGreater(float(logits.grad[1].abs().sum()), 0)
         with self.assertRaisesRegex(ValueError, "invalid learning rate ratio or action"):
             train_corpus(self.root / "unread.jsonl", self.root / "unwritten.npz",
                          opportunity_weights={"kakan": 2.})
+
+    def test_vectorized_weights_preserve_padding_duplicates_clamp_and_recorded_label(self):
+        from policy_corpus_training import supervised_loss
+        from policy_features import ACTIONS
+        candidates = (("pass", "daiminkan", "daiminkan"), ("chi", "chi", "pon"),
+                      ("chi", "chi"), ("discard", "riichi", "pass"))
+        actions = torch.zeros(4, 4, len(ACTIONS))
+        for row, names in enumerate(candidates):
+            for column, action in enumerate(names):
+                actions[row, column, ACTIONS.index(action)] = 1
+        targets = torch.tensor([0, 1, 1, 1])
+        logits = torch.tensor([[0., 1., 2., -torch.inf], [2., 0., 1., -torch.inf],
+                               [1., 0., -torch.inf, -torch.inf], [2., 0., 1., -torch.inf]], requires_grad=True)
+        # The actual pass receives its legal kan opportunity weight, duplicate
+        # chi candidates do not add weight, and opportunities below one clamp.
+        expected_weights = torch.tensor([2., 3., 1.5, .75])
+        reference_logits = logits.detach().clone().requires_grad_()
+        reference_losses = torch.nn.functional.cross_entropy(reference_logits, targets, reduction="none")
+        expected = (reference_losses * expected_weights).sum() / expected_weights.sum()
+        actual = supervised_loss(logits, targets, actions,
+                                 {"pass": .5, "chi": 1.5, "riichi": .75},
+                                 {"daiminkan": 4., "chi": .25, "pon": 2.})
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+        actual.backward()
+        expected.backward()
+        torch.testing.assert_close(logits.grad, reference_logits.grad, rtol=0, atol=0)
+        self.assertGreater(float(logits.grad[0].abs().sum()), 0)
+        self.assertEqual(float(logits.grad[:, -1].abs().sum()), 0)
 
 
 if __name__ == "__main__":
