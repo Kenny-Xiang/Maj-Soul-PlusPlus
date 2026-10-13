@@ -2,6 +2,7 @@
 from collections import Counter
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -13,6 +14,7 @@ import torch
 from torch import nn
 
 from policy_model import PolicyModel
+from policy_features import ACTIONS
 from policy_encoded_cache import cache_binding, cache_path, read_cache, write_cache, encoder_signature
 from policy_split import read_split
 from policy_training import (CandidatePolicy, batch_tensors, evaluate, export_model,
@@ -120,8 +122,10 @@ def save_training_checkpoint(path, payload):
 
 def merge_metrics(items):
     """Merge per-game scores by decisions, preserving action numerators."""
+    from policy_training import OPPORTUNITY_COUNTS, OPPORTUNITY_SCOPE, finalize_opportunities
     totals = {"samples": 0, "choices": 0, "forced": 0,
-              "choiceTop1": 0, "choiceTop3": 0, "choiceNll": 0., "byAction": {}}
+              "choiceTop1": 0, "choiceTop3": 0, "choiceNll": 0., "byAction": {},
+              "byOpportunity": {}, "opportunityScope": OPPORTUNITY_SCOPE}
     for item in items:
         for name in ("samples", "choices", "forced"):
             totals[name] += item[name]
@@ -134,6 +138,10 @@ def merge_metrics(items):
             dest = totals["byAction"].setdefault(action, {"count": 0, "correct": 0})
             dest["count"] += values["count"]
             dest["correct"] += values["correct"]
+        for action, values in item["byOpportunity"].items():
+            dest = totals["byOpportunity"].setdefault(action, dict.fromkeys(OPPORTUNITY_COUNTS, 0))
+            for name in OPPORTUNITY_COUNTS:
+                dest[name] += values[name]
     count = totals["choices"]
     for name in ("choiceTop1", "choiceTop3", "choiceNll"):
         totals[name] = totals[name] / count if count else None
@@ -141,26 +149,36 @@ def merge_metrics(items):
         values["accuracy"] = values["correct"] / values["count"]
     totals["macroActionAccuracy"] = (sum(v["accuracy"] for v in totals["byAction"].values()) /
                                     len(totals["byAction"]) if totals["byAction"] else None)
+    finalize_opportunities(totals["byOpportunity"])
     return totals
 
 
-def evaluate_corpus(model, rows, players, device, batch_size, phase="evaluation", encoded_cache=None):
+def evaluate_corpus(model, rows, players, device, batch_size, phase="evaluation", encoded_cache=None,
+                    game_window=16):
+    if type(game_window) is not int or game_window < 1:
+        raise ValueError("evaluation game_window must be a positive integer")
     actions, labels = Counter(), Counter()
     duplicate_count = 0
 
     def scores():
         nonlocal duplicate_count
+        group, group_games = [], 0
         for completed_games, row in enumerate(rows, 1):
             samples, audit = load_game(row, players, encoded_cache)
             actions.update(audit["actions"])
             labels.update(audit["labelSources"])
             duplicate_count += audit["duplicateSamples"]
-            result = evaluate(model, samples, device, batch_size)
+            group.extend(samples)
+            group_games += 1
             del samples
-            if completed_games % 100 == 0:
-                print(json.dumps({"phase": phase, "completedGames": completed_games,
-                                  "totalGames": len(rows)}), flush=True)
-            yield result
+            if (group_games == game_window or completed_games % 100 == 0 or
+                    completed_games == len(rows)):
+                result = evaluate(model, group, device, batch_size)
+                group, group_games = [], 0
+                if completed_games % 100 == 0:
+                    print(json.dumps({"phase": phase, "completedGames": completed_games,
+                                      "totalGames": len(rows)}), flush=True)
+                yield result
 
     metrics = merge_metrics(scores())
     return metrics, {"games": len(rows), "samples": metrics["samples"],
@@ -190,14 +208,47 @@ def verify_export(model, path, rows, players, device, encoded_cache=None):
     return {"samples": checked, "maxAbsError": error, "argmaxAgreement": matching}, deployed.sha256
 
 
+def supervised_loss(logits, targets, samples, action_weights, opportunity_weights=None):
+    """Weight recorded full-candidate labels; keep every legal negative example."""
+    losses = nn.functional.cross_entropy(logits, targets, reduction="none")
+    opportunity_weights = opportunity_weights or {}
+    values = []
+    for sample in samples:
+        opportunity = max([1.] + [value for action, value in opportunity_weights.items()
+                                 if np.any(sample["actions"][:, ACTIONS.index(action)])])
+        values.append(action_weights.get(sample["action"], 1.) * opportunity)
+    weights = losses.new_tensor(values)
+    return (losses * weights).sum() / weights.sum()
+
+
 def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
                  learning_rate=1e-3, seed=42, device="cpu", max_games=None, config=None, split_file=None,
-                 encoded_cache=None, resume=False, checkpoint_every_games=1000, game_window=1):
+                 encoded_cache=None, resume=False, checkpoint_every_games=1000, game_window=1,
+                 final_lr_ratio=1., action_weights=None, opportunity_weights=None, validation_only=False,
+                 train_game_limit=None, validation_game_limit=None, save_epoch_models=False):
     if (players not in (3, 4) or epochs < 1 or batch_size < 1 or not 0 < learning_rate < 1 or
             checkpoint_every_games < 1 or game_window < 1):
         raise ValueError("invalid training parameters")
+    action_weights = dict(action_weights or {})
+    opportunity_weights = dict(opportunity_weights or {})
+    if (not 0 < final_lr_ratio <= 1 or
+            any(key not in ACTIONS or not math.isfinite(value) or value <= 0
+                for key, value in list(action_weights.items()) + list(opportunity_weights.items()))):
+        raise ValueError("invalid learning rate ratio or action loss weights")
+    if ((train_game_limit is not None or validation_game_limit is not None) and not validation_only):
+        raise ValueError("partition limits are only permitted in validation-only experiments")
+    if any(value is not None and value < 1 for value in (train_game_limit, validation_game_limit)):
+        raise ValueError("partition limits must be positive")
     started = time.monotonic()
     partitions, groups, data_audit = read_manifest(manifest, seed, max_games, split_file)
+    if validation_only:
+        partitions = {"train": partitions["train"][:train_game_limit],
+                      "validation": partitions["validation"][:validation_game_limit]}
+        groups = {name: [row["gameId"] for row in rows] for name, rows in partitions.items()}
+        data_audit = {**data_audit, "validationOnly": True,
+                      "selectedGames": sum(len(rows) for rows in partitions.values()),
+                      "selectedSamples": sum(row["samples"] for rows in partitions.values() for row in rows),
+                      "selectedGameCounts": {name: len(rows) for name, rows in partitions.items()}}
     config = config or {"channels": 64, "blocks": 3, "hidden": 256}
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
@@ -209,6 +260,9 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
     binding = {"version": 1, "dataAudit": data_audit, "gameSplit": groups, "players": players,
                "epochs": epochs, "batchSize": batch_size, "learningRate": learning_rate,
                "seed": seed, "config": config, "gameWindow": game_window,
+               "finalLrRatio": final_lr_ratio, "actionWeights": action_weights,
+               "opportunityWeights": opportunity_weights,
+               "validationOnly": validation_only, "saveEpochModels": save_epoch_models,
                "encoderSignature": encoder_signature(),
                "trainerSignature": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
     start_epoch, cursor, order, loss_sum, choices, prior_elapsed = 0, 0, None, 0., 0, 0.
@@ -242,6 +296,10 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
 
     for epoch in range(start_epoch, epochs):
         model.train()
+        epoch_lr = learning_rate * (final_lr_ratio + (1 - final_lr_ratio) *
+                                    (1 + math.cos(math.pi * epoch / max(1, epochs - 1))) / 2)
+        for group in optimizer.param_groups:
+            group["lr"] = epoch_lr
         if order is None:
             order = rng.permutation(len(partitions["train"])).tolist()
             cursor, loss_sum, choices = 0, 0., 0
@@ -260,7 +318,8 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
                 batch = [training[index] for index in decision_order[start:start + batch_size]]
                 planes, globals_, actions, mask, targets = batch_tensors(batch, device)
                 optimizer.zero_grad(set_to_none=True)
-                loss = nn.functional.cross_entropy(model(planes, globals_, actions, mask), targets)
+                loss = supervised_loss(model(planes, globals_, actions, mask), targets, batch,
+                                       action_weights, opportunity_weights)
                 if not torch.isfinite(loss):
                     raise ValueError("non-finite training loss")
                 loss.backward()
@@ -285,9 +344,15 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
         criterion = validation["choiceNll"]
         if criterion is None:
             raise ValueError("validation partition contains no actual choices")
-        row = {"epoch": epoch + 1, "trainLoss": loss_sum / choices,
+        row = {"epoch": epoch + 1, "learningRate": epoch_lr, "trainLoss": loss_sum / choices,
                "trainChoices": choices, "validation": validation}
         history.append(row)
+        if save_epoch_models:
+            epoch_path = Path(output).with_suffix(f".epoch-{epoch + 1}.npz")
+            epoch_path.parent.mkdir(parents=True, exist_ok=True)
+            export_model(model, epoch_path, {"playerCount": players, "purpose": "behavior-cloning",
+                         "training": {"phase": "validation-complete", "epoch": epoch + 1,
+                                      "validation": validation, "dataAudit": data_audit, "gameSplit": groups}})
         if criterion < best_loss:
             best_loss, best_epoch = criterion, epoch + 1
             best_state = {key: value.detach().cpu().clone() for key, value in model.state_dict().items()}
@@ -304,11 +369,16 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
     model.load_state_dict(best_state)
     metrics, partition_audits = {}, {}
     for name, rows in partitions.items():
+        if validation_only and name == "train":
+            continue
         metrics[name], partition_audits[name] = evaluate_corpus(model, rows, players, device, batch_size,
                                                               phase=f"final-{name}", encoded_cache=encoded_cache)
     report = {"purpose": "behavior-cloning", "playerCount": players, "seed": seed,
               "config": config, "device": str(device), "epochs": epochs,
               "batchSize": batch_size, "learningRate": learning_rate, "weightDecay": 1e-4,
+              "finalLrRatio": final_lr_ratio, "actionWeights": action_weights,
+              "opportunityWeights": opportunity_weights,
+              "validationOnly": validation_only,
               "parameterCount": sum(p.numel() for p in model.parameters()),
               "gameSplit": groups, "dataAudit": {**data_audit, "partitions": partition_audits},
               "history": history, "bestEpoch": best_epoch, "metrics": metrics,
@@ -321,7 +391,7 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
               "versions": {"torch": torch.__version__, "numpy": np.__version__},
               "limitations": ["Behavior cloning predicts recorded choices, not optimal actions.",
                               "Only selected manifest games were trained; no playing-strength claim.",
-                              "Unknown match lengths are explicit missing features; East/South endgame behavior is not validated."]}
+                              "Match length and round index are excluded from model inputs by design."]}
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=output.parent, prefix=".policy-corpus-", suffix=".npz", delete=False) as handle:

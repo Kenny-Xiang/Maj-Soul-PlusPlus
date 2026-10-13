@@ -135,13 +135,39 @@ def batch_tensors(samples, device):
         actions, mask, np.asarray([s["target"] for s in samples], dtype=np.int64)))
 
 
+OPPORTUNITY_COUNTS = ("opportunityCount", "actualPositive", "predictedPositive", "truePositive",
+                      "exactCorrectPositive", "falsePositive", "falseNegative", "exactCorrect",
+                      "passAvailable", "passCorrect", "passAvailableExactCorrect")
+OPPORTUNITY_SCOPE = ("Choice windows only (at least two legal candidates). Action types collapse red-tile "
+                     "and consumed-tile choices; exact scores compare complete candidate indices. "
+                     "False selection rate is FP/opportunities; false positive rate is FP/actual negatives. "
+                     "Always-pass and pass-available model scores use only windows with a legal pass.")
+
+
+def finalize_opportunities(items):
+    for item in items.values():
+        denominators = {
+            "precision": (item["truePositive"], item["predictedPositive"]),
+            "recall": (item["truePositive"], item["actualPositive"]),
+            "exactPositiveRecall": (item["exactCorrectPositive"], item["actualPositive"]),
+            "falseSelectionRate": (item["falsePositive"], item["opportunityCount"]),
+            "falsePositiveRate": (item["falsePositive"], item["opportunityCount"] - item["actualPositive"]),
+            "exactCandidateTop1": (item["exactCorrect"], item["opportunityCount"]),
+            "alwaysPassTop1": (item["passCorrect"], item["passAvailable"]),
+            "passAvailableExactCandidateTop1": (item["passAvailableExactCorrect"], item["passAvailable"]),
+        }
+        for name, (numerator, denominator) in denominators.items():
+            item[name] = numerator / denominator if denominator else None
+
+
 @torch.no_grad()
 def evaluate(model, samples, device, batch_size):
     if not samples:
         return None
     model.eval()
     totals = {"samples": len(samples), "choices": 0, "forced": 0,
-              "choiceTop1": 0, "choiceTop3": 0, "choiceNll": 0., "byAction": {}}
+              "choiceTop1": 0, "choiceTop3": 0, "choiceNll": 0., "byAction": {},
+              "byOpportunity": {}, "opportunityScope": OPPORTUNITY_SCOPE}
     for start in range(0, len(samples), batch_size):
         batch = samples[start:start + batch_size]
         planes, globals_, actions, mask, targets = batch_tensors(batch, device)
@@ -160,6 +186,25 @@ def evaluate(model, samples, device, batch_size):
             item = totals["byAction"].setdefault(sample["action"], {"count": 0, "correct": 0})
             item["count"] += 1
             item["correct"] += correct
+            types = np.argmax(sample["actions"][:, :len(ACTIONS)], axis=1)
+            actual, predicted = types[sample["target"]], types[ranked[0]]
+            offered = set(types.tolist())
+            pass_available = ACTIONS.index("pass") in offered
+            for action in sorted(offered):
+                item = totals["byOpportunity"].setdefault(ACTIONS[action],
+                                                         dict.fromkeys(OPPORTUNITY_COUNTS, 0))
+                positive, selected = actual == action, predicted == action
+                item["opportunityCount"] += 1
+                item["actualPositive"] += int(positive)
+                item["predictedPositive"] += int(selected)
+                item["truePositive"] += int(positive and selected)
+                item["exactCorrectPositive"] += int(positive and correct)
+                item["falsePositive"] += int(not positive and selected)
+                item["falseNegative"] += int(positive and not selected)
+                item["exactCorrect"] += correct
+                item["passAvailable"] += int(pass_available)
+                item["passCorrect"] += int(pass_available and ACTIONS[actual] == "pass")
+                item["passAvailableExactCorrect"] += int(pass_available and correct)
     count = totals["choices"]
     for key in ("choiceTop1", "choiceTop3", "choiceNll"):
         totals[key] = totals[key] / count if count else None
@@ -167,6 +212,7 @@ def evaluate(model, samples, device, batch_size):
         item["accuracy"] = item["correct"] / item["count"]
     totals["macroActionAccuracy"] = (sum(item["accuracy"] for item in totals["byAction"].values()) /
                                     len(totals["byAction"]) if totals["byAction"] else None)
+    finalize_opportunities(totals["byOpportunity"])
     return totals
 
 

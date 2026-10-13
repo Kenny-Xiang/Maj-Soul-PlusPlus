@@ -12,7 +12,7 @@ from policy_features import (FEATURE_SIGNATURE, FEATURE_VERSION, RULESET,
                              encode_state, encode_actions)
 
 
-MODEL_FORMAT = "majsoul-candidate-cnn-v1"
+MODEL_FORMAT = "majsoul-candidate-cnn-v2"
 
 
 def weight_shapes(config):

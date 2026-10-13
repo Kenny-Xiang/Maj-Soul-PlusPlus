@@ -31,6 +31,48 @@ def complete_state(players=4):
 
 @unittest.skipIf(np is None or torch is None, "optional policy/training dependencies are not installed")
 class PolicyIndependentReviewTests(unittest.TestCase):
+    def test_match_length_and_schedule_metadata_never_change_actor_features(self):
+        from policy_features import GLOBAL_NAMES
+        self.assertNotIn("round_count/2", GLOBAL_NAMES)
+        self.assertNotIn("round_count_known", GLOBAL_NAMES)
+        for players in (3, 4):
+            visible = complete_state(players)
+            before = encode_state(visible)
+            for match in (None, {}, {"roundCount": None}, {"roundCount": 1},
+                          {"roundCount": 2}, {"roundCount": 2, "isFinalRound": True,
+                                              "roundIndex": 7, "roundsRemaining": 0}):
+                with self.subTest(players=players, match=match):
+                    changed = deepcopy(visible)
+                    changed["match"] = match
+                    for original, encoded in zip(before, encode_state(changed)):
+                        np.testing.assert_array_equal(original, encoded)
+
+    def test_round_and_self_winds_remain_visible(self):
+        from policy_features import GLOBAL_NAMES
+        for players in (3, 4):
+            visible = complete_state(players)
+            scalars = encode_state(visible)[1]
+            self.assertAlmostEqual(float(scalars[GLOBAL_NAMES.index("round_wind/3")]), 1 / 3)
+            self.assertAlmostEqual(float(scalars[GLOBAL_NAMES.index("self_wind/3")]), (players - 1) / 3)
+            visible["round"]["chang"] = 2
+            visible["round"]["ju"] = 0
+            changed = encode_state(visible)[1]
+            self.assertAlmostEqual(float(changed[GLOBAL_NAMES.index("round_wind/3")]), 2 / 3)
+            self.assertEqual(float(changed[GLOBAL_NAMES.index("self_wind/3")]), 0)
+
+    def test_public_dora_red_tiles_and_sanma_north_remain_visible(self):
+        from policy_features import GLOBAL_NAMES, PLANE_NAMES, tile34
+        visible = complete_state(3)
+        visible["doras"] = ["9p", "8s"]  # Includes an already revealed kan indicator.
+        visible["north"][1] = 2
+        planes, scalars = encode_state(visible)
+        indicators = planes[PLANE_NAMES.index("dora_indicators/4")]
+        self.assertEqual(float(indicators[tile34("9p")]), .25)
+        self.assertEqual(float(indicators[tile34("8s")]), .25)
+        self.assertEqual(float(planes[PLANE_NAMES.index("hand_red"), tile34("0p")]), 1)
+        self.assertEqual(float(scalars[GLOBAL_NAMES.index("seat1:north/4")]), .5)
+        self.assertEqual(float(planes[PLANE_NAMES.index("visible/4"), tile34("4z")]), .5)
+
     def test_hidden_and_outcome_fields_never_change_actor_features(self):
         visible = complete_state()
         before = encode_state(visible)
@@ -143,7 +185,8 @@ class PolicyIndependentReviewTests(unittest.TestCase):
             with np.load(path, allow_pickle=False) as saved:
                 arrays = {name: saved[name] for name in saved.files}
             metadata = json.loads(arrays["metadata"].item())
-            for key, value in (("actionVersion", 99), ("featureSignature", "wrong"),
+            for key, value in (("format", "majsoul-candidate-cnn-v1"), ("featureVersion", 1),
+                               ("actionVersion", 99), ("featureSignature", "wrong"),
                                ("ruleset", "custom-event"), ("playerCount", 5), ("purpose", None)):
                 with self.subTest(key=key):
                     bad = {**arrays, "metadata": np.asarray(json.dumps({**metadata, key: value}))}
@@ -155,6 +198,10 @@ class PolicyIndependentReviewTests(unittest.TestCase):
                 np.savez(path, **{**arrays, "conv.weight": value})
                 with self.assertRaises(ValueError):
                     PolicyModel(path)
+            legacy_state = np.pad(arrays["state.weight"], ((0, 0), (0, 2)))
+            np.savez(path, **{**arrays, "state.weight": legacy_state})
+            with self.assertRaisesRegex(ValueError, "invalid model weight: state.weight"):
+                PolicyModel(path)
             np.savez(path, **{**arrays, "extra": np.array([1.], dtype=np.float32)})
             with self.assertRaises(ValueError):
                 PolicyModel(path)

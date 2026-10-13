@@ -11,7 +11,7 @@ import json
 import numpy as np
 
 
-FEATURE_VERSION = 1
+FEATURE_VERSION = 2
 RULESET = "majsoul-standard-v1"
 TILES = tuple(f"{n}{s}" for s in "mps" for n in range(1, 10)) + tuple(f"{n}z" for n in range(1, 8))
 TILES37 = TILES + ("0m", "0p", "0s")
@@ -30,7 +30,7 @@ GLOBAL_NAMES = tuple(f"seat{seat}:{name}" for seat in range(4) for name in (
     "exists", "score/100000", "score_diff/100000", "riichi", "riichi_pending",
     "double_riichi", "north/4", "dealer")) + (
     "players3", "players4", "round_wind/3", "honba/10", "sticks/10", "left/70",
-    "can_discard", "furiten", "furiten_known", "round_count/2", "round_count_known",
+    "can_discard", "furiten", "furiten_known",
     "self_wind/3", "no_calls_yet", "can_double_riichi") + tuple(f"last_actor{seat}" for seat in range(4)) + EVENTS
 ACTION_NAMES = ACTIONS + tuple(f"tile:{t}" for t in TILES37) + tuple(
     f"called:{t}" for t in TILES37) + tuple(f"consumed/4:{t}" for t in TILES37) + tuple(
@@ -124,12 +124,10 @@ def encode_state(state):
                         float(bool(state.get("riichiPending", [False] * 4)[seat])),
                         float(bool(state.get("doubleRiichi", [False] * 4)[seat])),
                         state["north"][seat] / 4, float(seat == round_["ju"])])
-    rounds = (state.get("match") or {}).get("roundCount")
     furiten = state.get("furiten")
     scalars.extend([float(players == 3), float(players == 4), round_["chang"] / 3,
                     round_["ben"] / 10, state["riichiSticks"] / 10, state["left"] / 70,
                     float(bool(state["canDiscard"])), float(bool(furiten)), float(furiten is not None),
-                    rounds / 2 if rounds in (1, 2) else 0, float(rounds in (1, 2)),
                     ((own - round_["ju"]) % players) / 3,
                     float(bool(state.get("noCallsYet"))), float(bool(state.get("canDoubleRiichi")))])
     last = state.get("lastAction") or {}

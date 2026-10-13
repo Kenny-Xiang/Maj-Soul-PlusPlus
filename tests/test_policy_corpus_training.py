@@ -287,12 +287,71 @@ class CorpusTrainingTests(unittest.TestCase):
             with self.assertRaises(InterruptedError):
                 corpus.train_corpus(path, output, **options)
         for changed in ({"batch_size": 3}, {"learning_rate": .002}, {"seed": 43}, {"epochs": 3},
-                        {"game_window": 2}):
+                        {"game_window": 2}, {"final_lr_ratio": .1},
+                        {"action_weights": {"discard": 2.}}, {"opportunity_weights": {"discard": 2.}}):
             with self.assertRaisesRegex(ValueError, "differs in source"):
                 corpus.train_corpus(path, output, resume=True, **{**options, **changed})
         path.write_text("\n".join(reversed(path.read_text().splitlines())) + "\n")
         with self.assertRaisesRegex(ValueError, "differs in source"):
             corpus.train_corpus(path, output, resume=True, **options)
+
+    def test_validation_only_preserves_fixed_prefixes_and_never_reads_test(self):
+        import policy_corpus_training as corpus
+        path, _ = self.manifest(30)
+        partitions, groups, _ = corpus.read_manifest(path, 42)
+        allowed = {row["path"] for name in ("train", "validation") for row in partitions[name][:2]}
+        original = corpus.load_game
+        seen = []
+
+        def guarded(row, *args, **kwargs):
+            self.assertIn(row["path"], allowed)
+            seen.append(row["path"])
+            return original(row, *args, **kwargs)
+
+        with patch.object(corpus, "load_game", side_effect=guarded):
+            _, report = corpus.train_corpus(path, self.root / "experiment.npz", epochs=2,
+                batch_size=2, config={"channels": 4, "blocks": 1, "hidden": 8},
+                validation_only=True, train_game_limit=2, validation_game_limit=2,
+                final_lr_ratio=.1, action_weights={"discard": 1.5}, save_epoch_models=True)
+        self.assertTrue(seen)
+        self.assertEqual(report["gameSplit"], {name: groups[name][:2] for name in ("train", "validation")})
+        self.assertEqual(set(report["metrics"]), {"validation"})
+        self.assertEqual(report["history"][0]["learningRate"], .001)
+        self.assertAlmostEqual(report["history"][1]["learningRate"], .0001)
+        self.assertTrue((self.root / "experiment.epoch-2.npz").exists())
+        with self.assertRaisesRegex(ValueError, "only permitted"):
+            corpus.train_corpus(path, self.root / "invalid.npz", train_game_limit=2)
+
+    def test_weighted_loss_keeps_negative_examples_and_complete_candidate_targets(self):
+        from policy_corpus_training import supervised_loss
+        logits = torch.tensor([[0., 1., 2.], [1., 2., 0.]], requires_grad=True)
+        targets = torch.tensor([2, 0])
+        samples = [{"action": "daiminkan"}, {"action": "pass"}]
+        losses = torch.nn.functional.cross_entropy(logits, targets, reduction="none")
+        torch.testing.assert_close(supervised_loss(logits, targets, samples, {}), losses.mean())
+        weighted = supervised_loss(logits, targets, samples, {"daiminkan": 4.})
+        torch.testing.assert_close(weighted, (4 * losses[0] + losses[1]) / 5)
+        weighted.backward()
+        self.assertGreater(float(logits.grad[1].abs().sum()), 0)
+
+    def test_opportunity_weight_depends_on_legal_set_and_retains_negative_labels(self):
+        from policy_corpus_training import supervised_loss, train_corpus
+        from policy_features import ACTIONS
+        def encoded(*names):
+            return np.eye(len(ACTIONS), dtype=np.float32)[[ACTIONS.index(name) for name in names]]
+        samples = [{"action": "daiminkan", "actions": encoded("daiminkan", "pass")},
+                   {"action": "pass", "actions": encoded("daiminkan", "pass")},
+                   {"action": "discard", "actions": encoded("discard", "riichi")}]
+        logits = torch.tensor([[0., 1.], [1., 0.], [0., 2.]], requires_grad=True)
+        targets = torch.tensor([0, 1, 0])
+        losses = torch.nn.functional.cross_entropy(logits, targets, reduction="none")
+        result = supervised_loss(logits, targets, samples, {}, {"daiminkan": 4.})
+        torch.testing.assert_close(result, (4 * losses[0] + 4 * losses[1] + losses[2]) / 9)
+        result.backward()
+        self.assertGreater(float(logits.grad[1].abs().sum()), 0)
+        with self.assertRaisesRegex(ValueError, "invalid learning rate ratio or action"):
+            train_corpus(self.root / "unread.jsonl", self.root / "unwritten.npz",
+                         opportunity_weights={"kakan": 2.})
 
 
 if __name__ == "__main__":
