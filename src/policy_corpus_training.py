@@ -13,6 +13,7 @@ import torch
 from torch import nn
 
 from policy_model import PolicyModel
+from policy_encoded_cache import cache_binding, cache_path, read_cache, write_cache, encoder_signature
 from policy_split import read_split
 from policy_training import (CandidatePolicy, batch_tensors, evaluate, export_model,
                              read_samples, split_games)
@@ -82,13 +83,39 @@ def read_manifest(path, seed, max_games=None, split_file=None):
     return partitions, groups, audit
 
 
-def load_game(row, players):
+def load_game(row, players, encoded_cache=None):
+    binding = cache_binding(row, players) if encoded_cache is not None else None
+    cached = cache_path(encoded_cache, binding) if binding is not None else None
+    if cached is not None and cached.exists():
+        if hashlib.sha256(row["path"].read_bytes()).hexdigest() != row["sha256"]:
+            raise ValueError(f"Sample file SHA256 mismatch: {row['path'].name}")
+        return read_cache(cached, binding)
     samples, audit = read_samples([row["path"]], players)
     if audit["inputs"][0]["sha256"] != row["sha256"]:
         raise ValueError(f"Sample file SHA256 mismatch: {row['path'].name}")
     if len(samples) != row["samples"] or any(sample["game"] != row["gameId"] for sample in samples):
         raise ValueError(f"Sample count or game identity differs from manifest: {row['path'].name}")
+    if cached is not None:
+        write_cache(cached, binding, samples, audit)
     return samples, audit
+
+
+def prepare_game_cache(args):
+    row, players, encoded_cache = args
+    samples, _ = load_game(row, players, encoded_cache)
+    return len(samples)
+
+
+def save_training_checkpoint(path, payload):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(dir=path.parent, prefix=".training-", delete=False) as handle:
+        staged = Path(handle.name)
+    try:
+        with staged.open("wb") as handle:
+            torch.save(payload, handle)
+        os.replace(staged, path)
+    finally:
+        staged.unlink(missing_ok=True)
 
 
 def merge_metrics(items):
@@ -117,14 +144,14 @@ def merge_metrics(items):
     return totals
 
 
-def evaluate_corpus(model, rows, players, device, batch_size, phase="evaluation"):
+def evaluate_corpus(model, rows, players, device, batch_size, phase="evaluation", encoded_cache=None):
     actions, labels = Counter(), Counter()
     duplicate_count = 0
 
     def scores():
         nonlocal duplicate_count
         for completed_games, row in enumerate(rows, 1):
-            samples, audit = load_game(row, players)
+            samples, audit = load_game(row, players, encoded_cache)
             actions.update(audit["actions"])
             labels.update(audit["labelSources"])
             duplicate_count += audit["duplicateSamples"]
@@ -141,12 +168,12 @@ def evaluate_corpus(model, rows, players, device, batch_size, phase="evaluation"
                      "duplicateSamples": duplicate_count}
 
 
-def verify_export(model, path, rows, players, device):
+def verify_export(model, path, rows, players, device, encoded_cache=None):
     deployed = PolicyModel(path)
     model.eval()
     error, matching, checked = 0., True, 0
     for row in rows:
-        samples, _ = load_game(row, players)
+        samples, _ = load_game(row, players, encoded_cache)
         for sample in samples[:32 - checked]:
             planes, globals_, actions, mask, _ = batch_tensors([sample], device)
             with torch.no_grad():
@@ -164,8 +191,10 @@ def verify_export(model, path, rows, players, device):
 
 
 def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
-                 learning_rate=1e-3, seed=42, device="cpu", max_games=None, config=None, split_file=None):
-    if players not in (3, 4) or epochs < 1 or batch_size < 1 or not 0 < learning_rate < 1:
+                 learning_rate=1e-3, seed=42, device="cpu", max_games=None, config=None, split_file=None,
+                 encoded_cache=None, resume=False, checkpoint_every_games=1000, game_window=1):
+    if (players not in (3, 4) or epochs < 1 or batch_size < 1 or not 0 < learning_rate < 1 or
+            checkpoint_every_games < 1 or game_window < 1):
         raise ValueError("invalid training parameters")
     started = time.monotonic()
     partitions, groups, data_audit = read_manifest(manifest, seed, max_games, split_file)
@@ -175,17 +204,60 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
     model = CandidatePolicy(config).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate, weight_decay=1e-4)
     history, best_loss, best_state, best_epoch = [], float("inf"), None, None
-    maximum_game_samples, steps = 0, 0
-    for epoch in range(epochs):
+    maximum_game_samples, maximum_window_samples, steps = 0, 0, 0
+    checkpoint_path = Path(output).with_suffix(".resume.pt")
+    binding = {"version": 1, "dataAudit": data_audit, "gameSplit": groups, "players": players,
+               "epochs": epochs, "batchSize": batch_size, "learningRate": learning_rate,
+               "seed": seed, "config": config, "gameWindow": game_window,
+               "encoderSignature": encoder_signature(),
+               "trainerSignature": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
+    start_epoch, cursor, order, loss_sum, choices, prior_elapsed = 0, 0, None, 0., 0, 0.
+    if resume:
+        saved = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+        if saved["binding"] != binding:
+            raise ValueError("resume checkpoint differs in source, split, encoder or training parameters")
+        if saved.get("completed"):
+            raise ValueError("training checkpoint already completed; final test was evaluated")
+        model.load_state_dict(saved["model"])
+        optimizer.load_state_dict(saved["optimizer"])
+        rng.bit_generator.state = saved["numpyRng"]
+        torch.set_rng_state(saved["torchRng"])
+        start_epoch, cursor, order = saved["epoch"], saved["cursor"], saved["order"]
+        loss_sum, choices = saved["lossSum"], saved["choices"]
+        history, best_loss, best_state, best_epoch = (saved[name] for name in
+                                                    ("history", "bestLoss", "bestState", "bestEpoch"))
+        maximum_game_samples, steps = saved["maximumGameSamples"], saved["steps"]
+        maximum_window_samples = saved["maximumWindowSamples"]
+        prior_elapsed = saved["elapsedSeconds"]
+
+    def persist(epoch, cursor, order, loss_sum, choices, completed=False):
+        save_training_checkpoint(checkpoint_path, {
+            "binding": binding, "model": model.state_dict(), "optimizer": optimizer.state_dict(),
+            "numpyRng": rng.bit_generator.state, "torchRng": torch.get_rng_state(),
+            "epoch": epoch, "cursor": cursor, "order": order, "lossSum": loss_sum, "choices": choices,
+            "history": history, "bestLoss": best_loss, "bestState": best_state, "bestEpoch": best_epoch,
+            "maximumGameSamples": maximum_game_samples, "steps": steps,
+            "maximumWindowSamples": maximum_window_samples,
+            "elapsedSeconds": prior_elapsed + time.monotonic() - started, "completed": completed})
+
+    for epoch in range(start_epoch, epochs):
         model.train()
-        loss_sum, choices = 0., 0
-        for completed_games, game_index in enumerate(rng.permutation(len(partitions["train"])), 1):
-            samples, _ = load_game(partitions["train"][game_index], players)
-            maximum_game_samples = max(maximum_game_samples, len(samples))
-            training = [sample for sample in samples if len(sample["actions"]) > 1]
-            order = rng.permutation(len(training))
-            for start in range(0, len(order), batch_size):
-                batch = [training[index] for index in order[start:start + batch_size]]
+        if order is None:
+            order = rng.permutation(len(partitions["train"])).tolist()
+            cursor, loss_sum, choices = 0, 0., 0
+        for window_start in range(cursor, len(order), game_window):
+            completed_games = min(window_start + game_window, len(order))
+            training, window_samples = [], 0
+            for game_index in order[window_start:completed_games]:
+                samples, _ = load_game(partitions["train"][game_index], players, encoded_cache)
+                maximum_game_samples = max(maximum_game_samples, len(samples))
+                window_samples += len(samples)
+                training.extend(sample for sample in samples if len(sample["actions"]) > 1)
+                del samples
+            maximum_window_samples = max(maximum_window_samples, window_samples)
+            decision_order = rng.permutation(len(training))
+            for start in range(0, len(decision_order), batch_size):
+                batch = [training[index] for index in decision_order[start:start + batch_size]]
                 planes, globals_, actions, mask, targets = batch_tensors(batch, device)
                 optimizer.zero_grad(set_to_none=True)
                 loss = nn.functional.cross_entropy(model(planes, globals_, actions, mask), targets)
@@ -197,17 +269,19 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
                 loss_sum += loss.item() * len(batch)
                 choices += len(batch)
                 steps += 1
-            del samples, training
-            if completed_games % 100 == 0:
+            del training
+            if completed_games // checkpoint_every_games > window_start // checkpoint_every_games:
+                persist(epoch, completed_games, order, loss_sum, choices)
+            if completed_games // 100 > window_start // 100:
                 print(json.dumps({"phase": "training", "epoch": epoch + 1,
                                   "completedGames": completed_games, "trainGames": len(partitions["train"]),
                                   "choices": choices, "optimizerSteps": steps,
                                   "loss": loss_sum / choices if choices else None,
-                                  "elapsedSeconds": round(time.monotonic() - started, 1)}), flush=True)
+                                  "elapsedSeconds": round(prior_elapsed + time.monotonic() - started, 1)}), flush=True)
         if not choices:
             raise ValueError("training partition contains no actual choices")
         validation, _ = evaluate_corpus(model, partitions["validation"], players, device, batch_size,
-                                        phase=f"epoch-{epoch + 1}-validation")
+                                        phase=f"epoch-{epoch + 1}-validation", encoded_cache=encoded_cache)
         criterion = validation["choiceNll"]
         if criterion is None:
             raise ValueError("validation partition contains no actual choices")
@@ -225,19 +299,25 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
         print(json.dumps({"epoch": epoch + 1, "trainGames": len(partitions["train"]),
                           "trainChoices": choices, "trainLoss": row["trainLoss"],
                           "validationNll": criterion}), flush=True)
+        order, cursor = None, 0
+        persist(epoch + 1, 0, None, 0., 0)
     model.load_state_dict(best_state)
     metrics, partition_audits = {}, {}
     for name, rows in partitions.items():
         metrics[name], partition_audits[name] = evaluate_corpus(model, rows, players, device, batch_size,
-                                                              phase=f"final-{name}")
+                                                              phase=f"final-{name}", encoded_cache=encoded_cache)
     report = {"purpose": "behavior-cloning", "playerCount": players, "seed": seed,
               "config": config, "device": str(device), "epochs": epochs,
               "batchSize": batch_size, "learningRate": learning_rate, "weightDecay": 1e-4,
               "parameterCount": sum(p.numel() for p in model.parameters()),
               "gameSplit": groups, "dataAudit": {**data_audit, "partitions": partition_audits},
               "history": history, "bestEpoch": best_epoch, "metrics": metrics,
-              "streaming": {"unit": "one-game", "largestTrainingGameSamples": maximum_game_samples,
-                            "optimizerSteps": steps, "gameAndDecisionOrder": "shuffled-each-epoch"},
+              "streaming": {"unit": "bounded-game-window", "gameWindow": game_window,
+                            "largestTrainingGameSamples": maximum_game_samples,
+                            "largestTrainingWindowSamples": maximum_window_samples,
+                            "optimizerSteps": steps, "gameAndDecisionOrder": "shuffled-each-epoch",
+                            "encodedCache": encoded_cache is not None, "resumed": resume,
+                            "checkpointEveryGames": checkpoint_every_games},
               "versions": {"torch": torch.__version__, "numpy": np.__version__},
               "limitations": ["Behavior cloning predicts recorded choices, not optimal actions.",
                               "Only selected manifest games were trained; no playing-strength claim.",
@@ -248,11 +328,13 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
         staged = Path(handle.name)
     try:
         export_model(model, staged, {"playerCount": players, "purpose": "behavior-cloning", "training": report})
-        parity, digest = verify_export(model, staged, partitions["train"], players, device)
-        report.update(exportParity=parity, modelSha256=digest, elapsedSeconds=time.monotonic() - started)
+        parity, digest = verify_export(model, staged, partitions["train"], players, device, encoded_cache)
+        report.update(exportParity=parity, modelSha256=digest,
+                      elapsedSeconds=prior_elapsed + time.monotonic() - started)
         report_path = output.with_suffix(".report.json")
         report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
         os.replace(staged, output)
+        persist(epochs, 0, None, 0., 0, completed=True)
     finally:
         staged.unlink(missing_ok=True)
     return model, report

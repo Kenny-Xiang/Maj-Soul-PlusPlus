@@ -21,6 +21,10 @@ def main():
     parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--max-games", type=int, help="Deterministic game subset for a limited pipeline check")
     parser.add_argument("--split", type=Path, help="Frozen source-bound whole-game partitions")
+    parser.add_argument("--encoded-cache", type=Path, help="Lossless source-bound per-game feature cache")
+    parser.add_argument("--resume", action="store_true", help="Resume OUTPUT.resume.pt with identical source and hyperparameters")
+    parser.add_argument("--checkpoint-every-games", type=int, default=1000)
+    parser.add_argument("--game-window", type=int, default=1, help="Maximum games to shuffle together into batches")
     args = parser.parse_args()
     if args.threads < 1:
         parser.error("--threads must be positive")
@@ -29,7 +33,9 @@ def main():
     torch.set_num_threads(args.threads)
     _, report = train_corpus(args.manifest, args.output, players=args.players, epochs=args.epochs,
                              batch_size=args.batch_size, learning_rate=args.learning_rate,
-                             seed=args.seed, device=args.device, max_games=args.max_games, split_file=args.split)
+                             seed=args.seed, device=args.device, max_games=args.max_games, split_file=args.split,
+                             encoded_cache=args.encoded_cache, resume=args.resume,
+                             checkpoint_every_games=args.checkpoint_every_games, game_window=args.game_window)
     print(json.dumps({"model": str(args.output), "report": str(args.output.with_suffix(".report.json")),
                       "purpose": report["purpose"], "selectedGames": report["dataAudit"]["selectedGames"],
                       "gameCounts": report["dataAudit"]["selectedGameCounts"]}, ensure_ascii=False))

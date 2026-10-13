@@ -215,6 +215,85 @@ class CorpusTrainingTests(unittest.TestCase):
         self.assertFalse(output.with_suffix(".report.json").exists())
         self.assertEqual(list(self.root.glob(".policy-corpus-*.npz")), [])
 
+    def test_encoded_cache_is_exact_reuses_verified_features_and_rechecks_source(self):
+        import policy_corpus_training as corpus
+        path, _ = self.manifest()
+        partitions, _, _ = corpus.read_manifest(path, 42)
+        row = partitions["train"][0]
+        expected, audit = corpus.load_game(row, 4)
+        cache = self.root / "cache"
+        corpus.load_game(row, 4, cache)
+        with patch.object(corpus, "read_samples", side_effect=AssertionError("cache recomputed features")):
+            actual, cached_audit = corpus.load_game(row, 4, cache)
+        self.assertEqual(cached_audit, audit)
+        for left, right in zip(expected, actual):
+            for key in ("planes", "globals", "actions"):
+                np.testing.assert_array_equal(left[key], right[key])
+            for key in ("game", "target", "action", "labelSource"):
+                self.assertEqual(left[key], right[key])
+        row["path"].write_bytes(b"changed source bytes")
+        with self.assertRaisesRegex(ValueError, "SHA256 mismatch"):
+            corpus.load_game(row, 4, cache)
+
+    def test_resume_restores_exact_training_order_optimizer_rng_and_final_test_once(self):
+        import policy_corpus_training as corpus
+        path, _ = self.manifest()
+        options = {"epochs": 2, "batch_size": 2, "checkpoint_every_games": 1,
+                   "game_window": 2, "config": {"channels": 4, "blocks": 1, "hidden": 8}}
+        expected, expected_report = corpus.train_corpus(path, self.root / "baseline.npz", **options)
+        output = self.root / "resumed.npz"
+        original_save, original_evaluate = corpus.save_training_checkpoint, corpus.evaluate_corpus
+        phases = []
+
+        def interrupt_after_save(checkpoint, payload):
+            original_save(checkpoint, payload)
+            raise InterruptedError("simulated process interruption")
+
+        def record_evaluation(*args, **kwargs):
+            phases.append(kwargs.get("phase"))
+            return original_evaluate(*args, **kwargs)
+
+        with patch.object(corpus, "save_training_checkpoint", side_effect=interrupt_after_save), \
+                patch.object(corpus, "evaluate_corpus", side_effect=record_evaluation):
+            with self.assertRaises(InterruptedError):
+                corpus.train_corpus(path, output, **options)
+        self.assertEqual(phases, [])
+        with patch.object(corpus, "evaluate_corpus", side_effect=record_evaluation):
+            actual, report = corpus.train_corpus(path, output, resume=True, **options)
+        for key, value in expected.state_dict().items():
+            torch.testing.assert_close(value, actual.state_dict()[key], rtol=0, atol=0)
+        for field in ("gameSplit", "history", "metrics", "bestEpoch"):
+            self.assertEqual(report[field], expected_report[field])
+        self.assertEqual(report["streaming"]["optimizerSteps"], expected_report["streaming"]["optimizerSteps"])
+        self.assertEqual(phases.count("final-test"), 1)
+        self.assertLessEqual(report["streaming"]["largestTrainingWindowSamples"],
+                             2 * report["streaming"]["largestTrainingGameSamples"])
+        with self.assertRaisesRegex(ValueError, "already completed"):
+            corpus.train_corpus(path, output, resume=True, **options)
+
+    def test_resume_rejects_changed_hyperparameters_or_manifest(self):
+        import policy_corpus_training as corpus
+        path, _ = self.manifest()
+        output = self.root / "resumed.npz"
+        options = {"epochs": 2, "batch_size": 2, "checkpoint_every_games": 1,
+                   "config": {"channels": 4, "blocks": 1, "hidden": 8}}
+        original_save = corpus.save_training_checkpoint
+
+        def interrupt_after_save(checkpoint, payload):
+            original_save(checkpoint, payload)
+            raise InterruptedError()
+
+        with patch.object(corpus, "save_training_checkpoint", side_effect=interrupt_after_save):
+            with self.assertRaises(InterruptedError):
+                corpus.train_corpus(path, output, **options)
+        for changed in ({"batch_size": 3}, {"learning_rate": .002}, {"seed": 43}, {"epochs": 3},
+                        {"game_window": 2}):
+            with self.assertRaisesRegex(ValueError, "differs in source"):
+                corpus.train_corpus(path, output, resume=True, **{**options, **changed})
+        path.write_text("\n".join(reversed(path.read_text().splitlines())) + "\n")
+        with self.assertRaisesRegex(ValueError, "differs in source"):
+            corpus.train_corpus(path, output, resume=True, **options)
+
 
 if __name__ == "__main__":
     unittest.main()
