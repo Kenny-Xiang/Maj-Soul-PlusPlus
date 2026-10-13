@@ -155,9 +155,9 @@ path, and the schema hash for binary decoding. Unit tests use synthetic
 protobuf and JSON fixtures, covering old record arrays, result-less requests,
 packed signed integers, absent-field presence, raw response frames, malformed
 bytes, schema mismatch, and refusal to follow embedded URLs. The complete
-public game verifies the decoded-JSON path; a genuine complete raw binary
-game and a genuine complete three-player game remain separate validation
-requirements.
+public game verifies the decoded-JSON path. The authenticated three-game
+verification below also covers complete raw binary four-player games.
+A genuine complete three-player game remains a separate validation requirement.
 
 ```sh
 python3 -m unittest discover -s tests -p test_policy_fetch.py -v
@@ -227,17 +227,91 @@ Original files, normalized copies and extraction audits are under
 replay extractor and training reader. Their metadata and verification are
 recorded in [the original-format status report](benchmarks/policy-official-20261010.json).
 
-**The 10,000-game original-format acquisition is not complete.** One normal
-unauthenticated query to the official `fetchGameRecord` endpoint returned
-`1004 / ERR_ACC_NOT_LOGIN`, with no header or record data, after a successful
-WebSocket and route handshake. No account credentials were read, and no
-bulk authenticated requests were started. The user approved manual CN login
-but could not perform it at this time. A queue of 23,179 public game UUIDs
-is saved under `.local/policy-official/requests/`; IDs alone are not acquired
-original records. The known MJAI corpus is not counted toward this target.
+**The 10,000-game original-format acquisition is not complete: 19 complete
+official Throne raw games are durably archived as of 2026-10-11.** Explicit
+CDP authorization succeeded in the current conversation. Native method-name
+diagnostics identified the authenticated lobby connection, and the official
+replay UI established the exact current client version
+`WebGL_2022-0.16.283`. The legacy `web-0.11.252` value produced official error
+151 (outdated client version); it was not evidence of denied replay access.
+
+The three requested UUIDs ending `5e52b032`, `7c4aff37`, and `aeb23722`
+all returned complete original responses with official `mode_id=16` headers.
+Together they contain 3,256 Record events and 32 rounds. Their exact response
+frames, original `GameDetailRecords` Wrapper bytes, decoded headers, pinned
+schema and SHA-256 manifest are preserved under
+`.local/policy-official/archive/`. The third game's final `RecordNoTile`
+explicitly has `gameend=false`; its recorded old scores plus deltas exactly
+match the completed header. Archive validation uses that score equality
+instead of requiring a true flag. Multiple draw settlements remain rejected
+until their aggregation semantics are verified.
+
+All three requested raw games also passed the existing importer, extractor
+and training reader. The first two produced 1,284 explicit labels; the third
+produced 610 samples (605 explicit, 4 accepted-result labels and 1 inferred
+pass). All samples have valid legal-action targets and finite features.
+The combined count is 1,894 from the independent verification runs; this
+training check covers those three games only. Full evidence is in
+`.local/policy-official/probes/three-game-verification.json` and
+`probes/training-verification/{report,third-report}.json`.
+
+The first 50-game bulk batch was not durably exported before a browser page
+reload and is not counted. Following explicit user approval, the local-only
+archive bridge ran successfully: the official game page passed its health
+check and posted a durable batch spool containing 16 complete responses and
+one official error response. Fifteen games were archived immediately. The
+remaining successful response was recovered offline after adding strict
+validation for recorded riichi deposits awarded to the sole leader after
+the final draw. Its original bytes were not changed. The archive/batch/bridge
+suite now passes 40 tests; the browser driver has 29 passing mock tests.
+
+The official server stopped the batch with error **540**. The current Unity
+client's official error table maps this to “超出牌谱拉取限制，请稍后重试”
+(replay retrieval limit exceeded). Error 541 separately denotes missing log
+viewing permission. The official text does not specify a quota or recovery
+time. The collector and local bridge are stopped, with no automatic retry
+scheduled. Original resource packages, hashes, the exact mapping and an
+offline decoder are preserved in
+`.local/policy-official/probes/error-540/`; the live batch and offline recovery
+reports are in `probes/bulk-20261011*.json`.
+
+A final read-only audit rechecked all 19 original responses, bodies and
+headers against their file hashes, unique UUIDs, unique body hashes, the
+pinned queue and schema, and the archive's structural validation rules.
+All 19 are official mode 16, containing 190 rounds and 18,797 Record events,
+with no unknown schema fields. `final-verification.json` correctly reports
+`insufficient_games`: 9,981 additional complete games are still required.
+The 23,179-UUID queue under `.local/policy-official/requests/` is an index;
+neither pending IDs nor the separate MJAI corpus count toward the raw target.
 
 Future retrieval should preserve both the full `ResGameRecord` response and
 any original body supplied through `data_url`. A body-only `GameDetailRecords`
 blob lacks the header needed to validate room, player levels and match rules.
 Even original records may omit some operation lists; download completeness
 and training-window coverage must be checked separately.
+
+### Archive original responses locally
+
+`scripts/policy_official_archive.py` is an offline archive gate, not a login
+or browser downloader. It accepts raw `ResGameRecord` protobuf responses or
+their original WebSocket response frames. It saves the exact response bytes,
+original `GameDetailRecords` Wrapper, decoded header, pinned schema, and a
+manifest of file hashes. Only complete four-player ranked Throne games
+(`mode_id` 15/16) pass this gate; the public Jade JSON samples above are not
+counted toward this archive.
+
+```sh
+python3 scripts/policy_official_archive.py \
+  --input /path/to/original-response.bin --format ws-response \
+  --expected-uuid GAME_UUID \
+  --schema .local/policy-data/liqi-0.11.243.w.json \
+  --output .local/policy-official/archive
+```
+
+If the response contains only `data_url`, also supply `--body-file` with the
+downloaded original bytes and `--body-url` with that exact URL. The CLI does
+not fetch it. A URL without its body never counts as a complete game. The
+archive verifies existing files when reopened and rejects conflicting UUIDs,
+duplicate bodies under different UUIDs, and corrupted saved content.
+These structural checks do not replace a full rules replay or prove that
+every decision has a recorded legal-operation list.

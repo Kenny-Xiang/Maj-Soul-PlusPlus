@@ -16,6 +16,8 @@ import zstandard
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 from policy_mjai import ENGINE_VERSION, extract_game
+from policy_split import read_split
+from policy_match_metadata import load_metadata
 
 
 def digest(data):
@@ -24,7 +26,8 @@ def digest(data):
 
 def converter_signature():
     names = ["scripts/policy_convert_mjai.py", "src/policy_mjai.py", "src/policy_mjai_state.py",
-             "src/policy_actions.py", "src/policy_features.py"]
+             "src/policy_actions.py", "src/policy_features.py", "src/policy_metadata.py",
+             "scripts/policy_match_metadata.py"]
     return digest(b"".join((ROOT / name).read_bytes() for name in names) + ENGINE_VERSION.encode())
 
 
@@ -40,7 +43,7 @@ def convert_one(row, source_root, output, signature):
         raw = zstandard.ZstdDecompressor().decompress(compressed, max_output_size=32 * 1024 * 1024,
                                                      allow_extra_data=False)
         events = [json.loads(line) for line in raw.splitlines() if line.strip()]
-        samples, audit = extract_game(events, identifier)
+        samples, audit = extract_game(events, identifier, match_metadata=row.get("matchMetadata"))
         if not samples:
             raise ValueError("no verified training samples")
         text = "".join(json.dumps(s, ensure_ascii=False, separators=(",", ":")) + "\n" for s in samples)
@@ -56,7 +59,7 @@ def convert_one(row, source_root, output, signature):
         return {"gameId": identifier, "path": relative, "samples": len(samples), "sha256": digest(data),
                 "bytes": len(data), "sourceSha256": row["compressedSha256"],
                 "converterSignature": signature, "audit": audit, "auditSha256": digest(audit_data),
-                "roomEvidence": row.get("roomEvidence")}
+                "roomEvidence": row.get("roomEvidence"), "matchMetadata": row.get("matchMetadata")}
     except (ValueError, KeyError, TypeError, IndexError, OSError, zstandard.ZstdError) as error:
         return {"gameId": identifier, "error": f"{type(error).__name__}: {error}"}
 
@@ -68,7 +71,8 @@ def validate_saved(row, source, output, signature):
         if (row.get("converterSignature") != signature or
                 row["sourceSha256"] != source["compressedSha256"] or
                 row["path"] != f"games/{identifier}.jsonl.zst" or
-                row.get("roomEvidence") != source.get("roomEvidence")):
+                row.get("roomEvidence") != source.get("roomEvidence") or
+                row.get("matchMetadata") != source.get("matchMetadata")):
             raise ValueError("saved provenance differs")
         data = (output / row["path"]).read_bytes()
         if len(data) != row["bytes"] or digest(data) != row["sha256"]:
@@ -93,7 +97,7 @@ def validate_saved(row, source, output, signature):
         raise ValueError(f"existing conversion differs; use a new output directory: {error}") from error
 
 
-def convert_corpus(manifest, output, limit, workers):
+def convert_corpus(manifest, output, limit, workers, metadata_file=None, split_file=None):
     if version("riichienv") != ENGINE_VERSION:
         raise ValueError(f"conversion requires riichienv=={ENGINE_VERSION}")
     if limit < 1 or not 1 <= workers <= 8:
@@ -110,6 +114,19 @@ def convert_corpus(manifest, output, limit, workers):
             raise ValueError("duplicate source game or content")
         by_id[identifier] = row
         hashes.add(row["compressedSha256"])
+    metadata = load_metadata(metadata_file, source_rows) if metadata_file else {}
+    source_rows = [{**row, "matchMetadata": metadata.get(row["gameId"])} for row in source_rows]
+    by_id = {row["gameId"]: row for row in source_rows}
+    split_audit = None
+    if split_file is not None:
+        selected_ids = set(json.loads(Path(split_file).read_text())["sources"])
+        if not selected_ids <= by_id.keys():
+            raise ValueError("frozen split has games outside the source corpus")
+        _, split_audit = read_split(split_file, {game: by_id[game]["compressedSha256"] for game in selected_ids})
+        if limit != len(selected_ids):
+            raise ValueError("conversion limit must equal the frozen split size")
+        source_rows = [row for row in source_rows if row["gameId"] in selected_ids]
+        by_id = {row["gameId"]: row for row in source_rows}
     output.mkdir(parents=True, exist_ok=True)
     (output / "games").mkdir(exist_ok=True)
     (output / "audits").mkdir(exist_ok=True)
@@ -158,13 +175,17 @@ def convert_corpus(manifest, output, limit, workers):
               "samples": sum(row["samples"] for row in saved.values()),
               "compressedBytes": sum(row["bytes"] for row in saved.values()),
               "sourceManifestSha256": digest(payload), "converterSignature": signature,
+              "frozenSplit": split_audit,
+              "matchMetadata": {"knownGames": sum(row.get("matchMetadata") is not None for row in saved.values()),
+                                "unknownGames": sum(row.get("matchMetadata") is None for row in saved.values()),
+                                "fileSha256": digest(Path(metadata_file).read_bytes()) if metadata_file else None},
               "engineVersion": ENGINE_VERSION, "workers": workers,
               "elapsedSeconds": time.monotonic() - started, "failedGames": failed,
               "actions": dict(actions), "labelSources": dict(labels), "excludedWindows": dict(exclusions),
               "limitations": ["Operation masks are reconstructed with riichienv, not official server masks.",
                               "Windows after any kan are excluded until the next hand.",
                               "Competing claims and unresolved responses are censored.",
-                              "Four-player MJAI only; east/half match length is unknown.",
+                              "Four-player MJAI only; match length stays unknown without verified header metadata.",
                               "Throne classification comes from the archive publisher, not individual rank metadata."]}
     (output / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({key: report[key] for key in ("convertedGames", "samples", "goalReached", "elapsedSeconds")}), flush=True)
@@ -177,8 +198,10 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=10000)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--metadata", type=Path, help="Verified per-game official-header metadata sidecar")
+    parser.add_argument("--split", type=Path, help="Convert exactly the games in this frozen split")
     args = parser.parse_args()
-    report = convert_corpus(args.manifest, args.output, args.limit, args.workers)
+    report = convert_corpus(args.manifest, args.output, args.limit, args.workers, args.metadata, args.split)
     raise SystemExit(0 if report["goalReached"] else 2)
 
 

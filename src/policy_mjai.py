@@ -13,6 +13,7 @@ from riichienv.convert import tid_to_mpsz
 
 from policy_actions import action_key, legal_actions
 from policy_features import RULESET, encode_state, tile34
+from policy_metadata import validate_match_metadata
 from policy_mjai_state import MjaiVisibleState, tile_name
 
 
@@ -58,11 +59,13 @@ def operation_details(env, seat, observation, public):
                 offered[10] = set()
         else:
             raise ValueError(f"unsupported rule-engine action {kind}")
+    if public.state["riichi"][seat] or public.state["riichiPending"][seat]:
+        # Mahjong Soul auto-discards a locked draw. Only optional operations
+        # open a server decision, where cancelling them is PASS, not discard.
+        offered.pop(1, None)
     if 1 in offered:
-        # Riichi lock is encoded separately by the existing action adapter.
-        if not public.state["riichi"][seat] and not public.state["riichiPending"][seat]:
-            allowed = {t.replace("0", "5") for t in discards}
-            offered[1] = {_tile(t) for t in observation.hand if _tile(t).replace("0", "5") not in allowed}
+        allowed = {t.replace("0", "5") for t in discards}
+        offered[1] = {_tile(t) for t in observation.hand if _tile(t).replace("0", "5") not in allowed}
     return [{"type": code, "combination": sorted(values)} for code, values in sorted(offered.items())]
 
 
@@ -74,6 +77,9 @@ def _observed(window, event, riichi=False):
     if event.get("actor") != actor:
         return None
     if kind == "dahai":
+        if (not state["canDiscard"] and state["lastAction"]["name"] == "ActionDealTile"
+                and event.get("tsumogiri") is True and tile_name(event["pai"]) == state["lastDraw"]):
+            return {"action": "pass", "consumed": []}
         return {"action": "riichi" if riichi else "discard", "tile": tile_name(event["pai"]),
                 "consumed": [], "moqie": bool(event.get("tsumogiri")) and state["lastAction"]["name"] != "ActionNewRound"}
     if kind in ("chi", "pon", "daiminkan"):
@@ -99,19 +105,24 @@ def _observed(window, event, riichi=False):
     return None
 
 
-def extract_game(events, game_id):
+def extract_game(events, game_id, *, match_metadata=None):
     """Return samples and exclusions; every emitted label matches a frozen mask."""
     if not events or events[0].get("type") != "start_game" or events[-1].get("type") != "end_game":
         raise ValueError("expected a complete MJAI game")
     if len(events[0].get("names", [])) != 4:
         raise ValueError("MJAI conversion currently supports four-player games only")
-    env = RiichiEnv(game_mode="4p-red-half", rule=GameRule.default_mjsoul())
-    public = MjaiVisibleState()
+    match_metadata = validate_match_metadata(match_metadata, game_id)
+    engine_mode = "4p-red-east" if match_metadata and match_metadata["roundCount"] == 1 else "4p-red-half"
+    env = RiichiEnv(game_mode=engine_mode, rule=GameRule.default_mjsoul())
+    public = MjaiVisibleState(match_metadata)
     temporary, permanent = [False] * 4, [False] * 4
+    discard_furiten, response_waiting = [False] * 4, set()
     pending, samples, excluded = {}, [], Counter()
     rounds, blocked, declared = -1, False, None
     audit = {"gameId": game_id, "sourceFormat": "mjai", "operationSource": "riichienv-reconstructed",
-             "engineVersion": ENGINE_VERSION, "officialOperationLists": False}
+             "engineVersion": ENGINE_VERSION, "officialOperationLists": False,
+             "matchMetadata": match_metadata, "ruleEngineGameMode": engine_mode,
+             "ruleEngineMatchLengthAssumed": match_metadata is None}
 
     def emit(window, action, label_source):
         if action is None:
@@ -137,6 +148,7 @@ def extract_game(events, game_id):
             rounds += 1
             blocked, declared = False, None
             temporary, permanent = [False] * 4, [False] * 4
+            discard_furiten, response_waiting = [False] * 4, set()
         elif kind == "reach":
             if event["actor"] not in pending:
                 excluded["declaration_without_window"] += 1
@@ -154,23 +166,26 @@ def extract_game(events, game_id):
                 response = last["name"] == "ActionDiscardTile" and last["seat"] != seat
                 actual = _observed(window, winners.get(seat, event), declared == seat)
                 if seat in winners or (event.get("actor") == seat and kind != "tsumo"):
-                    emit(window, actual, "accepted")
+                    emit(window, actual, "inferred_pass" if actual and actual["action"] == "pass" else "accepted")
                 elif kind == "ryukyoku" and not response:
                     emit(window, actual, "accepted")
                 elif response and kind == "tsumo" and event["actor"] == (last["seat"] + 1) % 4:
                     emit(window, {"action": "pass", "consumed": []}, "inferred_pass")
                 else:
                     excluded["censored_response" if response else "unresolved_self_action"] += 1
-                # Ron outranks calls. Absence of a win before a call/draw proves
-                # missed ron, but does NOT prove a lower-priority pass label.
-                if response and seat not in winners and kind in ("tsumo", "chi", "pon", "daiminkan"):
-                    if any(a["action"] == "ron" for a in window["candidates"]):
-                        temporary[seat] = True
-                        permanent[seat] |= bool(state["riichi"][seat] or state["riichiPending"][seat])
             pending.clear()
             if kind == "dahai":
                 declared = None
-        if kind == "tsumo":
+        # Mahjong Soul marks a missed shape wait even when the hand has no
+        # yaku and no ron operation. Apply it only after the response closes.
+        if kind in ("tsumo", "chi", "pon", "daiminkan"):
+            for seat in response_waiting:
+                temporary[seat] = True
+                permanent[seat] |= bool(public.state["riichi"][seat] or public.state["riichiPending"][seat])
+            response_waiting.clear()
+        elif kind in ("hora", "ryukyoku", "end_kyoku", "end_game"):
+            response_waiting.clear()
+        if kind in ("tsumo", "dahai"):
             temporary[event["actor"]] = False
         if kind in KAN:
             blocked = True
@@ -182,6 +197,12 @@ def extract_game(events, game_id):
         env.apply_event(event)
         env.missed_agari_doujun = [a or b for a, b in zip(temporary, permanent)]
         public.apply(event, index)
+        if kind == "dahai" and not blocked:
+            actor = event["actor"]
+            discarded = {tile34(d["tile"]) for d in public.state["rivers"][actor]}
+            discard_furiten[actor] = bool(discarded.intersection(env.get_observation(actor).waits))
+            response_waiting = {seat for seat in range(4) if seat != actor
+                                and tile34(tile_name(event["pai"])) in env.get_observation(seat).waits}
         if blocked or kind not in ("tsumo", "dahai", "chi", "pon"):
             continue
         seats = [event["actor"]] if kind != "dahai" else [s for s in range(4) if s != event["actor"]]
@@ -191,8 +212,9 @@ def extract_game(events, game_id):
             if not details:
                 continue
             hand = [_tile(t) for t in observation.hand]
-            discarded = {tile34(d["tile"]) for d in public.state["rivers"][seat]}
-            furiten = temporary[seat] or permanent[seat] or bool(discarded.intersection(observation.waits))
+            # A 14-tile draw has no shape waits. Preserve self-discard furiten
+            # from the last completed discard until this player discards again.
+            furiten = temporary[seat] or permanent[seat] or discard_furiten[seat]
             state = public.snapshot(seat, hand, details, furiten)
             try:
                 candidates = legal_actions(state)

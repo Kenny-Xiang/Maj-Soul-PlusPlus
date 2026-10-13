@@ -102,8 +102,8 @@ class MjaiReviewTests(unittest.TestCase):
                 if locked:
                     self.assertFalse(later)
                     own_draw = events.index(draw(1, 'W'))
-                    own = next(s for s in samples if s['seat'] == 1 and s['state']['lastStep'] == own_draw)
-                    self.assertTrue(own['state']['furiten'])
+                    # A forced riichi tsumogiri is not a server decision.
+                    self.assertFalse([s for s in samples if s['seat'] == 1 and s['state']['lastStep'] == own_draw])
                 else:
                     self.assertEqual(len(later), 1)
                     self.assertIn('ron', {a['action'] for a in self.candidates(later[0])})

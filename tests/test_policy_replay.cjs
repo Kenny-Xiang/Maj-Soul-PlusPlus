@@ -272,3 +272,101 @@ test('wrong-seat draw cannot be evidence of normal response completion', () => {
   assert.equal(result.samples.some(s => s.action.action === 'pass'), false);
   assert.equal(result.audit.excluded.censored_response, 1);
 });
+
+test('a response uses pre-discard furiten regardless of its later ron or pass label', () => {
+  const opening = start();
+  const offered = record('RecordDiscardTile', {seat:0, tile:'5p',
+    zhenting:[false,true,false,false], operations:[op(1,9)]});
+  const win = extractGame(game([opening, offered, record('RecordHule', {hules:[{seat:1}]})]));
+  const pass = extractGame(game([opening, offered,
+    record('RecordDealTile', {seat:1,tile:'9p',left_tile_count:68})]));
+  assert.equal(win.samples[1].state.furiten, false);
+  assert.deepEqual(win.samples[1].state, pass.samples[1].state);
+  assert.equal(win.samples[1].action.action, 'ron');
+  assert.equal(pass.samples[1].action.action, 'pass');
+});
+
+test('a no-yaku wait does not pre-mark its pon window, but missed furiten applies afterwards', () => {
+  const opening = start();
+  opening.data.tiles3 = ['1m','2m','3m','4m','5m','6m','7p','8p','9p','5p','5p','6z','6z'];
+  const result = extractGame(game([opening,
+    record('RecordDiscardTile', {seat:0,tile:'5p',zhenting:[false,false,false,true],
+      operations:[op(3,3,['5p|5p'])]}),
+    record('RecordDealTile', {seat:1,tile:'9m',left_tile_count:68,zhenting:[false,false,false,true]}),
+    record('RecordDiscardTile', {seat:1,tile:'6z',zhenting:[false,false,false,true],
+      operations:[op(3,3,['6z|6z'])]}),
+    record('RecordDealTile', {seat:2,tile:'9m',left_tile_count:67,zhenting:[false,false,false,true]}),
+  ]));
+  const passes = result.samples.filter(sample => sample.seat === 3);
+  assert.deepEqual(passes.map(sample => sample.state.furiten), [false,true]);
+  assert.equal(passes.every(sample => sample.action.action === 'pass'), true);
+});
+
+test('missed ron survives another player call until the actor draws', () => {
+  const value = copy(fixture);
+  value.records = value.records.slice(0,3);
+  value.records[0].data.tiles2.splice(0,2,'5z','5z');
+  value.records[1].data.operations.push(op(2,9));
+  value.records[1].data.zhenting = [false,false,true,false];
+  value.records[2].data.zhenting = [false,false,true,false];
+  value.records.push(record('RecordDiscardTile', {seat:1,tile:'5z',
+    zhenting:[false,false,true,false],operations:[op(2,3,['5z|5z'])]}));
+  value.records.push(record('RecordDealTile', {seat:2,tile:'9p',left_tile_count:68,
+    zhenting:[false,false,true,false],operation:op(2,1)}));
+  value.records.push(record('RecordDiscardTile', {seat:2,tile:'9p',moqie:true,
+    zhenting:[false,false,false,false]}));
+  const samples = extractGame(value).samples.filter(sample => sample.seat === 2);
+  assert.deepEqual(samples.map(sample => [sample.action.action,sample.state.furiten]),
+    [['pass',true],['discard',false]]);
+});
+
+test('an own draw preserves discard furiten, including red and called river tiles', () => {
+  for (const called of [false,true]) {
+    const opening = start();
+    opening.data.tiles0 = ['1m','2m','3m','1p','2p','3p','1s','2s','3s','4p','4p','4p','5p','0p'];
+    const records = [opening,
+      record('RecordDiscardTile', {seat:0,tile:'0p',zhenting:[true,false,false,false],
+        tingpais:[{tile:'5p',haveyi:true}]})];
+    if (called) records.push(record('RecordChiPengGang', {seat:1,type:1,
+      tiles:['5p','5p','0p'],froms:[1,1,0],zhenting:[true,false,false,false]}));
+    records.push(record('RecordDealTile', {seat:0,tile:'9m',left_tile_count:60,
+      zhenting:[true,false,false,false],operation:op(0,1)}));
+    records.push(record('RecordDiscardTile', {seat:0,tile:'9m',moqie:true}));
+    const state = extractGame(game(records)).samples.at(-1).state;
+    assert.equal(state.furiten, true);
+    assert.equal(state.rivers[0][0].called, called);
+  }
+});
+
+test('permanent missed-ron furiten in riichi survives an own draw', () => {
+  const opening = start();
+  opening.data.operation.operation_list.push({type:7,combination:['5p']});
+  const records = [opening,
+    record('RecordDiscardTile', {seat:0,tile:'5p',is_liqi:true,zhenting:[false,false,false,false]}),
+    record('RecordDealTile', {seat:1,tile:'9m',left_tile_count:68,
+      liqi:{seat:0,score:24000,liqibang:1},zhenting:[false,false,false,false]}),
+    record('RecordDiscardTile', {seat:1,tile:'5m',zhenting:[true,false,false,false],operations:[op(0,9)]}),
+    record('RecordDealTile', {seat:2,tile:'9m',left_tile_count:67,zhenting:[true,false,false,false]}),
+    record('RecordDealTile', {seat:0,tile:'7z',left_tile_count:60,
+      zhenting:[true,false,false,false],operation:op(0,8)}),
+    record('RecordHule', {hules:[{seat:0,zimo:true}]}),
+  ];
+  const samples = extractGame(game(records)).samples;
+  assert.equal(samples.find(sample => sample.action.action === 'pass').state.furiten, false);
+  assert.equal(samples.at(-1).state.furiten, true);
+  assert.equal(samples.at(-1).state.riichi[0], true);
+});
+
+test('unknown post-kan waits are not guessed from a stale discard-furiten cache', () => {
+  const opening = start();
+  opening.data.tiles0.splice(0,4,'0p','5p','5p','5p');
+  opening.data.tiles0[13] = '9p';
+  opening.data.operation = op(0,4,['0p|5p|5p|5p']);
+  const result = extractGame(game([opening,
+    record('RecordAnGangAddGang', {seat:0,type:3,tiles:'5p'}),
+    record('RecordDealTile', {seat:0,tile:'9m',left_tile_count:60,
+      zhenting:[true,false,false,false],operation:op(0,1)}),
+    record('RecordDiscardTile', {seat:0,tile:'9m',moqie:true}),
+  ]));
+  assert.equal(result.samples.at(-1).state.furiten, null);
+});

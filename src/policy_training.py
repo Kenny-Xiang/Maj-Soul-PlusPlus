@@ -1,6 +1,7 @@
 """Offline supervised training; PyTorch is never imported by the desktop runtime."""
 from collections import Counter
 import hashlib
+import io
 import json
 from pathlib import Path
 
@@ -38,8 +39,12 @@ class CandidatePolicy(nn.Module):
     def forward(self, planes, globals_, actions, mask):
         encoded = self.blocks(torch.relu(self.conv(planes))).flatten(1)
         encoded = torch.relu(self.state(torch.cat((encoded, globals_), dim=1)))
-        encoded = encoded[:, None, :].expand(-1, actions.shape[1], -1)
-        logits = self.score(torch.cat((encoded, actions), dim=2)).squeeze(-1)
+        # The state part is identical for every candidate; multiply it once.
+        first = self.score[0]
+        hidden = encoded.shape[1]
+        state_score = nn.functional.linear(encoded, first.weight[:, :hidden], first.bias)
+        action_score = nn.functional.linear(actions, first.weight[:, hidden:])
+        logits = self.score[2](torch.relu(state_score[:, None, :] + action_score)).squeeze(-1)
         return logits.masked_fill(~mask, -torch.inf)
 
 
@@ -47,15 +52,16 @@ def read_samples(paths, players):
     """Reject malformed labels; never repair a label by adding it to the mask."""
     samples, seen, duplicates, sources = [], {}, 0, []
     for path in map(Path, paths):
-        sources.append({"file": path.name, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})
+        payload = path.read_bytes()
+        sources.append({"file": path.name, "sha256": hashlib.sha256(payload).hexdigest()})
         if path.name.endswith(".jsonl.zst"):
             try:
                 import zstandard
             except ImportError as exc:
                 raise ImportError("Reading .jsonl.zst samples requires the optional zstandard package") from exc
-            handle = zstandard.open(path, "rt", encoding="utf-8")
+            handle = zstandard.open(io.BytesIO(payload), "rt", encoding="utf-8")
         else:
-            handle = path.open(encoding="utf-8")
+            handle = io.StringIO(payload.decode("utf-8"))
         with handle:
             for line_number, line in enumerate(handle, 1):
                 if not line.strip():
@@ -81,7 +87,7 @@ def read_samples(paths, players):
                         continue
                     seen[identity] = fingerprint
                     candidates = legal_actions(sample["state"])
-                    keys = [action_key(candidate) for candidate in candidates]
+                    keys = [candidate["actionId"] for candidate in candidates]
                     label = action_key(sample["action"])
                     if label not in keys:
                         raise ValueError("observed action is not in the complete legal candidate set")

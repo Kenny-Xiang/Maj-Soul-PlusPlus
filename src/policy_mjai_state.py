@@ -5,6 +5,7 @@ Opponent starting hands, names, outcomes and future events are never retained.
 """
 from copy import deepcopy
 import re
+from policy_metadata import validate_match_metadata
 
 
 _TILE = re.compile(r"(?:[1-9][mps]|0[mps]|[1-7]z)\Z")
@@ -32,7 +33,8 @@ def _seat(value):
 
 
 class MjaiVisibleState:
-    def __init__(self):
+    def __init__(self, match_metadata=None):
+        self.match_metadata = validate_match_metadata(match_metadata)
         self.state = {"phase": "waiting", "historyComplete": False,
                       "baseline": None, "lastStep": None, "lastAction": None,
                       "left": None, "doras": [], "scores": [],
@@ -43,6 +45,9 @@ class MjaiVisibleState:
                       "riichiSticks": 0, "noCallsYet": False, "playerCount": 4,
                       "round": None, "match": {"playerCount": 4, "roundCount": None},
                       "recovery": None}
+        if self.match_metadata is not None:
+            self.state["match"].update(roundCount=self.match_metadata["roundCount"],
+                                       modeId=self.match_metadata["modeId"])
         self._draw_seat = self._draw_tile = None
         self._opening = False
 
@@ -57,7 +62,7 @@ class MjaiVisibleState:
             raise ValueError("Invalid event step")
         kind = event["type"]
         if kind == "start_game":
-            self.__init__()
+            self.__init__(self.match_metadata)
             return
         if kind == "start_kyoku":
             scores = event["scores"]
@@ -67,7 +72,7 @@ class MjaiVisibleState:
             wind = event["bakaze"]
             if wind not in ("E", "S", "W", "N"):
                 raise ValueError("Invalid round wind")
-            self.__init__()
+            self.__init__(self.match_metadata)
             self.state.update(phase="playing", historyComplete=True, baseline="new_round",
                               scores=list(scores), left=70, doras=[tile_name(event["dora_marker"])],
                               riichiSticks=event.get("kyotaku", 0), noCallsYet=True,

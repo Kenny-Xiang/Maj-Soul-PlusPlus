@@ -32,6 +32,23 @@ class MjaiVisibleStateTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 tile_name(value)
 
+    def test_match_metadata_survives_round_reset_and_unknown_never_uses_future_rounds(self):
+        metadata = {'schemaVersion': 1, 'gameId': '260101-11111111-2222-4333-8444-555555555555',
+                    'modeId': 15, 'roundCount': 1, 'playerCount': 4,
+                    'sourceCompressedSha256': '1' * 64,
+                    'provenance': {'kind': 'official-header-config', 'archive': 'fixture',
+                                   'headSha256': '2' * 64, 'responseSha256': '3' * 64,
+                                   'schemaSha256': '4' * 64}}
+        known, unknown = MjaiVisibleState(metadata), MjaiVisibleState()
+        metadata['roundCount'] = 2
+        for state in (known, unknown):
+            state.apply({'type': 'start_game'}, 0)
+            state.apply(start_event(), 1)
+            state.apply(start_event(bakaze='S'), 100)
+        self.assertEqual(known.state['match']['roundCount'], 1)
+        self.assertEqual(known.state['match']['modeId'], 15)
+        self.assertIsNone(unknown.state['match']['roundCount'])
+
     def test_starting_hands_names_and_outcomes_are_not_retained(self):
         state = self.opened()
         snapshot = state.snapshot(0, HAND, DISCARD, False)

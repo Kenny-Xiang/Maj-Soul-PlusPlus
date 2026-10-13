@@ -20,6 +20,7 @@ def main():
     parser.add_argument("--device", choices=("cpu", "mps", "cuda"), default="cpu")
     parser.add_argument("--threads", type=int, default=2)
     parser.add_argument("--max-games", type=int, help="Deterministic game subset for a limited pipeline check")
+    parser.add_argument("--split", type=Path, help="Frozen source-bound whole-game partitions")
     args = parser.parse_args()
     if args.threads < 1:
         parser.error("--threads must be positive")
@@ -28,7 +29,7 @@ def main():
     torch.set_num_threads(args.threads)
     _, report = train_corpus(args.manifest, args.output, players=args.players, epochs=args.epochs,
                              batch_size=args.batch_size, learning_rate=args.learning_rate,
-                             seed=args.seed, device=args.device, max_games=args.max_games)
+                             seed=args.seed, device=args.device, max_games=args.max_games, split_file=args.split)
     print(json.dumps({"model": str(args.output), "report": str(args.output.with_suffix(".report.json")),
                       "purpose": report["purpose"], "selectedGames": report["dataAudit"]["selectedGames"],
                       "gameCounts": report["dataAudit"]["selectedGameCounts"]}, ensure_ascii=False))

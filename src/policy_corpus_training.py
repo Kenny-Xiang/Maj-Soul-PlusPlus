@@ -13,15 +13,19 @@ import torch
 from torch import nn
 
 from policy_model import PolicyModel
+from policy_split import read_split
 from policy_training import (CandidatePolicy, batch_tensors, evaluate, export_model,
                              read_samples, split_games)
 
 
-def read_manifest(path, seed, max_games=None):
+def read_manifest(path, seed, max_games=None, split_file=None):
     path = Path(path).resolve()
     if max_games is not None and max_games < 3:
         raise ValueError("max_games must allow at least three distinct games")
-    rows, seen_games, seen_paths, seen_hashes = [], set(), set(), set()
+    if split_file is not None and max_games is not None:
+        raise ValueError("max_games cannot change a frozen split")
+    rows, seen_games, seen_paths, seen_hashes, source_hashes = [], set(), set(), set(), {}
+    converter_signatures = set()
     payload = path.read_bytes()
     for number, line in enumerate(payload.decode("utf-8").splitlines(), 1):
         try:
@@ -43,19 +47,38 @@ def read_manifest(path, seed, max_games=None):
             seen_games.add(identifier)
             seen_paths.add(sample_path)
             seen_hashes.add(digest)
-            rows.append({"gameId": identifier, "path": sample_path, "sha256": digest, "samples": count})
+            source_hashes[identifier] = row.get("sourceSha256")
+            if split_file is not None:
+                signature = row.get("converterSignature")
+                if not isinstance(signature, str) or not re.fullmatch("[0-9a-f]{64}", signature):
+                    raise ValueError("frozen training requires a converter signature")
+                converter_signatures.add(signature)
+            rows.append({"gameId": identifier, "path": sample_path, "sha256": digest, "samples": count,
+                         "matchMetadata": row.get("matchMetadata")})
         except (ValueError, KeyError, TypeError) as error:
             raise ValueError(f"{path.name}:{number}: {error}") from error
     rows.sort(key=lambda row: hashlib.sha256(f"{seed}:{row['gameId']}".encode()).digest())
     selected = rows if max_games is None else rows[:max_games]
-    _, groups = split_games([{"game": row["gameId"]} for row in selected], seed)
+    split_audit = None
+    if split_file is None:
+        _, groups = split_games([{"game": row["gameId"]} for row in selected], seed)
+    else:
+        if len(converter_signatures) != 1:
+            raise ValueError("frozen training mixes converter signatures")
+        groups, split_audit = read_split(split_file, source_hashes)
     by_id = {row["gameId"]: row for row in selected}
     partitions = {name: [by_id[identifier] for identifier in group] for name, group in groups.items()}
     audit = {"manifest": path.name, "manifestSha256": hashlib.sha256(payload).hexdigest(),
              "manifestGames": len(rows), "manifestSamples": sum(row["samples"] for row in rows),
              "maxGames": max_games, "selectedGames": len(selected),
              "selectedSamples": sum(row["samples"] for row in selected),
-             "selectedGameCounts": {name: len(group) for name, group in groups.items()}}
+             "selectedGameCounts": {name: len(group) for name, group in groups.items()},
+             "matchLengthCoverage": dict(Counter(
+                 {1: "east", 2: "south"}.get((row["matchMetadata"] or {}).get("roundCount"), "unknown")
+                 for row in selected))}
+    if split_audit is not None:
+        audit["frozenSplit"] = split_audit
+        audit["converterSignature"] = next(iter(converter_signatures))
     return partitions, groups, audit
 
 
@@ -94,19 +117,22 @@ def merge_metrics(items):
     return totals
 
 
-def evaluate_corpus(model, rows, players, device, batch_size):
+def evaluate_corpus(model, rows, players, device, batch_size, phase="evaluation"):
     actions, labels = Counter(), Counter()
     duplicate_count = 0
 
     def scores():
         nonlocal duplicate_count
-        for row in rows:
+        for completed_games, row in enumerate(rows, 1):
             samples, audit = load_game(row, players)
             actions.update(audit["actions"])
             labels.update(audit["labelSources"])
             duplicate_count += audit["duplicateSamples"]
             result = evaluate(model, samples, device, batch_size)
             del samples
+            if completed_games % 100 == 0:
+                print(json.dumps({"phase": phase, "completedGames": completed_games,
+                                  "totalGames": len(rows)}), flush=True)
             yield result
 
     metrics = merge_metrics(scores())
@@ -138,11 +164,11 @@ def verify_export(model, path, rows, players, device):
 
 
 def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
-                 learning_rate=1e-3, seed=42, device="cpu", max_games=None, config=None):
+                 learning_rate=1e-3, seed=42, device="cpu", max_games=None, config=None, split_file=None):
     if players not in (3, 4) or epochs < 1 or batch_size < 1 or not 0 < learning_rate < 1:
         raise ValueError("invalid training parameters")
     started = time.monotonic()
-    partitions, groups, data_audit = read_manifest(manifest, seed, max_games)
+    partitions, groups, data_audit = read_manifest(manifest, seed, max_games, split_file)
     config = config or {"channels": 64, "blocks": 3, "hidden": 256}
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
@@ -153,7 +179,7 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
     for epoch in range(epochs):
         model.train()
         loss_sum, choices = 0., 0
-        for game_index in rng.permutation(len(partitions["train"])):
+        for completed_games, game_index in enumerate(rng.permutation(len(partitions["train"])), 1):
             samples, _ = load_game(partitions["train"][game_index], players)
             maximum_game_samples = max(maximum_game_samples, len(samples))
             training = [sample for sample in samples if len(sample["actions"]) > 1]
@@ -172,9 +198,16 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
                 choices += len(batch)
                 steps += 1
             del samples, training
+            if completed_games % 100 == 0:
+                print(json.dumps({"phase": "training", "epoch": epoch + 1,
+                                  "completedGames": completed_games, "trainGames": len(partitions["train"]),
+                                  "choices": choices, "optimizerSteps": steps,
+                                  "loss": loss_sum / choices if choices else None,
+                                  "elapsedSeconds": round(time.monotonic() - started, 1)}), flush=True)
         if not choices:
             raise ValueError("training partition contains no actual choices")
-        validation, _ = evaluate_corpus(model, partitions["validation"], players, device, batch_size)
+        validation, _ = evaluate_corpus(model, partitions["validation"], players, device, batch_size,
+                                        phase=f"epoch-{epoch + 1}-validation")
         criterion = validation["choiceNll"]
         if criterion is None:
             raise ValueError("validation partition contains no actual choices")
@@ -184,13 +217,19 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
         if criterion < best_loss:
             best_loss, best_epoch = criterion, epoch + 1
             best_state = {key: value.detach().cpu().clone() for key, value in model.state_dict().items()}
+            checkpoint = Path(output).with_suffix(".checkpoint.npz")
+            checkpoint.parent.mkdir(parents=True, exist_ok=True)
+            export_model(model, checkpoint, {"playerCount": players, "purpose": "behavior-cloning",
+                         "training": {"phase": "validation-complete", "epoch": epoch + 1,
+                                      "validation": validation, "dataAudit": data_audit, "gameSplit": groups}})
         print(json.dumps({"epoch": epoch + 1, "trainGames": len(partitions["train"]),
                           "trainChoices": choices, "trainLoss": row["trainLoss"],
                           "validationNll": criterion}), flush=True)
     model.load_state_dict(best_state)
     metrics, partition_audits = {}, {}
     for name, rows in partitions.items():
-        metrics[name], partition_audits[name] = evaluate_corpus(model, rows, players, device, batch_size)
+        metrics[name], partition_audits[name] = evaluate_corpus(model, rows, players, device, batch_size,
+                                                              phase=f"final-{name}")
     report = {"purpose": "behavior-cloning", "playerCount": players, "seed": seed,
               "config": config, "device": str(device), "epochs": epochs,
               "batchSize": batch_size, "learningRate": learning_rate, "weightDecay": 1e-4,
@@ -201,7 +240,8 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
                             "optimizerSteps": steps, "gameAndDecisionOrder": "shuffled-each-epoch"},
               "versions": {"torch": torch.__version__, "numpy": np.__version__},
               "limitations": ["Behavior cloning predicts recorded choices, not optimal actions.",
-                              "Only selected manifest games were trained; no playing-strength claim."]}
+                              "Only selected manifest games were trained; no playing-strength claim.",
+                              "Unknown match lengths are explicit missing features; East/South endgame behavior is not validated."]}
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(dir=output.parent, prefix=".policy-corpus-", suffix=".npz", delete=False) as handle:

@@ -81,6 +81,7 @@ class CorpusTrainingTests(unittest.TestCase):
         self.assertEqual(audit["manifestGames"], 40)
         self.assertEqual(audit["selectedGames"], 30)
         self.assertEqual(audit["maxGames"], 30)
+        self.assertEqual(audit["matchLengthCoverage"], {"unknown": 30})
         self.assertEqual(first, second)
         with self.assertRaisesRegex(ValueError, "three distinct games"):
             read_manifest(path, seed=42, max_games=2)
@@ -102,6 +103,30 @@ class CorpusTrainingTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 load_game(changed, 4)
 
+    def test_frozen_manifest_preserves_partitions_and_rejects_mixed_converters(self):
+        from policy_corpus_training import read_manifest
+        from policy_split import freeze_split
+        path, rows = self.manifest(6)
+        corpus = []
+        for i, row in enumerate(rows):
+            row['sourceSha256'] = hashlib.sha256(f'source-{i}'.encode()).hexdigest()
+            row['converterSignature'] = 'a' * 64
+            corpus.append({'gameId': row['gameId'], 'compressedSha256': row['sourceSha256'],
+                           'eventsSha256': hashlib.sha256(f'events-{i}'.encode()).hexdigest()})
+        split = freeze_split(corpus, [r['gameId'] for r in rows], {}, count=6)
+        split_path = self.root / 'split.json'
+        split_path.write_text(json.dumps(split))
+        path.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+        _, groups, audit = read_manifest(path, 999, split_file=split_path)
+        self.assertEqual(groups, split['groups'])
+        self.assertEqual(audit['converterSignature'], 'a' * 64)
+        with self.assertRaisesRegex(ValueError, 'cannot change a frozen split'):
+            read_manifest(path, 42, max_games=3, split_file=split_path)
+        rows[0]['converterSignature'] = 'b' * 64
+        path.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+        with self.assertRaisesRegex(ValueError, 'mixes converter'):
+            read_manifest(path, 42, split_file=split_path)
+
     def test_metric_merge_weights_decisions_instead_of_games(self):
         from policy_corpus_training import merge_metrics
         from policy_training import CandidatePolicy, read_samples, evaluate
@@ -118,6 +143,26 @@ class CorpusTrainingTests(unittest.TestCase):
             self.assertEqual(merged[field], direct[field])
         for field in ("choiceTop1", "choiceTop3", "choiceNll"):
             self.assertAlmostEqual(merged[field], direct[field], places=6)
+
+    def test_shared_state_scoring_preserves_logits_and_training_gradients(self):
+        import torch
+        from policy_training import CandidatePolicy, read_samples, batch_tensors
+        row = self.write_game('factorized', 3)
+        samples, _ = read_samples([self.root / row['path']], 4)
+        model = CandidatePolicy({'channels': 4, 'blocks': 1, 'hidden': 8})
+        planes, globals_, actions, mask, targets = batch_tensors(samples, 'cpu')
+        old_encoded = model.blocks(torch.relu(model.conv(planes))).flatten(1)
+        old_encoded = torch.relu(model.state(torch.cat((old_encoded, globals_), dim=1)))
+        expanded = old_encoded[:, None, :].expand(-1, actions.shape[1], -1)
+        expected = model.score(torch.cat((expanded, actions), dim=2)).squeeze(-1).masked_fill(~mask, -torch.inf)
+        actual = model(planes, globals_, actions, mask)
+        torch.testing.assert_close(actual, expected, atol=1e-6, rtol=1e-5)
+        torch.nn.functional.cross_entropy(expected, targets).backward()
+        old_gradients = {name: value.grad.clone() for name, value in model.named_parameters()}
+        model.zero_grad(set_to_none=True)
+        torch.nn.functional.cross_entropy(actual, targets).backward()
+        for name, value in model.named_parameters():
+            torch.testing.assert_close(value.grad, old_gradients[name], atol=1e-6, rtol=1e-5)
 
     def test_streamed_training_exports_held_out_report_and_reads_one_game_at_a_time(self):
         import policy_corpus_training as corpus

@@ -178,7 +178,7 @@ function extractGame(game) {
   const samples = [], audit = {gameId:game.gameId, records:game.records.length, rounds:0,
     windows:0, emitted:0, labels:{accepted:0, explicit:0, inferred_pass:0}, excluded:{}};
   const exclude = reason => {audit.excluded[reason] = (audit.excluded[reason] || 0) + 1;};
-  let states = [], pending = new Map(), roundId = null, step = 0;
+  let states = [], discardFuriten = [], pending = new Map(), roundId = null, step = 0;
   function emit(window, action, labelSource) {
     if (!validateAction(window.state, action)) {exclude('invalid_label'); return;}
     samples.push({schemaVersion:1, ruleset:'majsoul-standard-v1', gameId:game.gameId,
@@ -215,6 +215,7 @@ function extractGame(game) {
       }
       if (count === 3 && d.tiles3?.length) throw new Error('Nonempty absent seat in sanma');
       states = Array.from({length:count}, () => core.emptyState());
+      discardFuriten = Array(count).fill(false);
       if (ranked) for (const state of states) core.setMatch(state, {playerCount:count, roundCount:mode % 10});
       roundId = `${audit.rounds}:${d.chang}:${d.ju}:${d.ben}`;
       audit.rounds++; step = 0;
@@ -224,9 +225,32 @@ function extractGame(game) {
     }
     for (let seat = 0; seat < states.length; seat++) {
       const state = states[seat], event = projectRecord(record, seat, step);
+      const furitenBefore = state.furiten;
       core.apply(state, event);
+      if (name === 'RecordDiscardTile' && d.seat === seat) {
+        // These waits are also in the live actor's ActionDiscardTile, not an
+        // opponent hand or a future result. An omitted repeated field is empty.
+        const ownRiver = new Set(state.rivers[seat].map(discard => family(discard.tile)));
+        discardFuriten[seat] = (d.tingpais || []).some(wait => ownRiver.has(family(wait.tile)));
+      } else if (d.seat === seat && (['RecordAnGangAddGang', 'RecordBaBei'].includes(name) ||
+          name === 'RecordChiPengGang' && d.type === 2)) {
+        // These hand-changing actions carry no own tingpais. A replacement
+        // draw cannot distinguish an old temporary flag from changed waits.
+        discardFuriten[seat] = null;
+      }
       if (state.canAct) {
         const snapshot = visibleState(state);
+        // RecordDiscardTile eagerly sets missed-win zhenting while still
+        // offering ron (even a no-yaku shape wait can set it). The response
+        // decision uses the previous flag; the stored flag applies afterwards.
+        if (responseNames.has(event.name) && event.seat !== seat) snapshot.furiten = furitenBefore;
+        // RecordDealTile can retain temporary zhenting until the next discard.
+        // The draw clears that component, not discard or permanent riichi
+        // furiten. Keep the prior discard's waits until a new discard changes it.
+        else if (event.name === 'ActionDealTile' && event.seat === seat) {
+          snapshot.furiten = state.riichi[seat] || state.riichiPending[seat] ? state.furiten :
+            state.furiten === false ? false : discardFuriten[seat];
+        }
         const window = {state:snapshot, roundId, id:`${game.gameId}:${roundId}:${step}:${seat}`};
         pending.set(seat, window); audit.windows++;
       } else if (event.operations?.length) exclude('incomplete_state');
