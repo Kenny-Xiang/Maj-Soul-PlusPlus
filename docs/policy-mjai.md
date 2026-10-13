@@ -1,6 +1,8 @@
 # 雀魂 MJAI 语料转换与训练
 
-2026-10-13 已取得 **50,000 场雀魂四麻完整 MJAI 和 50,000 场天凤高段位三麻完整 MJAI**。四麻已有 200 场管线实验；新增三麻提取器已将其中独立选取的 **500 场转换为 161,180 条监督样本**，包含 11,518 条拔北标签。完整 MJAI 数量不等于已验收训练样本或已训练场数。四麻采集和既有接入记录见 [50,000 场采集与接入记录](policy-50k.md)，三麻来源见 [跨平台调查](policy-cross-platform-data.md)；训练与实时双模型验收以 [策略模型设计](policy-model.md)中的实际报告为准。下文保留早期四麻 10,000 场流程，并补充新的三麻入口。
+2026-10-13 已取得 **50,000 场雀魂四麻完整 MJAI 和 50,000 场天凤高段位三麻完整 MJAI**。按固定排除规则，现已完成四麻 **49,951 场、29,809,311 条样本**和三麻 **47,063 场、14,887,401 条样本**的全量转换，两者整场失败均为 0。两套模型分别启动 MPS 3 轮训练，最终评估与导出尚未完成。按用户要求，只使用已经筛选的公开来源，不再用额外本地牌谱或数据库／归档记录补足 50,000 场。完整 MJAI、已转换样本和已完成训练分别计数。
+
+四麻采集记录见 [50,000 场采集与接入记录](policy-50k.md)，三麻来源见 [跨平台调查](policy-cross-platform-data.md)；模型及实时接口见 [策略模型设计](policy-model.md)。下文先给出本轮固定语料和训练命令，再保留早期 10,000 场流程与 500 场三麻 pilot，后两者均为历史记录。
 
 MJAI 现可经过转换用于现有策略模型训练，路径为：
 
@@ -15,7 +17,74 @@ MJAI 现可经过转换用于现有策略模型训练，路径为：
 
 模型结构、动作编码及部署接口沿用 [策略模型设计](policy-model.md)。MJAI 本身是事件流，不能直接作为模型输入；转换后的样本仍是 `schemaVersion: 1` 的 `state + action` 契约。
 
-## 数据来源与数量
+## 固定语料全量转换与 MPS 训练
+
+本轮仍采用“当前可见局面 → 高段位玩家实际动作”的监督模仿目标，没有收益、排名或价值预测标签。全部小局和座位按完整对局归入同一个固定集合；只有 train 集合参与梯度更新。
+
+| 项目 | 三麻 | 四麻 |
+| --- | ---: | ---: |
+| 合格完整对局 | 47,063 | 49,951 |
+| 训练 / 验证 / 测试场数 | 37,651 / 4,706 / 4,706 | 39,961 / 4,995 / 4,995 |
+| 全部样本 | 14,887,401 | 29,809,311 |
+| 直接动作标签 | 13,882,622 | 24,689,674 |
+| `inferred_pass` | 1,004,779 | 5,119,637 |
+| 拔北 / 吃 | 1,064,610 / 不适用 | 不适用 / 398,084 |
+| 整场转换失败 | 0 | 0 |
+
+四麻保留 `.local/high-rank-50k/split.json` 中的全部既有分区，49 个开发场始终排除。三麻排除前 1,000 个 XML 转换器开发场、3 个真实回归 fixture，以及 1,934 个额外含 `BYE` 的场次；排除并集为 2,937，所有含 `BYE` 的场次共 1,965，其中 31 场已在开发集合内。三麻 500 场 pilot 的原 400 / 50 / 50 分区全部保留；四麻 pilot 200 场原本全部位于正式 train，不把 pilot 内部评估当成正式留出集成绩。
+
+已重验两份原始 50,000 场来源清单及全部压缩文件 SHA；三麻另核验两个数据库 SHA、原 XML SHA、原始段位与完整终局。来源审计为 `.local/high-rank-50k/{four-player-full,three-player-full}/source-audit.json`。三麻固定来源 manifest SHA 为 `80d1aa75122f61b13d4cc0391a2dd5c41cc08d212023488c328ebbde07544032`，split SHA 为 `8b555a88b2b22c2c10e15a18e0b85a459eb62c9976a1167b3ddab3dcca0a8b38`；四麻来源 manifest SHA 为 `638c50eb3f4494e2162a58a5cdc959f7aa9bf8f2db4383dafa5b21fb1b344181`，split SHA 为 `951a9aeb150eea5368acfc4a1d06040d184dae93b304b4ac8541a72d03159d70`。不重排、不补场，也不混入个人或本地录制对局。
+
+以下命令对应本轮实际目录和已冻结配置。转换已经完成；重运行同一转换命令会先验证并恢复已有结果：
+
+```sh
+cd /Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013
+POLICY_PYTHON=/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python
+
+"$POLICY_PYTHON" scripts/policy_convert_mjai.py \
+  --manifest .local/high-rank-50k/four-player/manifest.jsonl \
+  --split .local/high-rank-50k/split.json \
+  --output .local/high-rank-50k/training --limit 49951 --workers 6
+
+"$POLICY_PYTHON" scripts/policy_convert_mjai.py \
+  --manifest .local/high-rank-50k/research/cross-platform/tenhou-sanma-mjai/full-source-eligible.jsonl \
+  --split .local/high-rank-50k/three-player-full/split.json \
+  --tenhou-db-root .local/high-rank-50k/research/cross-platform \
+  --output .local/high-rank-50k/three-player-full/training --limit 47063 --workers 4
+
+# 可选：先并行准备特征缓存；训练也会按需创建缺失缓存。
+"$POLICY_PYTHON" scripts/policy_prepare_cache.py \
+  --manifest .local/high-rank-50k/training/manifest.jsonl \
+  --players 4 --encoded-cache .local/high-rank-50k/encoded-cache --workers 2
+
+"$POLICY_PYTHON" scripts/policy_prepare_cache.py \
+  --manifest .local/high-rank-50k/three-player-full/training/manifest.jsonl \
+  --players 3 --encoded-cache .local/high-rank-50k/encoded-cache --workers 2
+
+"$POLICY_PYTHON" scripts/policy_train_corpus.py \
+  --manifest .local/high-rank-50k/training/manifest.jsonl \
+  --split .local/high-rank-50k/split.json --players 4 \
+  --epochs 3 --batch-size 2048 --game-window 16 --device mps --threads 2 \
+  --encoded-cache .local/high-rank-50k/encoded-cache --checkpoint-every-games 1000 \
+  --output .local/high-rank-50k/models/four-player-full.npz
+
+"$POLICY_PYTHON" scripts/policy_train_corpus.py \
+  --manifest .local/high-rank-50k/three-player-full/training/manifest.jsonl \
+  --split .local/high-rank-50k/three-player-full/split.json --players 3 \
+  --epochs 3 --batch-size 2048 --game-window 16 --device mps --threads 2 \
+  --encoded-cache .local/high-rank-50k/encoded-cache --checkpoint-every-games 1000 \
+  --output .local/high-rank-50k/models/three-player-full.npz
+```
+
+`--device mps` 使用 Apple GPU，部署仍是 NumPy CPU 推理。`--encoded-cache` 保存未经降精度的每场特征、候选和标签，绑定玩家数、原样本 SHA、样本数及编码器代码签名；不改变样本定义或正式数据划分。缓存准备命令只遍历 manifest 内全部场次，不决定训练分区，正式训练仍必须传入 `--split`。两个玩法可共享缓存目录，缓存键包含玩法和来源绑定。
+
+`--game-window 16` 将最多 16 场 train 数据合并后打乱决策并组成 batch，减少小 batch 的 GPU 开销；仅改变训练样本组织方式，不跨越固定分区，也不减少每轮读取的场数。内存由当前场窗口限制，而非一次加载约 4,470 万条样本。
+
+训练在跨过每 1,000 场的完整窗口边界和每轮结束时，原子保存 `four-player-full.resume.pt` 或 `three-player-full.resume.pt`。断点包括模型、AdamW 优化器、随机数状态、当前轮次、对局顺序与游标、累计损失以及历史最优验证权重。中断恢复时在对应完整训练命令末尾加 `--resume`，并保持来源 manifest、split、编码器／训练器代码和训练参数一致，包含 `--epochs 3`、batch size 和 game window。参数或来源不匹配会拒绝恢复；已经完成最终评估的断点也会拒绝再次恢复。`*.checkpoint.npz` 是按验证 NLL 选出的中间权重，不代表训练和测试已完成。
+
+两份转换报告为 `.local/high-rank-50k/training/report.json`、`three-player-full/training/report.json`，转换器签名均为 `96872ac64e57897511a367b3d25e9f26958a738cbe0ab9de61b6cf8feb6e4f42`。训练日志位于 `.local/high-rank-50k/research/full-training/`。当前只确认转换完成和训练已启动；最终 `models/{four-player,three-player}-full.report.json` 尚待生成，届时才能报告正式 Top-1／Top-3、NLL、逐动作成绩和导出一致性。历史 pilot 指标不能填入该结果。
+
+## 历史四麻数据来源与数量
 
 数据来自公开的 [nikketryhard/tenhou-houou-mjai](https://huggingface.co/datasets/nikketryhard/tenhou-houou-mjai) 数据集，固定版本 `6450bb584cef43ede3b514df48e301a832c6818b`。虽然数据集名称包含 Tenhou，本次选用的文件为 **`majsoul-throne-2026.tar`**，来源分类为雀魂王座之间，没有用天凤记录替代雀魂记录。
 
@@ -122,6 +191,8 @@ MJAI 现可经过转换用于现有策略模型训练，路径为：
 
 ## 天凤三麻入口与 500 场样本验收
 
+本节保留全量转换之前的历史 pilot 命令和测量，正式语料以本文开头的 47,063 场固定集合为准。
+
 三麻输入为 `.local/high-rank-50k/research/cross-platform/tenhou-sanma-mjai/` 下的完整 MJAI，原始 XML 仍在同级研究目录的 `pathofhouou-2016.db`、`pathofhouou-2017.db` 中。新的 `--tenhou-db-root` 参数是必需的：转换器只读 SQLite，核验 XML SHA256、`GO` 规则头、三席 `UN` 头和七段至天凤位的原始段位。`GO` 决定场长并选择 `GameRule.default_tenhou()`，不借用雀魂房间编号，也不从未来南场事件推断场长。
 
 本轮先排除开发 XML 转换器时使用过的前 1,000 场，再从余下 49,000 场按固定哈希顺序提取样本。以下命令在独立工作目录运行，复用已经安装的 Python 3.12 环境；原始 50,000 场清单保持不变：
@@ -169,7 +240,7 @@ RiichiEnv 0.4.10 的 MJAI 重放漏设拔北补牌的岭上标志，可能使副
   --output .local/policy-models/throne-mjai-30-games.npz
 ```
 
-本轮先完成一轮固定语料训练，模型规模沿用现有配置。以下命令使用新的 10,000 场 manifest，其中 8,000 场参与梯度更新，另外两组各 1,000 场分别验证与测试；“10,000 场全量流程”不表示把验证或测试数据用于梯度更新：
+以下保留 2026-10-11 的 10,000 场固定语料复现命令，其中 8,000 场参与梯度更新，另外两组各 1,000 场分别验证与测试；“10,000 场全量流程”不表示把验证或测试数据用于梯度更新。2026-10-13 的实际全量配置以上文两套 manifest 为准：
 
 ```sh
 .venv/bin/python scripts/policy_train_corpus.py \
@@ -181,9 +252,9 @@ RiichiEnv 0.4.10 的 MJAI 重放漏设拔北补牌的岭上标志，可能使副
 
 训练逐场加载和释放样本，按轮打乱对局和场内决策。只有一个候选的窗口不计入训练损失和决策准确率。读取时重新核对压缩文件哈希、样本数、gameId、统一转换器签名及固定源文件绑定；导出必须通过 PyTorch / NumPy 数值和首选动作一致性检查。
 
-报告明确记录 `manifestGames`、`selectedGames`、实际三个集合的数量和每类动作成绩，避免把少量场次验证称作全量训练。一轮监督模仿的准确率不等于实战胜率或已经收敛；本轮不修改主目录和桌面 App，也不自动部署权重。
+报告明确记录 `manifestGames`、`selectedGames`、实际三个集合的数量和每类动作成绩，避免把少量场次验证称作全量训练。一轮监督模仿的准确率不等于实战胜率或已经收敛；该历史实验未修改主目录或桌面 App，也未自动部署权重。当前全量模型的发布和构建应读取新的模型包验收记录。
 
-使用 `--split` 时禁止同时使用 `--max-games`，避免缩减或重新计算已固定的集合。未指定固定划分的旧式小规模实验，仍会随 `--max-games` 改变而重新选场和切分；它的成绩不能作为固定测试集上的直接比较。每次训练从随机初始化开始。
+使用 `--split` 时禁止同时使用 `--max-games`，避免缩减或重新计算已固定的集合。未指定固定划分的旧式小规模实验，仍会随 `--max-games` 改变而重新选场和切分；它的成绩不能作为固定测试集上的直接比较。未指定 `--resume` 时从随机初始化开始；恢复方式见上文，不通过载入历史 pilot 权重重新开始本轮训练。
 
 ## 回归检查
 
