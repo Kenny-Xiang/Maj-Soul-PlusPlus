@@ -55,6 +55,27 @@ class FrozenSplitTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown games"):
             freeze_split(self.corpus[2:], self.preferred, {}, count=30)
 
+    def test_expansion_preserves_existing_holdouts_and_source_binding(self):
+        old = freeze_split(self.corpus, self.preferred, self.excluded, count=30)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "previous.json"
+            path.write_text(json.dumps(old))
+            enlarged = freeze_split(self.corpus, self.preferred, self.excluded,
+                                    count=40, seed=7, previous=path)
+            self.assertEqual({k: len(v) for k, v in enlarged["groups"].items()},
+                             {"train": 32, "validation": 4, "test": 4})
+            for name, games in old["groups"].items():
+                self.assertTrue(set(games) <= set(enlarged["groups"][name]))
+            self.assertEqual(enlarged["previousSplit"]["preservedGames"], 30)
+            with self.assertRaisesRegex(ValueError, "exclusions"):
+                freeze_split(self.corpus, self.preferred, {}, count=40, previous=path)
+            with self.assertRaisesRegex(ValueError, "shrink"):
+                freeze_split(self.corpus, self.preferred, self.excluded, count=20, previous=path)
+            identifier = next(iter(old["sources"]))
+            next(row for row in self.corpus if row["gameId"] == identifier)["eventsSha256"] = "0" * 64
+            with self.assertRaisesRegex(ValueError, "event hash"):
+                freeze_split(self.corpus, self.preferred, self.excluded, count=40, previous=path)
+
 
 if __name__ == "__main__":
     unittest.main()

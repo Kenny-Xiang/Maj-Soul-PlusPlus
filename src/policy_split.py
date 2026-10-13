@@ -8,7 +8,7 @@ import re
 PARTITIONS = ("train", "validation", "test")
 
 
-def freeze_split(corpus, preferred_ids, excluded, *, count=10000, seed=42):
+def freeze_split(corpus, preferred_ids, excluded, *, count=10000, seed=42, previous=None):
     if count < 3:
         raise ValueError("at least three games are required")
     by_id = {row["gameId"]: row for row in corpus}
@@ -21,19 +21,46 @@ def freeze_split(corpus, preferred_ids, excluded, *, count=10000, seed=42):
     if not preferred <= by_id.keys() or not reserved <= by_id.keys():
         raise ValueError("selection contains unknown games")
     order = lambda game: hashlib.sha256(f"frozen-v1:{seed}:{game}".encode()).digest()
-    selected = sorted(preferred - reserved, key=order)[:count]
+    retained = {name: [] for name in PARTITIONS}
+    if previous is not None:
+        prior = json.loads(Path(previous).read_text())
+        prior_ids = set(prior["sources"])
+        if not prior_ids <= by_id.keys():
+            raise ValueError("previous split has games outside the corpus")
+        retained, previous_audit = read_split(previous, {
+            game: by_id[game]["compressedSha256"] for game in prior_ids})
+        if any(prior["sources"][game]["eventsSha256"] != by_id[game]["eventsSha256"]
+               for game in prior_ids):
+            raise ValueError("previous split event hash differs")
+        if prior_ids & reserved or not set(prior.get("excluded", {})) <= reserved:
+            raise ValueError("previous split exclusions must be preserved")
+        if count < len(prior_ids):
+            raise ValueError("cannot shrink a previous split")
+    else:
+        prior_ids = set()
+    selected = sorted(prior_ids, key=order)
+    selected += sorted(preferred - reserved - prior_ids, key=order)[:count - len(selected)]
     selected += sorted(by_id.keys() - reserved - set(selected), key=order)[:count - len(selected)]
     if len(selected) != count:
         raise ValueError("not enough unreserved games")
     selected.sort(key=order)
     held = max(1, count // 10)
-    groups = {"train": selected[2 * held:], "validation": selected[:held], "test": selected[held:2 * held]}
-    return {"schemaVersion": 1, "seed": seed, "unit": "whole-game-all-seats",
+    targets = {"train": count - 2 * held, "validation": held, "test": held}
+    groups = {name: list(retained[name]) for name in PARTITIONS}
+    additions = iter(game for game in selected if game not in prior_ids)
+    for name in ("validation", "test", "train"):
+        if len(groups[name]) > targets[name]:
+            raise ValueError("previous partition exceeds the new target")
+        groups[name].extend(next(additions) for _ in range(targets[name] - len(groups[name])))
+    result = {"schemaVersion": 1, "seed": seed, "unit": "whole-game-all-seats",
             "groups": groups, "excluded": excluded,
             "sources": {game: {field: by_id[game][field] for field in ("compressedSha256", "eventsSha256")}
                         for game in sorted(selected)},
             "selection": {"games": count, "retainedPreferred": len(set(selected) & preferred),
                           "replacementGames": len(set(selected) - preferred)}}
+    if previous is not None:
+        result["previousSplit"] = {**previous_audit, "preservedGames": len(prior_ids)}
+    return result
 
 
 def read_split(path, source_hashes):

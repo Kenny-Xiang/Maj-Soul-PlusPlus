@@ -42,6 +42,18 @@ def events():
     ]
 
 
+def sanma_events():
+    """Synthetic structural fixture using RiichiEnv's actor-only kita dialect."""
+    value = events()
+    tiles = ["1m", "9m"] + [f"{n}{suit}" for suit in "ps" for n in range(1, 10)] + list("ESWNPFC")
+    tiles = [pai for pai in tiles for _ in range(4)]
+    value[0]["names"] = ["one", "two", "three"]
+    value[1].update(tehais=[tiles[i * 13:(i + 1) * 13] for i in range(3)], scores=[35000] * 3)
+    value[3] = {"type": "kita", "actor": 0}
+    value[4]["deltas"] = [0] * 3
+    return value
+
+
 def compressed(value=None, pretty=False):
     value = events() if value is None else value
     separators = (",", ":") if not pretty else None
@@ -68,6 +80,81 @@ def make_archive(path, members):
 
 @unittest.skipIf(zstandard is None, "optional zstandard dependency is not installed")
 class CorpusAuditTests(unittest.TestCase):
+    def test_sanma_requires_explicit_count_and_preserves_canonical_hashes(self):
+        value = sanma_events()
+        with self.assertRaisesRegex(audit.InvalidGame, "not_four_players"):
+            audit.validate_game(compressed(value))
+        with self.assertRaisesRegex(audit.InvalidGame, "not_three_players"):
+            audit.validate_game(compressed(), players=3)
+        checked = audit.validate_game(compressed(value), players=3)
+        pretty = audit.validate_game(compressed(value, pretty=True), players=3)
+        self.assertEqual(checked["players"], 3)
+        self.assertEqual(checked["eventTypes"]["kita"], 1)
+        self.assertEqual(checked["eventsSha256"], pretty["eventsSha256"])
+        self.assertNotEqual(checked["decodedSha256"], pretty["decodedSha256"])
+        value[3]["pai"] = "N"
+        self.assertEqual(audit.validate_game(compressed(value), players=3)["players"], 3)
+
+    def test_sanma_rejects_fourth_seat_chi_removed_tiles_and_non_north_kita(self):
+        mutations = [
+            lambda rows: rows[0]["names"].append(""),
+            lambda rows: rows[1]["tehais"].append([]),
+            lambda rows: rows[1]["scores"].append(0),
+            lambda rows: rows[1].update(oya=3),
+            lambda rows: rows[1].update(kyoku=4),
+            lambda rows: rows[2].update(actor=3),
+            lambda rows: rows[3].update(actor=3),
+            lambda rows: rows[3].pop("actor"),
+            lambda rows: rows[3].update(pai="E"),
+            lambda rows: rows[3].update(type="chi", pai="3p", consumed=["1p", "2p"], target=2),
+            lambda rows: rows[3].update(type="pon", pai="1m", consumed=["1m", "1m"], target=3),
+            lambda rows: rows[4]["deltas"].append(0),
+        ]
+        for pai in ("2m", "3m", "4m", "5m", "5mr", "6m", "7m", "8m"):
+            mutations.extend([
+                lambda rows, pai=pai: rows[1]["tehais"][0].__setitem__(0, pai),
+                lambda rows, pai=pai: rows[1].update(dora_marker=pai),
+                lambda rows, pai=pai: rows[2].update(pai=pai),
+                lambda rows, pai=pai: rows[3].update(type="ankan", consumed=[pai] * 4),
+            ])
+        for mutate in mutations:
+            value = sanma_events()
+            mutate(value)
+            with self.subTest(mutation=mutate), self.assertRaises(audit.InvalidGame):
+                audit.validate_game(compressed(value), players=3)
+        value = events()
+        value[3] = {"type": "kita", "actor": 0}
+        with self.assertRaisesRegex(audit.InvalidGame, "unknown_event_type"):
+            audit.validate_game(compressed(value))
+
+    def test_sanma_archive_count_resume_and_no_mixed_player_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive = root / "source.tar"
+            make_archive(archive, [
+                (member_name(GAME_ID), compressed(sanma_events())),
+                (member_name(OTHER_ID), compressed(sanma_events(), pretty=True)),
+                (member_name(THIRD_ID), compressed()),
+            ])
+            report = audit.audit_archives([archive], root / "corpus", 50000,
+                                          "https://example.test/pinned", players=3)
+            self.assertEqual(report["players"], 3)
+            self.assertEqual(report["uniqueCompleteGames"], 1)
+            self.assertFalse(report["goalReached"])
+            self.assertEqual(report["excluded"], {"duplicate_content": 1, "not_three_players": 1})
+            rows = [json.loads(line) for line in (root / "corpus/manifest.jsonl").read_text().splitlines()]
+            self.assertEqual(rows[0]["players"], 3)
+            resumed = audit.audit_archives([], root / "corpus", 50000,
+                                           "https://example.test/pinned", players=3)
+            self.assertEqual(resumed["resumedGames"], 1)
+            with self.assertRaisesRegex(audit.InvalidGame, "not_four_players"):
+                audit.audit_archives([], root / "corpus", 50000, "https://example.test/pinned")
+
+    def test_invalid_player_count_is_rejected(self):
+        for players in (2, 5, True, "3"):
+            with self.subTest(players=players), self.assertRaises(ValueError):
+                audit.validate_game(compressed(), players=players)
+
     def test_game_id_normalization_and_invalid_paths(self):
         self.assertEqual(audit.game_id(member_name(GAME_ID)), GAME_ID)
         for name in ("../" + member_name(GAME_ID), "/" + member_name(GAME_ID),

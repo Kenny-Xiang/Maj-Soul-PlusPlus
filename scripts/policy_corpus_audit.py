@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit and retain complete four-player MJAI games from local tar archives.
+"""Audit and retain complete three- or four-player MJAI games from local tar archives.
 
 The publisher's room classification is provenance, not independently verified
 player ranks. Converted MJAI does not contain Mahjong Soul operation lists.
@@ -23,6 +23,7 @@ MAX_DECODED_BYTES = 32 * 1024 * 1024
 SUFFIX = ".mjai.json.zst"
 ID_PATTERN = re.compile(r"\d{6}-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\Z")
 TILE_PATTERN = re.compile(r"(?:[1-9][mps]|5[mps]r|[ESWNPFC])\Z")
+SANMA_REMOVED_TILES = frozenset({"2m", "3m", "4m", "5m", "5mr", "6m", "7m", "8m"})
 ACTOR_EVENTS = {"tsumo", "dahai", "chi", "pon", "daiminkan", "ankan",
                 "kakan", "reach", "reach_accepted", "hora"}
 EVENT_TYPES = ACTOR_EVENTS | {"start_game", "start_kyoku", "end_kyoku",
@@ -65,11 +66,14 @@ def integer(value, minimum=None, maximum=None):
             and (maximum is None or value <= maximum))
 
 
-def tile(value):
-    return isinstance(value, str) and TILE_PATTERN.fullmatch(value) is not None
+def tile(value, players=4):
+    return (isinstance(value, str) and TILE_PATTERN.fullmatch(value) is not None
+            and not (players == 3 and value in SANMA_REMOVED_TILES))
 
 
-def validate_game(compressed):
+def validate_game(compressed, players=4):
+    if type(players) is not int or players not in (3, 4):
+        raise ValueError("players must be 3 or 4")
     if len(compressed) > MAX_COMPRESSED_BYTES:
         raise InvalidGame("compressed_size_limit")
     try:
@@ -92,17 +96,21 @@ def validate_game(compressed):
     if events[0].get("type") != "start_game" or events[-1].get("type") != "end_game":
         raise InvalidGame("missing_game_boundary")
     names = events[0].get("names")
-    if not isinstance(names, list) or len(names) != 4 or any(not isinstance(n, str) for n in names):
-        raise InvalidGame("not_four_players")
+    if not isinstance(names, list) or len(names) != players or any(not isinstance(n, str) for n in names):
+        raise InvalidGame("not_three_players" if players == 3 else "not_four_players")
 
     rounds = 0
     in_round = False
     terminal = False
     types = Counter()
+    actor_events = ACTOR_EVENTS | ({"kita"} if players == 3 else set())
+    event_types = EVENT_TYPES | actor_events
     for index, event in enumerate(events):
         kind = event.get("type")
-        if not isinstance(kind, str) or kind not in EVENT_TYPES:
+        if not isinstance(kind, str) or kind not in event_types:
             raise InvalidGame("unknown_event_type")
+        if players == 3 and kind == "chi":
+            raise InvalidGame("chi_in_three_player_game")
         types[kind] += 1
         if kind == "start_game":
             if index != 0:
@@ -116,20 +124,20 @@ def validate_game(compressed):
             if in_round:
                 raise InvalidGame("nested_round")
             hands = event.get("tehais")
-            if (not isinstance(hands, list) or len(hands) != 4
+            if (not isinstance(hands, list) or len(hands) != players
                     or any(not isinstance(hand, list) or len(hand) != 13
-                           or not all(tile(pai) for pai in hand) for hand in hands)):
+                           or not all(tile(pai, players) for pai in hand) for hand in hands)):
                 raise InvalidGame("incomplete_initial_hands")
-            if (not integer(event.get("oya"), 0, 3)
-                    or not integer(event.get("kyoku"), 1, 4)
+            if (not integer(event.get("oya"), 0, players - 1)
+                    or not integer(event.get("kyoku"), 1, players)
                     or not integer(event.get("honba"), 0)
                     or not integer(event.get("kyotaku"), 0)
                     or not isinstance(event.get("bakaze"), str)
                     or event["bakaze"] not in {"E", "S", "W", "N"}
-                    or not tile(event.get("dora_marker"))):
+                    or not tile(event.get("dora_marker"), players)):
                 raise InvalidGame("invalid_round_metadata")
             scores = event.get("scores")
-            if not isinstance(scores, list) or len(scores) != 4 or not all(integer(s) for s in scores):
+            if not isinstance(scores, list) or len(scores) != players or not all(integer(s) for s in scores):
                 raise InvalidGame("invalid_scores")
             known = Counter(pai.rstrip("r") for hand in hands for pai in hand)
             known[event["dora_marker"].rstrip("r")] += 1
@@ -147,15 +155,19 @@ def validate_game(compressed):
             continue
         if terminal and kind not in {"hora", "dora", "reach_accepted"}:
             raise InvalidGame("action_after_round_result")
-        if kind in ACTOR_EVENTS and not integer(event.get("actor"), 0, 3):
+        if kind in actor_events and not integer(event.get("actor"), 0, players - 1):
             raise InvalidGame("invalid_actor")
-        if "target" in event and not integer(event["target"], 0, 3):
+        if "target" in event and not integer(event["target"], 0, players - 1):
             raise InvalidGame("invalid_target")
         if kind in {"chi", "pon", "daiminkan", "hora"} and "target" not in event:
             raise InvalidGame("missing_target")
         for field in ("pai", "dora_marker"):
-            if field in event and not tile(event[field]):
+            if field in event and not tile(event[field], players):
                 raise InvalidGame("invalid_tile")
+        # RiichiEnv accepts three-player MJAI {type: "kita", actor: 0}.
+        # Preserve that event verbatim; an optional explicit tile must be North.
+        if kind == "kita" and "pai" in event and event["pai"] != "N":
+            raise InvalidGame("invalid_kita_tile")
         if kind in {"tsumo", "dahai", "chi", "pon", "daiminkan", "kakan"} and "pai" not in event:
             raise InvalidGame("missing_tile")
         if kind == "dora" and "dora_marker" not in event:
@@ -164,12 +176,12 @@ def validate_game(compressed):
         if consumed_length is not None:
             consumed = event.get("consumed")
             if (not isinstance(consumed, list) or len(consumed) != consumed_length
-                    or not all(tile(pai) for pai in consumed)):
+                    or not all(tile(pai, players) for pai in consumed)):
                 raise InvalidGame("invalid_consumed_tiles")
         if kind == "dahai" and type(event.get("tsumogiri")) is not bool:
             raise InvalidGame("invalid_tsumogiri")
         if "deltas" in event and (not isinstance(event["deltas"], list)
-                                  or len(event["deltas"]) != 4
+                                  or len(event["deltas"]) != players
                                   or not all(integer(s) for s in event["deltas"])):
             raise InvalidGame("invalid_score_deltas")
         if kind in {"hora", "ryukyoku"}:
@@ -177,15 +189,17 @@ def validate_game(compressed):
 
     canonical = "\n".join(json.dumps(event, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
                           for event in events).encode("utf-8")
-    return {"players": 4, "roundCount": rounds, "eventCount": len(events),
+    return {"players": players, "roundCount": rounds, "eventCount": len(events),
             "eventTypes": dict(sorted(types.items())), "decodedBytes": len(raw),
             "decodedSha256": sha256(raw), "eventsSha256": sha256(canonical),
             "compressedSha256": sha256(compressed), "compressedBytes": len(compressed)}
 
 
-def audit_archives(archives, output, limit, source_url, publisher_room="throne"):
+def audit_archives(archives, output, limit, source_url, publisher_room="throne", *, players=4):
     if limit < 1:
         raise ValueError("limit must be positive")
+    if type(players) is not int or players not in (3, 4):
+        raise ValueError("players must be 3 or 4")
     output = Path(output)
     games_dir = output / "data" / "games"
     games_dir.mkdir(parents=True, exist_ok=True)
@@ -198,7 +212,7 @@ def audit_archives(archives, output, limit, source_url, publisher_room="throne")
             expected_path = f"data/games/{identifier}{SUFFIX}"
             if game_id(identifier + SUFFIX) != identifier or row["path"] != expected_path:
                 raise ValueError("Invalid existing manifest path")
-            checked = validate_game((output / expected_path).read_bytes())
+            checked = validate_game((output / expected_path).read_bytes(), players)
             if any(row.get(key) != value for key, value in checked.items()):
                 raise ValueError("Existing manifest does not match saved game")
             if identifier in seen_ids or checked["eventsSha256"] in seen_hashes:
@@ -233,7 +247,7 @@ def audit_archives(archives, output, limit, source_url, publisher_room="throne")
                         if member.size > MAX_COMPRESSED_BYTES:
                             raise InvalidGame("compressed_size_limit")
                         compressed = contents.extractfile(member).read()
-                        checked = validate_game(compressed)
+                        checked = validate_game(compressed, players)
                         if checked["eventsSha256"] in seen_hashes:
                             raise InvalidGame("duplicate_content")
                     except InvalidGame as error:
@@ -264,11 +278,12 @@ def audit_archives(archives, output, limit, source_url, publisher_room="throne")
                 else:
                     archive_info["fullyScanned"] = True
     report = {"schemaVersion": 1, "format": "mjai-jsonl-zstandard", "targetGames": limit,
+              "players": players,
               "uniqueCompleteGames": len(seen_ids), "resumedGames": resumed,
               "newGames": len(seen_ids) - resumed, "visitedMembers": visited,
               "goalReached": len(seen_ids) >= limit, "excluded": dict(sorted(rejected.items())),
               "excludedExamples": examples, "archives": archive_reports,
-              "validationScope": "game and round boundaries, four complete initial hands, tiles and seat indices; not full rules replay",
+              "validationScope": f"game and round boundaries, {players} complete initial hands, tiles and seat indices; not full rules replay",
               "officialOperationLists": False,
               "roomEvidence": "Publisher archive classification only; individual ranks not verified"}
     temporary = output / "report.json.part"
@@ -282,10 +297,13 @@ def main():
     parser.add_argument("archives", nargs="+", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=10000)
+    parser.add_argument("--players", type=int, choices=(3, 4), default=4,
+                        help="Required player count; three-player games are never inferred from padded four-player data")
     parser.add_argument("--source-url", required=True, help="Pinned publisher URL recorded as provenance; not fetched")
     parser.add_argument("--publisher-room", default="throne", help="Publisher's room classification, not player-rank evidence")
     args = parser.parse_args()
-    report = audit_archives(args.archives, args.output, args.limit, args.source_url, args.publisher_room)
+    report = audit_archives(args.archives, args.output, args.limit, args.source_url,
+                            args.publisher_room, players=args.players)
     print(json.dumps(report, ensure_ascii=False, indent=2))
     return 0 if report["goalReached"] else 2
 

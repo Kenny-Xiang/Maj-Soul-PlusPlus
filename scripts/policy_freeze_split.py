@@ -16,11 +16,13 @@ def main():
     parser.add_argument("--excluded", type=Path, required=True, help="JSON gameId to exclusion reason")
     parser.add_argument("--count", type=int, default=10000)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--previous", type=Path, help="Preserve every existing game's partition when expanding")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     rows = lambda path: [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
     result = freeze_split(rows(args.corpus), [r["gameId"] for r in rows(args.preferred_manifest)],
-                          json.loads(args.excluded.read_text()), count=args.count, seed=args.seed)
+                          json.loads(args.excluded.read_text()), count=args.count, seed=args.seed,
+                          previous=args.previous)
     data = json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
     args.output.parent.mkdir(parents=True, exist_ok=True)
     if args.output.exists():
