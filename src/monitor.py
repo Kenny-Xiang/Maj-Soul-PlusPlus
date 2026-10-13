@@ -200,19 +200,25 @@ def accept_event(advisor, log, event):
     log.accept(event)
 
 
-def create_advice_worker(environ=None):
-    """Opt-in model slots; the normal installation has no ML dependency."""
+def create_advice_worker(environ=None, resource_root=None, write=None):
+    """Load bundled models or explicit overrides; no-model builds stay optional."""
     from advice_worker import AdviceWorker
+    from policy_bundle import resolve_models
     environ = os.environ if environ is None else environ
-    paths = {players: environ[f"MAJSOUL_POLICY_MODEL_{players}P"] for players in (3, 4)
-             if environ.get(f"MAJSOUL_POLICY_MODEL_{players}P")}
-    if not paths:
-        return AdviceWorker()
     try:
+        paths = resolve_models(ROOT if resource_root is None else resource_root, environ)
+        if not paths:
+            return AdviceWorker()
         from policy_model import PolicyAdvisor
-        return AdviceWorker(calculate=PolicyAdvisor(paths))
+        calculate = PolicyAdvisor(paths)
+        if write:
+            for players, model in sorted(calculate.models.items()):
+                write(f"[策略模型] {players} 人模型已加载 · SHA256 {model.sha256}")
+        return AdviceWorker(calculate=calculate)
     except (ImportError, OSError, ValueError, KeyError, TypeError, BadZipFile) as error:
         message = f"策略模型未能加载：{error}"
+        if write:
+            write(message)
         return AdviceWorker(calculate=lambda state: {
             "status": "unavailable", "kind": "policy", "message": message,
             "candidates": [], "best": None})
@@ -279,7 +285,7 @@ def main():
     log.write("Maj-Soul++ · 开局发牌及每个场上动作后更新浮层")
     log.write("正在打开独立游戏窗口；采集器自动安装。首次请在新窗口登录。")
     log.write(f"文本记录：{log.text_path}\n结构化记录：{log.json_path}")
-    advisor = create_advice_worker()
+    advisor = create_advice_worker(write=log.write)
     advice_target = [None]
     background = BackgroundActivity(NSProcessInfo.processInfo(),
         NSActivityUserInitiatedAllowingIdleSystemSleep | NSActivityIdleSystemSleepDisabled,
