@@ -26,28 +26,36 @@ def tile_name(value):
     return value
 
 
-def _seat(value):
-    if type(value) is not int or value not in range(4):
-        raise ValueError("Expected a four-player seat")
+def _seat(value, players=4):
+    if type(value) is not int or value not in range(players):
+        raise ValueError("Expected an active player seat")
     return value
 
 
 class MjaiVisibleState:
-    def __init__(self, match_metadata=None):
+    def __init__(self, match_metadata=None, players=4):
+        if type(players) is not int or players not in (3, 4):
+            raise ValueError("Expected three or four players")
+        self.players = players
         self.match_metadata = validate_match_metadata(match_metadata)
+        if self.match_metadata and self.match_metadata["playerCount"] != players:
+            raise ValueError("Match metadata player count differs")
         self.state = {"phase": "waiting", "historyComplete": False,
                       "baseline": None, "lastStep": None, "lastAction": None,
                       "left": None, "doras": [], "scores": [],
-                      "rivers": [[], [], [], []], "melds": [[], [], [], []],
-                      "north": [0] * 4, "riichi": [False] * 4,
-                      "riichiPending": [False] * 4, "doubleRiichi": [False] * 4,
-                      "doubleRiichiPending": [False] * 4, "riichiStep": [None] * 4,
-                      "riichiSticks": 0, "noCallsYet": False, "playerCount": 4,
-                      "round": None, "match": {"playerCount": 4, "roundCount": None},
+                      "rivers": [[] for _ in range(players)], "melds": [[] for _ in range(players)],
+                      "north": [0] * players, "riichi": [False] * players,
+                      "riichiPending": [False] * players, "doubleRiichi": [False] * players,
+                      "doubleRiichiPending": [False] * players, "riichiStep": [None] * players,
+                      "riichiSticks": 0, "noCallsYet": False, "playerCount": players,
+                      "round": None, "match": {"playerCount": players, "roundCount": None},
                       "recovery": None}
         if self.match_metadata is not None:
-            self.state["match"].update(roundCount=self.match_metadata["roundCount"],
-                                       modeId=self.match_metadata["modeId"])
+            self.state["match"]["roundCount"] = self.match_metadata["roundCount"]
+            if "modeId" in self.match_metadata:
+                self.state["match"]["modeId"] = self.match_metadata["modeId"]
+            if "sourcePlatform" in self.match_metadata:
+                self.state["match"]["sourcePlatform"] = self.match_metadata["sourcePlatform"]
         self._draw_seat = self._draw_tile = None
         self._opening = False
 
@@ -60,21 +68,22 @@ class MjaiVisibleState:
         """Apply one source event. Informational events preserve decision origin."""
         if type(step) is not int or step < 0:
             raise ValueError("Invalid event step")
+        players = self.players
         kind = event["type"]
         if kind == "start_game":
-            self.__init__(self.match_metadata)
+            self.__init__(self.match_metadata, players)
             return
         if kind == "start_kyoku":
             scores = event["scores"]
-            if not isinstance(scores, list) or len(scores) != 4 or any(type(score) is not int for score in scores):
-                raise ValueError("Expected four starting scores")
-            dealer = _seat(event["oya"])
+            if not isinstance(scores, list) or len(scores) != players or any(type(score) is not int for score in scores):
+                raise ValueError("Expected " + ("four" if players == 4 else "three") + " starting scores")
+            dealer = _seat(event["oya"], players)
             wind = event["bakaze"]
             if wind not in ("E", "S", "W", "N"):
                 raise ValueError("Invalid round wind")
-            self.__init__(self.match_metadata)
+            self.__init__(self.match_metadata, players)
             self.state.update(phase="playing", historyComplete=True, baseline="new_round",
-                              scores=list(scores), left=70, doras=[tile_name(event["dora_marker"])],
+                              scores=list(scores), left=70 if players == 4 else 55, doras=[tile_name(event["dora_marker"])],
                               riichiSticks=event.get("kyotaku", 0), noCallsYet=True,
                               round={"chang": "ESWN".index(wind), "ju": dealer,
                                      "ben": event.get("honba", 0)})
@@ -85,8 +94,8 @@ class MjaiVisibleState:
         state = self.state
         if kind in ("hora", "ryukyoku", "end_kyoku", "end_game"):
             state["phase"] = "ended" if kind == "end_game" else "between_rounds"
-            state["riichiPending"] = [False] * 4
-            state["doubleRiichiPending"] = [False] * 4
+            state["riichiPending"] = [False] * players
+            state["doubleRiichiPending"] = [False] * players
             self._draw_seat = self._draw_tile = None
             return
         if state["phase"] != "playing":
@@ -96,7 +105,7 @@ class MjaiVisibleState:
             return
         if kind == "none":
             return
-        actor = _seat(event["actor"])
+        actor = _seat(event["actor"], players)
         if kind == "reach":
             state["riichiPending"][actor] = True
             state["doubleRiichiPending"][actor] = state["noCallsYet"] and not state["rivers"][actor]
@@ -132,7 +141,9 @@ class MjaiVisibleState:
                 state["riichiStep"][actor] = step
             self._action("ActionDiscardTile", step, actor, tile)
         elif kind in ("chi", "pon", "daiminkan"):
-            target, tile = _seat(event["target"]), tile_name(event["pai"])
+            if players == 3 and kind == "chi":
+                raise ValueError("Chi is not supported in sanma")
+            target, tile = _seat(event["target"], players), tile_name(event["pai"])
             river = state["rivers"][target]
             if target == actor or not river or river[-1]["tile"] != tile or river[-1]["called"]:
                 raise ValueError("Call has no matching unclaimed discard")
@@ -164,13 +175,19 @@ class MjaiVisibleState:
             matching[0]["froms"].append(actor)
             state["noCallsYet"] = False
             self._action("ActionAnGangAddGang", step, actor, tile, 2)
+        elif kind == "kita":
+            if players != 3 or tile_name(event["pai"]) != "4z":
+                raise ValueError("Invalid north extraction")
+            state["north"][actor] += 1
+            state["noCallsYet"] = False
+            self._action("ActionBaBei", step, actor, "4z")
         else:
-            raise ValueError(f"Unsupported four-player MJAI event: {kind}")
+            raise ValueError(f"Unsupported MJAI event: {kind}")
         self._draw_seat = self._draw_tile = None
 
     def snapshot(self, seat, hand, operation_details, furiten):
         """Return an isolated visible snapshot with external rules-engine actions."""
-        seat = _seat(seat)
+        seat = _seat(seat, self.players)
         if type(furiten) is not bool:
             raise ValueError("Expected known own furiten status")
         hand = [tile_name(value) for value in hand]

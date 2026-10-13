@@ -96,7 +96,7 @@
   const automationStatus = shadow.querySelector('.automation-status');
   let automationEnabled = false;
   let automationView = '';
-  let adviceKey = null, expectedAdviceKey = null;
+  let adviceKey = null, expectedAdviceKey = null, adviceExpiryTimer = null;
   function updateAutomation(status) {
     if (!status) return;
     automationEnabled = status.enabled === true;
@@ -245,7 +245,12 @@
       row(list, 'tile-chip', `${tileName(tile.tile)} × ${number(tile.count)}${constraint}`);
     }
   }
+  function cancelAdviceExpiry() {
+    if (adviceExpiryTimer !== null) clearTimeout(adviceExpiryTimer);
+    adviceExpiryTimer = null;
+  }
   function clearAdvice() {
+    cancelAdviceExpiry();
     adviceKey = null;
     advice.replaceChildren();
     advice.hidden = true;
@@ -260,9 +265,29 @@
     expectedAdviceKey = key;
   }
   function renderAdvice(result) {
+    cancelAdviceExpiry();
     advice.replaceChildren();
     advice.hidden = !result;
     if (!result) return;
+    if (result.kind === 'policy' && ['ready', 'analysis'].includes(result.status)) {
+      const timing = window.__mjMonitor?.getSnapshot?.().state?.operationTiming;
+      // The key can still be current after its timer expired but before a new
+      // server event arrived. Do not present a late prediction as actionable.
+      if (timing && [timing.timeFixed, timing.timeAdd].every(value => Number.isInteger(value) && value >= 0 && value <= 0xffffffff) &&
+          Number.isFinite(timing.receivedAt) && timing.receivedAt >= 0 && timing.receivedAt <= performance.now()) {
+        const remaining = timing.timeFixed + timing.timeAdd - (performance.now() - timing.receivedAt);
+        const expired = {status:'waiting', message:'本次操作窗口已结束，等待下一次行动'};
+        if (remaining <= 0) result = expired;
+        else {
+          const key = expectedAdviceKey;
+          adviceExpiryTimer = setTimeout(() => {
+            if (expectedAdviceKey !== key || adviceKey !== key) return;
+            renderAdvice(expired);
+            fit();
+          }, remaining);
+        }
+      }
+    }
     advice.dataset.status = result.status || 'unavailable';
     const best = result.best || result.candidates?.[0];
     if (!['ready', 'analysis'].includes(result.status) || !best) {
@@ -401,5 +426,6 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, {once:true});
   else mount();
   addEventListener('resize', fit);
+  addEventListener('pagehide', invalidateAdvice);
   document.addEventListener('fullscreenchange', mount);
 })();

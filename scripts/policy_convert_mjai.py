@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Convert an audited MJAI corpus into per-game, training-ready sample shards."""
 import argparse
+import bz2
 from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, ProcessPoolExecutor, wait
 import hashlib
@@ -8,8 +9,10 @@ from importlib.metadata import version
 import json
 from pathlib import Path
 import re
+import sqlite3
 import sys
 import time
+import xml.etree.ElementTree as ET
 
 import zstandard
 
@@ -18,6 +21,7 @@ sys.path.insert(0, str(ROOT / "src"))
 from policy_mjai import ENGINE_VERSION, extract_game
 from policy_split import read_split
 from policy_match_metadata import load_metadata
+from policy_metadata import TENHOU_GAME_ID, validate_match_metadata
 
 
 def digest(data):
@@ -29,6 +33,62 @@ def converter_signature():
              "src/policy_actions.py", "src/policy_features.py", "src/policy_metadata.py",
              "scripts/policy_match_metadata.py"]
     return digest(b"".join((ROOT / name).read_bytes() for name in names) + ENGINE_VERSION.encode())
+
+
+def tenhou_source(row, database_root):
+    """Normalize the audited research manifest without disguising its source."""
+    identifier = row["gameId"]
+    match = TENHOU_GAME_ID.fullmatch(identifier)
+    if not match or row.get("players") != 3:
+        raise ValueError("invalid Tenhou sanma game ID or player count")
+    if database_root is None:
+        raise ValueError("Tenhou conversion requires --tenhou-db-root to verify XML and disconnects")
+    name = row.get("sourceDb", "")
+    if not re.fullmatch(r"pathofhouou-\d{4}\.db", name):
+        raise ValueError("invalid Tenhou source database name")
+    database_root = Path(database_root).resolve()
+    path = (database_root / name).resolve()
+    if not path.is_relative_to(database_root) or not path.is_file():
+        raise ValueError("missing or escaped Tenhou source database")
+    compressed_hash = row["audit"]["compressedSha256"]
+    if row.get("compressedSha256", compressed_hash) != compressed_hash:
+        raise ValueError("inconsistent Tenhou compressed source hash")
+    go_type = int(match[1], 16)
+    metadata = validate_match_metadata({
+        "schemaVersion": 1, "sourcePlatform": "tenhou", "gameId": identifier,
+        "playerCount": 3, "goType": go_type, "roundCount": 2 if go_type & 8 else 1,
+        "sourceCompressedSha256": compressed_hash,
+        "provenance": {"kind": "tenhou-xml-header", "archive": str(path),
+                       "xmlSha256": row["sourceXmlSha256"]}}, identifier, compressed_hash)
+    return {**row, "compressedSha256": compressed_hash, "matchMetadata": metadata}
+
+
+def verify_tenhou_xml(row, events):
+    """Require original XML evidence; BYE was omitted by the MJAI importer."""
+    metadata = row["matchMetadata"]
+    path = Path(metadata["provenance"]["archive"])
+    with sqlite3.connect(path.as_uri() + "?mode=ro&immutable=1", uri=True) as database:
+        result = database.execute("SELECT log_content FROM logs WHERE log_id=?", (row["gameId"],)).fetchone()
+    if result is None:
+        raise ValueError("Tenhou XML game is missing")
+    raw = bz2.decompress(result[0])
+    if digest(raw) != metadata["provenance"]["xmlSha256"]:
+        raise ValueError("Tenhou XML source hash mismatch")
+    root = ET.fromstring(raw)
+    if root.tag != "mjloggm" or root.get("ver") != "2.3":
+        raise ValueError("Unsupported Tenhou XML version")
+    # Excluding the whole match also covers reconnects, without trying to
+    # decide which forced actions were human choices in an incomplete log.
+    if root.find("BYE") is not None:
+        raise ValueError("Tenhou game contains disconnect BYE; human labels unverified")
+    go, users = root.find("GO"), root.find("UN")
+    header = events[0].get("_tenhou", {})
+    if (go is None or users is None or dict(go.attrib) != header.get("GO") or
+            dict(users.attrib) != header.get("UN") or go.get("type") != str(metadata["goType"])):
+        raise ValueError("Tenhou XML header differs from MJAI")
+    ranks = [int(value) for value in users.get("dan", "").split(",")]
+    if len(ranks) != 4 or users.get("n3") or not all(16 <= rank <= 20 for rank in ranks[:3]):
+        raise ValueError("Tenhou players lack verified 7-dan-or-higher ranks")
 
 
 def convert_one(row, source_root, output, signature):
@@ -43,6 +103,8 @@ def convert_one(row, source_root, output, signature):
         raw = zstandard.ZstdDecompressor().decompress(compressed, max_output_size=32 * 1024 * 1024,
                                                      allow_extra_data=False)
         events = [json.loads(line) for line in raw.splitlines() if line.strip()]
+        if row.get("sourcePlatform") == "tenhou":
+            verify_tenhou_xml(row, events)
         samples, audit = extract_game(events, identifier, match_metadata=row.get("matchMetadata"))
         if not samples:
             raise ValueError("no verified training samples")
@@ -60,7 +122,8 @@ def convert_one(row, source_root, output, signature):
                 "bytes": len(data), "sourceSha256": row["compressedSha256"],
                 "converterSignature": signature, "audit": audit, "auditSha256": digest(audit_data),
                 "roomEvidence": row.get("roomEvidence"), "matchMetadata": row.get("matchMetadata")}
-    except (ValueError, KeyError, TypeError, IndexError, OSError, zstandard.ZstdError) as error:
+    except (ValueError, KeyError, TypeError, IndexError, OSError, zstandard.ZstdError,
+            sqlite3.Error, ET.ParseError) as error:
         return {"gameId": identifier, "error": f"{type(error).__name__}: {error}"}
 
 
@@ -97,7 +160,8 @@ def validate_saved(row, source, output, signature):
         raise ValueError(f"existing conversion differs; use a new output directory: {error}") from error
 
 
-def convert_corpus(manifest, output, limit, workers, metadata_file=None, split_file=None):
+def convert_corpus(manifest, output, limit, workers, metadata_file=None, split_file=None,
+                   tenhou_db_root=None):
     if version("riichienv") != ENGINE_VERSION:
         raise ValueError(f"conversion requires riichienv=={ENGINE_VERSION}")
     if limit < 1 or not 1 <= workers <= 8:
@@ -105,17 +169,26 @@ def convert_corpus(manifest, output, limit, workers, metadata_file=None, split_f
     manifest, output = Path(manifest).resolve(), Path(output).resolve()
     payload = manifest.read_bytes()
     source_rows = [json.loads(line) for line in payload.splitlines() if line.strip()]
+    source_rows = [tenhou_source(row, tenhou_db_root) if row.get("sourcePlatform") == "tenhou"
+                   else row for row in source_rows]
+    sources = {row.get("sourcePlatform", "majsoul") for row in source_rows}
+    if not sources <= {"tenhou", "majsoul"} or len(sources) > 1:
+        raise ValueError("convert each source and player-count corpus separately")
     by_id, hashes = {}, set()
     for row in source_rows:
         identifier = row["gameId"]
-        if not re.fullmatch(r"\d{6}-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", identifier):
+        if (row.get("sourcePlatform") != "tenhou" and
+                not re.fullmatch(r"\d{6}-[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}", identifier)):
             raise ValueError("invalid Mahjong Soul game ID")
         if identifier in by_id or row["compressedSha256"] in hashes:
             raise ValueError("duplicate source game or content")
         by_id[identifier] = row
         hashes.add(row["compressedSha256"])
+    if metadata_file and "tenhou" in sources:
+        raise ValueError("--metadata is for Mahjong Soul headers; Tenhou uses verified XML")
     metadata = load_metadata(metadata_file, source_rows) if metadata_file else {}
-    source_rows = [{**row, "matchMetadata": metadata.get(row["gameId"])} for row in source_rows]
+    source_rows = [{**row, "matchMetadata": metadata.get(row["gameId"], row.get("matchMetadata"))}
+                   for row in source_rows]
     by_id = {row["gameId"]: row for row in source_rows}
     split_audit = None
     if split_file is not None:
@@ -180,13 +253,16 @@ def convert_corpus(manifest, output, limit, workers, metadata_file=None, split_f
                                 "unknownGames": sum(row.get("matchMetadata") is None for row in saved.values()),
                                 "fileSha256": digest(Path(metadata_file).read_bytes()) if metadata_file else None},
               "engineVersion": ENGINE_VERSION, "workers": workers,
+              "sourcePlatform": next(iter(sources), None),
               "elapsedSeconds": time.monotonic() - started, "failedGames": failed,
               "actions": dict(actions), "labelSources": dict(labels), "excludedWindows": dict(exclusions),
               "limitations": ["Operation masks are reconstructed with riichienv, not official server masks.",
                               "Windows after any kan are excluded until the next hand.",
                               "Competing claims and unresolved responses are censored.",
-                              "Four-player MJAI only; match length stays unknown without verified header metadata.",
-                              "Throne classification comes from the archive publisher, not individual rank metadata."]}
+                              "Potential rob-North suffixes are excluded; no speculative pass labels are added.",
+                              "Mahjong Soul match length stays unknown without verified header metadata.",
+                              "Tenhou ranks and GO rules are verified against XML; matches with BYE are excluded.",
+                              "Mahjong Soul throne classification comes from the archive publisher."]}
     (output / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({key: report[key] for key in ("convertedGames", "samples", "goalReached", "elapsedSeconds")}), flush=True)
     return report
@@ -200,8 +276,10 @@ def main():
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--metadata", type=Path, help="Verified per-game official-header metadata sidecar")
     parser.add_argument("--split", type=Path, help="Convert exactly the games in this frozen split")
+    parser.add_argument("--tenhou-db-root", type=Path, help="Directory containing original Path of Houou SQLite files")
     args = parser.parse_args()
-    report = convert_corpus(args.manifest, args.output, args.limit, args.workers, args.metadata, args.split)
+    report = convert_corpus(args.manifest, args.output, args.limit, args.workers, args.metadata,
+                            args.split, args.tenhou_db_root)
     raise SystemExit(0 if report["goalReached"] else 2)
 
 

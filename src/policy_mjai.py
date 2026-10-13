@@ -18,7 +18,7 @@ from policy_mjai_state import MjaiVisibleState, tile_name
 
 
 ENGINE_VERSION = "0.4.10"
-RESOLVERS = {"tsumo", "dahai", "chi", "pon", "daiminkan", "ankan", "kakan", "hora", "ryukyoku"}
+RESOLVERS = {"tsumo", "dahai", "chi", "pon", "daiminkan", "ankan", "kakan", "kita", "hora", "ryukyoku"}
 KAN = {"ankan", "kakan", "daiminkan"}
 
 
@@ -54,6 +54,8 @@ def operation_details(env, seat, observation, public):
             offered.setdefault(code, set()).add("|".join(sorted(tiles)))
         elif kind == "hora":
             offered[8 if action.action_type == ActionType.TSUMO else 9] = set()
+        elif kind == "kita":
+            offered[11] = set()
         elif kind == "ryukyoku":
             if public.state["noCallsYet"] and not public.state["rivers"][seat]:
                 offered[10] = set()
@@ -96,6 +98,14 @@ def _observed(window, event, riichi=False):
         if len(indices) != 1:
             raise ValueError("added kan lacks a unique public pon")
         return {"action": "shouminkan", "tile": tile, "consumed": [tile], "meldIndex": indices[0]}
+    if kind == "kita":
+        # Plain MJAI does not identify which of two Norths was extracted.
+        # Our Tenhou importer preserves the physical tile comparison in XML.
+        moqie = event.get("_tenhou", {}).get("tsumogiri")
+        if type(moqie) is not bool:
+            return None
+        return {"action": "kita", "tile": "4z", "consumed": ["4z"],
+                "moqie": moqie and state["lastAction"]["name"] != "ActionNewRound"}
     if kind == "hora":
         if event["target"] == actor:
             return {"action": "tsumo", "consumed": []}
@@ -109,18 +119,33 @@ def extract_game(events, game_id, *, match_metadata=None):
     """Return samples and exclusions; every emitted label matches a frozen mask."""
     if not events or events[0].get("type") != "start_game" or events[-1].get("type") != "end_game":
         raise ValueError("expected a complete MJAI game")
-    if len(events[0].get("names", [])) != 4:
-        raise ValueError("MJAI conversion currently supports four-player games only")
+    players = len(events[0].get("names", []))
+    if players not in (3, 4):
+        raise ValueError("Expected a three- or four-player MJAI game")
     match_metadata = validate_match_metadata(match_metadata, game_id)
-    engine_mode = "4p-red-east" if match_metadata and match_metadata["roundCount"] == 1 else "4p-red-half"
-    env = RiichiEnv(game_mode=engine_mode, rule=GameRule.default_mjsoul())
-    public = MjaiVisibleState(match_metadata)
-    temporary, permanent = [False] * 4, [False] * 4
-    discard_furiten, response_waiting = [False] * 4, set()
+    source = (match_metadata or {}).get("sourcePlatform", "majsoul")
+    if players == 3 and source != "tenhou":
+        raise ValueError("Three-player conversion requires source-bound Tenhou metadata")
+    if match_metadata and match_metadata["playerCount"] != players:
+        raise ValueError("Match metadata player count differs")
+    if source == "tenhou":
+        header = events[0].get("_tenhou", {})
+        if (header.get("game_id") != game_id or
+                header.get("GO", {}).get("type") != str(match_metadata["goType"]) or
+                header.get("xml_sha256") != match_metadata["provenance"]["xmlSha256"]):
+            raise ValueError("MJAI Tenhou header differs from source metadata")
+    length = "east" if match_metadata and match_metadata["roundCount"] == 1 else "half"
+    engine_mode = f"{players}p-red-{length}"
+    env = RiichiEnv(game_mode=engine_mode, rule=(GameRule.default_tenhou() if source == "tenhou"
+                                              else GameRule.default_mjsoul()))
+    public = MjaiVisibleState(match_metadata, players)
+    temporary, permanent = [False] * players, [False] * players
+    discard_furiten, response_waiting = [False] * players, set()
     pending, samples, excluded = {}, [], Counter()
     rounds, blocked, declared = -1, False, None
     audit = {"gameId": game_id, "sourceFormat": "mjai", "operationSource": "riichienv-reconstructed",
              "engineVersion": ENGINE_VERSION, "officialOperationLists": False,
+             "sourcePlatform": source, "playerCount": players, "ruleEngineRules": source,
              "matchMetadata": match_metadata, "ruleEngineGameMode": engine_mode,
              "ruleEngineMatchLengthAssumed": match_metadata is None}
 
@@ -137,7 +162,8 @@ def extract_game(events, game_id, *, match_metadata=None):
                         "seat": window["state"]["selfSeat"], "state": window["state"],
                         "action": action, "labelSource": label_source,
                         "sourceFormat": "mjai", "operationSource": "riichienv-reconstructed",
-                        "engineVersion": ENGINE_VERSION})
+                        "engineVersion": ENGINE_VERSION, "sourcePlatform": source,
+                        "ruleEngineRules": source})
 
     for index, event in enumerate(events):
         kind = event["type"]
@@ -147,8 +173,8 @@ def extract_game(events, game_id, *, match_metadata=None):
             pending.clear()
             rounds += 1
             blocked, declared = False, None
-            temporary, permanent = [False] * 4, [False] * 4
-            discard_furiten, response_waiting = [False] * 4, set()
+            temporary, permanent = [False] * players, [False] * players
+            discard_furiten, response_waiting = [False] * players, set()
         elif kind == "reach":
             if event["actor"] not in pending:
                 excluded["declaration_without_window"] += 1
@@ -169,15 +195,16 @@ def extract_game(events, game_id, *, match_metadata=None):
                     emit(window, actual, "inferred_pass" if actual and actual["action"] == "pass" else "accepted")
                 elif kind == "ryukyoku" and not response:
                     emit(window, actual, "accepted")
-                elif response and kind == "tsumo" and event["actor"] == (last["seat"] + 1) % 4:
+                elif response and kind == "tsumo" and event["actor"] == (last["seat"] + 1) % players:
                     emit(window, {"action": "pass", "consumed": []}, "inferred_pass")
                 else:
                     excluded["censored_response" if response else "unresolved_self_action"] += 1
             pending.clear()
             if kind == "dahai":
                 declared = None
-        # Mahjong Soul marks a missed shape wait even when the hand has no
-        # yaku and no ron operation. Apply it only after the response closes.
+        # Both sources mark a missed shape wait even without yaku / a ron
+        # operation (Tenhou manual: 縛りをクリアしない待ち牌は同巡振聴).
+        # Apply it only after the response closes.
         if kind in ("tsumo", "chi", "pon", "daiminkan"):
             for seat in response_waiting:
                 temporary[seat] = True
@@ -190,22 +217,41 @@ def extract_game(events, game_id, *, match_metadata=None):
         if kind in KAN:
             blocked = True
             excluded["hand_suffix_after_kan"] += 1
+        if kind == "kita" and any(30 in env.get_observation(seat).waits
+                                   for seat in range(players) if seat != event["actor"]):
+            # Rob-North response masks are not yet audited by this extractor.
+            # Hidden waits are used only to censor uncertain suffixes; they
+            # never enter snapshots, features, or action candidates.
+            blocked = True
+            excluded["hand_suffix_after_rob_north_uncertainty"] += 1
         if kind in ("end_kyoku", "end_game"):
             excluded["unfinished_window"] += len(pending)
             pending.clear()
+        if players == 3:
+            # RiichiEnv 0.4.10's replay handler omits the replacement-draw
+            # flag that its normal step() path sets. Without it an open
+            # no-yaku hand can lose the legal rinshan tsumo candidate.
+            if kind == "tsumo":
+                last = public.state["lastAction"] or {}
+                env.is_rinshan_flag = (last.get("name") == "ActionBaBei"
+                                       and last.get("seat") == event["actor"])
+            elif kind in ("start_kyoku", "dahai"):
+                env.is_rinshan_flag = False
         env.missed_agari_doujun = [a or b for a, b in zip(temporary, permanent)]
         env.apply_event(event)
         env.missed_agari_doujun = [a or b for a, b in zip(temporary, permanent)]
         public.apply(event, index)
+        if players == 3 and not public.state["noCallsYet"]:
+            env.is_first_turn = False
         if kind == "dahai" and not blocked:
             actor = event["actor"]
             discarded = {tile34(d["tile"]) for d in public.state["rivers"][actor]}
             discard_furiten[actor] = bool(discarded.intersection(env.get_observation(actor).waits))
-            response_waiting = {seat for seat in range(4) if seat != actor
+            response_waiting = {seat for seat in range(players) if seat != actor
                                 and tile34(tile_name(event["pai"])) in env.get_observation(seat).waits}
         if blocked or kind not in ("tsumo", "dahai", "chi", "pon"):
             continue
-        seats = [event["actor"]] if kind != "dahai" else [s for s in range(4) if s != event["actor"]]
+        seats = [event["actor"]] if kind != "dahai" else [s for s in range(players) if s != event["actor"]]
         for seat in seats:
             observation = env.get_observation(seat)
             details = operation_details(env, seat, observation, public)
