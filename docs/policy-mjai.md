@@ -1,6 +1,6 @@
 # 雀魂 MJAI 语料转换与训练
 
-2026-10-13 已取得 **50,000 场雀魂四麻完整 MJAI 和 50,000 场天凤高段位三麻完整 MJAI**。按固定排除规则，现已完成四麻 **49,951 场、29,809,311 条样本**和三麻 **47,063 场、14,887,401 条样本**的全量转换，两者整场失败均为 0。两套模型分别启动 MPS 3 轮训练，最终评估与导出尚未完成。按用户要求，只使用已经筛选的公开来源，不再用额外本地牌谱或数据库／归档记录补足 50,000 场。完整 MJAI、已转换样本和已完成训练分别计数。
+2026-10-13 已取得 **50,000 场雀魂四麻完整 MJAI 和 50,000 场天凤高段位三麻完整 MJAI**。按固定排除规则，现已完成四麻 **49,951 场、29,809,311 条样本**和三麻 **47,063 场、14,887,401 条样本**的全量转换，两者整场失败均为 0。两套模型均已完成 MPS 3 轮训练与最终评估，分别选中验证 NLL 最低的第 3 轮权重，NumPy 导出核验通过。按用户要求，只使用已经筛选的公开来源，不再用额外本地牌谱或数据库／归档记录补足 50,000 场。完整 MJAI、已转换样本和已完成训练分别计数。
 
 四麻采集记录见 [50,000 场采集与接入记录](policy-50k.md)，三麻来源见 [跨平台调查](policy-cross-platform-data.md)；模型及实时接口见 [策略模型设计](policy-model.md)。下文先给出本轮固定语料和训练命令，再保留早期 10,000 场流程与 500 场三麻 pilot，后两者均为历史记录。
 
@@ -82,7 +82,7 @@ POLICY_PYTHON=/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python
 
 训练在跨过每 1,000 场的完整窗口边界和每轮结束时，原子保存 `four-player-full.resume.pt` 或 `three-player-full.resume.pt`。断点包括模型、AdamW 优化器、随机数状态、当前轮次、对局顺序与游标、累计损失以及历史最优验证权重。中断恢复时在对应完整训练命令末尾加 `--resume`，并保持来源 manifest、split、编码器／训练器代码和训练参数一致，包含 `--epochs 3`、batch size 和 game window。参数或来源不匹配会拒绝恢复；已经完成最终评估的断点也会拒绝再次恢复。`*.checkpoint.npz` 是按验证 NLL 选出的中间权重，不代表训练和测试已完成。
 
-两份转换报告为 `.local/high-rank-50k/training/report.json`、`three-player-full/training/report.json`，转换器签名均为 `96872ac64e57897511a367b3d25e9f26958a738cbe0ab9de61b6cf8feb6e4f42`。训练日志位于 `.local/high-rank-50k/research/full-training/`。当前只确认转换完成和训练已启动；最终 `models/{four-player,three-player}-full.report.json` 尚待生成，届时才能报告正式 Top-1／Top-3、NLL、逐动作成绩和导出一致性。历史 pilot 指标不能填入该结果。
+两份转换报告为 `.local/high-rank-50k/training/report.json`、`three-player-full/training/report.json`，转换器签名均为 `96872ac64e57897511a367b3d25e9f26958a738cbe0ab9de61b6cf8feb6e4f42`。训练日志位于 `.local/high-rank-50k/research/full-training/`。最终 `models/{four-player,three-player}-full.report.json` 已生成，两套作业正常完成，最佳轮次均为 3。三麻正式测试 Top-1 / Top-3 为 **75.333008% / 95.663311%**、NLL **0.672929630**；四麻为 **73.560030% / 94.853761%**、NLL **0.726915647**。两份权重各通过 32 个 MPS PyTorch / NumPy 导出首选一致性检查，logits 最大误差均为 `3.8146973e-6`。实际分区样本数、完整权重 SHA、逐动作结果和限制见 [正式模型结果](policy-model.md#固定语料全量训练2026-10-13)及 [全量训练汇总](benchmarks/policy-full-training-20261013.json)，没有用历史 pilot 指标替代。大明杠测试匹配仍为三麻 0 / 222、四麻 0 / 380，四麻吃为 42.68%；动作模仿准确率不等于实战胜率。模型包和 App 构建另按 [模型包验收流程](policy-bundle.md)核验，本节不声称已安装或通过 GUI／在线对局测试。
 
 ## 历史四麻数据来源与数量
 
