@@ -4,7 +4,9 @@
 
 训练目标固定为当前可见局面到高段位玩家实际动作的监督模仿。模型文件必须来自已完成全量训练和导出校验的报告；文件名含 `full` 不能作为训练完成的证据。
 
-当前源码要求特征 v2（54 维全局输入）和 `majsoul-candidate-cnn-v2` 权重。v2 移除了赛制长度两列，仍保留场风、自风、公开宝牌、赤牌与三麻拔北信息；v1 权重不兼容，必须在独立输出目录重新训练并评估。下列路径仅为命令示例，实际打包须指向本轮已验证的两套 v2 模型；历史 v1 模型与已安装 App 不会自动迁移或替换。
+当前源码要求特征 v2（54 维全局输入）和 `majsoul-candidate-cnn-v2` 权重。v2 移除了赛制长度两列，仍保留场风、自风、公开宝牌、赤牌与三麻拔北信息；v1 权重不兼容，必须在独立输出目录重新训练并评估。下列路径仅为命令示例，实际打包须指向已通过选模与正式评估的两套 v2 模型；历史 v1 模型与已安装 App 不会自动迁移或替换。
+
+本轮 v2 实验未获得两套均通过固定验证门槛的权重，详见 [改进实验报告](policy-improvement-20261013.md)。最低验证 NLL 的研究权重仅供离线诊断，不能当作已接受的部署模型。以下流程须在两套模型通过选模及正式评估后再执行；示例路径不表示本轮已经生成部署产物。
 
 ## 准备模型资源
 
@@ -14,8 +16,8 @@
 POLICY_PYTHON=/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python
 
 "$POLICY_PYTHON" scripts/policy_prepare_bundle.py \
-  --three-player .local/high-rank-50k/models/three-player-full.npz \
-  --four-player .local/high-rank-50k/models/four-player-full.npz \
+  --three-player .local/improvement/models/three-player-v2.npz \
+  --four-player .local/improvement/models/four-player-v2.npz \
   --minimum-games 40000 \
   --output build/policy-models
 ```
@@ -62,7 +64,7 @@ MAJSOUL_POLICY_BUNDLE="$PWD/build/policy-models" \
 
 ```sh
 "$POLICY_PYTHON" scripts/policy_launch.py \
-  --three-player .local/high-rank-50k/models/three-player-full.npz \
-  --four-player .local/high-rank-50k/models/four-player-full.npz \
+  --three-player .local/improvement/models/three-player-v2.npz \
+  --four-player .local/improvement/models/four-player-v2.npz \
   --check
 ```
