@@ -37,9 +37,10 @@ function setup(options = {}) {
   if (state.lastAction.name === 'ActionDiscardTile') {
     state.rivers[state.lastAction.seat].push({tile:state.lastAction.tile,step:12,called:false});
   }
-  const sent = [], timers = new Map();
+  const sent = [], diagnostics = [], timers = new Map();
   let time = 2200, timerId = 0, connected = true;
-  const window = {__mjMonitor:{getSnapshot:() => ({running:true,state:plain(state)})},
+  const window = {__mjMonitor:{getSnapshot:() => ({running:true,state:plain(state)}),
+      reportActionDiagnostic:value => diagnostics.push(plain(value))},
     __mjProtocol:{encode}, __mjUnityTransport:{snapshot:() => ({connected,gameConnected:connected}),
       request(method, bytes, options) {
         return new Promise((resolve,reject) => sent.push({method,bytes,options,resolve,reject}));
@@ -48,7 +49,7 @@ function setup(options = {}) {
     performance:{now:() => time}, setTimeout:(fn,delay) => {timers.set(++timerId,{fn,at:time+delay});return timerId;},
     clearTimeout:id => timers.delete(id)});
   const api = window.__mjUnityActions;
-  return {api,window,state,sent,timers,
+  return {api,window,state,sent,diagnostics,timers,
     run(choice) {return api.execute({status:'ready',best:choice},plain(state));},
     ack(index = 0) {sent[index].resolve({payload:new Uint8Array()});},
     echo(event, extra = {}) {api.onEvent({kind:'turn',action:{step:13,...event},...extra});},
@@ -315,6 +316,32 @@ test('echo without ACK and ACK without echo both time out; late messages cannot 
   }
 });
 
+test('confirmation diagnostics distinguish a successful response from missing authority without retrying', async () => {
+  const h = setup({players:3,hand:['9p','6z','6p','2s','9p','7z','4z','1s','9s','2z','4s','9s','7s','5z'],
+    ops:[{type:1,combination:[]},{type:11,combination:[]}],lastAction:{name:'ActionNewRound',seat:0,tile:'5z',step:0}});
+  h.state.lastStep = 0; h.state.operationTiming.timeFixed = 8000;
+  const p = h.run({action:'kita'}), rejected = assert.rejects(p,/确认超时/);
+  assert.equal(first(h,5),0,'the stalled opening north was held, not the synthetic lastDraw');
+  h.ack(); await Promise.resolve();
+  assert.deepEqual(h.diagnostics,[{event:'awaiting_authoritative_action',source:'automation',action:'kita',
+    step:0,ack:true,echo:false,elapsedMs:0}]);
+  h.advance(33000); await rejected;
+  assert.equal(h.api.snapshot().stalled,true);
+  assert.deepEqual(h.diagnostics.slice(1).map(record => [record.event,record.ack,record.echo,record.elapsedMs]),
+    [['confirmation_timeout',true,false,33000],['confirmation_failed',true,false,33000]]);
+  assert.equal(h.sent.length,1);
+  h.echo({name:'ActionBaBei',seat:0,step:1,moqie:false});
+  assert.equal(h.diagnostics.length,3,'late authority does not confirm the expired request');
+  h.api.onEvent({kind:'status',phase:'ended',reset:true});
+  assert.equal(h.api.snapshot().stalled,false);
+  assert.deepEqual(plain(h.api.checkpoint()),{submitted:null});
+
+  const success = setup(), complete = success.run({action:'discard',tile:'1m'});
+  success.echo({name:'ActionDiscardTile',seat:0,tile:'1m',moqie:false});success.ack();await complete;
+  assert.deepEqual(success.diagnostics,[{event:'confirmed',source:'automation',action:'discard',
+    step:12,ack:true,echo:true,elapsedMs:0}]);
+});
+
 test('wrong authoritative action, wrong physical tile, missing steps and new rounds reject confirmation', async () => {
   for (const event of [{name:'ActionDiscardTile',seat:1,tile:'1m'},
     {name:'ActionDiscardTile',seat:0,tile:'2m'}, {name:'ActionDiscardTile',seat:0,tile:'1m',step:14},
@@ -381,6 +408,8 @@ test('a final-hand win retains its authoritative echo across collector reset unt
   assert.equal(h.state.phase,'ended'); assert.equal(h.state.match,null);
   h.api.onEvent({kind:'status',phase:'ended'});
   assert.equal(h.api.snapshot().pending,true,'the collector publishes a phase change before its terminal action echo');
+  assert.equal(h.api.snapshot().stalled,false);
+  assert.deepEqual(plain(h.api.checkpoint()),{submitted:null});
   h.echo(event,{state:plain(h.state)});
   Object.assign(h.state,core.emptyState(),{phase:'ended'});
   h.api.onEvent({kind:'status',phase:'ended',reset:true});
@@ -397,7 +426,8 @@ for (const acknowledged of [false,true])
     if (acknowledged) {h.ack();await Promise.resolve();}
     h.api.onEvent({kind:'status',phase:'ended',reset:true});
     assert.equal(h.api.snapshot().pending,false);
-    assert.equal(h.api.checkpoint().submitted,null);
+    assert.equal(h.api.snapshot().stalled,false);
+    assert.deepEqual(plain(h.api.checkpoint()),{submitted:null});
     assert.equal(h.timers.size,0);
     await rejected;
     h.state.gameId='next-game';
@@ -443,14 +473,16 @@ test('a controlled reload blocks the same UUID round and step even when page gam
   const pending=previous.run({action:'discard',tile:'1m'});
   const rejected=assert.rejects(pending,/连接/); previous.disconnect(); await rejected;
   const checkpoint=plain(previous.api.checkpoint());
-  assert.deepEqual(checkpoint,{submitted:[81,'stable-fixture',0,4,0,0,0,12]});
+  assert.deepEqual(checkpoint,{submitted:[81,'stable-fixture',0,4,0,0,0,12],unconfirmed:true});
   const restored=setup(); restored.state.gameId='game-1';
   restored.api.restoreCheckpoint(checkpoint);
   assert.equal(restored.api.snapshot().canAct,false,'unproven UUID cannot release a restored guard');
   restored.window.__mjUnityTransport.snapshot=()=>({gameConnected:true,gameIdentity:'stable-fixture',gameAccountId:81});
+  assert.equal(restored.api.snapshot().stalled,true,'the restored unknown action still needs authority');
   assert.throws(()=>restored.run({action:'discard',tile:'1m'}),/已经提交/);
   assert.equal(restored.sent.length,0);
   restored.state.lastStep=14;
+  assert.equal(restored.api.snapshot().stalled,false,'a new authoritative scope releases the recovery signal');
   const next=restored.run({action:'discard',tile:'2m'});
   restored.ack(); restored.echo({name:'ActionDiscardTile',seat:0,tile:'2m',moqie:false,step:15}); await next;
 });
@@ -472,4 +504,6 @@ test('checkpoint preparation fails closed for a submitted turn without proven st
   const rejected=assert.rejects(pending,/连接/); h.disconnect(); await rejected;
   assert.throws(()=>h.api.checkpoint(),/身份/);
   assert.throws(()=>setup().api.restoreCheckpoint({submitted:[81,'fixture',0,4,0,0,0,-1]}),/恢复/);
+  assert.throws(()=>setup().api.restoreCheckpoint({submitted:null,unconfirmed:true}),/恢复/);
+  assert.throws(()=>setup().api.restoreCheckpoint({submitted:[81,'fixture',0,4,0,0,0,12],unconfirmed:'true'}),/恢复/);
 });

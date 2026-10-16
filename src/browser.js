@@ -248,6 +248,7 @@ window.__mjMonitor = {version:'3.0.0', session, getSnapshot:snapshot, stop,
   },
   onLobbyRecovery:() => {if (running && state.recovery?.status === 'waiting') resetStatistics('waiting');},
   reportRecoveryDiagnostic:value => {if (running) publish({kind:'recovery_diagnostic', ...value});},
+  reportActionDiagnostic:value => Promise.resolve().then(() => {if (running) publish({kind:'action_diagnostic', ...value});}),
   reportAutomationIntent:value => {if (running) publish({kind:'automation_intent', ...value});},
   reportAutomation:value => Promise.resolve().then(() => {if (running) publish({kind:'automation', ...value});}),
   uninstall:() => {stop(); delete window.__mjMonitor;}};

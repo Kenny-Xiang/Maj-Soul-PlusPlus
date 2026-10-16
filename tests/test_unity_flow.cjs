@@ -286,13 +286,58 @@ async function reconnectFixture(inFlight = false, timeAdd = 20000) {
   return {h,e,seats,auth,hand,opening,operation,old,previous,oldInput,statusStart};
 }
 
+for (const acknowledged of [false, true])
+  test(`Unity missing action authority enters controlled recovery with ACK=${acknowledged} without repeating input`, async () => {
+  const {h,old:game,operation,oldInput}=await reconnectFixture(true);
+  if (acknowledged) await h.reply(game);
+  assert.equal(h.window.__mjUnityActions.snapshot().pending,true);
+  assert.equal(h.window.__mjRecovery.snapshot().stalled,false);
+  await h.advance(40000);await h.advance(1);
+  const recovery=h.window.__mjRecovery.snapshot();
+  assert.equal(recovery.stalled,true,'the native recovery supervisor must see an unresolved action');
+  assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
+  assert.equal(h.window.__mjUnityActions.snapshot().stalled,true);
+  assert.equal(h.api.getStatus().phase,'reconnecting');
+  const prepared=h.window.__mjRecovery.prepare(recovery.session,recovery.revision,'missing-authority');
+  assert.equal(prepared.prepared,true);
+  assert.equal(prepared.checkpoint.actions.unconfirmed,true);
+  assert.deepEqual(Array.from(prepared.checkpoint.actions.submitted),[11,'reconnect-test-match',0,4,0,0,0,0]);
+  h.window.__mjRecovery.cancel('missing-authority');
+  h.advice({action:'discard',tile:'1z'});await h.advance(120000);
+  assert.equal(game.sent.length,2,'refreshing advice and elapsed time never resend the unknown action');
+  await h.feed(game,h.frame(3,oldInput.id,''));
+  assert.equal(h.window.__mjUnityActions.snapshot().stalled,true,'a late ACK cannot replace authority');
+  await h.action(game,'ActionDiscardTile',1,[[1,0],[2,'1z']]);
+  assert.equal(h.window.__mjUnityActions.snapshot().stalled,false);
+  assert.equal(h.window.__mjRecovery.snapshot().stalled,false);
+  await h.action(game,'ActionDealTile',2,[[1,0],[2,'2z'],[3,68],[4,operation]]);
+  h.advice({action:'discard',tile:'2z'});await h.advance(3000);
+  assert.equal(game.sent.length,3,'only a new authoritative window can submit again');
+  await h.feed(game,h.frame(3,oldInput.id,''));
+  assert.equal(h.window.__mjUnityActions.snapshot().pending,true,'an old ACK cannot confirm the new action');
+  await h.reply(game);await h.action(game,'ActionDiscardTile',3,[[1,0],[2,'2z'],[5,1]]);
+  assert.equal(h.window.__mjRecovery.snapshot().stalled,false);
+});
+
+test('turning autoplay off revokes recovery for an unconfirmed action',async()=>{
+  const {h,old}=await reconnectFixture(true);await h.reply(old);
+  await h.advance(40000);await h.advance(1);
+  const recovery=h.window.__mjRecovery.snapshot();
+  assert.equal(recovery.stalled,true);
+  h.api.setEnabled(false);
+  assert.equal(h.window.__mjRecovery.snapshot().enabled,false);
+  assert.equal(h.window.__mjRecovery.prepare(recovery.session,recovery.revision,'revoked').prepared,false);
+  await h.advance(120000);assert.equal(old.sent.length,2);
+});
+
 test('notification-only game end releases an acknowledged input before the settlement wait expires', async () => {
   const {h,old}=await reconnectFixture(true,90000);
   await h.reply(old);
   assert.equal(h.window.__mjUnityActions.snapshot().pending,true,'an ACK alone does not confirm the discard');
   await h.feed(old,h.frame(1,0,'.lq.NotifyGameEndResult'));
   assert.equal(h.window.__mjUnityActions.snapshot().pending,false);
-  assert.equal(h.window.__mjUnityActions.checkpoint().submitted,null);
+  assert.equal(h.window.__mjUnityActions.snapshot().stalled,false);
+  assert.deepEqual(JSON.parse(JSON.stringify(h.window.__mjUnityActions.checkpoint())),{submitted:null});
   assert.equal(h.api.getStatus().enabled,true);
   const before=h.lobby.sent.length;
   await h.advance(44999);assert.equal(h.lobby.sent.length,before);
