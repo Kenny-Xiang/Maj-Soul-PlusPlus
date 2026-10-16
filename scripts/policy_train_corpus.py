@@ -28,10 +28,12 @@ def main():
     parser.add_argument("--final-lr-ratio", type=float, default=1., help="Final cosine learning-rate ratio; 1 keeps a constant rate")
     parser.add_argument("--action-weights", type=json.loads, default={}, help='Recorded-label loss weights, e.g. {"daiminkan":4}')
     parser.add_argument("--opportunity-weights", type=json.loads, default={}, help="Weight all windows offering these action types, including negatives")
+    parser.add_argument("--action-boundary-weights", type=json.loads, default={}, help='Binary auxiliary losses for offered riichi/daiminkan, e.g. {"riichi":1,"daiminkan":1}')
     parser.add_argument("--validation-only", action="store_true", help="Do not load or evaluate test games")
     parser.add_argument("--train-game-limit", type=int, help="Fixed train prefix, only for validation-only experiments")
     parser.add_argument("--validation-game-limit", type=int, help="Fixed validation prefix, only for validation-only experiments")
     parser.add_argument("--save-epoch-models", action="store_true", help="Retain each validation-complete epoch for auditable selection")
+    parser.add_argument("--train-monitor-games", type=int, help="Evaluate this many fixed hash-selected training games each epoch without loss weights")
     args = parser.parse_args()
     if args.threads < 1:
         parser.error("--threads must be positive")
@@ -45,8 +47,10 @@ def main():
                              checkpoint_every_games=args.checkpoint_every_games, game_window=args.game_window,
                              final_lr_ratio=args.final_lr_ratio, action_weights=args.action_weights,
                              opportunity_weights=args.opportunity_weights,
+                             action_boundary_weights=args.action_boundary_weights,
                              validation_only=args.validation_only, train_game_limit=args.train_game_limit,
-                             validation_game_limit=args.validation_game_limit, save_epoch_models=args.save_epoch_models)
+                             validation_game_limit=args.validation_game_limit, save_epoch_models=args.save_epoch_models,
+                             train_monitor_games=args.train_monitor_games)
     print(json.dumps({"model": str(args.output), "report": str(args.output.with_suffix(".report.json")),
                       "purpose": report["purpose"], "selectedGames": report["dataAudit"]["selectedGames"],
                       "gameCounts": report["dataAudit"]["selectedGameCounts"]}, ensure_ascii=False))

@@ -63,7 +63,10 @@ def freeze_split(corpus, preferred_ids, excluded, *, count=10000, seed=42, previ
     return result
 
 
-def read_split(path, source_hashes):
+def read_split(path, source_hashes, partitions=None):
+    selected = PARTITIONS if partitions is None else tuple(partitions)
+    if not selected or len(selected) != len(set(selected)) or not set(selected) <= set(PARTITIONS):
+        raise ValueError("select distinct known frozen partitions")
     payload = Path(path).read_bytes()
     data = json.loads(payload)
     if data.get("schemaVersion") != 1 or data.get("unit") != "whole-game-all-seats":
@@ -75,7 +78,10 @@ def read_split(path, source_hashes):
     games = [game for name in PARTITIONS for game in groups[name]]
     if len(games) != len(set(games)):
         raise ValueError("game overlaps frozen partitions")
-    if set(games) != set(source_hashes) or set(data["sources"]) != set(games):
+    selected_games = {game for name in selected for game in groups[name]}
+    if (set(data["sources"]) != set(games) or not selected_games <= source_hashes.keys()
+            or not source_hashes.keys() <= set(games)
+            or (partitions is None and set(games) != set(source_hashes))):
         raise ValueError("frozen split and manifest games differ")
     if set(games) & set(data.get("excluded", {})):
         raise ValueError("calibration game leaked into frozen partitions")
@@ -85,8 +91,11 @@ def read_split(path, source_hashes):
             raise ValueError("invalid frozen source hash")
         if len(values) != len(set(values)):
             raise ValueError("duplicate frozen source hash")
-    for game in games:
+    for game in source_hashes:
         if data["sources"][game]["compressedSha256"] != source_hashes[game]:
             raise ValueError(f"frozen split source hash differs: {game}")
-    return groups, {"file": Path(path).name, "sha256": hashlib.sha256(payload).hexdigest(),
-                    "schemaVersion": 1, "unit": data["unit"], "excludedGames": len(data.get("excluded", {}))}
+    audit = {"file": Path(path).name, "sha256": hashlib.sha256(payload).hexdigest(),
+             "schemaVersion": 1, "unit": data["unit"], "excludedGames": len(data.get("excluded", {})),
+             "selectedPartitions": list(selected), "selectedGames": len(selected_games),
+             "fullPartitionCounts": {name: len(groups[name]) for name in PARTITIONS}}
+    return {name: groups[name] for name in selected}, audit

@@ -55,6 +55,50 @@ class FrozenSplitTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unknown games"):
             freeze_split(self.corpus[2:], self.preferred, {}, count=30)
 
+    def test_selected_partitions_accept_partial_or_full_metadata_but_require_selected_games(self):
+        split = freeze_split(self.corpus, self.preferred, self.excluded, count=30)
+        names = ("train", "validation")
+        selected = {game for name in names for game in split["groups"][name]}
+        hashes = {game: row["compressedSha256"] for game, row in split["sources"].items()}
+        partial = {game: hashes[game] for game in selected}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "split.json"
+            path.write_text(json.dumps(split))
+            for supplied in (partial, hashes):
+                groups, audit = read_split(path, supplied, partitions=names)
+                self.assertEqual(groups, {name: split["groups"][name] for name in names})
+                self.assertEqual(audit["selectedPartitions"], list(names))
+                self.assertEqual(audit["selectedGames"], 27)
+                self.assertEqual(audit["fullPartitionCounts"]["test"], 3)
+            for invalid in (dict(list(partial.items())[1:]), {**partial, "unknown": "f" * 64}):
+                with self.assertRaisesRegex(ValueError, "manifest games"):
+                    read_split(path, invalid, partitions=names)
+            for game in (next(iter(selected)), split["groups"]["test"][0]):
+                with self.assertRaisesRegex(ValueError, "source hash differs"):
+                    read_split(path, {**hashes, game: "f" * 64}, partitions=names)
+            for invalid in ((), ("train", "train"), ("unknown",), "train"):
+                with self.assertRaisesRegex(ValueError, "known frozen partitions"):
+                    read_split(path, hashes, partitions=invalid)
+            with self.assertRaisesRegex(ValueError, "manifest games"):
+                read_split(path, partial)
+
+    def test_selection_still_validates_unselected_partition_metadata(self):
+        split = freeze_split(self.corpus, self.preferred, self.excluded, count=30)
+        selected = split["groups"]["train"]
+        hashes = {game: split["sources"][game]["compressedSha256"] for game in selected}
+        test_game = split["groups"]["test"][0]
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "split.json"
+            for value in ("bad", split["sources"][selected[0]]["eventsSha256"]):
+                split["sources"][test_game]["eventsSha256"] = value
+                path.write_text(json.dumps(split))
+                with self.assertRaisesRegex(ValueError, "frozen source hash"):
+                    read_split(path, hashes, partitions=("train",))
+            split["groups"]["test"][0] = selected[0]
+            path.write_text(json.dumps(split))
+            with self.assertRaisesRegex(ValueError, "overlaps"):
+                read_split(path, hashes, partitions=("train",))
+
     def test_expansion_preserves_existing_holdouts_and_source_binding(self):
         old = freeze_split(self.corpus, self.preferred, self.excluded, count=30)
         with tempfile.TemporaryDirectory() as directory:

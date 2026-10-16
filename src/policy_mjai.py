@@ -2,8 +2,9 @@
 
 RiichiEnv supplies legal actions, not labels. We infer pass only when play
 advances to the next normal draw; competing claims are censored. Its 0.4.10
-event API does not reconstruct kan-response windows, so the rest of a hand
-after a kan is excluded, including potential missed-ron state after that kan.
+event API does not reconstruct rob-kan windows. Only accepted open kans with
+an observed replacement draw are resumed; closed/added kans and fourth-kan
+suffixes stay excluded.
 """
 from collections import Counter
 import json
@@ -143,6 +144,7 @@ def extract_game(events, game_id, *, match_metadata=None):
     discard_furiten, response_waiting = [False] * players, set()
     pending, samples, excluded = {}, [], Counter()
     rounds, blocked, declared = -1, False, None
+    kan_count, replacement_actor = 0, None
     audit = {"gameId": game_id, "sourceFormat": "mjai", "operationSource": "riichienv-reconstructed",
              "engineVersion": ENGINE_VERSION, "officialOperationLists": False,
              "sourcePlatform": source, "playerCount": players, "ruleEngineRules": source,
@@ -152,11 +154,11 @@ def extract_game(events, game_id, *, match_metadata=None):
     def emit(window, action, label_source):
         if action is None:
             excluded["unresolved_action"] += 1
-            return
+            return False
         key = action_key(action)
         if key not in window["keys"]:
             excluded["label_not_in_reconstructed_mask"] += 1
-            return
+            return False
         samples.append({"schemaVersion": 1, "ruleset": RULESET, "gameId": game_id,
                         "roundId": str(rounds), "decisionId": window["id"],
                         "seat": window["state"]["selfSeat"], "state": window["state"],
@@ -164,15 +166,19 @@ def extract_game(events, game_id, *, match_metadata=None):
                         "sourceFormat": "mjai", "operationSource": "riichienv-reconstructed",
                         "engineVersion": ENGINE_VERSION, "sourcePlatform": source,
                         "ruleEngineRules": source})
+        return True
 
     for index, event in enumerate(events):
         kind = event["type"]
+        verified_daiminkan = False
+        replacement_draw = False
         if kind == "start_kyoku":
             if pending:
                 excluded["unfinished_window"] += len(pending)
             pending.clear()
             rounds += 1
             blocked, declared = False, None
+            kan_count, replacement_actor = 0, None
             temporary, permanent = [False] * players, [False] * players
             discard_furiten, response_waiting = [False] * players, set()
         elif kind == "reach":
@@ -192,7 +198,8 @@ def extract_game(events, game_id, *, match_metadata=None):
                 response = last["name"] == "ActionDiscardTile" and last["seat"] != seat
                 actual = _observed(window, winners.get(seat, event), declared == seat)
                 if seat in winners or (event.get("actor") == seat and kind != "tsumo"):
-                    emit(window, actual, "inferred_pass" if actual and actual["action"] == "pass" else "accepted")
+                    accepted = emit(window, actual, "inferred_pass" if actual and actual["action"] == "pass" else "accepted")
+                    verified_daiminkan |= accepted and kind == "daiminkan"
                 elif kind == "ryukyoku" and not response:
                     emit(window, actual, "accepted")
                 elif response and kind == "tsumo" and event["actor"] == (last["seat"] + 1) % players:
@@ -214,9 +221,28 @@ def extract_game(events, game_id, *, match_metadata=None):
             response_waiting.clear()
         if kind in ("tsumo", "dahai"):
             temporary[event["actor"]] = False
+        if replacement_actor is not None and kind in RESOLVERS:
+            replacement_draw = kind == "tsumo" and event["actor"] == replacement_actor
+            if not replacement_draw and kind not in ("hora", "ryukyoku"):
+                blocked = True
+                excluded["hand_suffix_after_unverified_daiminkan_draw"] += 1
+            replacement_actor = None
         if kind in KAN:
-            blocked = True
-            excluded["hand_suffix_after_kan"] += 1
+            kan_count += 1
+            if kind != "daiminkan":
+                blocked = True
+                excluded["hand_suffix_after_kan"] += 1
+            elif kan_count >= 4:
+                # Four-kan abort timing differs from the ordinary call path.
+                # Keep even a single player's legal fourth-kan suffix censored.
+                blocked = True
+                excluded["hand_suffix_after_four_kans"] += 1
+            elif not blocked:
+                if verified_daiminkan:
+                    replacement_actor = event["actor"]
+                else:
+                    blocked = True
+                    excluded["hand_suffix_after_unverified_daiminkan"] += 1
         if kind == "kita" and any(30 in env.get_observation(seat).waits
                                    for seat in range(players) if seat != event["actor"]):
             # Rob-North response masks are not yet audited by this extractor.
@@ -227,14 +253,15 @@ def extract_game(events, game_id, *, match_metadata=None):
         if kind in ("end_kyoku", "end_game"):
             excluded["unfinished_window"] += len(pending)
             pending.clear()
-        if players == 3:
+        if players == 3 or kan_count:
             # RiichiEnv 0.4.10's replay handler omits the replacement-draw
             # flag that its normal step() path sets. Without it an open
             # no-yaku hand can lose the legal rinshan tsumo candidate.
             if kind == "tsumo":
                 last = public.state["lastAction"] or {}
-                env.is_rinshan_flag = (last.get("name") == "ActionBaBei"
-                                       and last.get("seat") == event["actor"])
+                env.is_rinshan_flag = (replacement_draw or
+                                      (players == 3 and last.get("name") == "ActionBaBei"
+                                       and last.get("seat") == event["actor"]))
             elif kind in ("start_kyoku", "dahai"):
                 env.is_rinshan_flag = False
         env.missed_agari_doujun = [a or b for a, b in zip(temporary, permanent)]
@@ -243,10 +270,11 @@ def extract_game(events, game_id, *, match_metadata=None):
         public.apply(event, index)
         if players == 3 and not public.state["noCallsYet"]:
             env.is_first_turn = False
-        if kind == "dahai" and not blocked:
+        if kind in ("dahai", "daiminkan") and not blocked:
             actor = event["actor"]
             discarded = {tile34(d["tile"]) for d in public.state["rivers"][actor]}
             discard_furiten[actor] = bool(discarded.intersection(env.get_observation(actor).waits))
+        if kind == "dahai" and not blocked:
             response_waiting = {seat for seat in range(players) if seat != actor
                                 and tile34(tile_name(event["pai"])) in env.get_observation(seat).waits}
         if blocked or kind not in ("tsumo", "dahai", "chi", "pon"):

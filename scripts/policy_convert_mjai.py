@@ -161,7 +161,9 @@ def validate_saved(row, source, output, signature):
 
 
 def convert_corpus(manifest, output, limit, workers, metadata_file=None, split_file=None,
-                   tenhou_db_root=None):
+                   tenhou_db_root=None, partitions=None):
+    if partitions is not None and split_file is None:
+        raise ValueError("partition selection requires a frozen split")
     if version("riichienv") != ENGINE_VERSION:
         raise ValueError(f"conversion requires riichienv=={ENGINE_VERSION}")
     if limit < 1 or not 1 <= workers <= 8:
@@ -192,12 +194,12 @@ def convert_corpus(manifest, output, limit, workers, metadata_file=None, split_f
     by_id = {row["gameId"]: row for row in source_rows}
     split_audit = None
     if split_file is not None:
-        selected_ids = set(json.loads(Path(split_file).read_text())["sources"])
-        if not selected_ids <= by_id.keys():
-            raise ValueError("frozen split has games outside the source corpus")
-        _, split_audit = read_split(split_file, {game: by_id[game]["compressedSha256"] for game in selected_ids})
+        frozen_ids = set(json.loads(Path(split_file).read_text())["sources"])
+        groups, split_audit = read_split(split_file,
+            {game: by_id[game]["compressedSha256"] for game in frozen_ids & by_id.keys()}, partitions)
+        selected_ids = {game for group in groups.values() for game in group}
         if limit != len(selected_ids):
-            raise ValueError("conversion limit must equal the frozen split size")
+            raise ValueError("conversion limit must equal the selected frozen split size")
         source_rows = [row for row in source_rows if row["gameId"] in selected_ids]
         by_id = {row["gameId"]: row for row in source_rows}
     output.mkdir(parents=True, exist_ok=True)
@@ -249,6 +251,7 @@ def convert_corpus(manifest, output, limit, workers, metadata_file=None, split_f
               "compressedBytes": sum(row["bytes"] for row in saved.values()),
               "sourceManifestSha256": digest(payload), "converterSignature": signature,
               "frozenSplit": split_audit,
+              "selectedPartitions": split_audit["selectedPartitions"] if split_audit else None,
               "matchMetadata": {"knownGames": sum(row.get("matchMetadata") is not None for row in saved.values()),
                                 "unknownGames": sum(row.get("matchMetadata") is None for row in saved.values()),
                                 "fileSha256": digest(Path(metadata_file).read_bytes()) if metadata_file else None},
@@ -257,7 +260,7 @@ def convert_corpus(manifest, output, limit, workers, metadata_file=None, split_f
               "elapsedSeconds": time.monotonic() - started, "failedGames": failed,
               "actions": dict(actions), "labelSources": dict(labels), "excludedWindows": dict(exclusions),
               "limitations": ["Operation masks are reconstructed with riichienv, not official server masks.",
-                              "Windows after any kan are excluded until the next hand.",
+                              "Only verified first-through-third daiminkan suffixes are recovered; other kan suffixes remain excluded.",
                               "Competing claims and unresolved responses are censored.",
                               "Potential rob-North suffixes are excluded; no speculative pass labels are added.",
                               "Mahjong Soul match length stays unknown without verified header metadata.",
@@ -276,10 +279,12 @@ def main():
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--metadata", type=Path, help="Verified per-game official-header metadata sidecar")
     parser.add_argument("--split", type=Path, help="Convert exactly the games in this frozen split")
+    parser.add_argument("--partitions", nargs="+", choices=("train", "validation", "test"),
+                        help="Select frozen partitions; requires --split (default: all)")
     parser.add_argument("--tenhou-db-root", type=Path, help="Directory containing original Path of Houou SQLite files")
     args = parser.parse_args()
     report = convert_corpus(args.manifest, args.output, args.limit, args.workers, args.metadata,
-                            args.split, args.tenhou_db_root)
+                            args.split, args.tenhou_db_root, args.partitions)
     raise SystemExit(0 if report["goalReached"] else 2)
 
 

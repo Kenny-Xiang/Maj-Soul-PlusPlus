@@ -100,6 +100,48 @@ class MjaiBatchTests(unittest.TestCase):
         self.assertEqual(self.output_rows(), [])
         self.assertEqual(list((self.output / "games").iterdir()), [])
 
+    def test_selected_frozen_conversion_never_dispatches_test_and_requires_exact_selection(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from policy_split import freeze_split
+        rows = [self.row, self.source_game(OTHER, honba=1),
+                self.source_game("260103-aaaaaaaa-bbbb-4ccc-8ddd-ffffffffffff", honba=2)]
+        for row in rows:
+            row["eventsSha256"] = hashlib.sha256(("events:" + row["gameId"]).encode()).hexdigest()
+        split = freeze_split(rows, [row["gameId"] for row in rows], {}, count=3)
+        split_path = self.root / "split.json"
+        split_path.write_text(json.dumps(split))
+        allowed = set(split["groups"]["train"] + split["groups"]["validation"])
+        test_row = next(row for row in rows if row["gameId"] not in allowed)
+        (self.source / test_row["path"]).unlink()
+        self.write_manifest(rows)
+        original = batch.convert_one
+        seen = set()
+
+        def guarded(row, *args):
+            self.assertIn(row["gameId"], allowed)
+            seen.add(row["gameId"])
+            return original(row, *args)
+
+        options = {"limit": 2, "workers": 1, "split_file": split_path,
+                   "partitions": ("train", "validation")}
+        with patch.object(batch, "ProcessPoolExecutor", ThreadPoolExecutor), \
+                patch.object(batch, "convert_one", side_effect=guarded):
+            report = batch.convert_corpus(self.manifest, self.output, **options)
+        self.assertEqual(seen, allowed)
+        self.assertEqual({row["gameId"] for row in self.output_rows()}, allowed)
+        self.assertTrue(report["goalReached"])
+        self.assertEqual(report["selectedPartitions"], ["train", "validation"])
+        self.assertEqual(report["frozenSplit"]["fullPartitionCounts"]["test"], 1)
+        for changed, message in (({"limit": 3}, "selected frozen split size"),
+                                 ({"split_file": None}, "requires a frozen split")):
+            with self.assertRaisesRegex(ValueError, message):
+                batch.convert_corpus(self.manifest, self.output, **{**options, **changed})
+        self.write_manifest([row for row in rows if row["gameId"] in allowed])
+        self.assertTrue(batch.convert_corpus(self.manifest, self.output, **options)["goalReached"])
+        self.write_manifest([row for row in rows if row["gameId"] != next(iter(allowed))])
+        with self.assertRaisesRegex(ValueError, "manifest games"):
+            batch.convert_corpus(self.manifest, self.output, **options)
+
     def test_invalid_game_id_and_duplicate_game_or_content_are_rejected_up_front(self):
         other = self.source_game(OTHER, honba=1)
         invalid_rows = [

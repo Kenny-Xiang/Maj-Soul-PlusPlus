@@ -53,6 +53,109 @@ class CorpusTrainingTests(unittest.TestCase):
         path.write_text("".join(json.dumps(row) + "\n" for row in rows))
         return path, rows
 
+    def frozen_manifest(self):
+        from policy_split import freeze_split
+        path, rows = self.manifest()
+        for row in rows:
+            row["sourceSha256"] = hashlib.sha256(("source:" + row["gameId"]).encode()).hexdigest()
+            row["converterSignature"] = "a" * 64
+        corpus = [{"gameId": row["gameId"], "compressedSha256": row["sourceSha256"],
+                   "eventsSha256": hashlib.sha256(("events:" + row["gameId"]).encode()).hexdigest()}
+                  for row in rows]
+        split = freeze_split(corpus, [row["gameId"] for row in rows], {}, count=len(rows))
+        split_path = self.root / "split.json"
+        split_path.write_text(json.dumps(split))
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+        return path, rows, split_path, split
+
+    def test_frozen_partition_selection_reads_only_manifest_and_enforces_completeness(self):
+        from policy_corpus_training import read_manifest
+        path, rows, split_path, split = self.frozen_manifest()
+        names = ("train", "validation")
+        selected_ids = {game for name in names for game in split["groups"][name]}
+        selected_rows = [row for row in rows if row["gameId"] in selected_ids]
+        for row in rows:
+            (self.root / row["path"]).unlink()
+            if row["gameId"] not in selected_ids:
+                row["converterSignature"] = "b" * 64
+        for supplied in (rows, selected_rows):
+            path.write_text("".join(json.dumps(row) + "\n" for row in supplied))
+            partitions, groups, audit = read_manifest(path, 42, split_file=split_path, partitions=names)
+            self.assertEqual(groups, {name: split["groups"][name] for name in names})
+            self.assertEqual(set(partitions), set(names))
+            self.assertEqual(audit["manifestGames"], len(supplied))
+            self.assertEqual(audit["selectedGames"], len(selected_rows))
+            self.assertEqual(audit["selectedSamples"], sum(row["samples"] for row in selected_rows))
+            self.assertEqual(audit["converterSignature"], "a" * 64)
+        for invalid in (selected_rows[1:], [{**selected_rows[0], "gameId": "unknown"}, *selected_rows[1:]]):
+            path.write_text("".join(json.dumps(row) + "\n" for row in invalid))
+            with self.assertRaisesRegex(ValueError, "manifest games"):
+                read_manifest(path, 42, split_file=split_path, partitions=names)
+        with self.assertRaisesRegex(ValueError, "requires a frozen split"):
+            read_manifest(path, 42, partitions=names)
+
+    def test_validation_only_accepts_full_and_selected_frozen_manifests_without_test_reads(self):
+        import policy_corpus_training as corpus
+        path, rows, split_path, split = self.frozen_manifest()
+        selected_rows = [row for row in rows if row["gameId"] not in split["groups"]["test"]]
+        for row in rows:
+            if row not in selected_rows:
+                (self.root / row["path"]).unlink()
+        original = corpus.load_game
+        seen = set()
+
+        def guarded(row, *args, **kwargs):
+            self.assertNotIn(row["gameId"], split["groups"]["test"])
+            seen.add(row["gameId"])
+            return original(row, *args, **kwargs)
+
+        for index, supplied in enumerate((rows, selected_rows)):
+            path.write_text("".join(json.dumps(row) + "\n" for row in supplied))
+            with patch.object(corpus, "load_game", side_effect=guarded):
+                _, report = corpus.train_corpus(path, self.root / f"selected-{index}.npz", epochs=1,
+                    batch_size=2, config={"channels": 4, "blocks": 1, "hidden": 8},
+                    validation_only=True, split_file=split_path)
+            self.assertEqual(report["gameSplit"], {name: split["groups"][name] for name in ("train", "validation")})
+            self.assertEqual(set(report["metrics"]), {"validation"})
+        self.assertEqual(seen, {row["gameId"] for row in selected_rows})
+
+    def test_cache_cli_selects_frozen_partitions_without_dispatching_test_games(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from contextlib import redirect_stdout
+        import io
+        import sys
+        import policy_corpus_training as corpus
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        import policy_prepare_cache as prepare
+        path, rows, split_path, split = self.frozen_manifest()
+        allowed = set(split["groups"]["train"] + split["groups"]["validation"])
+        for row in rows:
+            if row["gameId"] not in allowed:
+                (self.root / row["path"]).unlink()
+        original = corpus.prepare_game_cache
+        seen = set()
+
+        def guarded(args):
+            self.assertIn(args[0]["gameId"], allowed)
+            seen.add(args[0]["gameId"])
+            return original(args)
+
+        argv = ["policy_prepare_cache", "--manifest", str(path), "--players", "4",
+                "--encoded-cache", str(self.root / "cache"), "--partitions", "train", "validation"]
+        with patch.object(sys, "argv", argv), self.assertRaises(SystemExit):
+            prepare.main()
+        output = io.StringIO()
+        with patch.object(sys, "argv", argv + ["--split", str(split_path)]), \
+                patch.object(prepare, "ProcessPoolExecutor", ThreadPoolExecutor), \
+                patch.object(corpus, "prepare_game_cache", side_effect=guarded), redirect_stdout(output):
+            prepare.main()
+        report = json.loads(output.getvalue().splitlines()[-1])
+        self.assertEqual(seen, allowed)
+        self.assertEqual(report["games"], len(allowed))
+        self.assertEqual(report["samples"], sum(row["samples"] for row in rows if row["gameId"] in allowed))
+        self.assertEqual(report["selectedPartitions"], ["train", "validation"])
+        self.assertEqual(report["frozenSplit"]["fullPartitionCounts"]["test"], 1)
+
     def test_compressed_and_plain_samples_have_identical_features(self):
         from policy_training import read_samples
         compressed = self.write_game("game-a", 3)

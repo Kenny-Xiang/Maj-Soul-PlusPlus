@@ -21,14 +21,16 @@ from policy_training import (CandidatePolicy, batch_tensors, evaluate, export_mo
                              read_samples, split_games)
 
 
-def read_manifest(path, seed, max_games=None, split_file=None):
+def read_manifest(path, seed, max_games=None, split_file=None, partitions=None):
     path = Path(path).resolve()
+    if partitions is not None and split_file is None:
+        raise ValueError("partition selection requires a frozen split")
     if max_games is not None and max_games < 3:
         raise ValueError("max_games must allow at least three distinct games")
     if split_file is not None and max_games is not None:
         raise ValueError("max_games cannot change a frozen split")
     rows, seen_games, seen_paths, seen_hashes, source_hashes = [], set(), set(), set(), {}
-    converter_signatures = set()
+    converter_signatures = {}
     payload = path.read_bytes()
     for number, line in enumerate(payload.decode("utf-8").splitlines(), 1):
         try:
@@ -55,7 +57,7 @@ def read_manifest(path, seed, max_games=None, split_file=None):
                 signature = row.get("converterSignature")
                 if not isinstance(signature, str) or not re.fullmatch("[0-9a-f]{64}", signature):
                     raise ValueError("frozen training requires a converter signature")
-                converter_signatures.add(signature)
+                converter_signatures[identifier] = signature
             rows.append({"gameId": identifier, "path": sample_path, "sha256": digest, "samples": count,
                          "matchMetadata": row.get("matchMetadata")})
         except (ValueError, KeyError, TypeError) as error:
@@ -66,14 +68,18 @@ def read_manifest(path, seed, max_games=None, split_file=None):
     if split_file is None:
         _, groups = split_games([{"game": row["gameId"]} for row in selected], seed)
     else:
-        if len(converter_signatures) != 1:
+        groups, split_audit = read_split(split_file, source_hashes, partitions)
+        selected_ids = {game for group in groups.values() for game in group}
+        selected = [row for row in selected if row["gameId"] in selected_ids]
+        signatures = {converter_signatures[game] for game in selected_ids}
+        if len(signatures) != 1:
             raise ValueError("frozen training mixes converter signatures")
-        groups, split_audit = read_split(split_file, source_hashes)
     by_id = {row["gameId"]: row for row in selected}
     partitions = {name: [by_id[identifier] for identifier in group] for name, group in groups.items()}
     audit = {"manifest": path.name, "manifestSha256": hashlib.sha256(payload).hexdigest(),
              "manifestGames": len(rows), "manifestSamples": sum(row["samples"] for row in rows),
              "maxGames": max_games, "selectedGames": len(selected),
+             "selectedPartitions": list(groups),
              "selectedSamples": sum(row["samples"] for row in selected),
              "selectedGameCounts": {name: len(group) for name, group in groups.items()},
              "matchLengthCoverage": dict(Counter(
@@ -81,7 +87,7 @@ def read_manifest(path, seed, max_games=None, split_file=None):
                  for row in selected))}
     if split_audit is not None:
         audit["frozenSplit"] = split_audit
-        audit["converterSignature"] = next(iter(converter_signatures))
+        audit["converterSignature"] = next(iter(signatures))
     return partitions, groups, audit
 
 
@@ -208,8 +214,18 @@ def verify_export(model, path, rows, players, device, encoded_cache=None):
     return {"samples": checked, "maxAbsError": error, "argmaxAgreement": matching}, deployed.sha256
 
 
-def supervised_loss(logits, targets, actions, action_weights, opportunity_weights=None):
+def _validate_action_boundary_weights(weights):
+    if weights is not None and (not isinstance(weights, dict) or any(
+            key not in ("riichi", "daiminkan") or isinstance(value, bool) or
+            not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0
+            for key, value in weights.items())):
+        raise ValueError("action boundary weights must map riichi/daiminkan to finite nonnegative numbers")
+
+
+def supervised_loss(logits, targets, actions, action_weights, opportunity_weights=None,
+                    action_boundary_weights=None):
     """Weight recorded full-candidate labels; keep every legal negative example."""
+    _validate_action_boundary_weights(action_boundary_weights)
     losses = nn.functional.cross_entropy(logits, targets, reduction="none")
     types = actions[:, :, :len(ACTIONS)]
     weights = torch.ones_like(losses)
@@ -220,19 +236,49 @@ def supervised_loss(logits, targets, actions, action_weights, opportunity_weight
         labels = losses.new_tensor([action_weights.get(action, 1.) for action in ACTIONS])
         recorded = types[torch.arange(len(targets), device=targets.device), targets]
         weights = weights * (recorded * labels).sum(dim=1)
+    for action, coefficient in (action_boundary_weights or {}).items():
+        if coefficient == 0:
+            continue
+        focal = types[:, :, ACTIONS.index(action)] > 0
+        offered = focal.any(dim=1)
+        valid = types[offered].any(dim=2)
+        scores = logits[offered].masked_fill(~valid, -torch.inf)
+        focal = focal[offered]
+        positive = focal.gather(1, targets[offered, None]).squeeze(1)
+        actual_group = torch.where(positive[:, None], focal, ~focal) & valid
+        # The complement contains every true negative type; full CE still
+        # distinguishes its exact recorded candidate. Keep the base denominator.
+        boundary = torch.logsumexp(scores, dim=1) - torch.logsumexp(
+            scores.masked_fill(~actual_group, -torch.inf), dim=1)
+        extra = torch.zeros_like(losses)
+        extra[offered] = boundary
+        losses = losses + coefficient * extra
     return (losses * weights).sum() / weights.sum()
+
+
+def select_train_monitor(rows, seed, count):
+    if count is None:
+        return []
+    if type(count) is not int or count < 1:
+        raise ValueError("train monitor games must be a positive integer")
+    return sorted(rows, key=lambda row: hashlib.sha256(
+        f"train-monitor-v1:{seed}:{row['gameId']}".encode()).digest())[:count]
 
 
 def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
                  learning_rate=1e-3, seed=42, device="cpu", max_games=None, config=None, split_file=None,
                  encoded_cache=None, resume=False, checkpoint_every_games=1000, game_window=1,
-                 final_lr_ratio=1., action_weights=None, opportunity_weights=None, validation_only=False,
-                 train_game_limit=None, validation_game_limit=None, save_epoch_models=False):
+                 final_lr_ratio=1., action_weights=None, opportunity_weights=None,
+                 action_boundary_weights=None, validation_only=False,
+                 train_game_limit=None, validation_game_limit=None, save_epoch_models=False,
+                 train_monitor_games=None):
     if (players not in (3, 4) or epochs < 1 or batch_size < 1 or not 0 < learning_rate < 1 or
             checkpoint_every_games < 1 or game_window < 1):
         raise ValueError("invalid training parameters")
     action_weights = dict(action_weights or {})
     opportunity_weights = dict(opportunity_weights or {})
+    _validate_action_boundary_weights(action_boundary_weights)
+    action_boundary_weights = dict(action_boundary_weights or {})
     if (not 0 < final_lr_ratio <= 1 or
             any(key not in ACTIONS or not math.isfinite(value) or value <= 0
                 for key, value in list(action_weights.items()) + list(opportunity_weights.items()))):
@@ -241,8 +287,10 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
         raise ValueError("partition limits are only permitted in validation-only experiments")
     if any(value is not None and value < 1 for value in (train_game_limit, validation_game_limit)):
         raise ValueError("partition limits must be positive")
+    select_train_monitor([], seed, train_monitor_games)
     started = time.monotonic()
-    partitions, groups, data_audit = read_manifest(manifest, seed, max_games, split_file)
+    partitions, groups, data_audit = read_manifest(manifest, seed, max_games, split_file,
+                                                 ("train", "validation") if validation_only and split_file else None)
     if validation_only:
         partitions = {"train": partitions["train"][:train_game_limit],
                       "validation": partitions["validation"][:validation_game_limit]}
@@ -251,6 +299,13 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
                       "selectedGames": sum(len(rows) for rows in partitions.values()),
                       "selectedSamples": sum(row["samples"] for rows in partitions.values() for row in rows),
                       "selectedGameCounts": {name: len(rows) for name, rows in partitions.items()}}
+    monitor_rows = select_train_monitor(partitions["train"], seed, train_monitor_games)
+    monitor_ids = [row["gameId"] for row in monitor_rows]
+    monitor_audit = None if train_monitor_games is None else {
+        "requestedGames": train_monitor_games, "games": len(monitor_rows), "gameIds": monitor_ids,
+        "identitySha256": hashlib.sha256(json.dumps(monitor_ids, separators=(",", ":")).encode()).hexdigest(),
+        "selection": "sha256(train-monitor-v1:{seed}:{gameId}) ascending over actual training games",
+        "scope": "Fixed training games evaluated without loss weights; not independent held-out data."}
     config = config or {"channels": 64, "blocks": 3, "hidden": 256}
     torch.manual_seed(seed)
     rng = np.random.default_rng(seed)
@@ -264,6 +319,8 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
                "seed": seed, "config": config, "gameWindow": game_window,
                "finalLrRatio": final_lr_ratio, "actionWeights": action_weights,
                "opportunityWeights": opportunity_weights,
+               "actionBoundaryWeights": action_boundary_weights,
+               "trainMonitor": monitor_audit,
                "validationOnly": validation_only, "saveEpochModels": save_epoch_models,
                "encoderSignature": encoder_signature(),
                "trainerSignature": hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}
@@ -321,7 +378,7 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
                 planes, globals_, actions, mask, targets = batch_tensors(batch, device)
                 optimizer.zero_grad(set_to_none=True)
                 loss = supervised_loss(model(planes, globals_, actions, mask), targets, actions,
-                                       action_weights, opportunity_weights)
+                                       action_weights, opportunity_weights, action_boundary_weights)
                 if not torch.isfinite(loss):
                     raise ValueError("non-finite training loss")
                 loss.backward()
@@ -348,6 +405,10 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
             raise ValueError("validation partition contains no actual choices")
         row = {"epoch": epoch + 1, "learningRate": epoch_lr, "trainLoss": loss_sum / choices,
                "trainChoices": choices, "validation": validation}
+        if monitor_rows:
+            row["trainMonitor"], _ = evaluate_corpus(
+                model, monitor_rows, players, device, batch_size,
+                phase=f"epoch-{epoch + 1}-train-monitor", encoded_cache=encoded_cache)
         history.append(row)
         if save_epoch_models:
             epoch_path = Path(output).with_suffix(f".epoch-{epoch + 1}.npz")
@@ -380,6 +441,8 @@ def train_corpus(manifest, output, *, players=4, epochs=1, batch_size=64,
               "batchSize": batch_size, "learningRate": learning_rate, "weightDecay": 1e-4,
               "finalLrRatio": final_lr_ratio, "actionWeights": action_weights,
               "opportunityWeights": opportunity_weights,
+              "actionBoundaryWeights": action_boundary_weights,
+              "trainMonitor": monitor_audit,
               "validationOnly": validation_only,
               "parameterCount": sum(p.numel() for p in model.parameters()),
               "gameSplit": groups, "dataAudit": {**data_audit, "partitions": partition_audits},
