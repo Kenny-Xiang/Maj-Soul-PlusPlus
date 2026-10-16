@@ -6,7 +6,7 @@
   if (location.hostname !== 'game.maj-soul.com' || window.__mjUnityActions) return;
   const types = {discard:1, chi:2, pon:3, ankan:4, daiminkan:5, shouminkan:6,
     riichi:7, tsumo:8, ron:9, abort:10, kita:11};
-  let pending = null, submitted = null, submittedStable = null;
+  let pending = null, submitted = null, submittedStable = null, confirmationStalled = false;
   const now = () => performance.now();
   const check = (ok, message) => {if (!ok) throw new Error(message);};
   const reconnectError = message => Object.assign(new Error(message), {recoverable:true});
@@ -84,7 +84,9 @@
       check(!expected || fingerprint(expected) === fingerprint(state), '建议所依据的牌局状态已过期');
       blocked = false;
     } catch (error) {reason = error.message;}
-    return {available, inGame, canAct:!reason, blocked, recoverable, pending:!!pending,
+    const stalled = confirmationStalled && inGame && submitted !== null &&
+      submitted === JSON.stringify(submittedStable ? stableSubmission(state) : localSubmission(state));
+    return {available, inGame, canAct:!reason, blocked, recoverable, pending:!!pending, stalled,
       remainingMs, clientStep:state?.lastStep ?? null, reason};
   }
   function execute(advice, expected) {
@@ -172,30 +174,42 @@
     put('timeuse', 6, Math.floor((now() - state.operationTiming.receivedAt) / 1000));
     const bytes = window.__mjProtocol.encode(entries), key = submissionKey(state);
     check(snapshot(expected).canAct, '提交前牌局状态发生变化');
-    submitted = key; submittedStable = stableSubmission(state);
+    submitted = key; submittedStable = stableSubmission(state); confirmationStalled = false;
     return new Promise((resolve, reject) => {
       const request = pending = {state, choice:JSON.parse(JSON.stringify(choice)), action, method,
         moqie:payload.moqie, ack:false, echo:false, finish};
-      const timer = setTimeout(() => finish(reconnectError('操作回应或权威动作确认超时；等待权威状态推进，暂不重复操作')),
+      const startedAt = now();
+      const diagnostic = event => window.__mjMonitor?.reportActionDiagnostic?.({event, source:'automation',
+        action, step:state.lastStep, ack:request.ack, echo:request.echo, elapsedMs:Math.max(0, now() - startedAt)});
+      const timer = setTimeout(() => {
+        diagnostic('confirmation_timeout');
+        finish(reconnectError('操作回应或权威动作确认超时；等待权威状态推进，暂不重复操作'));
+      },
         Math.min(60000, Math.max(10000, current.remainingMs + 5000)));
       function finish(error) {
         if (pending !== request) return;
         if (!error && (!request.ack || !request.echo)) return;
         pending = null; clearTimeout(timer);
+        // A successful RPC can still leave the current action unresolved.
+        // Recovery may refresh authority, but the submitted guard still forbids a retry.
+        confirmationStalled = !!(submitted !== null && error?.recoverable && !request.echo);
+        diagnostic(error ? 'confirmation_failed' : 'confirmed');
         if (error) reject(error); else resolve({ok:true, action, method, ...payload});
       }
       try {
         window.__mjUnityTransport.request(method, bytes, {game:true}).then(response => {
           check(response?.payload instanceof Uint8Array, '操作响应格式无效');
           // Transport validates ResCommon.error and owns request IDs and response routing.
-          request.ack = true; finish();
+          request.ack = true;
+          if (pending === request && !request.echo) diagnostic('awaiting_authoritative_action');
+          finish();
         }).catch(finish);
       } catch (error) {finish(error);}
     });
   }
   function onEvent(packet) {
     const ended = packet.phase === 'ended' || packet.state?.phase === 'ended';
-    if (ended) submitted = submittedStable = null;
+    if (ended) {submitted = submittedStable = null; confirmationStalled = false;}
     const request = pending;
     if (!request) return;
     // A phase update can precede the final action; reset means no echo followed it.
@@ -241,13 +255,17 @@
   }
   function checkpoint() {
     check(submitted === null || submittedStable, '旧操作缺少稳定牌局身份，无法安全自动恢复');
-    return {submitted:submittedStable && [...submittedStable]};
+    return {submitted:submittedStable && [...submittedStable],
+      ...(submitted !== null && (confirmationStalled || pending && !pending.echo) ? {unconfirmed:true} : {})};
   }
   function restoreCheckpoint(saved) {
-    check(saved && (saved.submitted === null || validSubmission(saved.submitted)) && !pending && submitted === null,
+    check(saved && (saved.submitted === null || validSubmission(saved.submitted)) &&
+      (saved.unconfirmed === undefined || saved.unconfirmed === true && saved.submitted !== null) &&
+      !pending && submitted === null,
       '自动恢复操作记录无效');
     submittedStable = saved.submitted && [...saved.submitted];
     submitted = submittedStable && JSON.stringify(submittedStable);
+    confirmationStalled = saved.unconfirmed === true;
   }
   window.__mjUnityActions = {snapshot, execute, onEvent, checkpoint, restoreCheckpoint};
 })();

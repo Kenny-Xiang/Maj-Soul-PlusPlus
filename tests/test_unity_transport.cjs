@@ -109,6 +109,59 @@ test('requests require authentication and reject methods or gateway overrides ou
   assert.equal(c.socket.sent.length, 0);
 });
 
+test('action diagnostics distinguish native sends, rejected replies and timeouts with only public operation fields', async () => {
+  const h = setup({collect:true}), c = h.connect(true), e = h.protocol.encode;
+  await h.login(c, 23, true);
+  const diagnostics = () => h.packets.filter(p => p.kind === 'action_diagnostic');
+  assert.equal(diagnostics().length, 0, 'authentication must not enter action diagnostics');
+  const payload = e([[1,1],[3,'1p'],[99,'private-payload-canary']]);
+  const rejected = h.api.request('.lq.FastTest.inputOperation', payload);
+  const rejection = assert.rejects(rejected, /服务器拒绝操作（300）/);
+  await h.advance(120);
+  h.acknowledge(c, 0, e([[1,e([[1,300]])]]));
+  await h.flush(); await rejection;
+  const [sent, response] = diagnostics();
+  assert.equal(sent.source, 'automation'); assert.equal(sent.event, 'sent');
+  assert.deepEqual(sent.operation, {type:1,index:0,timeuse:0,cancelOperation:false,moqie:false,tile:'1p'});
+  assert.equal(response.event, 'response'); assert.equal(response.code, 300);
+  assert.equal(response.request, sent.request); assert.equal(response.connection, sent.connection);
+  assert.equal(response.elapsedMs, 120);
+  assert.equal(c.unity.length, 0, 'injected replies must still be hidden from Unity');
+
+  c.socket.send(h.frame(2, 8, '.lq.FastTest.inputChiPengGang', payload));
+  h.acknowledge(c, 1); await h.flush();
+  const native = diagnostics().slice(2);
+  assert.deepEqual(native.map(p => [p.event,p.source]), [['sent','client'],['response','client']]);
+  assert.equal(native[1].code, 0); assert.equal(c.unity.length, 1);
+  const pending = h.api.request('.lq.FastTest.inputOperation', payload);
+  const timeout = assert.rejects(pending, /等待服务器确认超时/);
+  await h.advance(10001); await timeout;
+  assert.equal(diagnostics().at(-1).event, 'timeout');
+  assert.equal(diagnostics().at(-1).elapsedMs, 10001);
+  assert.equal(JSON.stringify(diagnostics()).includes('private-payload-canary'), false);
+  assert.ok(diagnostics().every(p => Object.keys(p).every(k =>
+    ['session','serial','time','kind','event','method','source','connection','request','elapsedMs','code','operation'].includes(k))));
+});
+
+test('native kita and pass diagnostics decode their own wire fields without copying unexpected values', async () => {
+  const h = setup({collect:true}), c = h.connect(true), e = h.protocol.encode;
+  await h.login(c, 23, true);
+  const payloads = [
+    ['.lq.FastTest.inputOperation',e([[1,11],[5,1],[6,2],[99,'private-canary']])],
+    ['.lq.FastTest.inputChiPengGang',e([[3,1],[6,4],[5,'private-canary']])],
+    ['.lq.FastTest.inputOperation',e([[1,1],[3,'private-canary'],[5,'private-canary']])],
+  ];
+  for (const [index,[method,payload]] of payloads.entries()) {
+    c.socket.send(h.frame(2, 8 + index, method, payload)); h.acknowledge(c,index); await h.flush();
+  }
+  const records = h.packets.filter(p => p.kind === 'action_diagnostic' && p.event === 'sent');
+  assert.deepEqual(records[0].operation,{type:11,index:0,timeuse:2,cancelOperation:false,moqie:true});
+  assert.deepEqual(records[1].operation,{type:0,index:0,timeuse:4,cancelOperation:true});
+  assert.equal(JSON.stringify(records).includes('private-canary'),false);
+  assert.equal(Object.hasOwn(records[2].operation,'tile'),false);
+  assert.equal(Object.hasOwn(records[2].operation,'moqie'),false);
+});
+
 test('injected ACK resolves its owner, exposes request context and never reaches Unity', async () => {
   const h = setup(), c = h.connect(); await h.login(c);
   const payload = h.protocol.encode([[1, '1:2'], [2, 'WebGL_test']]);

@@ -282,8 +282,12 @@
       if (recovery?.status === 'waiting') {
         status('reconnecting', '正在重新连接并恢复牌局 · 自动打牌保持开启'); return;
       }
-      if (window.__mjUnityTransport?.isUnity() && window.__mjUnityActions?.snapshot().pending) {
+      const actionState = window.__mjUnityTransport?.isUnity() && window.__mjUnityActions?.snapshot();
+      if (actionState?.pending) {
         status('submitted', '等待服务器回应及牌局动作确认'); return;
+      }
+      if (actionState?.stalled) {
+        status('reconnecting', '操作未获牌局动作确认 · 等待权威状态恢复'); return;
       }
       if (lobby.clientLoading) {
         clientLoadingSince ??= now();
@@ -377,7 +381,8 @@
         (lobby?.recoveryReady || live.gameConnected && current?.state.handComplete &&
           current.state.historyComplete && !current.state.recovery)) restoring = false;
     return {session:recoverySession(), revision, enabled, playerCount, roundCount,
-      stalled:!!(restoring || recovery?.status === 'waiting' || live.stalled || lobby?.recoveryStalled),
+      stalled:!!(restoring || recovery?.status === 'waiting' || live.stalled || lobby?.recoveryStalled ||
+        window.__mjUnityActions?.snapshot().stalled),
       progress:progress + (live.progress || 0), phase, fault:problem || null};
   }
   window.__mjRecovery = {

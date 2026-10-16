@@ -37,9 +37,37 @@
     .replace(/\b(access[_ -]?token|connect[_ -]?token|token|password|authorization|cookie|account[_ ]?id|game[_ ]?uuid)\b.*/gi,
       '$1=[redacted]').slice(0, 256) : '';
   const connectionError = message => Object.assign(new Error(message), {recoverable:true});
+  function operationDiagnostic(request) {
+    // Only public action fields; never copy an arbitrary request or payload.
+    try {
+      const f = core.fields(request.payload), result = {};
+      for (const [name, field] of [['type',1],['index',2],['timeuse',6]]) {
+        const value = first(f, field);
+        if (Number.isInteger(value) && value >= 0 && value <= 0xffffffff) result[name] = value;
+      }
+      const self = request.method === '.lq.FastTest.inputOperation';
+      for (const [name, field] of self ? [['cancelOperation',4],['moqie',5]] : [['cancelOperation',3]]) {
+        const value = first(f, field);
+        if (value === 0 || value === 1) result[name] = Boolean(value);
+      }
+      const tile = self && str(f, 3);
+      if (typeof tile === 'string' && /^(?:[0-9][mps]|[1-7]z)$/.test(tile)) result.tile = tile;
+      return result;
+    } catch (_) {return {};}
+  }
+  function actionDiagnostic(meta, request, event, code) {
+    if (!['.lq.FastTest.inputOperation', '.lq.FastTest.inputChiPengGang'].includes(request.method)) return;
+    if (event === 'sent') request.sentAt = performance.now();
+    window.__mjMonitor?.reportActionDiagnostic?.({event, method:request.method,
+      source:request.injected ? 'automation' : 'client', connection:meta.id, request:request.order,
+      elapsedMs:Math.max(0, performance.now() - request.sentAt),
+      ...(event === 'sent' ? {operation:operationDiagnostic(request)} : {}),
+      ...(event === 'response' ? {code} : {})});
+  }
   function interrupt(meta, message) {
     for (const [id, request] of meta.pending) if (request.injected) {
       meta.pending.delete(id); meta.retired.add(id); clearTimeout(request.timer);
+      actionDiagnostic(meta, request, 'interrupted');
       request.reject(connectionError(message));
     }
   }
@@ -120,6 +148,9 @@
       if (!request) {if (!meta.retired.has(env.id)) deliver(meta, event); return;}
       meta.pending.delete(env.id);
       if (request.injected) clearTimeout(request.timer);
+      let code = null;
+      try {code = errorCode(env.data);} catch (_) { /* Preserve malformed replies for their original handler. */ }
+      actionDiagnostic(meta, request, 'response', code);
       try {identify(meta, request, env.data);} catch (_) { /* An invalid response remains visible to its owner. */ }
       const obsoleteAuth = (loginMethods.includes(request.method) || request.method === '.lq.FastTest.authGame') &&
         meta.authRequest !== request;
@@ -191,6 +222,7 @@
       if (id !== env.id) {wire[1] = id & 255; wire[2] = id >> 8;}
       try {Reflect.apply(meta.originalSend, this, [wire]);}
       catch (error) {meta.pending.delete(id); throw error;}
+      actionDiagnostic(meta, request, 'sent');
       if (!injected && (loginMethods.includes(env.name) ||
           ['.lq.FastTest.authGame', '.lq.FastTest.syncGame', '.lq.FastTest.enterGame'].includes(env.name)))
         interrupt(meta, '客户端正在恢复连接，等待权威牌局状态');
@@ -230,6 +262,7 @@
       entry.timer = setTimeout(() => {
         if (meta.pending.get(id) !== entry) return;
         meta.pending.delete(id); meta.retired.add(id);
+        actionDiagnostic(meta, entry, 'timeout');
         let sid;
         if (['.lq.Lobby.startUnifiedMatch', '.lq.Lobby.cancelUnifiedMatch'].includes(method)) {
           try {sid = str(core.fields(payload), 1);} catch (_) { /* Invalid payload cannot prove a queue scope. */ }
