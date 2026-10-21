@@ -4,9 +4,9 @@
   "sourceSha256": {
     "tests/test_policy_live_windows.py": "e719bb6810c0905969cbbaee442e9331a3483c8811a2796230e7847e486d99b7",
     "tests/helpers/policy_live_windows.cjs": "f4359706f09d8bffe079c482f156389a5bb44d5aa73f379e74880aacaf47636d",
-    "src/browser.js": "f15d9e1e4a02473588b2f112890fc63124ca8cab35f1d12d1ec499fd873691a0",
+    "src/browser.js": "56ca58c73c5740b61fab9a915345453fd17207d10da647eb72ea668b89585cd2",
     "src/core.cjs": "de17c642e6bfc07452f5ea988b21a11bc4dea9d3f6a9a6631cd9a5632f48a89a",
-    "src/unity_transport.js": "ef8ba48c96243e93e59fc1a39746dabfb94b01fcc965ffad8b0d87ce44f87b96"
+    "src/unity_transport.js": "dfe2acd1fdee2af0f74bb4094cda421614b33efb8f9a0a3506caef84d2342620"
   },
   "windows": [
     {

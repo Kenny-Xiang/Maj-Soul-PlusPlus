@@ -1,0 +1,45 @@
+{
+  "status": "completed-train-only-gradient-diagnostic",
+  "createdAtUtc": "2026-10-20T09:18:27.211750+00:00",
+  "goalAchieved": false,
+  "diagnosticPlanFrozen": true,
+  "diagnosticStarted": true,
+  "trainingStarted": false,
+  "newHoldoutGamesConsumed": 0,
+  "testPayloadReads": 0,
+  "deploymentAllowed": false,
+  "next": "Review completed train-only gradients and freeze next discriminating experiment. Do not restart this completed diagnostic.",
+  "updatedAtUtc": "2026-10-20T09:37:27.448259+00:00",
+  "planSha256": "80912373642c7482eba38fdc153ab583b4628c2ba7b4e49b723ef5263efb7854",
+  "process": {
+    "pid": 36746,
+    "startedAtUtc": "2026-10-20T09:35:28.787726+00:00",
+    "planSha256": "80912373642c7482eba38fdc153ab583b4628c2ba7b4e49b723ef5263efb7854",
+    "scriptSha256": "68134014158bc8fa4763ffebbb51f5d149bbac752c96638a0ec76b1fb2f008c1",
+    "command": [
+      "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+      "-B",
+      "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/gradient_diagnostic.py",
+      "--run",
+      "--plan-sha256",
+      "80912373642c7482eba38fdc153ab583b4628c2ba7b4e49b723ef5263efb7854"
+    ],
+    "threadEnvironment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1"
+    },
+    "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/diagnostic.log"
+  },
+  "executionState": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/state.json",
+  "processAbsent": true,
+  "summary": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/summary.json",
+    "sha256": "335b0f15e96abeca6f04529a9fdcc90392a0ec927d9355b863f38c14c4cb31a8"
+  },
+  "finalAudit": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/final-artifact-audit.json",
+    "sha256": "500d4a73a6c02a698c8022733a4f2716fcc21b7ec43cd8d04dbf339b29f91706"
+  }
+}

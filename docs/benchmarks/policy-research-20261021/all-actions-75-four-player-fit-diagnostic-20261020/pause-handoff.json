@@ -1,0 +1,126 @@
+{
+  "status": "paused-by-user",
+  "createdAtUtc": "2026-10-20T10:50:09.395573+00:00",
+  "processExited": true,
+  "processExitEvidence": "ps -p 40946 returned no process after STOP",
+  "originalStatePreserved": {
+    "status": "failed",
+    "pid": 40946,
+    "planSha256": "73ebe8a561cf0e509f15b5f2a746e9848e55c325c068ab7db2252912714d492d",
+    "completedGames": 3900,
+    "samples": 2347524,
+    "choices": 2347298,
+    "forced": 4,
+    "cachePayloadReads": 3901,
+    "cacheDecodes": 3901,
+    "cachePostHashChecks": 0,
+    "labelFilesRead": 1,
+    "modelPayloadFilesRead": 4,
+    "holdoutPayloadReads": 0,
+    "formalValidationPayloadReads": 0,
+    "testPayloadReads": 0,
+    "rawGameReads": 0,
+    "sourceSamplePayloadReads": 0,
+    "sqlReads": 0,
+    "otherPackedReads": 0,
+    "cacheWrites": 0,
+    "trainingUpdates": 0,
+    "modelWrites": 0,
+    "elapsedSeconds": 118.01630787499016,
+    "peakRssBytes": 595492864,
+    "mpsDriverBytes": 44548096,
+    "error": "ValueError('STOP requested; preserve partial outputs')"
+  },
+  "partialArtifacts": [
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/failed.json",
+      "bytes": 762,
+      "sha256": "db814f8bfe803d1b8135bfeec09f4be81aaa1cf091d96c515b819552fd1557e2"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed42-mix-chi.bin",
+      "bytes": 10356984,
+      "sha256": "4bf439e2a490d45e413ea3bcf87fdb93418f9fc12b7e94aa5a15e7bc60942de5"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed42-mix-daiminkan.bin",
+      "bytes": 325710,
+      "sha256": "dce0a41eb39abeaea6f2a961c0afe760a7a19283ae8b1b3e32367ee2fac753e9"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed42-mix-within.bin",
+      "bytes": 32783184,
+      "sha256": "8a1fa35e196abd730e03cc5cbd35af01359e9cb4db487c6afe4b730659aaab62"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed42-natural-chi.bin",
+      "bytes": 10356984,
+      "sha256": "ada47fc8a1c610f52025ff8dd8b62c3432da5f89f99b37733f8792bb17785af2"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed42-natural-daiminkan.bin",
+      "bytes": 325710,
+      "sha256": "5b6dbd56f18c3878b244f3712c47c40cd60d2ca976debc46fef57e45c13ababf"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed42-natural-within.bin",
+      "bytes": 32783184,
+      "sha256": "fb7608484941dd2cad1c05c4652cef4734b9c7446b1e1596a8501c8b7302fe10"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed42-seen.npy",
+      "bytes": 9851180,
+      "sha256": "fca3929186d4ade35549fce2d874e70c472579293a2b67205283fd1e1b347b4e"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed43-mix-chi.bin",
+      "bytes": 10356984,
+      "sha256": "c3f0f015eace61191a4b49c500463f1fff17486825cbe8b8bf3c9040ccaa3999"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed43-mix-daiminkan.bin",
+      "bytes": 325710,
+      "sha256": "be0febdc5dcfef3d5c049d276443e1eed5d947085a28fe2bc25fb3d266bf5d46"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed43-mix-within.bin",
+      "bytes": 32783184,
+      "sha256": "9ee0901047b3ee799fc5ed94930b6fea5150d289ceca6e662913de422ea21754"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed43-natural-chi.bin",
+      "bytes": 10356984,
+      "sha256": "12e278277c6a7e106af56ead718fef0eb1f37fd064fed4e98ce79ab7592ca266"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed43-natural-daiminkan.bin",
+      "bytes": 325710,
+      "sha256": "f364b63968f32ad2427bb7798fad0d67678895d5fb1d12f9eb8d251378826248"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed43-natural-within.bin",
+      "bytes": 32783184,
+      "sha256": "84e0bd2fa0a1fc0fe822d2bdc10e9048daf631a128838e60448ca189c148591f"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/seed43-seen.npy",
+      "bytes": 9851180,
+      "sha256": "d290e99e22bbc42ecde8ab037e792aa9a666a8893555bf7c62e80d6fb324f330"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/started.json",
+      "bytes": 575,
+      "sha256": "1bfdfb770fb02a974eb28e6ff85a751321beec2007b645899825392443294222"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/state.json",
+      "bytes": 762,
+      "sha256": "b88862a6888fdc53336b9da93a43ceae2e26f1e46ec9b5237993b4ddac40d9d2"
+    }
+  ],
+  "qualityFailure": false,
+  "diagnosticComplete": false,
+  "goalAchieved": false,
+  "automaticResumeAllowed": false,
+  "warning": "Mid-game and pending-batch progress is partial. Choices, sample counters and binary prefixes are not a completed aggregate or a verified resume cursor. Do not remove STOP or overwrite output to rerun."
+}

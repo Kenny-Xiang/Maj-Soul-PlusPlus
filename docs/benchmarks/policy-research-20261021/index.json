@@ -1,0 +1,969 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-10-21",
+  "scope": "Read-only snapshot of completed research and the user-paused final diagnostic; no training, selection, deployment or test-payload reads.",
+  "qualityAccepted": false,
+  "deploymentAllowed": false,
+  "experiments": [
+    {
+      "name": "all-actions-75-20261018",
+      "execution": {
+        "status": "failed",
+        "deploymentAllowed": false,
+        "startedAtUtc": "2026-10-18T04:45:42.826635+00:00"
+      }
+    },
+    {
+      "name": "all-actions-75-bilinear-20261018",
+      "status": "rejected-full-quality-screen",
+      "userGoalStatus": "not-certified-by-this-internal-three-player-pilot",
+      "historicalAcceptancePolicy": "not-assessed",
+      "qualifiedForPromotion": false,
+      "deploymentAllowed": null,
+      "targetPointEstimates": {
+        "seed42-stable-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed42-stable-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon"
+          ],
+          "supported": true
+        },
+        "seed42-bilinear-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed42-bilinear-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed43-stable-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed43-stable-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed43-bilinear-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed43-bilinear-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        }
+      },
+      "execution": {
+        "status": "completed",
+        "deploymentAllowed": false,
+        "startedAtUtc": "2026-10-18T05:25:42.302471+00:00",
+        "finishedAtUtc": "2026-10-18T05:57:13.519271+00:00"
+      }
+    },
+    {
+      "name": "all-actions-75-data-diversity-20261020",
+      "status": "rejected-full-quality-screen",
+      "userGoalStatus": "not-certified-by-this-internal-three-player-pilot",
+      "historicalAcceptancePolicy": "not-assessed",
+      "qualifiedForPromotion": false,
+      "deploymentAllowed": false,
+      "targetPointEstimates": {
+        "seed42-bilinear-kan-sampling-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed42-bilinear-data-diversity-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi"
+          ],
+          "supported": true
+        },
+        "seed43-bilinear-kan-sampling-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed43-bilinear-data-diversity-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        }
+      },
+      "execution": {
+        "status": "completed",
+        "qualityStatus": "rejected-full-quality-screen",
+        "goalAchieved": false,
+        "deploymentAllowed": false,
+        "startedAtUtc": "2026-10-20T08:34:50.011809+00:00",
+        "finishedAtUtc": "2026-10-20T08:45:27.577940+00:00"
+      }
+    },
+    {
+      "name": "all-actions-75-four-player-diagnostic-20261020",
+      "execution": {
+        "status": "completed-train-only-diagnostic",
+        "goalAchieved": false,
+        "deploymentAllowed": false,
+        "updatedAtUtc": "2026-10-20T09:20:45.317131+00:00"
+      }
+    },
+    {
+      "name": "all-actions-75-four-player-fit-diagnostic-20261020"
+    },
+    {
+      "name": "all-actions-75-four-player-objective-20261020",
+      "status": "rejected-full-quality-screen",
+      "userGoalStatus": "not-certified-by-this-internal-four-player-pilot",
+      "historicalAcceptancePolicy": "not-assessed",
+      "qualifiedForPromotion": null,
+      "deploymentAllowed": false,
+      "targetPointEstimates": {
+        "seed42-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "chi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true,
+          "researchQualityAccepted": false,
+          "formalQualityAccepted": false
+        },
+        "seed42-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "chi"
+          ],
+          "supported": true,
+          "researchQualityAccepted": false,
+          "formalQualityAccepted": false
+        },
+        "seed43-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "chi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true,
+          "researchQualityAccepted": false,
+          "formalQualityAccepted": false
+        },
+        "seed43-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "chi"
+          ],
+          "supported": true,
+          "researchQualityAccepted": false,
+          "formalQualityAccepted": false
+        }
+      },
+      "execution": {
+        "status": "completed",
+        "qualityStatus": "rejected-full-quality-screen",
+        "goalAchieved": false,
+        "deploymentAllowed": false,
+        "updatedAtUtc": "2026-10-20T10:29:28.118208+00:00"
+      }
+    },
+    {
+      "name": "all-actions-75-gradient-diagnostic-20261020",
+      "execution": {
+        "status": "completed-train-only-gradient-diagnostic",
+        "goalAchieved": false,
+        "deploymentAllowed": false,
+        "updatedAtUtc": "2026-10-20T09:37:27.448259+00:00"
+      }
+    },
+    {
+      "name": "all-actions-75-kan-sampling-20261018",
+      "status": "rejected-full-quality-screen",
+      "userGoalStatus": "not-certified-by-this-internal-three-player-pilot",
+      "historicalAcceptancePolicy": "not-assessed",
+      "qualifiedForPromotion": false,
+      "deploymentAllowed": null,
+      "targetPointEstimates": {
+        "seed42-bilinear-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed42-bilinear-kan-sampling-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed43-bilinear-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed43-bilinear-kan-sampling-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        }
+      },
+      "execution": {
+        "status": "completed",
+        "qualityStatus": "rejected-full-quality-screen",
+        "deploymentAllowed": false,
+        "startedAtUtc": "2026-10-20T07:40:04.754268+00:00",
+        "finishedAtUtc": "2026-10-20T07:48:32.804730+00:00"
+      }
+    },
+    {
+      "name": "all-actions-75-stable-20261018",
+      "status": "rejected-screen",
+      "userGoalStatus": "not-certified-by-this-internal-three-player-pilot",
+      "historicalAcceptancePolicy": "not-assessed",
+      "qualifiedForPromotion": null,
+      "deploymentAllowed": null,
+      "targetPointEstimates": {
+        "seed42-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "supported": true,
+          "scope": "Internal train holdout only; not certification on formal validation or both player modes."
+        },
+        "seed42-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "supported": true,
+          "scope": "Internal train holdout only; not certification on formal validation or both player modes."
+        },
+        "seed43-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "supported": true,
+          "scope": "Internal train holdout only; not certification on formal validation or both player modes."
+        },
+        "seed43-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "supported": true,
+          "scope": "Internal train holdout only; not certification on formal validation or both player modes."
+        }
+      },
+      "execution": {
+        "status": "completed",
+        "deploymentAllowed": false,
+        "startedAtUtc": "2026-10-18T04:52:30.791414+00:00",
+        "finishedAtUtc": "2026-10-18T05:16:50.878326+00:00"
+      }
+    },
+    {
+      "name": "all-actions-75-structural-20261018",
+      "status": "rejected-full-quality-screen",
+      "userGoalStatus": "not-certified-by-this-internal-three-player-pilot",
+      "historicalAcceptancePolicy": "not-assessed",
+      "qualifiedForPromotion": false,
+      "deploymentAllowed": null,
+      "targetPointEstimates": {
+        "seed42-tilelocal-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed42-tilelocal-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed42-structural-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed42-structural-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed43-tilelocal-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed43-tilelocal-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed43-structural-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed43-structural-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "daiminkan"
+          ],
+          "supported": true
+        }
+      },
+      "execution": {
+        "status": "completed",
+        "deploymentAllowed": false,
+        "startedAtUtc": "2026-10-18T09:18:03.895739+00:00",
+        "finishedAtUtc": "2026-10-18T09:37:42.200752+00:00"
+      }
+    },
+    {
+      "name": "all-actions-75-tilelocal-20261018",
+      "status": "rejected-full-quality-screen",
+      "userGoalStatus": "not-certified-by-this-internal-three-player-pilot",
+      "historicalAcceptancePolicy": "not-assessed",
+      "qualifiedForPromotion": false,
+      "deploymentAllowed": null,
+      "targetPointEstimates": {
+        "seed42-bilinear-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed42-bilinear-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed42-tilelocal-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed42-tilelocal-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed43-bilinear-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed43-bilinear-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "daiminkan"
+          ],
+          "supported": true
+        },
+        "seed43-tilelocal-natural": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "riichi",
+            "pon",
+            "daiminkan",
+            "ankan",
+            "shouminkan"
+          ],
+          "supported": true
+        },
+        "seed43-tilelocal-mix": {
+          "allApplicableStrictlyAbove75PointEstimate": false,
+          "notStrictlyAbove75": [
+            "discard",
+            "daiminkan"
+          ],
+          "supported": true
+        }
+      },
+      "execution": {
+        "status": "completed",
+        "deploymentAllowed": false,
+        "startedAtUtc": "2026-10-18T08:01:56.866898+00:00",
+        "finishedAtUtc": "2026-10-18T08:20:10.684768+00:00"
+      }
+    }
+  ],
+  "copiedArtifacts": [
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-capacity-probe-20261018.json",
+      "file": "docs/benchmarks/policy-research-20261021/expanded-training/action-capacity-probe-20261018.json",
+      "sha256": "f979313cacf6d90fc204922b0d2f2c7cd991702a6e11c8d6c4889a8739494cd3",
+      "bytes": 112380
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-capacity-probe-20261018.png",
+      "file": "docs/benchmarks/policy-research-20261021/expanded-training/action-capacity-probe-20261018.png",
+      "sha256": "fa47d105545dfe82b5132a069a88561be2a64b7b6f35ac8c5ec2a88d50f4ed96",
+      "bytes": 459367
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-capacity-probe-20261018.svg",
+      "file": "docs/benchmarks/policy-research-20261021/expanded-training/action-capacity-probe-20261018.svg",
+      "sha256": "2167fb85af238193db853d4c3e839819eb01a4e51a31286de4b567c43dac84de",
+      "bytes": 427805
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-ranking-calibration-3p-20261018.json",
+      "file": "docs/benchmarks/policy-research-20261021/expanded-training/action-ranking-calibration-3p-20261018.json",
+      "sha256": "4cb8c089871cd8bf214fa9dfba52b4fef01eb4895607d548bc0e3afc1daf24e2",
+      "bytes": 19284
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-ranking-calibration-3p-20261018.png",
+      "file": "docs/benchmarks/policy-research-20261021/expanded-training/action-ranking-calibration-3p-20261018.png",
+      "sha256": "d627b6381031c1676d8849dfbceb8122fa24548875801842d21d411b0a660784",
+      "bytes": 495131
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-ranking-calibration-3p-20261018.svg",
+      "file": "docs/benchmarks/policy-research-20261021/expanded-training/action-ranking-calibration-3p-20261018.svg",
+      "sha256": "20a4c788a904deb590c58ac0953afe82a8cfd23841752c7b39cd71cdd011c5a9",
+      "bytes": 464213
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-training-3p-20261018.json",
+      "file": "docs/benchmarks/policy-research-20261021/expanded-training/action-training-3p-20261018.json",
+      "sha256": "209d940543bd77dc19432f68a790fe29001ba43332eb1c77ad1f69e5a2b0fac7",
+      "bytes": 12838
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-training-3p-20261018.png",
+      "file": "docs/benchmarks/policy-research-20261021/expanded-training/action-training-3p-20261018.png",
+      "sha256": "45a8c643f682294ad922dedaa9c35651729641c4647238d0c98dd8b787495d69",
+      "bytes": 438693
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-training-3p-20261018.svg",
+      "file": "docs/benchmarks/policy-research-20261021/expanded-training/action-training-3p-20261018.svg",
+      "sha256": "aaeba047b3630f15e2c3bbb8b092929ae6419c7f3c4ade6d256d8784133b0b8c",
+      "bytes": 384920
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-training-final-20261018.json",
+      "file": "docs/benchmarks/policy-research-20261021/expanded-training/action-training-final-20261018.json",
+      "sha256": "6532afe022624b494a7240ee965dc431a6fceef6c281ddb54517a42916abb819",
+      "bytes": 1195188
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-training-final-20261018.md",
+      "file": "docs/benchmarks/policy-research-20261021/expanded-training/action-training-final-20261018.md",
+      "sha256": "63b4f4843b61e9896ec3ac260b81b6c4957d1f7f161017246c2e9f5f9c709622",
+      "bytes": 72763
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/collection-summary.json",
+      "file": "docs/benchmarks/policy-research-20261021/corpus-expansion/collection-summary.json",
+      "sha256": "2515a620d55942e43902cb59f187224a4ae67b9fcef0e36c16ce0ae69f990ce9",
+      "bytes": 4076
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/research/independent-audit.json",
+      "file": "docs/benchmarks/policy-research-20261021/corpus-expansion/independent-audit.json",
+      "sha256": "fc2508d75d989c2efc209e2f5bdc5ae6940992fd1c4d7b0095d5bcc133794b85",
+      "bytes": 3235
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-20261018/README.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-20261018/README.md",
+      "sha256": "a6d0bc5670c3c5b8ddcb048c33a44ec6ef733beddd04b34567e74960085ebb67",
+      "bytes": 7230
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-20261018/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-20261018/state.json",
+      "sha256": "e3ee5e2e5627105e21471c6c8a68eea756bc264a99c02b06d078f1c4c499b774",
+      "bytes": 691
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-20261018/plan.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-20261018/plan.json",
+      "sha256": "0f94c959df443d2feeaca9fde816074e8bf55796b2e15f14db4133a59ea5c0fa",
+      "bytes": 22231
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/README.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-bilinear-20261018/README.md",
+      "sha256": "b587fd49d892043e3340e9246ea83c32f3cfebf13b1f88552f08390cc8bc7405",
+      "bytes": 4684
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-bilinear-20261018/state.json",
+      "sha256": "9686abbf1e2dea9ac393df318e56b5989be795b1a42a6a3ae64a10883dc8d14f",
+      "bytes": 1927
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/plan.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-bilinear-20261018/plan.json",
+      "sha256": "75c7c2ee6627a43ce90798a8faa11d0fdf5569ff74a4bc7031ce6350ee893402",
+      "bytes": 32026
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/decision.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-bilinear-20261018/decision.json",
+      "sha256": "2e5d474c8ab205b7baa700b622615b535f92f5c8bd2d8f469a5ee2e43c512496",
+      "bytes": 1201104
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/bilinear-result-analysis.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-bilinear-20261018/bilinear-result-analysis.md",
+      "sha256": "05b679ce860132cb6a881397f15d84cae0f185c16c4e4e1f940e0a15bd2b617a",
+      "bytes": 24896
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/README.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-data-diversity-20261020/README.md",
+      "sha256": "eeaaea15b0129894458feabac185bc9617414b5bc6fdfa513ddebdb7a1fa23e9",
+      "bytes": 5653
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-data-diversity-20261020/state.json",
+      "sha256": "306ffee3aa0dd42a3fb9d272d2804bb5737c5bf8c8d376831820d17ea360d77a",
+      "bytes": 1668
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/plan.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-data-diversity-20261020/plan.json",
+      "sha256": "3d10f415076d211d66ec4ffcc80fab08ef8bdedebac2490d66d880d4fc222a64",
+      "bytes": 50688
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/decision.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-data-diversity-20261020/decision.json",
+      "sha256": "7b837a93e0b917204003115baed329a70f7d0d6e85d716ab4f5df6421d56c59d",
+      "bytes": 704653
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/final-artifact-audit.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-data-diversity-20261020/final-artifact-audit.json",
+      "sha256": "47001153d3cd17ca9052244413c5c8c1b57f58dc499c2d789ca07732fcdcf287",
+      "bytes": 4776
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/diversity-result-analysis.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-data-diversity-20261020/diversity-result-analysis.md",
+      "sha256": "8d1c4b1cc5843c83706c2f48270fdbb1547db9a2572bd6b53fd434c426f68ce6",
+      "bytes": 5940
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/README.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-diagnostic-20261020/README.md",
+      "sha256": "ebb8b0e4a5dd3f4d7ff4448e1db8a9e101c3a5c185d1b894dd17d0f3f3e6180f",
+      "bytes": 1873
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-diagnostic-20261020/state.json",
+      "sha256": "3866b42ccb9c45c30f06077a5f7b6bee9880fc3cbfc8e13559b5fd2472f58df9",
+      "bytes": 2065
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/plan.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-diagnostic-20261020/plan.json",
+      "sha256": "14e6eb70100836528e0dd2db66e5338bc30777d18f75bd6e8c8cc01d1cb4476b",
+      "bytes": 21322
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/final-artifact-audit.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-diagnostic-20261020/final-artifact-audit.json",
+      "sha256": "42f6fd62a7afd8bea9c7ba86bfa6c5cd9c06be9fc43b281e136d4b5d22a0af90",
+      "bytes": 11979
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/output/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-diagnostic-20261020/output/state.json",
+      "sha256": "0d81355d82ab2984a0bfb3dfccf0691fb303650b3306b5b96960d6add432906f",
+      "bytes": 845
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/output/summary.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-diagnostic-20261020/output/summary.json",
+      "sha256": "85eecb69d41cbf7f5541577d9d9bbff54b2ceb376595741e1d14e5f9548ce2c7",
+      "bytes": 31579
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/README.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-fit-diagnostic-20261020/README.md",
+      "sha256": "ad6fe74345ec8443d7434e5fc393f76b9f3f17e317eb7097c29f1d2b63bb4999",
+      "bytes": 1872
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/plan.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-fit-diagnostic-20261020/plan.json",
+      "sha256": "73ebe8a561cf0e509f15b5f2a746e9848e55c325c068ab7db2252912714d492d",
+      "bytes": 24807
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/pause-handoff.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-fit-diagnostic-20261020/pause-handoff.md",
+      "sha256": "1e11a7aeb954e53269379508644586933564b9c1a1f18559af90373ad7dafbe3",
+      "bytes": 2960
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/pause-handoff.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-fit-diagnostic-20261020/pause-handoff.json",
+      "sha256": "68ac15e01b545e7e919ba7d43ae0d28d94e6b1c7a0e80e52478443e1ed1b5f7a",
+      "bytes": 6397
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-fit-diagnostic-20261020/output/state.json",
+      "sha256": "b88862a6888fdc53336b9da93a43ceae2e26f1e46ec9b5237993b4ddac40d9d2",
+      "bytes": 762
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output/failed.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-fit-diagnostic-20261020/output/failed.json",
+      "sha256": "db814f8bfe803d1b8135bfeec09f4be81aaa1cf091d96c515b819552fd1557e2",
+      "bytes": 762
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/README.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-objective-20261020/README.md",
+      "sha256": "2b4dcb29414ae318e5b2e79894cfb04c8bf6d57ef7a5f6db9200e2109a04e84d",
+      "bytes": 4517
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-objective-20261020/state.json",
+      "sha256": "d973b3db78a71bcd18654f5131655e0d6ce5cb811ea59aa34ed84a313384254b",
+      "bytes": 9806
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/plan.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-objective-20261020/plan.json",
+      "sha256": "efc3a869cfd666d2bebd25e32adb844198dc586f50791d37768319a05462a474",
+      "bytes": 29533
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/decision.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-objective-20261020/decision.json",
+      "sha256": "1971e962dff54a9c356650d541aab9945df5ed7afa039cb8e1c360c54df5809f",
+      "bytes": 688835
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/final-artifact-audit.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-objective-20261020/final-artifact-audit.json",
+      "sha256": "460649e81cd0d2992556adb7cd18aebdfdc48a3d4e065805ebad1d5844448f81",
+      "bytes": 16305
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/objective-result-analysis.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-four-player-objective-20261020/objective-result-analysis.md",
+      "sha256": "dd85f2490070defedfba470396eb11ed5431893ba330e4bd7b6cdcd1e14da1dd",
+      "bytes": 13498
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/README.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-gradient-diagnostic-20261020/README.md",
+      "sha256": "789c0ae1a910a06692c6f7c5cd328f324ed0dd8bfe74d2d671439fcb08b68684",
+      "bytes": 2049
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-gradient-diagnostic-20261020/state.json",
+      "sha256": "8044af46043c7dfaf5311c790720148fd6f99c893fd06a8bf0f19e92b5b0da7d",
+      "bytes": 2261
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/plan.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-gradient-diagnostic-20261020/plan.json",
+      "sha256": "80912373642c7482eba38fdc153ab583b4628c2ba7b4e49b723ef5263efb7854",
+      "bytes": 8598
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/final-artifact-audit.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-gradient-diagnostic-20261020/final-artifact-audit.json",
+      "sha256": "500d4a73a6c02a698c8022733a4f2716fcc21b7ec43cd8d04dbf339b29f91706",
+      "bytes": 15045
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-gradient-diagnostic-20261020/output/state.json",
+      "sha256": "e2026dc040b35bb5bd7e1522b6b3e5f7105a88edfde298b53709cb6ec933439e",
+      "bytes": 900
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/summary.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-gradient-diagnostic-20261020/output/summary.json",
+      "sha256": "335b0f15e96abeca6f04529a9fdcc90392a0ec927d9355b863f38c14c4cb31a8",
+      "bytes": 103475
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/README.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-kan-sampling-20261018/README.md",
+      "sha256": "fe5a8ede699a4da98088227e14755153ca89e07c74af4515e870d54d48148bd2",
+      "bytes": 4097
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-kan-sampling-20261018/state.json",
+      "sha256": "99e14f6c149d91779fce32ca867d50ec994b7153ebcca5bf604317ebc03bc294",
+      "bytes": 1898
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/plan.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-kan-sampling-20261018/plan.json",
+      "sha256": "cc20e25846dd176e6ece5749e8155f4eb81cbfe0b08d0bb49bfbb6a9481ef44d",
+      "bytes": 37440
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/decision.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-kan-sampling-20261018/decision.json",
+      "sha256": "c238666068281d09f6c284f15b03372830eaa0d0c2c34dbadc6c256281ca3838",
+      "bytes": 587745
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/sampler-result-analysis.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-kan-sampling-20261018/sampler-result-analysis.md",
+      "sha256": "5d9cb4ef872c067406bfbaee4c3d421b03c03d780b3578a01faef4e90d39ea0b",
+      "bytes": 9210
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-stable-20261018/README.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-stable-20261018/README.md",
+      "sha256": "8e4044ab157c7605a7cf96c0b07f405d56ba7d34e2302a33bd77652c791af866",
+      "bytes": 4470
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-stable-20261018/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-stable-20261018/state.json",
+      "sha256": "586806daeb90ead442573cc8bb45782270f536d24feb1719e1574997f5b6f7a1",
+      "bytes": 1908
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-stable-20261018/plan.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-stable-20261018/plan.json",
+      "sha256": "e6299b8514e803131b76ad6ea0d2fe99de5cdc9fdd9777fa81e096ad95fe191f",
+      "bytes": 25101
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-stable-20261018/decision.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-stable-20261018/decision.json",
+      "sha256": "7287592d453b3756577c809434dcccc626e870fdcbcc1d0ac815c0d534730469",
+      "bytes": 534844
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-stable-20261018/pilot-result-analysis.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-stable-20261018/pilot-result-analysis.md",
+      "sha256": "eac24bc1d4faba90eecd5074ca2a586e79be0bc08c88767a4ea60b9b8ee598c4",
+      "bytes": 16087
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-structural-20261018/README.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-structural-20261018/README.md",
+      "sha256": "03222c6be4140a708968c0fd6d4e7bedeac8e72c27d36e37dbd26d045bd2183e",
+      "bytes": 4130
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-structural-20261018/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-structural-20261018/state.json",
+      "sha256": "e9abef728526019f06f857b6757c625502f8a0043b258c630f849ae7dfd863b1",
+      "bytes": 1939
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-structural-20261018/plan.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-structural-20261018/plan.json",
+      "sha256": "a616465bf07b9269132657472c96c120f0532623ca1b00a1f4befa1561737a24",
+      "bytes": 57220
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-structural-20261018/decision.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-structural-20261018/decision.json",
+      "sha256": "578d3d0c42fd1b8b3c8ae93d5f441ade2a54592fc503a3bd52272e6c4b5cd20b",
+      "bytes": 1205424
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-tilelocal-20261018/README.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-tilelocal-20261018/README.md",
+      "sha256": "9ff3d974e4f07da4da51991a66523665b2ce1472e85c461eaee8cbe197dd8b33",
+      "bytes": 4076
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-tilelocal-20261018/state.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-tilelocal-20261018/state.json",
+      "sha256": "54984e396ead2bf5ead346f08ed6e5fd545a12bc3b792947e143471ce76c1cb2",
+      "bytes": 1933
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-tilelocal-20261018/plan.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-tilelocal-20261018/plan.json",
+      "sha256": "daa203e1ccdda7f52ae1b730ef3c215e9e9820e85b04942bb12576436f8ac21e",
+      "bytes": 35309
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-tilelocal-20261018/decision.json",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-tilelocal-20261018/decision.json",
+      "sha256": "e3cd078de6e81b027d7a8da36db5e7da006a32ef1a87740830c48373152bc805",
+      "bytes": 1205350
+    },
+    {
+      "source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-tilelocal-20261018/tilelocal-result-analysis.md",
+      "file": "docs/benchmarks/policy-research-20261021/all-actions-75-tilelocal-20261018/tilelocal-result-analysis.md",
+      "sha256": "7183c5a5af989f22d05715e6b1620a494512d2793995ff02f44f7415622215aa",
+      "bytes": 25669
+    }
+  ],
+  "limitations": [
+    "Original artifact bytes and their local provenance paths are retained; local links inside historical reports require the original evidence directories.",
+    "Plans reference frozen local research scripts, caches and weights. This PR does not port every one-off experiment runner or redistribute raw corpora and checkpoints.",
+    "Internal holdouts are whole games drawn from the original train partition; their results are not new formal test results.",
+    "The final fit diagnostic was paused by the user and has no completed summary. Partial arrays are not quality evidence."
+  ]
+}

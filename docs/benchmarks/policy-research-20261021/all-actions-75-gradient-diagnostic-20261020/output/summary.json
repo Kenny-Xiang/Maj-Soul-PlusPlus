@@ -1,0 +1,2820 @@
+{
+  "status": "completed-train-only-gradient-diagnostic",
+  "plan": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/plan.json",
+    "sha256": "80912373642c7482eba38fdc153ab583b4628c2ba7b4e49b723ef5263efb7854"
+  },
+  "models": {
+    "42": {
+      "original": {
+        "support": {
+          "windows": 8192,
+          "discard": 6464,
+          "riichiMulti": 79
+        },
+        "gradientGroups": {
+          "all": {
+            "natural": {
+              "firstNorm": 0.29999091140712775,
+              "secondNorm": 0.34991419442984234,
+              "firstRms": 0.0003611157411846269,
+              "secondRms": 0.00042121117296472826,
+              "parameterCount": 690118,
+              "dot": -0.0022879126132295535,
+              "cosine": -0.02179564747369432,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.22954656079344596,
+              "secondNorm": 0.11031156809597494,
+              "firstRms": 0.00027631795926247424,
+              "secondRms": 0.0001327881684393921,
+              "parameterCount": 690118,
+              "dot": -0.0046903286617172545,
+              "cosine": -0.18523004288507552,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.38562381744783464,
+              "secondNorm": 0.6819351479225401,
+              "firstRms": 0.00046419683184045746,
+              "secondRms": 0.0008208832568520446,
+              "parameterCount": 690118,
+              "dot": -0.019010263627146893,
+              "cosine": -0.07229049770404482,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.84744881667386,
+              "secondNorm": 8.98527270447023,
+              "firstRms": 0.002223876868817672,
+              "secondRms": 0.010816072384330471,
+              "parameterCount": 690118,
+              "dot": 0.39767727525849306,
+              "cosine": 0.023956705647674242,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.38562381744783464,
+              "secondNorm": 0.45591519514478296,
+              "firstRms": 0.00046419683184045746,
+              "secondRms": 0.0005488104717566131,
+              "parameterCount": 690118,
+              "dot": 0.11261386753477272,
+              "cosine": 0.6405366104404095,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.38562381744783464,
+              "secondNorm": 0.23554109684820945,
+              "firstRms": 0.00046419683184045746,
+              "secondRms": 0.0002835339156403529,
+              "parameterCount": 690118,
+              "dot": 0.07921680389600586,
+              "cosine": 0.8721411407534956,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.84744881667386,
+              "secondNorm": 0.45591519514478296,
+              "firstRms": 0.002223876868817672,
+              "secondRms": 0.0005488104717566131,
+              "parameterCount": 690118,
+              "dot": -0.14453825736941983,
+              "cosine": -0.17160357537572893,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.84744881667386,
+              "secondNorm": 0.23554109684820945,
+              "firstRms": 0.002223876868817672,
+              "secondRms": 0.0002835339156403529,
+              "parameterCount": 690118,
+              "dot": -0.04555577432461948,
+              "cosine": -0.1046897890239373,
+              "cosineUndefinedReason": null
+            }
+          },
+          "trunk": {
+            "natural": {
+              "firstNorm": 0.17235926358814901,
+              "secondNorm": 0.2109984591491656,
+              "firstRms": 0.00021285735513932759,
+              "secondRms": 0.00026057534140017596,
+              "parameterCount": 655680,
+              "dot": 0.002536916216094822,
+              "cosine": 0.06975770929951923,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.13450003170163907,
+              "secondNorm": 0.06768790383195154,
+              "firstRms": 0.00016610259534744894,
+              "secondRms": 8.359207323501821e-05,
+              "parameterCount": 655680,
+              "dot": 0.00022380451205120265,
+              "cosine": 0.024583028589980672,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.21974311027836396,
+              "secondNorm": 0.4411241859652816,
+              "firstRms": 0.00027137466411847794,
+              "secondRms": 0.0005447721553099906,
+              "parameterCount": 655680,
+              "dot": -0.01015185412011425,
+              "cosine": -0.10472954848423467,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.4217102161292479,
+              "secondNorm": 6.46259185614738,
+              "firstRms": 0.0017557598592608569,
+              "secondRms": 0.007981063397506141,
+              "parameterCount": 655680,
+              "dot": 0.29068623699044016,
+              "cosine": 0.0316378277111422,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.21974311027836396,
+              "secondNorm": 0.2816059266779745,
+              "firstRms": 0.00027137466411847794,
+              "secondRms": 0.0003477729684867052,
+              "parameterCount": 655680,
+              "dot": 0.04115464155807873,
+              "cosine": 0.6650614356055974,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.21974311027836396,
+              "secondNorm": 0.15205104365642427,
+              "firstRms": 0.00027137466411847794,
+              "secondRms": 0.00018777744999083558,
+              "parameterCount": 655680,
+              "dot": 0.029205912326669976,
+              "cosine": 0.8741100317231401,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.4217102161292479,
+              "secondNorm": 0.2816059266779745,
+              "firstRms": 0.0017557598592608569,
+              "secondRms": 0.0003477729684867052,
+              "parameterCount": 655680,
+              "dot": -0.028205945083593326,
+              "cosine": -0.0704511004331791,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.4217102161292479,
+              "secondNorm": 0.15205104365642427,
+              "firstRms": 0.0017557598592608569,
+              "secondRms": 0.00018777744999083558,
+              "parameterCount": 655680,
+              "dot": 0.019434717794131057,
+              "cosine": 0.08990373800419345,
+              "cosineUndefinedReason": null
+            }
+          },
+          "head": {
+            "natural": {
+              "firstNorm": 0.24553376790622947,
+              "secondNorm": 0.2791408133902375,
+              "firstRms": 0.0013230987758235191,
+              "secondRms": 0.0015041958245843152,
+              "parameterCount": 34438,
+              "dot": -0.004824828829324375,
+              "cosine": -0.07039589621692052,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.1860144216031576,
+              "secondNorm": 0.0871033278964093,
+              "firstRms": 0.001002369065596918,
+              "secondRms": 0.0004693704963380306,
+              "parameterCount": 34438,
+              "dot": -0.0049141331737684564,
+              "cosine": -0.3032952142026694,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.3168890879601752,
+              "secondNorm": 0.5200432660160154,
+              "firstRms": 0.0017076085620616657,
+              "secondRms": 0.0028023380022573164,
+              "parameterCount": 34438,
+              "dot": -0.008858409507032632,
+              "cosine": -0.05375377774648448,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.1797487832514908,
+              "secondNorm": 6.242598183012848,
+              "firstRms": 0.006357268836013864,
+              "secondRms": 0.03363925900838533,
+              "parameterCount": 34438,
+              "dot": 0.10699103826805298,
+              "cosine": 0.014527553461538624,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.3168890879601752,
+              "secondNorm": 0.35854813794488577,
+              "firstRms": 0.0017076085620616657,
+              "secondRms": 0.0019320951510419298,
+              "parameterCount": 34438,
+              "dot": 0.071459225976694,
+              "cosine": 0.6289317967083334,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.3168890879601752,
+              "secondNorm": 0.17988910035755293,
+              "firstRms": 0.0017076085620616657,
+              "secondRms": 0.0009693617725036094,
+              "parameterCount": 34438,
+              "dot": 0.05001089156933588,
+              "cosine": 0.8773087534163725,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.1797487832514908,
+              "secondNorm": 0.35854813794488577,
+              "firstRms": 0.006357268836013864,
+              "secondRms": 0.0019320951510419298,
+              "parameterCount": 34438,
+              "dot": -0.11633231228582654,
+              "cosine": -0.2750194131039875,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.1797487832514908,
+              "secondNorm": 0.17988910035755293,
+              "firstRms": 0.006357268836013864,
+              "secondRms": 0.0009693617725036094,
+              "parameterCount": 34438,
+              "dot": -0.06499049211875052,
+              "cosine": -0.3062354317487883,
+              "cosineUndefinedReason": null
+            }
+          }
+        },
+        "byAction": {
+          "discard": {
+            "count": 6464,
+            "completeCorrect": 4333,
+            "typeCorrect": 6259,
+            "conditionalCorrect": 4456,
+            "multipleSameType": 6464,
+            "multipleConditionalCorrect": 4456,
+            "completeTop1": 0.6703279702970297,
+            "typeRecall": 0.9682858910891089,
+            "conditionalTop1": 0.6893564356435643,
+            "multipleConditionalTop1": 0.6893564356435643,
+            "sumDensity": 5034.311009324956
+          },
+          "riichi": {
+            "count": 160,
+            "completeCorrect": 126,
+            "typeCorrect": 139,
+            "conditionalCorrect": 142,
+            "multipleSameType": 79,
+            "multipleConditionalCorrect": 61,
+            "completeTop1": 0.7875,
+            "typeRecall": 0.86875,
+            "conditionalTop1": 0.8875,
+            "multipleConditionalTop1": 0.7721518987341772,
+            "sumDensity": 302.60538344337226
+          },
+          "chi": {
+            "count": 0,
+            "completeCorrect": 0,
+            "typeCorrect": 0,
+            "conditionalCorrect": 0,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": null,
+            "typeRecall": null,
+            "conditionalTop1": null,
+            "multipleConditionalTop1": null,
+            "sumDensity": 0.0
+          },
+          "pon": {
+            "count": 217,
+            "completeCorrect": 173,
+            "typeCorrect": 173,
+            "conditionalCorrect": 217,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.7972350230414746,
+            "typeRecall": 0.7972350230414746,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 350.2396269437799
+          },
+          "daiminkan": {
+            "count": 1,
+            "completeCorrect": 1,
+            "typeCorrect": 1,
+            "conditionalCorrect": 1,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 140.5016735046426
+          },
+          "ankan": {
+            "count": 7,
+            "completeCorrect": 7,
+            "typeCorrect": 7,
+            "conditionalCorrect": 7,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 91.97313788548784
+          },
+          "shouminkan": {
+            "count": 18,
+            "completeCorrect": 18,
+            "typeCorrect": 18,
+            "conditionalCorrect": 18,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 407.63404608045465
+          },
+          "kita": {
+            "count": 583,
+            "completeCorrect": 575,
+            "typeCorrect": 578,
+            "conditionalCorrect": 580,
+            "multipleSameType": 7,
+            "multipleConditionalCorrect": 4,
+            "completeTop1": 0.9862778730703259,
+            "typeRecall": 0.9914236706689536,
+            "conditionalTop1": 0.9948542024013722,
+            "multipleConditionalTop1": 0.5714285714285714,
+            "sumDensity": 622.3360380412788
+          },
+          "tsumo": {
+            "count": 89,
+            "completeCorrect": 89,
+            "typeCorrect": 89,
+            "conditionalCorrect": 89,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 251.70180328289968
+          },
+          "ron": {
+            "count": 97,
+            "completeCorrect": 97,
+            "typeCorrect": 97,
+            "conditionalCorrect": 97,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 270.44430133397157
+          },
+          "abort": {
+            "count": 8,
+            "completeCorrect": 8,
+            "typeCorrect": 8,
+            "conditionalCorrect": 8,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 224.92262156448206
+          },
+          "pass": {
+            "count": 548,
+            "completeCorrect": 478,
+            "typeCorrect": 478,
+            "conditionalCorrect": 548,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.8722627737226277,
+            "typeRecall": 0.8722627737226277,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 594.8995972628184
+          }
+        },
+        "meanDensity": 1.0121544480796074,
+        "unsupportedGradientGroups": [],
+        "gradientMeanDenominators": {
+          "naturalWithin": 8192,
+          "naturalType": 8192,
+          "mixedWithin": 8192,
+          "mixedType": 8192,
+          "discardWithin": 6464,
+          "discardType": 6464,
+          "riichiMultiWithin": 79,
+          "riichiMultiType": 79
+        }
+      },
+      "added": {
+        "support": {
+          "windows": 8192,
+          "discard": 6534,
+          "riichiMulti": 70
+        },
+        "gradientGroups": {
+          "all": {
+            "natural": {
+              "firstNorm": 0.3416444117823681,
+              "secondNorm": 0.34712355483830776,
+              "firstRms": 0.00041125637574713673,
+              "secondRms": 0.00041785192491368135,
+              "parameterCount": 690118,
+              "dot": 0.012865397086808615,
+              "cosine": 0.10848377492816312,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.2590832651998131,
+              "secondNorm": 0.11382467533051625,
+              "firstRms": 0.0003118729327575916,
+              "secondRms": 0.00013701709096545071,
+              "parameterCount": 690118,
+              "dot": 0.00243342837412393,
+              "cosine": 0.08251687751812861,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.43927973641700263,
+              "secondNorm": 0.6854925573501813,
+              "firstRms": 0.0005287854450641347,
+              "secondRms": 0.0008251655083913803,
+              "parameterCount": 690118,
+              "dot": 0.011864386595746165,
+              "cosine": 0.039400467560936424,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 3.23375716894916,
+              "secondNorm": 9.058404275067726,
+              "firstRms": 0.0038926533187246116,
+              "secondRms": 0.010904104922371169,
+              "parameterCount": 690118,
+              "dot": 3.7528826994735893,
+              "cosine": 0.12811674212610294,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.43927973641700263,
+              "secondNorm": 0.5127830541265197,
+              "firstRms": 0.0005287854450641347,
+              "secondRms": 0.0006172654757747274,
+              "parameterCount": 690118,
+              "dot": 0.16609690684214395,
+              "cosine": 0.7373721151014943,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.43927973641700263,
+              "secondNorm": 0.2914567751295927,
+              "firstRms": 0.0005287854450641347,
+              "secondRms": 0.0003508427268030337,
+              "parameterCount": 690118,
+              "dot": 0.115366039494813,
+              "cosine": 0.9010785639010767,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 3.23375716894916,
+              "secondNorm": 0.5127830541265197,
+              "firstRms": 0.0038926533187246116,
+              "secondRms": 0.0006172654757747274,
+              "parameterCount": 690118,
+              "dot": -0.3722551525868598,
+              "cosine": -0.22449136910397238,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 3.23375716894916,
+              "secondNorm": 0.2914567751295927,
+              "firstRms": 0.0038926533187246116,
+              "secondRms": 0.0003508427268030337,
+              "parameterCount": 690118,
+              "dot": -0.13381163318912562,
+              "cosine": -0.14197514194796657,
+              "cosineUndefinedReason": null
+            }
+          },
+          "trunk": {
+            "natural": {
+              "firstNorm": 0.2216433579952485,
+              "secondNorm": 0.21233158415274694,
+              "firstRms": 0.000273721400201617,
+              "secondRms": 0.00026222170177805785,
+              "parameterCount": 655680,
+              "dot": 0.015172480395991195,
+              "cosine": 0.3223942324622976,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.17250949300076077,
+              "secondNorm": 0.08030235018717864,
+              "firstRms": 0.00021304288294193572,
+              "secondRms": 9.917045081579358e-05,
+              "parameterCount": 655680,
+              "dot": 0.003535621891082589,
+              "cosine": 0.2552257916468306,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.2800348992198047,
+              "secondNorm": 0.44919598932301025,
+              "firstRms": 0.000345832807321963,
+              "secondRms": 0.0005547405357623251,
+              "parameterCount": 655680,
+              "dot": 0.017730037146904437,
+              "cosine": 0.1409488760442428,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 2.035488375793593,
+              "secondNorm": 6.6903124879147695,
+              "firstRms": 0.002513753325864525,
+              "secondRms": 0.008262290007434614,
+              "parameterCount": 655680,
+              "dot": 3.798260443850203,
+              "cosine": 0.2789136127091028,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.2800348992198047,
+              "secondNorm": 0.35292412862286326,
+              "firstRms": 0.000345832807321963,
+              "secondRms": 0.0004358483264526999,
+              "parameterCount": 655680,
+              "dot": 0.08136750849508706,
+              "cosine": 0.8232988492095044,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.2800348992198047,
+              "secondNorm": 0.2080366227449604,
+              "firstRms": 0.000345832807321963,
+              "secondRms": 0.00025691758230890396,
+              "parameterCount": 655680,
+              "dot": 0.0530495791889931,
+              "cosine": 0.9106049146855596,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 2.035488375793593,
+              "secondNorm": 0.35292412862286326,
+              "firstRms": 0.002513753325864525,
+              "secondRms": 0.0004358483264526999,
+              "parameterCount": 655680,
+              "dot": -0.09959853804498595,
+              "cosine": -0.1386446085859987,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 2.035488375793593,
+              "secondNorm": 0.2080366227449604,
+              "firstRms": 0.002513753325864525,
+              "secondRms": 0.00025691758230890396,
+              "parameterCount": 655680,
+              "dot": 0.019844744779911744,
+              "cosine": 0.046863756358239195,
+              "cosineUndefinedReason": null
+            }
+          },
+          "head": {
+            "natural": {
+              "firstNorm": 0.25999062667471384,
+              "secondNorm": 0.27460892318853847,
+              "firstRms": 0.0014010019184419315,
+              "secondRms": 0.00147977499469535,
+              "parameterCount": 34438,
+              "dot": -0.0023070833091825816,
+              "cosine": -0.032314016414995844,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.1932992838352413,
+              "secondNorm": 0.08066963039777214,
+              "firstRms": 0.0010416247345157203,
+              "secondRms": 0.0004347014674828362,
+              "parameterCount": 34438,
+              "dot": -0.0011021935169586593,
+              "cosine": -0.07068341763748592,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.3384481378964067,
+              "secondNorm": 0.5178059572451961,
+              "firstRms": 0.0018237830207595005,
+              "secondRms": 0.0027902818988502246,
+              "parameterCount": 34438,
+              "dot": -0.005865650551158273,
+              "cosine": -0.033470100355257604,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 2.5127619265937726,
+              "secondNorm": 6.106914673107602,
+              "firstRms": 0.013540427686842086,
+              "secondRms": 0.03290810627372918,
+              "parameterCount": 34438,
+              "dot": -0.04537774437661315,
+              "cosine": -0.0029571251798848827,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.3384481378964067,
+              "secondNorm": 0.3720094354114071,
+              "firstRms": 0.0018237830207595005,
+              "secondRms": 0.0020046335491239104,
+              "parameterCount": 34438,
+              "dot": 0.0847293983470569,
+              "cosine": 0.6729581209413448,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.3384481378964067,
+              "secondNorm": 0.20412695893931554,
+              "firstRms": 0.0018237830207595005,
+              "secondRms": 0.0010999714287296364,
+              "parameterCount": 34438,
+              "dot": 0.062316460305819915,
+              "cosine": 0.9020077771441054,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 2.5127619265937726,
+              "secondNorm": 0.3720094354114071,
+              "firstRms": 0.013540427686842086,
+              "secondRms": 0.0020046335491239104,
+              "parameterCount": 34438,
+              "dot": -0.27265661454187395,
+              "cosine": -0.2916827458944834,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 2.5127619265937726,
+              "secondNorm": 0.20412695893931554,
+              "firstRms": 0.013540427686842086,
+              "secondRms": 0.0010999714287296364,
+              "parameterCount": 34438,
+              "dot": -0.15365637796903733,
+              "cosine": -0.29957038882793374,
+              "cosineUndefinedReason": null
+            }
+          }
+        },
+        "byAction": {
+          "discard": {
+            "count": 6534,
+            "completeCorrect": 4371,
+            "typeCorrect": 6319,
+            "conditionalCorrect": 4498,
+            "multipleSameType": 6534,
+            "multipleConditionalCorrect": 4498,
+            "completeTop1": 0.6689623507805326,
+            "typeRecall": 0.9670951943679217,
+            "conditionalTop1": 0.6883991429445975,
+            "multipleConditionalTop1": 0.6883991429445975,
+            "sumDensity": 5088.828609982868
+          },
+          "riichi": {
+            "count": 154,
+            "completeCorrect": 113,
+            "typeCorrect": 130,
+            "conditionalCorrect": 132,
+            "multipleSameType": 70,
+            "multipleConditionalCorrect": 48,
+            "completeTop1": 0.7337662337662337,
+            "typeRecall": 0.8441558441558441,
+            "conditionalTop1": 0.8571428571428571,
+            "multipleConditionalTop1": 0.6857142857142857,
+            "sumDensity": 291.25768156424584
+          },
+          "chi": {
+            "count": 0,
+            "completeCorrect": 0,
+            "typeCorrect": 0,
+            "conditionalCorrect": 0,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": null,
+            "typeRecall": null,
+            "conditionalTop1": null,
+            "multipleConditionalTop1": null,
+            "sumDensity": 0.0
+          },
+          "pon": {
+            "count": 214,
+            "completeCorrect": 175,
+            "typeCorrect": 175,
+            "conditionalCorrect": 214,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.8177570093457944,
+            "typeRecall": 0.8177570093457944,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 345.3976044514696
+          },
+          "daiminkan": {
+            "count": 0,
+            "completeCorrect": 0,
+            "typeCorrect": 0,
+            "conditionalCorrect": 0,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": null,
+            "typeRecall": null,
+            "conditionalTop1": null,
+            "multipleConditionalTop1": null,
+            "sumDensity": 0.0
+          },
+          "ankan": {
+            "count": 10,
+            "completeCorrect": 10,
+            "typeCorrect": 10,
+            "conditionalCorrect": 10,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 131.39019697926835
+          },
+          "shouminkan": {
+            "count": 6,
+            "completeCorrect": 6,
+            "typeCorrect": 6,
+            "conditionalCorrect": 6,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 135.87801536015155
+          },
+          "kita": {
+            "count": 548,
+            "completeCorrect": 534,
+            "typeCorrect": 538,
+            "conditionalCorrect": 543,
+            "multipleSameType": 10,
+            "multipleConditionalCorrect": 5,
+            "completeTop1": 0.9744525547445255,
+            "typeRecall": 0.9817518248175182,
+            "conditionalTop1": 0.9908759124087592,
+            "multipleConditionalTop1": 0.5,
+            "sumDensity": 584.9745263235349
+          },
+          "tsumo": {
+            "count": 95,
+            "completeCorrect": 95,
+            "typeCorrect": 95,
+            "conditionalCorrect": 95,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 268.67046417837605
+          },
+          "ron": {
+            "count": 91,
+            "completeCorrect": 91,
+            "typeCorrect": 91,
+            "conditionalCorrect": 91,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 253.71578784939598
+          },
+          "abort": {
+            "count": 10,
+            "completeCorrect": 10,
+            "typeCorrect": 10,
+            "conditionalCorrect": 10,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 281.15327695560256
+          },
+          "pass": {
+            "count": 530,
+            "completeCorrect": 463,
+            "typeCorrect": 463,
+            "conditionalCorrect": 530,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.8735849056603774,
+            "typeRecall": 0.8735849056603774,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 575.3590995425068
+          }
+        },
+        "meanDensity": 0.971267732322683,
+        "unsupportedGradientGroups": [],
+        "gradientMeanDenominators": {
+          "naturalWithin": 8192,
+          "naturalType": 8192,
+          "mixedWithin": 8192,
+          "mixedType": 8192,
+          "discardWithin": 6534,
+          "discardType": 6534,
+          "riichiMultiWithin": 70,
+          "riichiMultiType": 70
+        }
+      },
+      "pooled50_50": {
+        "support": {
+          "windows": 16384,
+          "discard": 12998,
+          "riichiMulti": 149
+        },
+        "gradientGroups": {
+          "all": {
+            "natural": {
+              "firstNorm": 0.2937685215996298,
+              "secondNorm": 0.34532816290332413,
+              "firstRms": 0.0003536255045746757,
+              "secondRms": 0.0004156907118079995,
+              "parameterCount": 690118,
+              "dot": 0.005655876070272729,
+              "cosine": 0.055752279513883354,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.22167041560666906,
+              "secondNorm": 0.09064614255126066,
+              "firstRms": 0.0002668370053447047,
+              "secondRms": 0.00010911580220676007,
+              "parameterCount": 690118,
+              "dot": -0.001567037392486883,
+              "cosine": -0.07798701481363075,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.37937546742870293,
+              "secondNorm": 0.6822286003745388,
+              "firstRms": 0.000456675345480234,
+              "secondRms": 0.0008212365018860656,
+              "parameterCount": 690118,
+              "dot": -0.003307467586818009,
+              "cosine": -0.012778987088530746,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.963911208802126,
+              "secondNorm": 8.96359474078597,
+              "firstRms": 0.002364069126163953,
+              "secondRms": 0.01078997741403122,
+              "parameterCount": 690118,
+              "dot": 2.08124583060503,
+              "cosine": 0.11822772122377809,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.37937546742870293,
+              "secondNorm": 0.46568577014716944,
+              "firstRms": 0.000456675345480234,
+              "secondRms": 0.0005605718561840179,
+              "parameterCount": 690118,
+              "dot": 0.11852520563449676,
+              "cosine": 0.6708856559945376,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.37937546742870293,
+              "secondNorm": 0.23285278939639756,
+              "firstRms": 0.000456675345480234,
+              "secondRms": 0.0002802978504761129,
+              "parameterCount": 690118,
+              "dot": 0.08007866227943038,
+              "cosine": 0.9064964784287816,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.963911208802126,
+              "secondNorm": 0.46568577014716944,
+              "firstRms": 0.002364069126163953,
+              "secondRms": 0.0005605718561840179,
+              "parameterCount": 690118,
+              "dot": -0.2555693957742683,
+              "cosine": -0.27944351139453405,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.963911208802126,
+              "secondNorm": 0.23285278939639756,
+              "firstRms": 0.002364069126163953,
+              "secondRms": 0.0002802978504761129,
+              "parameterCount": 690118,
+              "dot": -0.11601658915676466,
+              "cosine": -0.2536978575025618,
+              "cosineUndefinedReason": null
+            }
+          },
+          "trunk": {
+            "natural": {
+              "firstNorm": 0.17430000234856338,
+              "secondNorm": 0.20927680830356685,
+              "firstRms": 0.0002152540961729008,
+              "secondRms": 0.0002584491658884076,
+              "parameterCount": 655680,
+              "dot": 0.009165340433113876,
+              "cosine": 0.2512639047593836,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.13544280827889685,
+              "secondNorm": 0.05736610119900986,
+              "firstRms": 0.00016726688976681888,
+              "secondRms": 7.084502638079169e-05,
+              "parameterCount": 655680,
+              "dot": 0.0013580191141511376,
+              "cosine": 0.17478115224158156,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.22127363711723708,
+              "secondNorm": 0.44404241687066,
+              "firstRms": 0.0002732648085070658,
+              "secondRms": 0.0005483760632130144,
+              "parameterCount": 655680,
+              "dot": 0.004065408947728459,
+              "cosine": 0.041376152739382915,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.2715721429796114,
+              "secondNorm": 6.521427525712101,
+              "firstRms": 0.0015703448575310407,
+              "secondRms": 0.008053723286801808,
+              "parameterCount": 655680,
+              "dot": 1.9744435127118214,
+              "cosine": 0.23810089955215613,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.22127363711723708,
+              "secondNorm": 0.30415120282297886,
+              "firstRms": 0.0002732648085070658,
+              "secondRms": 0.0003756155558313483,
+              "parameterCount": 655680,
+              "dot": 0.05034863541059381,
+              "cosine": 0.7481152222974241,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.22127363711723708,
+              "secondNorm": 0.156050190994921,
+              "firstRms": 0.0002732648085070658,
+              "secondRms": 0.00019271624995762443,
+              "parameterCount": 655680,
+              "dot": 0.03165469167400273,
+              "cosine": 0.9167356250166667,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.2715721429796114,
+              "secondNorm": 0.30415120282297886,
+              "firstRms": 0.0015703448575310407,
+              "secondRms": 0.0003756155558313483,
+              "parameterCount": 655680,
+              "dot": -0.057262919785617414,
+              "cosine": -0.14806177285707411,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.2715721429796114,
+              "secondNorm": 0.156050190994921,
+              "firstRms": 0.0015703448575310407,
+              "secondRms": 0.00019271624995762443,
+              "parameterCount": 655680,
+              "dot": 0.008902383528531541,
+              "cosine": 0.04486430979797838,
+              "cosineUndefinedReason": null
+            }
+          },
+          "head": {
+            "natural": {
+              "firstNorm": 0.23647294446537206,
+              "secondNorm": 0.2746902939684198,
+              "firstRms": 0.0012742730501207724,
+              "secondRms": 0.0014802134744212423,
+              "parameterCount": 34438,
+              "dot": -0.0035094643628411464,
+              "cosine": -0.05402764822395529,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.17547939719739,
+              "secondNorm": 0.07018442557041005,
+              "firstRms": 0.0009455993674270707,
+              "secondRms": 0.0003782002302410415,
+              "parameterCount": 34438,
+              "dot": -0.00292505650663802,
+              "cosine": -0.2375020576902249,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.3081618451457872,
+              "secondNorm": 0.5179403394105012,
+              "firstRms": 0.0016605803900000486,
+              "secondRms": 0.0027910060390771434,
+              "parameterCount": 34438,
+              "dot": -0.007372876534546463,
+              "cosine": -0.04619323294254371,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.4966801666544747,
+              "secondNorm": 6.149553943493011,
+              "firstRms": 0.008065105313971092,
+              "secondRms": 0.033137874940296005,
+              "parameterCount": 34438,
+              "dot": 0.1068023178932088,
+              "cosine": 0.011604009055705805,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.3081618451457872,
+              "secondNorm": 0.3526404434248822,
+              "firstRms": 0.0016605803900000486,
+              "secondRms": 0.0019002605750729695,
+              "parameterCount": 34438,
+              "dot": 0.06817657022390294,
+              "cosine": 0.627370602447736,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.3081618451457872,
+              "secondNorm": 0.17282580658030142,
+              "firstRms": 0.0016605803900000486,
+              "secondRms": 0.0009313000613603486,
+              "parameterCount": 34438,
+              "dot": 0.04842397060542766,
+              "cosine": 0.909228287907278,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.4966801666544747,
+              "secondNorm": 0.3526404434248822,
+              "firstRms": 0.008065105313971092,
+              "secondRms": 0.0019002605750729695,
+              "parameterCount": 34438,
+              "dot": -0.1983064759886508,
+              "cosine": -0.37572991513049975,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.4966801666544747,
+              "secondNorm": 0.17282580658030142,
+              "firstRms": 0.008065105313971092,
+              "secondRms": 0.0009313000613603486,
+              "parameterCount": 34438,
+              "dot": -0.12491897268529618,
+              "cosine": -0.48293736475408106,
+              "cosineUndefinedReason": null
+            }
+          }
+        },
+        "byAction": {
+          "discard": {
+            "count": 12998,
+            "completeCorrect": 8704,
+            "typeCorrect": 12578,
+            "conditionalCorrect": 8954,
+            "multipleSameType": 12998,
+            "multipleConditionalCorrect": 8954,
+            "completeTop1": 0.6696414833051239,
+            "typeRecall": 0.9676873365133097,
+            "conditionalTop1": 0.688875211571011,
+            "multipleConditionalTop1": 0.688875211571011,
+            "sumDensity": 10123.139619307824
+          },
+          "riichi": {
+            "count": 314,
+            "completeCorrect": 239,
+            "typeCorrect": 269,
+            "conditionalCorrect": 274,
+            "multipleSameType": 149,
+            "multipleConditionalCorrect": 109,
+            "completeTop1": 0.7611464968152867,
+            "typeRecall": 0.856687898089172,
+            "conditionalTop1": 0.8726114649681529,
+            "multipleConditionalTop1": 0.7315436241610739,
+            "sumDensity": 593.863065007618
+          },
+          "chi": {
+            "count": 0,
+            "completeCorrect": 0,
+            "typeCorrect": 0,
+            "conditionalCorrect": 0,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": null,
+            "typeRecall": null,
+            "conditionalTop1": null,
+            "multipleConditionalTop1": null,
+            "sumDensity": 0.0
+          },
+          "pon": {
+            "count": 431,
+            "completeCorrect": 348,
+            "typeCorrect": 348,
+            "conditionalCorrect": 431,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.8074245939675174,
+            "typeRecall": 0.8074245939675174,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 695.6372313952495
+          },
+          "daiminkan": {
+            "count": 1,
+            "completeCorrect": 1,
+            "typeCorrect": 1,
+            "conditionalCorrect": 1,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 140.5016735046426
+          },
+          "ankan": {
+            "count": 17,
+            "completeCorrect": 17,
+            "typeCorrect": 17,
+            "conditionalCorrect": 17,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 223.3633348647562
+          },
+          "shouminkan": {
+            "count": 24,
+            "completeCorrect": 24,
+            "typeCorrect": 24,
+            "conditionalCorrect": 24,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 543.5120614406062
+          },
+          "kita": {
+            "count": 1131,
+            "completeCorrect": 1109,
+            "typeCorrect": 1116,
+            "conditionalCorrect": 1123,
+            "multipleSameType": 17,
+            "multipleConditionalCorrect": 9,
+            "completeTop1": 0.9805481874447391,
+            "typeRecall": 0.986737400530504,
+            "conditionalTop1": 0.9929266136162688,
+            "multipleConditionalTop1": 0.5294117647058824,
+            "sumDensity": 1207.3105643648137
+          },
+          "tsumo": {
+            "count": 184,
+            "completeCorrect": 184,
+            "typeCorrect": 184,
+            "conditionalCorrect": 184,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 520.3722674612757
+          },
+          "ron": {
+            "count": 188,
+            "completeCorrect": 188,
+            "typeCorrect": 188,
+            "conditionalCorrect": 188,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 524.1600891833675
+          },
+          "abort": {
+            "count": 18,
+            "completeCorrect": 18,
+            "typeCorrect": 18,
+            "conditionalCorrect": 18,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 506.07589852008465
+          },
+          "pass": {
+            "count": 1078,
+            "completeCorrect": 941,
+            "typeCorrect": 941,
+            "conditionalCorrect": 1078,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.87291280148423,
+            "typeRecall": 0.87291280148423,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 1170.2586968053251
+          }
+        },
+        "meanDensity": 0.9917110902011452,
+        "unsupportedGradientGroups": [],
+        "gradientMeanDenominators": {
+          "naturalWithin": 16384,
+          "naturalType": 16384,
+          "mixedWithin": 16384,
+          "mixedType": 16384,
+          "discardWithin": 12998,
+          "discardType": 12998,
+          "riichiMultiWithin": 149,
+          "riichiMultiType": 149
+        }
+      }
+    },
+    "43": {
+      "original": {
+        "support": {
+          "windows": 8192,
+          "discard": 6464,
+          "riichiMulti": 79
+        },
+        "gradientGroups": {
+          "all": {
+            "natural": {
+              "firstNorm": 0.19250493577279593,
+              "secondNorm": 0.2939490391051264,
+              "firstRms": 0.00023172889550960072,
+              "secondRms": 0.00035384280353379554,
+              "parameterCount": 690118,
+              "dot": -0.0038766743678921097,
+              "cosine": -0.0685086498630414,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.14995197812171968,
+              "secondNorm": 0.10664390803127304,
+              "firstRms": 0.0001805055342094579,
+              "secondRms": 0.00012837320207769246,
+              "parameterCount": 690118,
+              "dot": -0.0011971202064655789,
+              "cosine": -0.07485994617544516,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.246746405533781,
+              "secondNorm": 0.5947446167042356,
+              "firstRms": 0.00029702236878119214,
+              "secondRms": 0.0007159271661575208,
+              "parameterCount": 690118,
+              "dot": -0.015875258066918724,
+              "cosine": -0.10817812240092767,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 2.0202872587897795,
+              "secondNorm": 7.701956938538564,
+              "firstRms": 0.002431932112348638,
+              "secondRms": 0.0092712738375525,
+              "parameterCount": 690118,
+              "dot": -1.126622914361765,
+              "cosine": -0.07240430164350606,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.246746405533781,
+              "secondNorm": 0.34016295970009897,
+              "firstRms": 0.00029702236878119214,
+              "secondRms": 0.0004094730694989281,
+              "parameterCount": 690118,
+              "dot": 0.041424502923058854,
+              "cosine": 0.49353669599994243,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.246746405533781,
+              "secondNorm": 0.17738173087967138,
+              "firstRms": 0.00029702236878119214,
+              "secondRms": 0.00021352425284742343,
+              "parameterCount": 690118,
+              "dot": 0.03388466712688107,
+              "cosine": 0.7741827679295894,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 2.0202872587897795,
+              "secondNorm": 0.34016295970009897,
+              "firstRms": 0.002431932112348638,
+              "secondRms": 0.0004094730694989281,
+              "parameterCount": 690118,
+              "dot": 0.049170892247067,
+              "cosine": 0.07154972065223401,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 2.0202872587897795,
+              "secondNorm": 0.17738173087967138,
+              "firstRms": 0.002431932112348638,
+              "secondRms": 0.00021352425284742343,
+              "parameterCount": 690118,
+              "dot": 0.02604273091004318,
+              "cosine": 0.07267156455077826,
+              "cosineUndefinedReason": null
+            }
+          },
+          "trunk": {
+            "natural": {
+              "firstNorm": 0.1327550363570602,
+              "secondNorm": 0.17653195162566182,
+              "firstRms": 0.0001639475902375116,
+              "secondRms": 0.0002180104714905833,
+              "parameterCount": 655680,
+              "dot": -0.0032271503723340584,
+              "cosine": -0.137703466682988,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.1035373211294492,
+              "secondNorm": 0.0757826067438255,
+              "firstRms": 0.00012786478588401847,
+              "secondRms": 9.358873379500552e-05,
+              "parameterCount": 655680,
+              "dot": -0.0010420732644138724,
+              "cosine": -0.1328103097907144,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.1707169852962296,
+              "secondNorm": 0.3671225552622228,
+              "firstRms": 0.00021082920181386436,
+              "secondRms": 0.00045338286146217563,
+              "parameterCount": 655680,
+              "dot": -0.01377498025060512,
+              "cosine": -0.2197875988667764,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.5629725760389666,
+              "secondNorm": 4.953421302145225,
+              "firstRms": 0.0019302136813830696,
+              "secondRms": 0.006117293235743046,
+              "parameterCount": 655680,
+              "dot": -1.1675853163187027,
+              "cosine": -0.15081064562349283,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.1707169852962296,
+              "secondNorm": 0.2057501613079836,
+              "firstRms": 0.00021082920181386436,
+              "secondRms": 0.0002540938864774696,
+              "parameterCount": 655680,
+              "dot": 0.017657746959597743,
+              "cosine": 0.5027109807861491,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.1707169852962296,
+              "secondNorm": 0.11991177516292656,
+              "firstRms": 0.00021082920181386436,
+              "secondRms": 0.00014808663474121057,
+              "parameterCount": 655680,
+              "dot": 0.01576399289876547,
+              "cosine": 0.7700654973934116,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.5629725760389666,
+              "secondNorm": 0.2057501613079836,
+              "firstRms": 0.0019302136813830696,
+              "secondRms": 0.0002540938864774696,
+              "parameterCount": 655680,
+              "dot": 0.04753500549837829,
+              "cosine": 0.1478161907254229,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.5629725760389666,
+              "secondNorm": 0.11991177516292656,
+              "firstRms": 0.0019302136813830696,
+              "secondRms": 0.00014808663474121057,
+              "parameterCount": 655680,
+              "dot": -0.00024529042953523356,
+              "cosine": -0.001308782301629737,
+              "cosineUndefinedReason": null
+            }
+          },
+          "head": {
+            "natural": {
+              "firstNorm": 0.1394067811073906,
+              "secondNorm": 0.2350372473589284,
+              "firstRms": 0.0007512161891114209,
+              "secondRms": 0.001266536561978276,
+              "parameterCount": 34438,
+              "dot": -0.0006495239955580505,
+              "cosine": -0.0198232385965588,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.10846943752022505,
+              "secondNorm": 0.075032790400553,
+              "firstRms": 0.0005845052646774224,
+              "secondRms": 0.00040432643530933094,
+              "parameterCount": 34438,
+              "dot": -0.0001550469420517063,
+              "cosine": -0.019050427213130768,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.178155829472987,
+              "secondNorm": 0.4679125864052005,
+              "firstRms": 0.0009600217594980846,
+              "secondRms": 0.002521423328222506,
+              "parameterCount": 34438,
+              "dot": -0.0021002778163136055,
+              "cosine": -0.02519486178609086,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.2801083292356314,
+              "secondNorm": 5.897775689745774,
+              "firstRms": 0.006898072626735359,
+              "secondRms": 0.03178112673351096,
+              "parameterCount": 34438,
+              "dot": 0.040962401956937795,
+              "cosine": 0.00542563333223835,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.178155829472987,
+              "secondNorm": 0.2708832041188045,
+              "firstRms": 0.0009600217594980846,
+              "secondRms": 0.0014596983495061232,
+              "parameterCount": 34438,
+              "dot": 0.02376675596346111,
+              "cosine": 0.4924790852823942,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.178155829472987,
+              "secondNorm": 0.13071130259906338,
+              "firstRms": 0.0009600217594980846,
+              "secondRms": 0.0007043591841964746,
+              "parameterCount": 34438,
+              "dot": 0.0181206742281156,
+              "cosine": 0.7781461490929844,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.2801083292356314,
+              "secondNorm": 0.2708832041188045,
+              "firstRms": 0.006898072626735359,
+              "secondRms": 0.0014596983495061232,
+              "parameterCount": 34438,
+              "dot": 0.0016358867486887091,
+              "cosine": 0.004717636047835986,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.2801083292356314,
+              "secondNorm": 0.13071130259906338,
+              "firstRms": 0.006898072626735359,
+              "secondRms": 0.0007043591841964746,
+              "parameterCount": 34438,
+              "dot": 0.0262880213395784,
+              "cosine": 0.15710790325525492,
+              "cosineUndefinedReason": null
+            }
+          }
+        },
+        "byAction": {
+          "discard": {
+            "count": 6464,
+            "completeCorrect": 4404,
+            "typeCorrect": 6269,
+            "conditionalCorrect": 4526,
+            "multipleSameType": 6464,
+            "multipleConditionalCorrect": 4526,
+            "completeTop1": 0.6813118811881188,
+            "typeRecall": 0.9698329207920792,
+            "conditionalTop1": 0.7001856435643564,
+            "multipleConditionalTop1": 0.7001856435643564,
+            "sumDensity": 5034.311009324956
+          },
+          "riichi": {
+            "count": 160,
+            "completeCorrect": 124,
+            "typeCorrect": 137,
+            "conditionalCorrect": 141,
+            "multipleSameType": 79,
+            "multipleConditionalCorrect": 60,
+            "completeTop1": 0.775,
+            "typeRecall": 0.85625,
+            "conditionalTop1": 0.88125,
+            "multipleConditionalTop1": 0.759493670886076,
+            "sumDensity": 302.60538344337226
+          },
+          "chi": {
+            "count": 0,
+            "completeCorrect": 0,
+            "typeCorrect": 0,
+            "conditionalCorrect": 0,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": null,
+            "typeRecall": null,
+            "conditionalTop1": null,
+            "multipleConditionalTop1": null,
+            "sumDensity": 0.0
+          },
+          "pon": {
+            "count": 217,
+            "completeCorrect": 163,
+            "typeCorrect": 163,
+            "conditionalCorrect": 217,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.7511520737327189,
+            "typeRecall": 0.7511520737327189,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 350.2396269437799
+          },
+          "daiminkan": {
+            "count": 1,
+            "completeCorrect": 1,
+            "typeCorrect": 1,
+            "conditionalCorrect": 1,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 140.5016735046426
+          },
+          "ankan": {
+            "count": 7,
+            "completeCorrect": 7,
+            "typeCorrect": 7,
+            "conditionalCorrect": 7,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 91.97313788548784
+          },
+          "shouminkan": {
+            "count": 18,
+            "completeCorrect": 18,
+            "typeCorrect": 18,
+            "conditionalCorrect": 18,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 407.63404608045465
+          },
+          "kita": {
+            "count": 583,
+            "completeCorrect": 575,
+            "typeCorrect": 580,
+            "conditionalCorrect": 578,
+            "multipleSameType": 7,
+            "multipleConditionalCorrect": 2,
+            "completeTop1": 0.9862778730703259,
+            "typeRecall": 0.9948542024013722,
+            "conditionalTop1": 0.9914236706689536,
+            "multipleConditionalTop1": 0.2857142857142857,
+            "sumDensity": 622.3360380412788
+          },
+          "tsumo": {
+            "count": 89,
+            "completeCorrect": 89,
+            "typeCorrect": 89,
+            "conditionalCorrect": 89,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 251.70180328289968
+          },
+          "ron": {
+            "count": 97,
+            "completeCorrect": 97,
+            "typeCorrect": 97,
+            "conditionalCorrect": 97,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 270.44430133397157
+          },
+          "abort": {
+            "count": 8,
+            "completeCorrect": 8,
+            "typeCorrect": 8,
+            "conditionalCorrect": 8,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 224.92262156448206
+          },
+          "pass": {
+            "count": 548,
+            "completeCorrect": 487,
+            "typeCorrect": 487,
+            "conditionalCorrect": 548,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.8886861313868614,
+            "typeRecall": 0.8886861313868614,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 594.8995972628184
+          }
+        },
+        "meanDensity": 1.0121544480796074,
+        "unsupportedGradientGroups": [],
+        "gradientMeanDenominators": {
+          "naturalWithin": 8192,
+          "naturalType": 8192,
+          "mixedWithin": 8192,
+          "mixedType": 8192,
+          "discardWithin": 6464,
+          "discardType": 6464,
+          "riichiMultiWithin": 79,
+          "riichiMultiType": 79
+        }
+      },
+      "added": {
+        "support": {
+          "windows": 8192,
+          "discard": 6534,
+          "riichiMulti": 70
+        },
+        "gradientGroups": {
+          "all": {
+            "natural": {
+              "firstNorm": 0.21764091496079785,
+              "secondNorm": 0.2995868649685303,
+              "firstRms": 0.0002619864713551502,
+              "secondRms": 0.0003606293680193109,
+              "parameterCount": 690118,
+              "dot": 0.006311683905117995,
+              "cosine": 0.09680146490106244,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.17399964233657708,
+              "secondNorm": 0.09812316498583712,
+              "firstRms": 0.00020945304480561036,
+              "secondRms": 0.0001181163098743134,
+              "parameterCount": 690118,
+              "dot": -0.0007104232346053414,
+              "cosine": -0.04160995567200021,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.2719516467065364,
+              "secondNorm": 0.6027677110861237,
+              "firstRms": 0.0003273633191291318,
+              "secondRms": 0.0007255850109926191,
+              "parameterCount": 690118,
+              "dot": 0.01183208487249364,
+              "cosine": 0.07218045298877203,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 2.9100862670117067,
+              "secondNorm": 7.657126599905517,
+              "firstRms": 0.003503032656202556,
+              "secondRms": 0.009217309066129609,
+              "parameterCount": 690118,
+              "dot": 2.8735244885162077,
+              "cosine": 0.12895649229786477,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.2719516467065364,
+              "secondNorm": 0.38696669796880667,
+              "firstRms": 0.0003273633191291318,
+              "secondRms": 0.0004658133317950014,
+              "parameterCount": 690118,
+              "dot": 0.06713656562717377,
+              "cosine": 0.6379605688973851,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.2719516467065364,
+              "secondNorm": 0.19617131434255078,
+              "firstRms": 0.0003273633191291318,
+              "secondRms": 0.00023614231926457452,
+              "parameterCount": 690118,
+              "dot": 0.04434845362084563,
+              "cosine": 0.831287569399216,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 2.9100862670117067,
+              "secondNorm": 0.38696669796880667,
+              "firstRms": 0.003503032656202556,
+              "secondRms": 0.0004658133317950014,
+              "parameterCount": 690118,
+              "dot": 0.0014264143957108183,
+              "cosine": 0.001266678088808289,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 2.9100862670117067,
+              "secondNorm": 0.19617131434255078,
+              "firstRms": 0.003503032656202556,
+              "secondRms": 0.00023614231926457452,
+              "parameterCount": 690118,
+              "dot": 0.1213050577895553,
+              "cosine": 0.2124895338316447,
+              "cosineUndefinedReason": null
+            }
+          },
+          "trunk": {
+            "natural": {
+              "firstNorm": 0.15550001104298597,
+              "secondNorm": 0.1851767998929025,
+              "firstRms": 0.00019203679793989355,
+              "secondRms": 0.0002286865413428113,
+              "parameterCount": 655680,
+              "dot": 0.006314739007949733,
+              "cosine": 0.21929988643283985,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.12407524116224701,
+              "secondNorm": 0.06380736992986208,
+              "firstRms": 0.00015322836221427227,
+              "secondRms": 7.879975650233028e-05,
+              "parameterCount": 655680,
+              "dot": -0.0009837634881004254,
+              "cosine": -0.12426096673570784,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.19408047237935652,
+              "secondNorm": 0.38207187661076175,
+              "firstRms": 0.00023968224959219203,
+              "secondRms": 0.00047184472383692683,
+              "parameterCount": 655680,
+              "dot": 0.012197931531102955,
+              "cosine": 0.16449749135866282,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.9403002768180158,
+              "secondNorm": 5.186271378670265,
+              "firstRms": 0.002396199522449023,
+              "secondRms": 0.006404854521404735,
+              "parameterCount": 655680,
+              "dot": 3.0454130501137437,
+              "cosine": 0.3026369982677881,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.19408047237935652,
+              "secondNorm": 0.2666461675495155,
+              "firstRms": 0.00023968224959219203,
+              "secondRms": 0.00032929821583741305,
+              "parameterCount": 655680,
+              "dot": 0.038527766645510546,
+              "cosine": 0.744486193574758,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.19408047237935652,
+              "secondNorm": 0.13228196759435948,
+              "firstRms": 0.00023968224959219203,
+              "secondRms": 0.0001633633677041169,
+              "parameterCount": 655680,
+              "dot": 0.02189337027231733,
+              "cosine": 0.8527665083442549,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.9403002768180158,
+              "secondNorm": 0.2666461675495155,
+              "firstRms": 0.002396199522449023,
+              "secondRms": 0.00032929821583741305,
+              "parameterCount": 655680,
+              "dot": -0.037580377531454046,
+              "cosine": -0.07263682405826577,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.9403002768180158,
+              "secondNorm": 0.13228196759435948,
+              "firstRms": 0.002396199522449023,
+              "secondRms": 0.0001633633677041169,
+              "parameterCount": 655680,
+              "dot": 0.04920168950314889,
+              "cosine": 0.19169484063692938,
+              "cosineUndefinedReason": null
+            }
+          },
+          "head": {
+            "natural": {
+              "firstNorm": 0.15227381400163478,
+              "secondNorm": 0.23550338095895013,
+              "firstRms": 0.0008205522955705419,
+              "secondRms": 0.001269048398948067,
+              "parameterCount": 34438,
+              "dot": -3.055102831736782e-06,
+              "cosine": -8.519291151001334e-05,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.12198856529932217,
+              "secondNorm": 0.07454377941499575,
+              "firstRms": 0.0006573552908357646,
+              "secondRms": 0.0004016913198143326,
+              "parameterCount": 34438,
+              "dot": 0.0002733402534950838,
+              "cosine": 0.030058898452272022,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.19050057319442013,
+              "secondNorm": 0.46620810227958864,
+              "firstRms": 0.0010265434255196844,
+              "secondRms": 0.002512238437365176,
+              "parameterCount": 34438,
+              "dot": -0.0003658466586093198,
+              "cosine": -0.004119295896010906,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 2.1688330773090994,
+              "secondNorm": 5.633309591507133,
+              "firstRms": 0.011687110958396288,
+              "secondRms": 0.03035600800621638,
+              "parameterCount": 34438,
+              "dot": -0.17188856159753627,
+              "cosine": -0.0140688056311713,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.19050057319442013,
+              "secondNorm": 0.28043367605913055,
+              "firstRms": 0.0010265434255196844,
+              "secondRms": 0.001511162626051613,
+              "parameterCount": 34438,
+              "dot": 0.028608798981663224,
+              "cosine": 0.5355168919783444,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.19050057319442013,
+              "secondNorm": 0.1448608491630803,
+              "firstRms": 0.0010265434255196844,
+              "secondRms": 0.000780606324852331,
+              "parameterCount": 34438,
+              "dot": 0.02245508334852829,
+              "cosine": 0.8137056995273926,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 2.1688330773090994,
+              "secondNorm": 0.28043367605913055,
+              "firstRms": 0.011687110958396288,
+              "secondRms": 0.001511162626051613,
+              "parameterCount": 34438,
+              "dot": 0.03900679192716486,
+              "cosine": 0.06413335217746528,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 2.1688330773090994,
+              "secondNorm": 0.1448608491630803,
+              "firstRms": 0.011687110958396288,
+              "secondRms": 0.000780606324852331,
+              "parameterCount": 34438,
+              "dot": 0.0721033682864064,
+              "cosine": 0.22949773216698616,
+              "cosineUndefinedReason": null
+            }
+          }
+        },
+        "byAction": {
+          "discard": {
+            "count": 6534,
+            "completeCorrect": 4441,
+            "typeCorrect": 6341,
+            "conditionalCorrect": 4547,
+            "multipleSameType": 6534,
+            "multipleConditionalCorrect": 4547,
+            "completeTop1": 0.6796755433119069,
+            "typeRecall": 0.970462197734925,
+            "conditionalTop1": 0.6958983777165595,
+            "multipleConditionalTop1": 0.6958983777165595,
+            "sumDensity": 5088.828609982868
+          },
+          "riichi": {
+            "count": 154,
+            "completeCorrect": 113,
+            "typeCorrect": 127,
+            "conditionalCorrect": 135,
+            "multipleSameType": 70,
+            "multipleConditionalCorrect": 51,
+            "completeTop1": 0.7337662337662337,
+            "typeRecall": 0.8246753246753247,
+            "conditionalTop1": 0.8766233766233766,
+            "multipleConditionalTop1": 0.7285714285714285,
+            "sumDensity": 291.25768156424584
+          },
+          "chi": {
+            "count": 0,
+            "completeCorrect": 0,
+            "typeCorrect": 0,
+            "conditionalCorrect": 0,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": null,
+            "typeRecall": null,
+            "conditionalTop1": null,
+            "multipleConditionalTop1": null,
+            "sumDensity": 0.0
+          },
+          "pon": {
+            "count": 214,
+            "completeCorrect": 166,
+            "typeCorrect": 166,
+            "conditionalCorrect": 214,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.7757009345794392,
+            "typeRecall": 0.7757009345794392,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 345.3976044514696
+          },
+          "daiminkan": {
+            "count": 0,
+            "completeCorrect": 0,
+            "typeCorrect": 0,
+            "conditionalCorrect": 0,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": null,
+            "typeRecall": null,
+            "conditionalTop1": null,
+            "multipleConditionalTop1": null,
+            "sumDensity": 0.0
+          },
+          "ankan": {
+            "count": 10,
+            "completeCorrect": 10,
+            "typeCorrect": 10,
+            "conditionalCorrect": 10,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 131.39019697926835
+          },
+          "shouminkan": {
+            "count": 6,
+            "completeCorrect": 6,
+            "typeCorrect": 6,
+            "conditionalCorrect": 6,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 135.87801536015155
+          },
+          "kita": {
+            "count": 548,
+            "completeCorrect": 536,
+            "typeCorrect": 539,
+            "conditionalCorrect": 543,
+            "multipleSameType": 10,
+            "multipleConditionalCorrect": 5,
+            "completeTop1": 0.9781021897810219,
+            "typeRecall": 0.9835766423357665,
+            "conditionalTop1": 0.9908759124087592,
+            "multipleConditionalTop1": 0.5,
+            "sumDensity": 584.9745263235349
+          },
+          "tsumo": {
+            "count": 95,
+            "completeCorrect": 95,
+            "typeCorrect": 95,
+            "conditionalCorrect": 95,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 268.67046417837605
+          },
+          "ron": {
+            "count": 91,
+            "completeCorrect": 91,
+            "typeCorrect": 91,
+            "conditionalCorrect": 91,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 253.71578784939598
+          },
+          "abort": {
+            "count": 10,
+            "completeCorrect": 10,
+            "typeCorrect": 10,
+            "conditionalCorrect": 10,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 281.15327695560256
+          },
+          "pass": {
+            "count": 530,
+            "completeCorrect": 476,
+            "typeCorrect": 476,
+            "conditionalCorrect": 530,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.8981132075471698,
+            "typeRecall": 0.8981132075471698,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 575.3590995425068
+          }
+        },
+        "meanDensity": 0.971267732322683,
+        "unsupportedGradientGroups": [],
+        "gradientMeanDenominators": {
+          "naturalWithin": 8192,
+          "naturalType": 8192,
+          "mixedWithin": 8192,
+          "mixedType": 8192,
+          "discardWithin": 6534,
+          "discardType": 6534,
+          "riichiMultiWithin": 70,
+          "riichiMultiType": 70
+        }
+      },
+      "pooled50_50": {
+        "support": {
+          "windows": 16384,
+          "discard": 12998,
+          "riichiMulti": 149
+        },
+        "gradientGroups": {
+          "all": {
+            "natural": {
+              "firstNorm": 0.16273354029934634,
+              "secondNorm": 0.2935597672113481,
+              "firstRms": 0.0001958914113269384,
+              "secondRms": 0.0003533742153096233,
+              "parameterCount": 690118,
+              "dot": 0.001192729204230825,
+              "cosine": 0.024967108341740464,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.1284095928848423,
+              "secondNorm": 0.08614452127607788,
+              "firstRms": 0.00015457376722621688,
+              "secondRms": 0.00010369695036323223,
+              "parameterCount": 690118,
+              "dot": -0.0009061889126847022,
+              "cosine": -0.08192069220296287,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.20591169928294586,
+              "secondNorm": 0.5972680895278452,
+              "firstRms": 0.00024786736223562895,
+              "secondRms": 0.0007189648107140932,
+              "parameterCount": 690118,
+              "dot": -0.0022658998126135,
+              "cosine": -0.018424273365078382,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.9089136525941992,
+              "secondNorm": 7.6160517439642,
+              "firstRms": 0.002297865509593665,
+              "secondRms": 0.009167864978047986,
+              "parameterCount": 690118,
+              "dot": 0.8126606890469739,
+              "cosine": 0.055897589759748095,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.20591169928294586,
+              "secondNorm": 0.3391828422429435,
+              "firstRms": 0.00024786736223562895,
+              "secondRms": 0.0004082932476158966,
+              "parameterCount": 690118,
+              "dot": 0.03447757804000545,
+              "cosine": 0.4936530816246463,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.20591169928294586,
+              "secondNorm": 0.14865236044330468,
+              "firstRms": 0.00024786736223562895,
+              "secondRms": 0.00017894111214414887,
+              "parameterCount": 690118,
+              "dot": 0.023818731059093712,
+              "cosine": 0.7781544195821483,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.9089136525941992,
+              "secondNorm": 0.3391828422429435,
+              "firstRms": 0.002297865509593665,
+              "secondRms": 0.0004082932476158966,
+              "parameterCount": 690118,
+              "dot": 0.028859109983714812,
+              "cosine": 0.04457206694590115,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.9089136525941992,
+              "secondNorm": 0.14865236044330468,
+              "firstRms": 0.002297865509593665,
+              "secondRms": 0.00017894111214414887,
+              "parameterCount": 690118,
+              "dot": 0.049161310350096174,
+              "cosine": 0.1732468537331308,
+              "cosineUndefinedReason": null
+            }
+          },
+          "trunk": {
+            "natural": {
+              "firstNorm": 0.1106998082915801,
+              "secondNorm": 0.17848467237992496,
+              "firstRms": 0.00013671019425843322,
+              "secondRms": 0.0002204220098461388,
+              "parameterCount": 655680,
+              "dot": 0.0014603373108674155,
+              "cosine": 0.0739103716648755,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.0876838900080306,
+              "secondNorm": 0.05985522151880588,
+              "firstRms": 0.00010828638117203237,
+              "secondRms": 7.391899848339569e-05,
+              "parameterCount": 655680,
+              "dot": -0.0010878006944173128,
+              "cosine": -0.2072657206165525,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.1397268557980264,
+              "secondNorm": 0.37339940946277705,
+              "firstRms": 0.0001725575309846421,
+              "secondRms": 0.0004611345456821645,
+              "parameterCount": 655680,
+              "dot": -0.0010244780565829112,
+              "cosine": -0.01963582475196309,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.2851360424333018,
+              "secondNorm": 5.005993398358235,
+              "firstRms": 0.0015870957747894665,
+              "secondRms": 0.006182217842178885,
+              "parameterCount": 655680,
+              "dot": 0.7749121803363219,
+              "cosine": 0.12045174913611272,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.1397268557980264,
+              "secondNorm": 0.2168683943134558,
+              "firstRms": 0.0001725575309846421,
+              "secondRms": 0.0002678244955674606,
+              "parameterCount": 655680,
+              "dot": 0.01706855533362444,
+              "cosine": 0.5632751786200051,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.1397268557980264,
+              "secondNorm": 0.09537038702433322,
+              "firstRms": 0.0001725575309846421,
+              "secondRms": 0.00011777892245537193,
+              "parameterCount": 655680,
+              "dot": 0.01028637772507356,
+              "cosine": 0.7719142110903059,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.2851360424333018,
+              "secondNorm": 0.2168683943134558,
+              "firstRms": 0.0015870957747894665,
+              "secondRms": 0.0002678244955674606,
+              "parameterCount": 655680,
+              "dot": 0.015243724922467923,
+              "cosine": 0.05469476181511846,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.2851360424333018,
+              "secondNorm": 0.09537038702433322,
+              "firstRms": 0.0015870957747894665,
+              "secondRms": 0.00011777892245537193,
+              "parameterCount": 655680,
+              "dot": 0.014320892711819164,
+              "cosine": 0.11684427609556146,
+              "cosineUndefinedReason": null
+            }
+          },
+          "head": {
+            "natural": {
+              "firstNorm": 0.11928016424605721,
+              "secondNorm": 0.23306771258716158,
+              "firstRms": 0.0006427606297894577,
+              "secondRms": 0.001255923402461815,
+              "parameterCount": 34438,
+              "dot": -0.0002676081066365912,
+              "cosine": -0.009626067950292342,
+              "cosineUndefinedReason": null
+            },
+            "mixed": {
+              "firstNorm": 0.09381129451143148,
+              "secondNorm": 0.06195345836044434,
+              "firstRms": 0.0005055174690835082,
+              "secondRms": 0.00033384632025865467,
+              "parameterCount": 34438,
+              "dot": 0.00018161178173261045,
+              "cosine": 0.03124807985172225,
+              "cosineUndefinedReason": null
+            },
+            "discard": {
+              "firstNorm": 0.15124825179283188,
+              "secondNorm": 0.46615668157937135,
+              "firstRms": 0.000815025886251901,
+              "secondRms": 0.002511961348530961,
+              "parameterCount": 34438,
+              "dot": -0.0012414217560305888,
+              "cosine": -0.017607474785037852,
+              "cosineUndefinedReason": null
+            },
+            "riichiMulti": {
+              "firstNorm": 1.4115157404362866,
+              "secondNorm": 5.739710294286107,
+              "firstRms": 0.007606182905726086,
+              "secondRms": 0.030929365556153814,
+              "parameterCount": 34438,
+              "dot": 0.03774850871065181,
+              "cosine": 0.0046593367639058345,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_naturalFull": {
+              "firstNorm": 0.15124825179283188,
+              "secondNorm": 0.26079321314003734,
+              "firstRms": 0.000815025886251901,
+              "secondRms": 0.0014053267865805073,
+              "parameterCount": 34438,
+              "dot": 0.017409022706381012,
+              "cosine": 0.44135468704540176,
+              "cosineUndefinedReason": null
+            },
+            "discardWithin_vs_mixedFull": {
+              "firstNorm": 0.15124825179283188,
+              "secondNorm": 0.1140263721434435,
+              "firstRms": 0.000815025886251901,
+              "secondRms": 0.0006144497137037558,
+              "parameterCount": 34438,
+              "dot": 0.013532353334020157,
+              "cosine": 0.7846530337552278,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_naturalFull": {
+              "firstNorm": 1.4115157404362866,
+              "secondNorm": 0.26079321314003734,
+              "firstRms": 0.007606182905726086,
+              "secondRms": 0.0014053267865805073,
+              "parameterCount": 34438,
+              "dot": 0.013615385061246892,
+              "cosine": 0.03698689867769819,
+              "cosineUndefinedReason": null
+            },
+            "riichiMultiWithin_vs_mixedFull": {
+              "firstNorm": 1.4115157404362866,
+              "secondNorm": 0.1140263721434435,
+              "firstRms": 0.007606182905726086,
+              "secondRms": 0.0006144497137037558,
+              "parameterCount": 34438,
+              "dot": 0.034840417638277,
+              "cosine": 0.21646730973967443,
+              "cosineUndefinedReason": null
+            }
+          }
+        },
+        "byAction": {
+          "discard": {
+            "count": 12998,
+            "completeCorrect": 8845,
+            "typeCorrect": 12610,
+            "conditionalCorrect": 9073,
+            "multipleSameType": 12998,
+            "multipleConditionalCorrect": 9073,
+            "completeTop1": 0.6804893060470841,
+            "typeRecall": 0.9701492537313433,
+            "conditionalTop1": 0.6980304662255732,
+            "multipleConditionalTop1": 0.6980304662255732,
+            "sumDensity": 10123.139619307824
+          },
+          "riichi": {
+            "count": 314,
+            "completeCorrect": 237,
+            "typeCorrect": 264,
+            "conditionalCorrect": 276,
+            "multipleSameType": 149,
+            "multipleConditionalCorrect": 111,
+            "completeTop1": 0.7547770700636943,
+            "typeRecall": 0.8407643312101911,
+            "conditionalTop1": 0.8789808917197452,
+            "multipleConditionalTop1": 0.7449664429530202,
+            "sumDensity": 593.863065007618
+          },
+          "chi": {
+            "count": 0,
+            "completeCorrect": 0,
+            "typeCorrect": 0,
+            "conditionalCorrect": 0,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": null,
+            "typeRecall": null,
+            "conditionalTop1": null,
+            "multipleConditionalTop1": null,
+            "sumDensity": 0.0
+          },
+          "pon": {
+            "count": 431,
+            "completeCorrect": 329,
+            "typeCorrect": 329,
+            "conditionalCorrect": 431,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.7633410672853829,
+            "typeRecall": 0.7633410672853829,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 695.6372313952495
+          },
+          "daiminkan": {
+            "count": 1,
+            "completeCorrect": 1,
+            "typeCorrect": 1,
+            "conditionalCorrect": 1,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 140.5016735046426
+          },
+          "ankan": {
+            "count": 17,
+            "completeCorrect": 17,
+            "typeCorrect": 17,
+            "conditionalCorrect": 17,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 223.3633348647562
+          },
+          "shouminkan": {
+            "count": 24,
+            "completeCorrect": 24,
+            "typeCorrect": 24,
+            "conditionalCorrect": 24,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 543.5120614406062
+          },
+          "kita": {
+            "count": 1131,
+            "completeCorrect": 1111,
+            "typeCorrect": 1119,
+            "conditionalCorrect": 1121,
+            "multipleSameType": 17,
+            "multipleConditionalCorrect": 7,
+            "completeTop1": 0.982316534040672,
+            "typeRecall": 0.9893899204244032,
+            "conditionalTop1": 0.9911582670203359,
+            "multipleConditionalTop1": 0.4117647058823529,
+            "sumDensity": 1207.3105643648137
+          },
+          "tsumo": {
+            "count": 184,
+            "completeCorrect": 184,
+            "typeCorrect": 184,
+            "conditionalCorrect": 184,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 520.3722674612757
+          },
+          "ron": {
+            "count": 188,
+            "completeCorrect": 188,
+            "typeCorrect": 188,
+            "conditionalCorrect": 188,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 524.1600891833675
+          },
+          "abort": {
+            "count": 18,
+            "completeCorrect": 18,
+            "typeCorrect": 18,
+            "conditionalCorrect": 18,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 1.0,
+            "typeRecall": 1.0,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 506.07589852008465
+          },
+          "pass": {
+            "count": 1078,
+            "completeCorrect": 963,
+            "typeCorrect": 963,
+            "conditionalCorrect": 1078,
+            "multipleSameType": 0,
+            "multipleConditionalCorrect": 0,
+            "completeTop1": 0.8933209647495362,
+            "typeRecall": 0.8933209647495362,
+            "conditionalTop1": 1.0,
+            "multipleConditionalTop1": null,
+            "sumDensity": 1170.2586968053251
+          }
+        },
+        "meanDensity": 0.9917110902011452,
+        "unsupportedGradientGroups": [],
+        "gradientMeanDenominators": {
+          "naturalWithin": 16384,
+          "naturalType": 16384,
+          "mixedWithin": 16384,
+          "mixedType": 16384,
+          "discardWithin": 12998,
+          "discardType": 12998,
+          "riichiMultiWithin": 149,
+          "riichiMultiType": 149
+        }
+      }
+    }
+  },
+  "gradientSums": {
+    "42-original": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/42-original.gradient-sums.npy",
+      "sha256": "a9590b4a2930d23c5d5b522ec79a846ec4cb548d81a1d961cb3f55091bbee60c"
+    },
+    "42-added": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/42-added.gradient-sums.npy",
+      "sha256": "7ab54552a1ba76fecb32645259569beee1275b9c6a09972e5dafc347be8b83c2"
+    },
+    "43-original": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/43-original.gradient-sums.npy",
+      "sha256": "7aa8bb482d989f58fc8bd51ab45ce6711deb81355eacc1f7e30c06d732919a62"
+    },
+    "43-added": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/43-added.gradient-sums.npy",
+      "sha256": "bb7080030740fd549e7e8205e81e5e469d0c6371f2222335da45a003fd8bf1fc"
+    }
+  },
+  "parameterLayout": [
+    {
+      "name": "bilinear_weight",
+      "group": "head",
+      "start": 0,
+      "end": 34304,
+      "shape": [
+        256,
+        134
+      ]
+    },
+    {
+      "name": "bilinear_bias",
+      "group": "head",
+      "start": 34304,
+      "end": 34438,
+      "shape": [
+        134
+      ]
+    },
+    {
+      "name": "conv.weight",
+      "group": "trunk",
+      "start": 34438,
+      "end": 44806,
+      "shape": [
+        64,
+        54,
+        3
+      ]
+    },
+    {
+      "name": "conv.bias",
+      "group": "trunk",
+      "start": 44806,
+      "end": 44870,
+      "shape": [
+        64
+      ]
+    },
+    {
+      "name": "blocks.0.conv1.weight",
+      "group": "trunk",
+      "start": 44870,
+      "end": 57158,
+      "shape": [
+        64,
+        64,
+        3
+      ]
+    },
+    {
+      "name": "blocks.0.conv1.bias",
+      "group": "trunk",
+      "start": 57158,
+      "end": 57222,
+      "shape": [
+        64
+      ]
+    },
+    {
+      "name": "blocks.0.conv2.weight",
+      "group": "trunk",
+      "start": 57222,
+      "end": 69510,
+      "shape": [
+        64,
+        64,
+        3
+      ]
+    },
+    {
+      "name": "blocks.0.conv2.bias",
+      "group": "trunk",
+      "start": 69510,
+      "end": 69574,
+      "shape": [
+        64
+      ]
+    },
+    {
+      "name": "blocks.1.conv1.weight",
+      "group": "trunk",
+      "start": 69574,
+      "end": 81862,
+      "shape": [
+        64,
+        64,
+        3
+      ]
+    },
+    {
+      "name": "blocks.1.conv1.bias",
+      "group": "trunk",
+      "start": 81862,
+      "end": 81926,
+      "shape": [
+        64
+      ]
+    },
+    {
+      "name": "blocks.1.conv2.weight",
+      "group": "trunk",
+      "start": 81926,
+      "end": 94214,
+      "shape": [
+        64,
+        64,
+        3
+      ]
+    },
+    {
+      "name": "blocks.1.conv2.bias",
+      "group": "trunk",
+      "start": 94214,
+      "end": 94278,
+      "shape": [
+        64
+      ]
+    },
+    {
+      "name": "blocks.2.conv1.weight",
+      "group": "trunk",
+      "start": 94278,
+      "end": 106566,
+      "shape": [
+        64,
+        64,
+        3
+      ]
+    },
+    {
+      "name": "blocks.2.conv1.bias",
+      "group": "trunk",
+      "start": 106566,
+      "end": 106630,
+      "shape": [
+        64
+      ]
+    },
+    {
+      "name": "blocks.2.conv2.weight",
+      "group": "trunk",
+      "start": 106630,
+      "end": 118918,
+      "shape": [
+        64,
+        64,
+        3
+      ]
+    },
+    {
+      "name": "blocks.2.conv2.bias",
+      "group": "trunk",
+      "start": 118918,
+      "end": 118982,
+      "shape": [
+        64
+      ]
+    },
+    {
+      "name": "state.weight",
+      "group": "trunk",
+      "start": 118982,
+      "end": 689862,
+      "shape": [
+        256,
+        2230
+      ]
+    },
+    {
+      "name": "state.bias",
+      "group": "trunk",
+      "start": 689862,
+      "end": 690118,
+      "shape": [
+        256
+      ]
+    }
+  ],
+  "components": [
+    "naturalWithin",
+    "naturalType",
+    "mixedWithin",
+    "mixedType",
+    "discardWithin",
+    "discardType",
+    "riichiMultiWithin",
+    "riichiMultiType"
+  ],
+  "stateBefore": {
+    "42": "f19888a7df87e36c25d458ff9d8dc256f5894d5e4d051f120c45f241e6d512de",
+    "43": "647090c493bbc3cbfa643bdf604c5c1517effd0c881a35f664285852dcc55c7c"
+  },
+  "stateAfter": {
+    "42": "f19888a7df87e36c25d458ff9d8dc256f5894d5e4d051f120c45f241e6d512de",
+    "43": "647090c493bbc3cbfa643bdf604c5c1517effd0c881a35f664285852dcc55c7c"
+  },
+  "batches": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/batches.jsonl",
+    "sha256": "39209cfa2500c9d41b231758c338c9806050169ac3232c9fbe801d9fbaca1162"
+  },
+  "selectedIdentities": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/selected-identities.jsonl",
+    "sha256": "7cf18098217d8eeaaee9853a1a461eb43edad3c93197cc93506d182c26638214"
+  },
+  "reads": {
+    "status": "completed",
+    "pid": 36746,
+    "planSha256": "80912373642c7482eba38fdc153ab583b4628c2ba7b4e49b723ef5263efb7854",
+    "cachePayloadReads": 512,
+    "completedCaches": 512,
+    "modelPayloadFiles": 2,
+    "completedBatches": 128,
+    "trainingUpdates": 0,
+    "modelWrites": 0,
+    "rawOrSourcePayloadReads": 0,
+    "holdoutPayloadReads": 0,
+    "validationPayloadReads": 0,
+    "testPayloadReads": 0,
+    "SQLReads": 0,
+    "packedReads": 0,
+    "elapsedSeconds": 11.08712349999405,
+    "peakRssBytes": 1007894528,
+    "currentMonitor": "added",
+    "currentGameIndex": 49123,
+    "originalWindows": 8192,
+    "addedWindows": 8192
+  },
+  "sourceMetadataModelHashesRecheckedAfter": true,
+  "parametersBuffersUnchanged": true,
+  "trainingUpdates": 0,
+  "modelWrites": 0,
+  "newHoldoutGamesConsumed": 0,
+  "qualityAccepted": false,
+  "newWeightChosen": false,
+  "goalAchieved": false,
+  "deploymentAllowed": false,
+  "interpretation": "Fixed-endpoint local gradients on fitted monitor samples; mixed density is a projection, not full-fit objective; no causal or generalization acceptance."
+}

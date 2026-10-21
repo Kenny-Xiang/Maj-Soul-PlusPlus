@@ -1,0 +1,3451 @@
+{
+  "schemaVersion": 1,
+  "purpose": "All frozen capacity-probe trajectories, no model/step/seed selection",
+  "sources": {
+    "report": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/capacity-probe-run/report.json",
+      "sha256": "397b6c71999aa937bda798540aa038eef037c925303d081470fa25d35feb2595"
+    },
+    "plan": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/capacity-probe-plan.json",
+      "sha256": "5580f3a3656ef9c4b8aeeb235b9ace57da14a1f7ad5c2d2243321a9ca71bf6d8"
+    },
+    "preparation": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/capacity-probe-preparation.json",
+      "sha256": "bcd39139ae31ff44911752272fabf616f91d83ed66bc5dabb75d5d4a6fd1ee2e"
+    }
+  },
+  "primaryStep": 2500,
+  "steps": [
+    0,
+    100,
+    400,
+    1000,
+    2500
+  ],
+  "parameterCounts": {
+    "current": 756033,
+    "larger": 2904705
+  },
+  "plan": {
+    "schemaVersion": 1,
+    "status": "frozen-for-CPU-preparation-awaiting-root-review-before-MPS",
+    "frozenAtUtc": "2026-10-18T02:49:17.970426+00:00",
+    "purpose": "Training-only whole-game-disjoint enriched capacity comparison; no formal validation or deployment selection",
+    "prepareScript": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/capacity-probe-prepare.py",
+      "sha256": "e1663f0b313be90e4beb96283aa0856d62df736dfae728a40cfdba14a5d8f090"
+    },
+    "runScript": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/capacity-probe-run.py",
+      "sha256": "0bef688d4014b309e5c57292b869bf6fc964b2bc1c015b362f597b47274d5452"
+    },
+    "trainingPlan": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/full-training-plan-3p.json",
+      "sha256": "04650e99f46520f551f416183b77211c947ebcc488fb6d178d4b9052dad60a7a"
+    },
+    "bindingPlan": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-validation-plan-3p.json",
+      "sha256": "9c9f5c18065cf2a2398f8a46bcd3f4a150f24888e4f4dd26ce0a4e6c32d3d87c"
+    },
+    "eligibleGames": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/capacity-probe-eligible-games.json",
+      "sha256": "6315442e7f08185933764df99758312bb404bd09aaa847fea414a5ad7e95036a"
+    },
+    "sourceSha256": {
+      "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_actions.py": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+      "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_features.py": "86537a62645bce835caaa3ce2f5636c75f2bfaef770cbcd0bf230ff29dccd9c8",
+      "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_model.py": "c36c96e06c88bd3f87306b20a51474e71ddc7a4c9daf4580727170559deccbe4",
+      "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_training.py": "7438965893f4d41a46b5690d891e576d7d203c9fcf5d1eb22412b57df0fe5a4e",
+      "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_encoded_cache.py": "44babbd91dd903f4e0f299b8fcba21231074e7602f78397c97db40f838b93229"
+    },
+    "metadataFeasibility": {
+      "holdout": {
+        "trainGames": 37578,
+        "kanPositives": 1868,
+        "kanGames": 1787,
+        "riichiPositivesInKanGames": 11503
+      },
+      "fit": {
+        "trainGames": 37688,
+        "kanPositives": 1856,
+        "kanGames": 1774,
+        "riichiPositivesInKanGames": 11495
+      }
+    },
+    "selectionSeed": 20261018,
+    "selectionPerStratum": {
+      "fit": 256,
+      "holdout": 128
+    },
+    "initializationSeeds": [
+      42,
+      43
+    ],
+    "models": {
+      "current": {
+        "channels": 64,
+        "blocks": 3,
+        "hidden": 256
+      },
+      "larger": {
+        "channels": 128,
+        "blocks": 3,
+        "hidden": 512
+      }
+    },
+    "preparationBudget": {
+      "maximumCaches": 4096,
+      "wallSeconds": 600,
+      "cpuThreads": 1,
+      "maximumRssBytes": 1073741824,
+      "maximumDecodedGameBytes": 268435456
+    },
+    "selectionMethod": {
+      "wholeGameFold": "SHA256(capacity-probe-fold-v1:20261018:{gameId}), first byte even = fit, odd = holdout; all seats/windows of a game remain in one fold. Only actual original train IDs eligible.",
+      "enrichment": "Within each fold, eligible games are those whose converted manifest audit.actions.daiminkan > 0. This explicitly uses whole-game target counts to enrich the sampling cohort, never as model features.",
+      "gameOrder": "Ascending SHA256(capacity-probe-game-v1:20261018:{gameId}); fit then holdout.",
+      "stop": "Within each fold scan entire eligible games until each of riichi-positive, riichi-negative, daiminkan-positive, daiminkan-negative has at least the required support. Fail if budget/support exhausted; no expanded scan or fallback.",
+      "windowSelection": "Among all eligible opportunity windows in that scanned cohort, keep the lowest SHA256(capacity-probe-sample-v1:20261018:{gameId}:{sampleIndex}:{action}) per stratum using bounded heaps. Negative means actual target action differs from the offered focal action. Retain ALL candidate vectors in their original canonical order and actual target index.",
+      "finalOrder": "Within each fold, combine all strata and sort ascending by the same sample hash, gameId, sampleIndex. Assert no window appears in two strata and fit/holdout games never overlap.",
+      "batchOrder": "For each initialization seed, NumPy default_rng(seed) generates 2500 draws of 128 distinct fit indices without replacement within a batch, independently across steps. Freeze the full schedules in the sample package; both architectures consume exactly the same schedule for the paired seed."
+    },
+    "training": {
+      "initialization": "fresh-random-no-parent-weights",
+      "device": "mps-only-after-root-review-and-explicit---run",
+      "cpuThreads": 1,
+      "steps": 2500,
+      "batchSize": 128,
+      "loss": "Unweighted full legal candidate cross entropy only; no action weights, auxiliary loss, rewards or engineered features",
+      "optimizer": "AdamW",
+      "learningRate": 0.001,
+      "weightDecay": 0.0001,
+      "gradientClip": 1.0,
+      "learningRateSchedule": "constant",
+      "recordSteps": [
+        0,
+        100,
+        400,
+        1000,
+        2500
+      ],
+      "evaluationBatchSize": 128,
+      "armOrder": [
+        "current-seed-42",
+        "larger-seed-42",
+        "current-seed-43",
+        "larger-seed-43"
+      ],
+      "savedResearchWeights": "All four final-step arms, plus all five metric records per arm. Not runtime-exported or deployment-eligible."
+    },
+    "primaryComparison": {
+      "step": 2500,
+      "pairedBy": "initialization seed and exact batch schedule; fixed identical data for every arm",
+      "report": "Report both paired larger-minus-current differences, fit/holdout NLL, complete action accuracy, and focal type recall, exact positive recall, FPR, precision and binary balanced accuracy. Preserve every arm, including failures; no best-seed or best-step selection. Intermediate points show learning trajectory only.",
+      "interpretation": [
+        "If both seeds show better fit and holdout loss for the larger model, with concordant focal improvements and disclosed FP/recall tradeoffs, this supports added capacity being useful under this probe budget; it is not proof of the full-corpus cause.",
+        "Better fit but unchanged/worse holdout suggests memorization or generalization limitations; it does not justify widening the production model.",
+        "If both architectures fit strongly yet holdout remains weak, capacity insufficiency alone is less supported; missing useful features, label variability and cohort mismatch remain alternatives.",
+        "Failure to fit or continued improvement at 2500 steps leaves optimizer and finite training budget unresolved. Equal updates do not prove convergence or equal compute.",
+        "Mixed seeds, metrics, or actions are inconclusive; do not select the favorable seed, checkpoint or action to claim success.",
+        "This probe changes channels and hidden width together. It cannot uniquely separate parameter count, inductive bias, and optimization conditioning, nor localize a benefit to the state encoder versus candidate scorer."
+      ]
+    },
+    "limitations": [
+      "Artificially balanced action strata and games enriched for recorded daiminkan are not the natural training/validation population. In particular precision and accuracy here are not deployable rate estimates.",
+      "Internal holdout uses whole games from the original formal train split. It has not trained these freshly initialized probe arms, but is not a new formal validation/test set and is not a blind final quality claim.",
+      "Only two initialization seeds and 128 holdout positive labels per action; seed agreement is limited evidence, not a formal significance claim or guarantee.",
+      "Enrichment selects games using complete-game action counts; this is a sampling condition only, never a model input. It may shift context distributions for both positive and negative examples.",
+      "No original formal validation or test payloads, raw games, or converted sample payloads are read. Cache source hashes are verified against frozen metadata without rereading those source payloads.",
+      "Complete semantic candidate objects are absent from caches; exact vectors and targets are preserved but this preparation does not independently re-prove semantic mask correctness.",
+      "The prior 256-window memorization/gate experiment is not rerun. This new probe adds whole-game-disjoint internal holdout and a paired width comparison.",
+      "No thresholds or selection rules from the 8-epoch full-training program change. No probe model can be selected for deployment or installed in the App."
+    ]
+  },
+  "preparation": {
+    "schemaVersion": 1,
+    "status": "prepared-not-trained",
+    "planSha256": "5580f3a3656ef9c4b8aeeb235b9ace57da14a1f7ad5c2d2243321a9ca71bf6d8",
+    "samplePackage": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/capacity-probe-samples.npz",
+      "sha256": "ea1d925c7f00541890f987c4623c8226b20de28942d7abfa5457ad88441bca15"
+    },
+    "selection": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/capacity-probe-selection.json",
+      "sha256": "3d17abcebe34a30d1c1128754ce1b5de02d0349dbc5143d8e45e790828aa27b4"
+    },
+    "loadedBindings": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/capacity-probe-bindings.jsonl",
+      "sha256": "25b4e617f51b79c1f23859f9f3ef4b2fe48f3733d4a02e2590c3110e6ece001c"
+    },
+    "loadedTrainingCaches": 363,
+    "loadedGamesByFold": {
+      "fit": 243,
+      "holdout": 120
+    },
+    "selectedGamesByFold": {
+      "fit": 243,
+      "holdout": 120
+    },
+    "support": {
+      "fit": {
+        "riichi:negative": 256,
+        "riichi:positive": 256,
+        "daiminkan:positive": 256,
+        "daiminkan:negative": 256
+      },
+      "holdout": {
+        "riichi:positive": 128,
+        "riichi:negative": 128,
+        "daiminkan:negative": 128,
+        "daiminkan:positive": 128
+      }
+    },
+    "candidateCounts": {
+      "fit": 7981,
+      "holdout": 3991
+    },
+    "scannedOpportunityCounts": {
+      "fit": {
+        "riichi:positive": 1514,
+        "daiminkan:negative": 495,
+        "daiminkan:positive": 256,
+        "riichi:negative": 3709
+      },
+      "holdout": {
+        "riichi:negative": 1878,
+        "daiminkan:negative": 290,
+        "riichi:positive": 791,
+        "daiminkan:positive": 128
+      }
+    },
+    "wholeGameOverlap": 0,
+    "exactInputHashOverlapBetweenFolds": 0,
+    "batchScheduleSha256": {
+      "42": "69eb64f50e90cc4db62e22400436cf9947884eb306927820e3171e55845a87ae",
+      "43": "9ebf64f3b7da09efcc6eda668b003d86536ac1b11482f074fe7e894a7eecd373"
+    },
+    "elapsedSeconds": 2.7520713330013677,
+    "peakRssBytes": 289832960,
+    "scope": {
+      "formalValidationPayloadReads": 0,
+      "testPayloadReads": 0,
+      "rawGameReads": 0,
+      "sourceSamplePayloadReads": 0,
+      "gpuWork": 0,
+      "modelInferenceRuns": 0,
+      "trainingRuns": 0,
+      "sourceCacheAppWrites": 0
+    },
+    "limitations": [
+      "Artificially balanced action strata and games enriched for recorded daiminkan are not the natural training/validation population. In particular precision and accuracy here are not deployable rate estimates.",
+      "Internal holdout uses whole games from the original formal train split. It has not trained these freshly initialized probe arms, but is not a new formal validation/test set and is not a blind final quality claim.",
+      "Only two initialization seeds and 128 holdout positive labels per action; seed agreement is limited evidence, not a formal significance claim or guarantee.",
+      "Enrichment selects games using complete-game action counts; this is a sampling condition only, never a model input. It may shift context distributions for both positive and negative examples.",
+      "No original formal validation or test payloads, raw games, or converted sample payloads are read. Cache source hashes are verified against frozen metadata without rereading those source payloads.",
+      "Complete semantic candidate objects are absent from caches; exact vectors and targets are preserved but this preparation does not independently re-prove semantic mask correctness.",
+      "The prior 256-window memorization/gate experiment is not rerun. This new probe adds whole-game-disjoint internal holdout and a paired width comparison.",
+      "No thresholds or selection rules from the 8-epoch full-training program change. No probe model can be selected for deployment or installed in the App."
+    ]
+  },
+  "rows": [
+    {
+      "arm": "current-seed-42",
+      "architecture": "current",
+      "seed": 42,
+      "step": 0,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 1.8135762214660645,
+            "fullCorrect": 253,
+            "fullAccuracy": 0.2470703125,
+            "typeCorrect": 481,
+            "typeAccuracy": 0.4697265625
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 1.098689079284668,
+            "fullCorrect": 229,
+            "fullAccuracy": 0.89453125,
+            "typeCorrect": 229,
+            "typeAccuracy": 0.89453125
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 1.1099790334701538,
+            "fullCorrect": 7,
+            "fullAccuracy": 0.02734375,
+            "typeCorrect": 7,
+            "typeAccuracy": 0.02734375
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 2.5167770385742188,
+            "fullCorrect": 17,
+            "fullAccuracy": 0.06640625,
+            "typeCorrect": 245,
+            "typeAccuracy": 0.95703125
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 2.5288596153259277,
+            "fullCorrect": 0,
+            "fullAccuracy": 0.0,
+            "typeCorrect": 0,
+            "typeAccuracy": 0.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 0,
+            "falsePositive": 0,
+            "falseNegative": 256,
+            "exactCorrectPositive": 0,
+            "precision": null,
+            "typeRecall": 0.0,
+            "exactPositiveRecall": 0.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 0.5
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 7,
+            "falsePositive": 11,
+            "falseNegative": 249,
+            "exactCorrectPositive": 7,
+            "precision": 0.3888888888888889,
+            "typeRecall": 0.02734375,
+            "exactPositiveRecall": 0.02734375,
+            "falsePositiveRate": 0.04296875,
+            "binaryBalancedAccuracy": 0.4921875
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 1.8129478693008423,
+            "fullCorrect": 127,
+            "fullAccuracy": 0.248046875,
+            "typeCorrect": 241,
+            "typeAccuracy": 0.470703125
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 1.0825526714324951,
+            "fullCorrect": 118,
+            "fullAccuracy": 0.921875,
+            "typeCorrect": 118,
+            "typeAccuracy": 0.921875
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.1149353981018066,
+            "fullCorrect": 1,
+            "fullAccuracy": 0.0078125,
+            "typeCorrect": 1,
+            "typeAccuracy": 0.0078125
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 2.5046658515930176,
+            "fullCorrect": 8,
+            "fullAccuracy": 0.0625,
+            "typeCorrect": 122,
+            "typeAccuracy": 0.953125
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 2.549638271331787,
+            "fullCorrect": 0,
+            "fullAccuracy": 0.0,
+            "typeCorrect": 0,
+            "typeAccuracy": 0.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 0,
+            "falsePositive": 0,
+            "falseNegative": 128,
+            "exactCorrectPositive": 0,
+            "precision": null,
+            "typeRecall": 0.0,
+            "exactPositiveRecall": 0.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 0.5
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 1,
+            "falsePositive": 3,
+            "falseNegative": 127,
+            "exactCorrectPositive": 1,
+            "precision": 0.25,
+            "typeRecall": 0.0078125,
+            "exactPositiveRecall": 0.0078125,
+            "falsePositiveRate": 0.0234375,
+            "binaryBalancedAccuracy": 0.4921875
+          }
+        }
+      }
+    },
+    {
+      "arm": "current-seed-42",
+      "architecture": "current",
+      "seed": 42,
+      "step": 100,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 1.1030107736587524,
+            "fullCorrect": 655,
+            "fullAccuracy": 0.6396484375,
+            "typeCorrect": 723,
+            "typeAccuracy": 0.7060546875
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 0.6115453243255615,
+            "fullCorrect": 201,
+            "fullAccuracy": 0.78515625,
+            "typeCorrect": 201,
+            "typeAccuracy": 0.78515625
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 0.3729608654975891,
+            "fullCorrect": 245,
+            "fullAccuracy": 0.95703125,
+            "typeCorrect": 245,
+            "typeAccuracy": 0.95703125
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 2.32822585105896,
+            "fullCorrect": 17,
+            "fullAccuracy": 0.06640625,
+            "typeCorrect": 25,
+            "typeAccuracy": 0.09765625
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 1.0993108749389648,
+            "fullCorrect": 192,
+            "fullAccuracy": 0.75,
+            "typeCorrect": 252,
+            "typeAccuracy": 0.984375
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 252,
+            "falsePositive": 228,
+            "falseNegative": 4,
+            "exactCorrectPositive": 192,
+            "precision": 0.525,
+            "typeRecall": 0.984375,
+            "exactPositiveRecall": 0.75,
+            "falsePositiveRate": 0.890625,
+            "binaryBalancedAccuracy": 0.546875
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 245,
+            "falsePositive": 50,
+            "falseNegative": 11,
+            "exactCorrectPositive": 245,
+            "precision": 0.8305084745762712,
+            "typeRecall": 0.95703125,
+            "exactPositiveRecall": 0.95703125,
+            "falsePositiveRate": 0.1953125,
+            "binaryBalancedAccuracy": 0.880859375
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 1.2837129831314087,
+            "fullCorrect": 268,
+            "fullAccuracy": 0.5234375,
+            "typeCorrect": 306,
+            "typeAccuracy": 0.59765625
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 0.9349591732025146,
+            "fullCorrect": 65,
+            "fullAccuracy": 0.5078125,
+            "typeCorrect": 65,
+            "typeAccuracy": 0.5078125
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 0.4463976323604584,
+            "fullCorrect": 111,
+            "fullAccuracy": 0.8671875,
+            "typeCorrect": 111,
+            "typeAccuracy": 0.8671875
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 2.4956107139587402,
+            "fullCorrect": 6,
+            "fullAccuracy": 0.046875,
+            "typeCorrect": 11,
+            "typeAccuracy": 0.0859375
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 1.2578842639923096,
+            "fullCorrect": 86,
+            "fullAccuracy": 0.671875,
+            "typeCorrect": 119,
+            "typeAccuracy": 0.9296875
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 119,
+            "falsePositive": 117,
+            "falseNegative": 9,
+            "exactCorrectPositive": 86,
+            "precision": 0.5042372881355932,
+            "typeRecall": 0.9296875,
+            "exactPositiveRecall": 0.671875,
+            "falsePositiveRate": 0.9140625,
+            "binaryBalancedAccuracy": 0.5078125
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 111,
+            "falsePositive": 60,
+            "falseNegative": 17,
+            "exactCorrectPositive": 111,
+            "precision": 0.6491228070175439,
+            "typeRecall": 0.8671875,
+            "exactPositiveRecall": 0.8671875,
+            "falsePositiveRate": 0.46875,
+            "binaryBalancedAccuracy": 0.69921875
+          }
+        }
+      }
+    },
+    {
+      "arm": "current-seed-42",
+      "architecture": "current",
+      "seed": 42,
+      "step": 400,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 0.11358913034200668,
+            "fullCorrect": 1008,
+            "fullAccuracy": 0.984375,
+            "typeCorrect": 1023,
+            "typeAccuracy": 0.9990234375
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 0.008156788535416126,
+            "fullCorrect": 255,
+            "fullAccuracy": 0.99609375,
+            "typeCorrect": 255,
+            "typeAccuracy": 0.99609375
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 0.004786648787558079,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.3393789529800415,
+            "fullCorrect": 243,
+            "fullAccuracy": 0.94921875,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.10203413665294647,
+            "fullCorrect": 254,
+            "fullAccuracy": 0.9921875,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 254,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 0.9921875,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 1,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 0.9961089494163424,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.00390625,
+            "binaryBalancedAccuracy": 0.998046875
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 1.9582093954086304,
+            "fullCorrect": 302,
+            "fullAccuracy": 0.58984375,
+            "typeCorrect": 361,
+            "typeAccuracy": 0.705078125
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 1.390114665031433,
+            "fullCorrect": 93,
+            "fullAccuracy": 0.7265625,
+            "typeCorrect": 93,
+            "typeAccuracy": 0.7265625
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 0.6089987754821777,
+            "fullCorrect": 110,
+            "fullAccuracy": 0.859375,
+            "typeCorrect": 110,
+            "typeAccuracy": 0.859375
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 4.032570838928223,
+            "fullCorrect": 35,
+            "fullAccuracy": 0.2734375,
+            "typeCorrect": 69,
+            "typeAccuracy": 0.5390625
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 1.8011530637741089,
+            "fullCorrect": 64,
+            "fullAccuracy": 0.5,
+            "typeCorrect": 89,
+            "typeAccuracy": 0.6953125
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 89,
+            "falsePositive": 57,
+            "falseNegative": 39,
+            "exactCorrectPositive": 64,
+            "precision": 0.6095890410958904,
+            "typeRecall": 0.6953125,
+            "exactPositiveRecall": 0.5,
+            "falsePositiveRate": 0.4453125,
+            "binaryBalancedAccuracy": 0.625
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 110,
+            "falsePositive": 30,
+            "falseNegative": 18,
+            "exactCorrectPositive": 110,
+            "precision": 0.7857142857142857,
+            "typeRecall": 0.859375,
+            "exactPositiveRecall": 0.859375,
+            "falsePositiveRate": 0.234375,
+            "binaryBalancedAccuracy": 0.8125
+          }
+        }
+      }
+    },
+    {
+      "arm": "current-seed-42",
+      "architecture": "current",
+      "seed": 42,
+      "step": 1000,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 0.003086965996772051,
+            "fullCorrect": 1024,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 1024,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 0.0003846287727355957,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 0.00015353626804426312,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.009432913735508919,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.002376785036176443,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 2.870211601257324,
+            "fullCorrect": 294,
+            "fullAccuracy": 0.57421875,
+            "typeCorrect": 352,
+            "typeAccuracy": 0.6875
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 2.354769229888916,
+            "fullCorrect": 89,
+            "fullAccuracy": 0.6953125,
+            "typeCorrect": 89,
+            "typeAccuracy": 0.6953125
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 0.9510706067085266,
+            "fullCorrect": 111,
+            "fullAccuracy": 0.8671875,
+            "typeCorrect": 111,
+            "typeAccuracy": 0.8671875
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 5.4148759841918945,
+            "fullCorrect": 35,
+            "fullAccuracy": 0.2734375,
+            "typeCorrect": 70,
+            "typeAccuracy": 0.546875
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 2.7601306438446045,
+            "fullCorrect": 59,
+            "fullAccuracy": 0.4609375,
+            "typeCorrect": 82,
+            "typeAccuracy": 0.640625
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 82,
+            "falsePositive": 57,
+            "falseNegative": 46,
+            "exactCorrectPositive": 59,
+            "precision": 0.5899280575539568,
+            "typeRecall": 0.640625,
+            "exactPositiveRecall": 0.4609375,
+            "falsePositiveRate": 0.4453125,
+            "binaryBalancedAccuracy": 0.59765625
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 111,
+            "falsePositive": 35,
+            "falseNegative": 17,
+            "exactCorrectPositive": 111,
+            "precision": 0.7602739726027398,
+            "typeRecall": 0.8671875,
+            "exactPositiveRecall": 0.8671875,
+            "falsePositiveRate": 0.2734375,
+            "binaryBalancedAccuracy": 0.796875
+          }
+        }
+      }
+    },
+    {
+      "arm": "current-seed-42",
+      "architecture": "current",
+      "seed": 42,
+      "step": 2500,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 0.0002708765387069434,
+            "fullCorrect": 1024,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 1024,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 3.29926006088499e-05,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 1.5244273527059704e-05,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.0008278395980596542,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.00020742975175380707,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 3.472238063812256,
+            "fullCorrect": 288,
+            "fullAccuracy": 0.5625,
+            "typeCorrect": 346,
+            "typeAccuracy": 0.67578125
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 2.9559171199798584,
+            "fullCorrect": 87,
+            "fullAccuracy": 0.6796875,
+            "typeCorrect": 87,
+            "typeAccuracy": 0.6796875
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.2754851579666138,
+            "fullCorrect": 111,
+            "fullAccuracy": 0.8671875,
+            "typeCorrect": 111,
+            "typeAccuracy": 0.8671875
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 6.299546241760254,
+            "fullCorrect": 33,
+            "fullAccuracy": 0.2578125,
+            "typeCorrect": 70,
+            "typeAccuracy": 0.546875
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 3.358004093170166,
+            "fullCorrect": 57,
+            "fullAccuracy": 0.4453125,
+            "typeCorrect": 78,
+            "typeAccuracy": 0.609375
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 78,
+            "falsePositive": 56,
+            "falseNegative": 50,
+            "exactCorrectPositive": 57,
+            "precision": 0.582089552238806,
+            "typeRecall": 0.609375,
+            "exactPositiveRecall": 0.4453125,
+            "falsePositiveRate": 0.4375,
+            "binaryBalancedAccuracy": 0.5859375
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 111,
+            "falsePositive": 37,
+            "falseNegative": 17,
+            "exactCorrectPositive": 111,
+            "precision": 0.75,
+            "typeRecall": 0.8671875,
+            "exactPositiveRecall": 0.8671875,
+            "falsePositiveRate": 0.2890625,
+            "binaryBalancedAccuracy": 0.7890625
+          }
+        }
+      }
+    },
+    {
+      "arm": "current-seed-43",
+      "architecture": "current",
+      "seed": 43,
+      "step": 0,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 1.814633846282959,
+            "fullCorrect": 106,
+            "fullAccuracy": 0.103515625,
+            "typeCorrect": 325,
+            "typeAccuracy": 0.3173828125
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 1.1234338283538818,
+            "fullCorrect": 50,
+            "fullAccuracy": 0.1953125,
+            "typeCorrect": 50,
+            "typeAccuracy": 0.1953125
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 1.104365587234497,
+            "fullCorrect": 10,
+            "fullAccuracy": 0.0390625,
+            "typeCorrect": 10,
+            "typeAccuracy": 0.0390625
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 2.518066883087158,
+            "fullCorrect": 7,
+            "fullAccuracy": 0.02734375,
+            "typeCorrect": 200,
+            "typeAccuracy": 0.78125
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 2.512669086456299,
+            "fullCorrect": 39,
+            "fullAccuracy": 0.15234375,
+            "typeCorrect": 65,
+            "typeAccuracy": 0.25390625
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 65,
+            "falsePositive": 49,
+            "falseNegative": 191,
+            "exactCorrectPositive": 39,
+            "precision": 0.5701754385964912,
+            "typeRecall": 0.25390625,
+            "exactPositiveRecall": 0.15234375,
+            "falsePositiveRate": 0.19140625,
+            "binaryBalancedAccuracy": 0.53125
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 10,
+            "falsePositive": 3,
+            "falseNegative": 246,
+            "exactCorrectPositive": 10,
+            "precision": 0.7692307692307693,
+            "typeRecall": 0.0390625,
+            "exactPositiveRecall": 0.0390625,
+            "falsePositiveRate": 0.01171875,
+            "binaryBalancedAccuracy": 0.513671875
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 1.8137071132659912,
+            "fullCorrect": 51,
+            "fullAccuracy": 0.099609375,
+            "typeCorrect": 161,
+            "typeAccuracy": 0.314453125
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 1.1081349849700928,
+            "fullCorrect": 21,
+            "fullAccuracy": 0.1640625,
+            "typeCorrect": 21,
+            "typeAccuracy": 0.1640625
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.1092023849487305,
+            "fullCorrect": 8,
+            "fullAccuracy": 0.0625,
+            "typeCorrect": 8,
+            "typeAccuracy": 0.0625
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 2.504751682281494,
+            "fullCorrect": 2,
+            "fullAccuracy": 0.015625,
+            "typeCorrect": 103,
+            "typeAccuracy": 0.8046875
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 2.5327396392822266,
+            "fullCorrect": 20,
+            "fullAccuracy": 0.15625,
+            "typeCorrect": 29,
+            "typeAccuracy": 0.2265625
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 29,
+            "falsePositive": 22,
+            "falseNegative": 99,
+            "exactCorrectPositive": 20,
+            "precision": 0.5686274509803921,
+            "typeRecall": 0.2265625,
+            "exactPositiveRecall": 0.15625,
+            "falsePositiveRate": 0.171875,
+            "binaryBalancedAccuracy": 0.52734375
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 8,
+            "falsePositive": 2,
+            "falseNegative": 120,
+            "exactCorrectPositive": 8,
+            "precision": 0.8,
+            "typeRecall": 0.0625,
+            "exactPositiveRecall": 0.0625,
+            "falsePositiveRate": 0.015625,
+            "binaryBalancedAccuracy": 0.5234375
+          }
+        }
+      }
+    },
+    {
+      "arm": "current-seed-43",
+      "architecture": "current",
+      "seed": 43,
+      "step": 100,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 1.110095500946045,
+            "fullCorrect": 625,
+            "fullAccuracy": 0.6103515625,
+            "typeCorrect": 691,
+            "typeAccuracy": 0.6748046875
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 0.6227719783782959,
+            "fullCorrect": 188,
+            "fullAccuracy": 0.734375,
+            "typeCorrect": 188,
+            "typeAccuracy": 0.734375
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 0.44751405715942383,
+            "fullCorrect": 231,
+            "fullAccuracy": 0.90234375,
+            "typeCorrect": 231,
+            "typeAccuracy": 0.90234375
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 2.3513293266296387,
+            "fullCorrect": 16,
+            "fullAccuracy": 0.0625,
+            "typeCorrect": 21,
+            "typeAccuracy": 0.08203125
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 1.0187667608261108,
+            "fullCorrect": 190,
+            "fullAccuracy": 0.7421875,
+            "typeCorrect": 251,
+            "typeAccuracy": 0.98046875
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 251,
+            "falsePositive": 234,
+            "falseNegative": 5,
+            "exactCorrectPositive": 190,
+            "precision": 0.5175257731958763,
+            "typeRecall": 0.98046875,
+            "exactPositiveRecall": 0.7421875,
+            "falsePositiveRate": 0.9140625,
+            "binaryBalancedAccuracy": 0.533203125
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 231,
+            "falsePositive": 61,
+            "falseNegative": 25,
+            "exactCorrectPositive": 231,
+            "precision": 0.791095890410959,
+            "typeRecall": 0.90234375,
+            "exactPositiveRecall": 0.90234375,
+            "falsePositiveRate": 0.23828125,
+            "binaryBalancedAccuracy": 0.83203125
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 1.2979792356491089,
+            "fullCorrect": 251,
+            "fullAccuracy": 0.490234375,
+            "typeCorrect": 287,
+            "typeAccuracy": 0.560546875
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 0.918906033039093,
+            "fullCorrect": 65,
+            "fullAccuracy": 0.5078125,
+            "typeCorrect": 65,
+            "typeAccuracy": 0.5078125
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 0.5416284203529358,
+            "fullCorrect": 96,
+            "fullAccuracy": 0.75,
+            "typeCorrect": 96,
+            "typeAccuracy": 0.75
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 2.558865785598755,
+            "fullCorrect": 4,
+            "fullAccuracy": 0.03125,
+            "typeCorrect": 7,
+            "typeAccuracy": 0.0546875
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 1.1725163459777832,
+            "fullCorrect": 86,
+            "fullAccuracy": 0.671875,
+            "typeCorrect": 119,
+            "typeAccuracy": 0.9296875
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 119,
+            "falsePositive": 121,
+            "falseNegative": 9,
+            "exactCorrectPositive": 86,
+            "precision": 0.49583333333333335,
+            "typeRecall": 0.9296875,
+            "exactPositiveRecall": 0.671875,
+            "falsePositiveRate": 0.9453125,
+            "binaryBalancedAccuracy": 0.4921875
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 96,
+            "falsePositive": 60,
+            "falseNegative": 32,
+            "exactCorrectPositive": 96,
+            "precision": 0.6153846153846154,
+            "typeRecall": 0.75,
+            "exactPositiveRecall": 0.75,
+            "falsePositiveRate": 0.46875,
+            "binaryBalancedAccuracy": 0.640625
+          }
+        }
+      }
+    },
+    {
+      "arm": "current-seed-43",
+      "architecture": "current",
+      "seed": 43,
+      "step": 400,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 0.11833041906356812,
+            "fullCorrect": 1014,
+            "fullAccuracy": 0.990234375,
+            "typeCorrect": 1024,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 0.006669585593044758,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 0.001386631396599114,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.3664554953575134,
+            "fullCorrect": 246,
+            "fullAccuracy": 0.9609375,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.09881000220775604,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 2.063764810562134,
+            "fullCorrect": 292,
+            "fullAccuracy": 0.5703125,
+            "typeCorrect": 339,
+            "typeAccuracy": 0.662109375
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 1.6138601303100586,
+            "fullCorrect": 83,
+            "fullAccuracy": 0.6484375,
+            "typeCorrect": 83,
+            "typeAccuracy": 0.6484375
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 0.8756407499313354,
+            "fullCorrect": 107,
+            "fullAccuracy": 0.8359375,
+            "typeCorrect": 107,
+            "typeAccuracy": 0.8359375
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 3.8137996196746826,
+            "fullCorrect": 42,
+            "fullAccuracy": 0.328125,
+            "typeCorrect": 63,
+            "typeAccuracy": 0.4921875
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 1.951758861541748,
+            "fullCorrect": 60,
+            "fullAccuracy": 0.46875,
+            "typeCorrect": 86,
+            "typeAccuracy": 0.671875
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 86,
+            "falsePositive": 61,
+            "falseNegative": 42,
+            "exactCorrectPositive": 60,
+            "precision": 0.5850340136054422,
+            "typeRecall": 0.671875,
+            "exactPositiveRecall": 0.46875,
+            "falsePositiveRate": 0.4765625,
+            "binaryBalancedAccuracy": 0.59765625
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 107,
+            "falsePositive": 40,
+            "falseNegative": 21,
+            "exactCorrectPositive": 107,
+            "precision": 0.7278911564625851,
+            "typeRecall": 0.8359375,
+            "exactPositiveRecall": 0.8359375,
+            "falsePositiveRate": 0.3125,
+            "binaryBalancedAccuracy": 0.76171875
+          }
+        }
+      }
+    },
+    {
+      "arm": "current-seed-43",
+      "architecture": "current",
+      "seed": 43,
+      "step": 1000,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 0.0038993649650365114,
+            "fullCorrect": 1024,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 1024,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 0.00028228681185282767,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 5.782783409813419e-05,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.012524230405688286,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.0027331144083291292,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 2.9937026500701904,
+            "fullCorrect": 283,
+            "fullAccuracy": 0.552734375,
+            "typeCorrect": 330,
+            "typeAccuracy": 0.64453125
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 2.596343994140625,
+            "fullCorrect": 79,
+            "fullAccuracy": 0.6171875,
+            "typeCorrect": 79,
+            "typeAccuracy": 0.6171875
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.3334908485412598,
+            "fullCorrect": 106,
+            "fullAccuracy": 0.828125,
+            "typeCorrect": 106,
+            "typeAccuracy": 0.828125
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 4.963254451751709,
+            "fullCorrect": 42,
+            "fullAccuracy": 0.328125,
+            "typeCorrect": 64,
+            "typeAccuracy": 0.5
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 3.081721305847168,
+            "fullCorrect": 56,
+            "fullAccuracy": 0.4375,
+            "typeCorrect": 81,
+            "typeAccuracy": 0.6328125
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 81,
+            "falsePositive": 60,
+            "falseNegative": 47,
+            "exactCorrectPositive": 56,
+            "precision": 0.574468085106383,
+            "typeRecall": 0.6328125,
+            "exactPositiveRecall": 0.4375,
+            "falsePositiveRate": 0.46875,
+            "binaryBalancedAccuracy": 0.58203125
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 106,
+            "falsePositive": 44,
+            "falseNegative": 22,
+            "exactCorrectPositive": 106,
+            "precision": 0.7066666666666667,
+            "typeRecall": 0.828125,
+            "exactPositiveRecall": 0.828125,
+            "falsePositiveRate": 0.34375,
+            "binaryBalancedAccuracy": 0.7421875
+          }
+        }
+      }
+    },
+    {
+      "arm": "current-seed-43",
+      "architecture": "current",
+      "seed": 43,
+      "step": 2500,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 0.000391271838452667,
+            "fullCorrect": 1024,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 1024,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 3.1153027521213517e-05,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 7.068652848829515e-06,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.0012571171391755342,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.00026974850334227085,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 3.650165319442749,
+            "fullCorrect": 283,
+            "fullAccuracy": 0.552734375,
+            "typeCorrect": 332,
+            "typeAccuracy": 0.6484375
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 3.1383731365203857,
+            "fullCorrect": 80,
+            "fullAccuracy": 0.625,
+            "typeCorrect": 80,
+            "typeAccuracy": 0.625
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.7034156322479248,
+            "fullCorrect": 107,
+            "fullAccuracy": 0.8359375,
+            "typeCorrect": 107,
+            "typeAccuracy": 0.8359375
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 5.966551780700684,
+            "fullCorrect": 39,
+            "fullAccuracy": 0.3046875,
+            "typeCorrect": 64,
+            "typeAccuracy": 0.5
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 3.7923200130462646,
+            "fullCorrect": 57,
+            "fullAccuracy": 0.4453125,
+            "typeCorrect": 81,
+            "typeAccuracy": 0.6328125
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 81,
+            "falsePositive": 60,
+            "falseNegative": 47,
+            "exactCorrectPositive": 57,
+            "precision": 0.574468085106383,
+            "typeRecall": 0.6328125,
+            "exactPositiveRecall": 0.4453125,
+            "falsePositiveRate": 0.46875,
+            "binaryBalancedAccuracy": 0.58203125
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 107,
+            "falsePositive": 43,
+            "falseNegative": 21,
+            "exactCorrectPositive": 107,
+            "precision": 0.7133333333333334,
+            "typeRecall": 0.8359375,
+            "exactPositiveRecall": 0.8359375,
+            "falsePositiveRate": 0.3359375,
+            "binaryBalancedAccuracy": 0.75
+          }
+        }
+      }
+    },
+    {
+      "arm": "larger-seed-42",
+      "architecture": "larger",
+      "seed": 42,
+      "step": 0,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 1.8070989847183228,
+            "fullCorrect": 307,
+            "fullAccuracy": 0.2998046875,
+            "typeCorrect": 430,
+            "typeAccuracy": 0.419921875
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 1.1099038124084473,
+            "fullCorrect": 175,
+            "fullAccuracy": 0.68359375,
+            "typeCorrect": 175,
+            "typeAccuracy": 0.68359375
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 1.1014347076416016,
+            "fullCorrect": 72,
+            "fullAccuracy": 0.28125,
+            "typeCorrect": 72,
+            "typeAccuracy": 0.28125
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 2.5055811405181885,
+            "fullCorrect": 6,
+            "fullAccuracy": 0.0234375,
+            "typeCorrect": 80,
+            "typeAccuracy": 0.3125
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 2.5114755630493164,
+            "fullCorrect": 54,
+            "fullAccuracy": 0.2109375,
+            "typeCorrect": 103,
+            "typeAccuracy": 0.40234375
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 103,
+            "falsePositive": 173,
+            "falseNegative": 153,
+            "exactCorrectPositive": 54,
+            "precision": 0.37318840579710144,
+            "typeRecall": 0.40234375,
+            "exactPositiveRecall": 0.2109375,
+            "falsePositiveRate": 0.67578125,
+            "binaryBalancedAccuracy": 0.36328125
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 72,
+            "falsePositive": 59,
+            "falseNegative": 184,
+            "exactCorrectPositive": 72,
+            "precision": 0.549618320610687,
+            "typeRecall": 0.28125,
+            "exactPositiveRecall": 0.28125,
+            "falsePositiveRate": 0.23046875,
+            "binaryBalancedAccuracy": 0.525390625
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 1.8070878982543945,
+            "fullCorrect": 137,
+            "fullAccuracy": 0.267578125,
+            "typeCorrect": 207,
+            "typeAccuracy": 0.404296875
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 1.0966349840164185,
+            "fullCorrect": 85,
+            "fullAccuracy": 0.6640625,
+            "typeCorrect": 85,
+            "typeAccuracy": 0.6640625
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.1063032150268555,
+            "fullCorrect": 29,
+            "fullAccuracy": 0.2265625,
+            "typeCorrect": 29,
+            "typeAccuracy": 0.2265625
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 2.493906021118164,
+            "fullCorrect": 3,
+            "fullAccuracy": 0.0234375,
+            "typeCorrect": 44,
+            "typeAccuracy": 0.34375
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 2.5315072536468506,
+            "fullCorrect": 20,
+            "fullAccuracy": 0.15625,
+            "typeCorrect": 49,
+            "typeAccuracy": 0.3828125
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 49,
+            "falsePositive": 81,
+            "falseNegative": 79,
+            "exactCorrectPositive": 20,
+            "precision": 0.3769230769230769,
+            "typeRecall": 0.3828125,
+            "exactPositiveRecall": 0.15625,
+            "falsePositiveRate": 0.6328125,
+            "binaryBalancedAccuracy": 0.375
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 29,
+            "falsePositive": 31,
+            "falseNegative": 99,
+            "exactCorrectPositive": 29,
+            "precision": 0.48333333333333334,
+            "typeRecall": 0.2265625,
+            "exactPositiveRecall": 0.2265625,
+            "falsePositiveRate": 0.2421875,
+            "binaryBalancedAccuracy": 0.4921875
+          }
+        }
+      }
+    },
+    {
+      "arm": "larger-seed-42",
+      "architecture": "larger",
+      "seed": 42,
+      "step": 100,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 1.0092153549194336,
+            "fullCorrect": 656,
+            "fullAccuracy": 0.640625,
+            "typeCorrect": 721,
+            "typeAccuracy": 0.7041015625
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 0.5809050798416138,
+            "fullCorrect": 207,
+            "fullAccuracy": 0.80859375,
+            "typeCorrect": 207,
+            "typeAccuracy": 0.80859375
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 0.30047857761383057,
+            "fullCorrect": 241,
+            "fullAccuracy": 0.94140625,
+            "typeCorrect": 241,
+            "typeAccuracy": 0.94140625
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 2.2859482765197754,
+            "fullCorrect": 15,
+            "fullAccuracy": 0.05859375,
+            "typeCorrect": 21,
+            "typeAccuracy": 0.08203125
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.8695293664932251,
+            "fullCorrect": 193,
+            "fullAccuracy": 0.75390625,
+            "typeCorrect": 252,
+            "typeAccuracy": 0.984375
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 252,
+            "falsePositive": 232,
+            "falseNegative": 4,
+            "exactCorrectPositive": 193,
+            "precision": 0.5206611570247934,
+            "typeRecall": 0.984375,
+            "exactPositiveRecall": 0.75390625,
+            "falsePositiveRate": 0.90625,
+            "binaryBalancedAccuracy": 0.5390625
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 241,
+            "falsePositive": 42,
+            "falseNegative": 15,
+            "exactCorrectPositive": 241,
+            "precision": 0.8515901060070671,
+            "typeRecall": 0.94140625,
+            "exactPositiveRecall": 0.94140625,
+            "falsePositiveRate": 0.1640625,
+            "binaryBalancedAccuracy": 0.888671875
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 1.2986732721328735,
+            "fullCorrect": 275,
+            "fullAccuracy": 0.537109375,
+            "typeCorrect": 312,
+            "typeAccuracy": 0.609375
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 0.9668580293655396,
+            "fullCorrect": 66,
+            "fullAccuracy": 0.515625,
+            "typeCorrect": 66,
+            "typeAccuracy": 0.515625
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 0.3797708749771118,
+            "fullCorrect": 116,
+            "fullAccuracy": 0.90625,
+            "typeCorrect": 116,
+            "typeAccuracy": 0.90625
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 2.7729358673095703,
+            "fullCorrect": 6,
+            "fullAccuracy": 0.046875,
+            "typeCorrect": 8,
+            "typeAccuracy": 0.0625
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 1.075128197669983,
+            "fullCorrect": 87,
+            "fullAccuracy": 0.6796875,
+            "typeCorrect": 122,
+            "typeAccuracy": 0.953125
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 122,
+            "falsePositive": 120,
+            "falseNegative": 6,
+            "exactCorrectPositive": 87,
+            "precision": 0.5041322314049587,
+            "typeRecall": 0.953125,
+            "exactPositiveRecall": 0.6796875,
+            "falsePositiveRate": 0.9375,
+            "binaryBalancedAccuracy": 0.5078125
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 116,
+            "falsePositive": 60,
+            "falseNegative": 12,
+            "exactCorrectPositive": 116,
+            "precision": 0.6590909090909091,
+            "typeRecall": 0.90625,
+            "exactPositiveRecall": 0.90625,
+            "falsePositiveRate": 0.46875,
+            "binaryBalancedAccuracy": 0.71875
+          }
+        }
+      }
+    },
+    {
+      "arm": "larger-seed-42",
+      "architecture": "larger",
+      "seed": 42,
+      "step": 400,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 0.027476932853460312,
+            "fullCorrect": 1024,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 1024,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 0.0010505104437470436,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 0.00027855377993546426,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.08932829648256302,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.01925036497414112,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 2.6553397178649902,
+            "fullCorrect": 288,
+            "fullAccuracy": 0.5625,
+            "typeCorrect": 341,
+            "typeAccuracy": 0.666015625
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 1.9294722080230713,
+            "fullCorrect": 91,
+            "fullAccuracy": 0.7109375,
+            "typeCorrect": 91,
+            "typeAccuracy": 0.7109375
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.050610065460205,
+            "fullCorrect": 103,
+            "fullAccuracy": 0.8046875,
+            "typeCorrect": 103,
+            "typeAccuracy": 0.8046875
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 4.991548538208008,
+            "fullCorrect": 39,
+            "fullAccuracy": 0.3046875,
+            "typeCorrect": 69,
+            "typeAccuracy": 0.5390625
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 2.649728775024414,
+            "fullCorrect": 55,
+            "fullAccuracy": 0.4296875,
+            "typeCorrect": 78,
+            "typeAccuracy": 0.609375
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 78,
+            "falsePositive": 55,
+            "falseNegative": 50,
+            "exactCorrectPositive": 55,
+            "precision": 0.5864661654135338,
+            "typeRecall": 0.609375,
+            "exactPositiveRecall": 0.4296875,
+            "falsePositiveRate": 0.4296875,
+            "binaryBalancedAccuracy": 0.58984375
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 103,
+            "falsePositive": 32,
+            "falseNegative": 25,
+            "exactCorrectPositive": 103,
+            "precision": 0.762962962962963,
+            "typeRecall": 0.8046875,
+            "exactPositiveRecall": 0.8046875,
+            "falsePositiveRate": 0.25,
+            "binaryBalancedAccuracy": 0.77734375
+          }
+        }
+      }
+    },
+    {
+      "arm": "larger-seed-42",
+      "architecture": "larger",
+      "seed": 42,
+      "step": 1000,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 0.0013701856369152665,
+            "fullCorrect": 1024,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 1024,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 8.351311407750472e-05,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 2.4176631995942444e-05,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.004390392452478409,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.0009826603345572948,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 3.448883533477783,
+            "fullCorrect": 288,
+            "fullAccuracy": 0.5625,
+            "typeCorrect": 340,
+            "typeAccuracy": 0.6640625
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 2.9146461486816406,
+            "fullCorrect": 84,
+            "fullAccuracy": 0.65625,
+            "typeCorrect": 84,
+            "typeAccuracy": 0.65625
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.0088467597961426,
+            "fullCorrect": 112,
+            "fullAccuracy": 0.875,
+            "typeCorrect": 112,
+            "typeAccuracy": 0.875
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 6.5511369705200195,
+            "fullCorrect": 34,
+            "fullAccuracy": 0.265625,
+            "typeCorrect": 66,
+            "typeAccuracy": 0.515625
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 3.3209052085876465,
+            "fullCorrect": 58,
+            "fullAccuracy": 0.453125,
+            "typeCorrect": 78,
+            "typeAccuracy": 0.609375
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 78,
+            "falsePositive": 58,
+            "falseNegative": 50,
+            "exactCorrectPositive": 58,
+            "precision": 0.5735294117647058,
+            "typeRecall": 0.609375,
+            "exactPositiveRecall": 0.453125,
+            "falsePositiveRate": 0.453125,
+            "binaryBalancedAccuracy": 0.578125
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 112,
+            "falsePositive": 39,
+            "falseNegative": 16,
+            "exactCorrectPositive": 112,
+            "precision": 0.7417218543046358,
+            "typeRecall": 0.875,
+            "exactPositiveRecall": 0.875,
+            "falsePositiveRate": 0.3046875,
+            "binaryBalancedAccuracy": 0.78515625
+          }
+        }
+      }
+    },
+    {
+      "arm": "larger-seed-42",
+      "architecture": "larger",
+      "seed": 42,
+      "step": 2500,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 0.00014913029735907912,
+            "fullCorrect": 1024,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 1024,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 9.564446372678503e-06,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 3.2944994927674998e-06,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.00047578359954059124,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.00010787862993311137,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 4.015053749084473,
+            "fullCorrect": 280,
+            "fullAccuracy": 0.546875,
+            "typeCorrect": 334,
+            "typeAccuracy": 0.65234375
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 3.4650473594665527,
+            "fullCorrect": 80,
+            "fullAccuracy": 0.625,
+            "typeCorrect": 80,
+            "typeAccuracy": 0.625
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.1253098249435425,
+            "fullCorrect": 111,
+            "fullAccuracy": 0.8671875,
+            "typeCorrect": 111,
+            "typeAccuracy": 0.8671875
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 7.594388961791992,
+            "fullCorrect": 32,
+            "fullAccuracy": 0.25,
+            "typeCorrect": 65,
+            "typeAccuracy": 0.5078125
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 3.87546706199646,
+            "fullCorrect": 57,
+            "fullAccuracy": 0.4453125,
+            "typeCorrect": 78,
+            "typeAccuracy": 0.609375
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 78,
+            "falsePositive": 59,
+            "falseNegative": 50,
+            "exactCorrectPositive": 57,
+            "precision": 0.5693430656934306,
+            "typeRecall": 0.609375,
+            "exactPositiveRecall": 0.4453125,
+            "falsePositiveRate": 0.4609375,
+            "binaryBalancedAccuracy": 0.57421875
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 111,
+            "falsePositive": 43,
+            "falseNegative": 17,
+            "exactCorrectPositive": 111,
+            "precision": 0.7207792207792207,
+            "typeRecall": 0.8671875,
+            "exactPositiveRecall": 0.8671875,
+            "falsePositiveRate": 0.3359375,
+            "binaryBalancedAccuracy": 0.765625
+          }
+        }
+      }
+    },
+    {
+      "arm": "larger-seed-43",
+      "architecture": "larger",
+      "seed": 43,
+      "step": 0,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 1.8167107105255127,
+            "fullCorrect": 125,
+            "fullAccuracy": 0.1220703125,
+            "typeCorrect": 356,
+            "typeAccuracy": 0.34765625
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 1.1167893409729004,
+            "fullCorrect": 107,
+            "fullAccuracy": 0.41796875,
+            "typeCorrect": 107,
+            "typeAccuracy": 0.41796875
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 1.1080667972564697,
+            "fullCorrect": 6,
+            "fullAccuracy": 0.0234375,
+            "typeCorrect": 6,
+            "typeAccuracy": 0.0234375
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 2.5116946697235107,
+            "fullCorrect": 12,
+            "fullAccuracy": 0.046875,
+            "typeCorrect": 243,
+            "typeAccuracy": 0.94921875
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 2.53029203414917,
+            "fullCorrect": 0,
+            "fullAccuracy": 0.0,
+            "typeCorrect": 0,
+            "typeAccuracy": 0.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 0,
+            "falsePositive": 0,
+            "falseNegative": 256,
+            "exactCorrectPositive": 0,
+            "precision": null,
+            "typeRecall": 0.0,
+            "exactPositiveRecall": 0.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 0.5
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 6,
+            "falsePositive": 6,
+            "falseNegative": 250,
+            "exactCorrectPositive": 6,
+            "precision": 0.5,
+            "typeRecall": 0.0234375,
+            "exactPositiveRecall": 0.0234375,
+            "falsePositiveRate": 0.0234375,
+            "binaryBalancedAccuracy": 0.5
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 1.8160266876220703,
+            "fullCorrect": 59,
+            "fullAccuracy": 0.115234375,
+            "typeCorrect": 176,
+            "typeAccuracy": 0.34375
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 1.103410243988037,
+            "fullCorrect": 50,
+            "fullAccuracy": 0.390625,
+            "typeCorrect": 50,
+            "typeAccuracy": 0.390625
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.112261414527893,
+            "fullCorrect": 4,
+            "fullAccuracy": 0.03125,
+            "typeCorrect": 4,
+            "typeAccuracy": 0.03125
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 2.4999217987060547,
+            "fullCorrect": 5,
+            "fullAccuracy": 0.0390625,
+            "typeCorrect": 122,
+            "typeAccuracy": 0.953125
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 2.548513889312744,
+            "fullCorrect": 0,
+            "fullAccuracy": 0.0,
+            "typeCorrect": 0,
+            "typeAccuracy": 0.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 0,
+            "falsePositive": 0,
+            "falseNegative": 128,
+            "exactCorrectPositive": 0,
+            "precision": null,
+            "typeRecall": 0.0,
+            "exactPositiveRecall": 0.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 0.5
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 4,
+            "falsePositive": 7,
+            "falseNegative": 124,
+            "exactCorrectPositive": 4,
+            "precision": 0.36363636363636365,
+            "typeRecall": 0.03125,
+            "exactPositiveRecall": 0.03125,
+            "falsePositiveRate": 0.0546875,
+            "binaryBalancedAccuracy": 0.48828125
+          }
+        }
+      }
+    },
+    {
+      "arm": "larger-seed-43",
+      "architecture": "larger",
+      "seed": 43,
+      "step": 100,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 1.1911193132400513,
+            "fullCorrect": 552,
+            "fullAccuracy": 0.5390625,
+            "typeCorrect": 624,
+            "typeAccuracy": 0.609375
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 0.7743299007415771,
+            "fullCorrect": 148,
+            "fullAccuracy": 0.578125,
+            "typeCorrect": 148,
+            "typeAccuracy": 0.578125
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 0.5177333354949951,
+            "fullCorrect": 199,
+            "fullAccuracy": 0.77734375,
+            "typeCorrect": 199,
+            "typeAccuracy": 0.77734375
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 2.4365477561950684,
+            "fullCorrect": 15,
+            "fullAccuracy": 0.05859375,
+            "typeCorrect": 25,
+            "typeAccuracy": 0.09765625
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 1.0358664989471436,
+            "fullCorrect": 190,
+            "fullAccuracy": 0.7421875,
+            "typeCorrect": 252,
+            "typeAccuracy": 0.984375
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 252,
+            "falsePositive": 230,
+            "falseNegative": 4,
+            "exactCorrectPositive": 190,
+            "precision": 0.5228215767634855,
+            "typeRecall": 0.984375,
+            "exactPositiveRecall": 0.7421875,
+            "falsePositiveRate": 0.8984375,
+            "binaryBalancedAccuracy": 0.54296875
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 199,
+            "falsePositive": 101,
+            "falseNegative": 57,
+            "exactCorrectPositive": 199,
+            "precision": 0.6633333333333333,
+            "typeRecall": 0.77734375,
+            "exactPositiveRecall": 0.77734375,
+            "falsePositiveRate": 0.39453125,
+            "binaryBalancedAccuracy": 0.69140625
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 1.371177315711975,
+            "fullCorrect": 225,
+            "fullAccuracy": 0.439453125,
+            "typeCorrect": 261,
+            "typeAccuracy": 0.509765625
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 1.0426503419876099,
+            "fullCorrect": 48,
+            "fullAccuracy": 0.375,
+            "typeCorrect": 48,
+            "typeAccuracy": 0.375
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 0.6123913526535034,
+            "fullCorrect": 85,
+            "fullAccuracy": 0.6640625,
+            "typeCorrect": 85,
+            "typeAccuracy": 0.6640625
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 2.6476597785949707,
+            "fullCorrect": 6,
+            "fullAccuracy": 0.046875,
+            "typeCorrect": 7,
+            "typeAccuracy": 0.0546875
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 1.1820080280303955,
+            "fullCorrect": 86,
+            "fullAccuracy": 0.671875,
+            "typeCorrect": 121,
+            "typeAccuracy": 0.9453125
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 121,
+            "falsePositive": 121,
+            "falseNegative": 7,
+            "exactCorrectPositive": 86,
+            "precision": 0.5,
+            "typeRecall": 0.9453125,
+            "exactPositiveRecall": 0.671875,
+            "falsePositiveRate": 0.9453125,
+            "binaryBalancedAccuracy": 0.5
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 85,
+            "falsePositive": 77,
+            "falseNegative": 43,
+            "exactCorrectPositive": 85,
+            "precision": 0.5246913580246914,
+            "typeRecall": 0.6640625,
+            "exactPositiveRecall": 0.6640625,
+            "falsePositiveRate": 0.6015625,
+            "binaryBalancedAccuracy": 0.53125
+          }
+        }
+      }
+    },
+    {
+      "arm": "larger-seed-43",
+      "architecture": "larger",
+      "seed": 43,
+      "step": 400,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 0.02134810760617256,
+            "fullCorrect": 1024,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 1024,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 0.0010107168927788734,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 0.0003117794403806329,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.0677589625120163,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.01631096750497818,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 2.6017837524414062,
+            "fullCorrect": 277,
+            "fullAccuracy": 0.541015625,
+            "typeCorrect": 336,
+            "typeAccuracy": 0.65625
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 2.081838846206665,
+            "fullCorrect": 84,
+            "fullAccuracy": 0.65625,
+            "typeCorrect": 84,
+            "typeAccuracy": 0.65625
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 0.9579148292541504,
+            "fullCorrect": 108,
+            "fullAccuracy": 0.84375,
+            "typeCorrect": 108,
+            "typeAccuracy": 0.84375
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 4.633130073547363,
+            "fullCorrect": 33,
+            "fullAccuracy": 0.2578125,
+            "typeCorrect": 69,
+            "typeAccuracy": 0.5390625
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 2.7342519760131836,
+            "fullCorrect": 52,
+            "fullAccuracy": 0.40625,
+            "typeCorrect": 75,
+            "typeAccuracy": 0.5859375
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 75,
+            "falsePositive": 57,
+            "falseNegative": 53,
+            "exactCorrectPositive": 52,
+            "precision": 0.5681818181818182,
+            "typeRecall": 0.5859375,
+            "exactPositiveRecall": 0.40625,
+            "falsePositiveRate": 0.4453125,
+            "binaryBalancedAccuracy": 0.5703125
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 108,
+            "falsePositive": 41,
+            "falseNegative": 20,
+            "exactCorrectPositive": 108,
+            "precision": 0.7248322147651006,
+            "typeRecall": 0.84375,
+            "exactPositiveRecall": 0.84375,
+            "falsePositiveRate": 0.3203125,
+            "binaryBalancedAccuracy": 0.76171875
+          }
+        }
+      }
+    },
+    {
+      "arm": "larger-seed-43",
+      "architecture": "larger",
+      "seed": 43,
+      "step": 1000,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 0.0009965046774595976,
+            "fullCorrect": 1024,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 1024,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 9.002991282613948e-05,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 2.8486925657489337e-05,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.003017664421349764,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 0.0008498374372720718,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 3.3402750492095947,
+            "fullCorrect": 278,
+            "fullAccuracy": 0.54296875,
+            "typeCorrect": 331,
+            "typeAccuracy": 0.646484375
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 2.9200692176818848,
+            "fullCorrect": 82,
+            "fullAccuracy": 0.640625,
+            "typeCorrect": 82,
+            "typeAccuracy": 0.640625
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.1383256912231445,
+            "fullCorrect": 110,
+            "fullAccuracy": 0.859375,
+            "typeCorrect": 110,
+            "typeAccuracy": 0.859375
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 5.793601036071777,
+            "fullCorrect": 34,
+            "fullAccuracy": 0.265625,
+            "typeCorrect": 66,
+            "typeAccuracy": 0.515625
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 3.5091042518615723,
+            "fullCorrect": 52,
+            "fullAccuracy": 0.40625,
+            "typeCorrect": 73,
+            "typeAccuracy": 0.5703125
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 73,
+            "falsePositive": 61,
+            "falseNegative": 55,
+            "exactCorrectPositive": 52,
+            "precision": 0.5447761194029851,
+            "typeRecall": 0.5703125,
+            "exactPositiveRecall": 0.40625,
+            "falsePositiveRate": 0.4765625,
+            "binaryBalancedAccuracy": 0.546875
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 110,
+            "falsePositive": 42,
+            "falseNegative": 18,
+            "exactCorrectPositive": 110,
+            "precision": 0.7236842105263158,
+            "typeRecall": 0.859375,
+            "exactPositiveRecall": 0.859375,
+            "falsePositiveRate": 0.328125,
+            "binaryBalancedAccuracy": 0.765625
+          }
+        }
+      }
+    },
+    {
+      "arm": "larger-seed-43",
+      "architecture": "larger",
+      "seed": 43,
+      "step": 2500,
+      "fit": {
+        "byStratum": {
+          "all": {
+            "count": 1024,
+            "nll": 8.019489905564114e-05,
+            "fullCorrect": 1024,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 1024,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:negative": {
+            "count": 256,
+            "nll": 9.807600690692198e-06,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "daiminkan:positive": {
+            "count": 256,
+            "nll": 1.813280050555477e-06,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:negative": {
+            "count": 256,
+            "nll": 0.00023291772231459618,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          },
+          "riichi:positive": {
+            "count": 256,
+            "nll": 7.624097634106874e-05,
+            "fullCorrect": 256,
+            "fullAccuracy": 1.0,
+            "typeCorrect": 256,
+            "typeAccuracy": 1.0
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 512,
+            "actualPositive": 256,
+            "actualNegative": 256,
+            "truePositive": 256,
+            "falsePositive": 0,
+            "falseNegative": 0,
+            "exactCorrectPositive": 256,
+            "precision": 1.0,
+            "typeRecall": 1.0,
+            "exactPositiveRecall": 1.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 1.0
+          }
+        }
+      },
+      "holdout": {
+        "byStratum": {
+          "all": {
+            "count": 512,
+            "nll": 3.9484782218933105,
+            "fullCorrect": 279,
+            "fullAccuracy": 0.544921875,
+            "typeCorrect": 331,
+            "typeAccuracy": 0.646484375
+          },
+          "daiminkan:negative": {
+            "count": 128,
+            "nll": 3.5840134620666504,
+            "fullCorrect": 81,
+            "fullAccuracy": 0.6328125,
+            "typeCorrect": 81,
+            "typeAccuracy": 0.6328125
+          },
+          "daiminkan:positive": {
+            "count": 128,
+            "nll": 1.3604710102081299,
+            "fullCorrect": 109,
+            "fullAccuracy": 0.8515625,
+            "typeCorrect": 109,
+            "typeAccuracy": 0.8515625
+          },
+          "riichi:negative": {
+            "count": 128,
+            "nll": 6.742092132568359,
+            "fullCorrect": 35,
+            "fullAccuracy": 0.2734375,
+            "typeCorrect": 68,
+            "typeAccuracy": 0.53125
+          },
+          "riichi:positive": {
+            "count": 128,
+            "nll": 4.107336044311523,
+            "fullCorrect": 54,
+            "fullAccuracy": 0.421875,
+            "typeCorrect": 73,
+            "typeAccuracy": 0.5703125
+          }
+        },
+        "byOpportunity": {
+          "riichi": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 73,
+            "falsePositive": 59,
+            "falseNegative": 55,
+            "exactCorrectPositive": 54,
+            "precision": 0.553030303030303,
+            "typeRecall": 0.5703125,
+            "exactPositiveRecall": 0.421875,
+            "falsePositiveRate": 0.4609375,
+            "binaryBalancedAccuracy": 0.5546875
+          },
+          "daiminkan": {
+            "count": 256,
+            "actualPositive": 128,
+            "actualNegative": 128,
+            "truePositive": 109,
+            "falsePositive": 43,
+            "falseNegative": 19,
+            "exactCorrectPositive": 109,
+            "precision": 0.7171052631578947,
+            "typeRecall": 0.8515625,
+            "exactPositiveRecall": 0.8515625,
+            "falsePositiveRate": 0.3359375,
+            "binaryBalancedAccuracy": 0.7578125
+          }
+        }
+      }
+    }
+  ],
+  "pairedFinalStepComparisons": [
+    {
+      "seed": 42,
+      "step": 2500,
+      "largerMinusCurrent": {
+        "fit": {
+          "nll": -0.00012174624134786427,
+          "fullAccuracy": 0.0,
+          "riichi": {
+            "typeRecall": 0.0,
+            "exactPositiveRecall": 0.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 0.0
+          },
+          "daiminkan": {
+            "typeRecall": 0.0,
+            "exactPositiveRecall": 0.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 0.0
+          }
+        },
+        "holdout": {
+          "nll": 0.5428156852722168,
+          "fullAccuracy": -0.015625,
+          "riichi": {
+            "typeRecall": 0.0,
+            "exactPositiveRecall": 0.0,
+            "falsePositiveRate": 0.0234375,
+            "binaryBalancedAccuracy": -0.01171875
+          },
+          "daiminkan": {
+            "typeRecall": 0.0,
+            "exactPositiveRecall": 0.0,
+            "falsePositiveRate": 0.046875,
+            "binaryBalancedAccuracy": -0.0234375
+          }
+        }
+      }
+    },
+    {
+      "seed": 43,
+      "step": 2500,
+      "largerMinusCurrent": {
+        "fit": {
+          "nll": -0.00031107693939702585,
+          "fullAccuracy": 0.0,
+          "riichi": {
+            "typeRecall": 0.0,
+            "exactPositiveRecall": 0.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 0.0
+          },
+          "daiminkan": {
+            "typeRecall": 0.0,
+            "exactPositiveRecall": 0.0,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 0.0
+          }
+        },
+        "holdout": {
+          "nll": 0.2983129024505615,
+          "fullAccuracy": -0.0078125,
+          "riichi": {
+            "typeRecall": -0.0625,
+            "exactPositiveRecall": -0.0234375,
+            "falsePositiveRate": -0.0078125,
+            "binaryBalancedAccuracy": -0.02734375
+          },
+          "daiminkan": {
+            "typeRecall": 0.015625,
+            "exactPositiveRecall": 0.015625,
+            "falsePositiveRate": 0.0,
+            "binaryBalancedAccuracy": 0.0078125
+          }
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Artificially balanced action strata and games enriched for recorded daiminkan are not the natural training/validation population. In particular precision and accuracy here are not deployable rate estimates.",
+    "Internal holdout uses whole games from the original formal train split. It has not trained these freshly initialized probe arms, but is not a new formal validation/test set and is not a blind final quality claim.",
+    "Only two initialization seeds and 128 holdout positive labels per action; seed agreement is limited evidence, not a formal significance claim or guarantee.",
+    "Enrichment selects games using complete-game action counts; this is a sampling condition only, never a model input. It may shift context distributions for both positive and negative examples.",
+    "No original formal validation or test payloads, raw games, or converted sample payloads are read. Cache source hashes are verified against frozen metadata without rereading those source payloads.",
+    "Complete semantic candidate objects are absent from caches; exact vectors and targets are preserved but this preparation does not independently re-prove semantic mask correctness.",
+    "The prior 256-window memorization/gate experiment is not rerun. This new probe adds whole-game-disjoint internal holdout and a paired width comparison.",
+    "No thresholds or selection rules from the 8-epoch full-training program change. No probe model can be selected for deployment or installed in the App."
+  ],
+  "metricDefinition": {
+    "binaryBalancedAccuracy": "(TP / actualPositive + 1 - FP / actualNegative) / 2",
+    "nll": "Unweighted mean full-candidate negative log likelihood in the artificially balanced probe cohort"
+  },
+  "renderer": {
+    "script": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/plot_capacity_probe_20261018.py",
+    "sha256": "c8dd30b52b3c16aad3caef591d964601cc9a3a16f83c4e61c673b8692e311060",
+    "matplotlib": "3.11.2",
+    "fontPath": "/System/Library/Fonts/STHeiti Light.ttc",
+    "fontFamily": "Heiti TC"
+  },
+  "verification": {
+    "allFourArmsAndFiveStepsRetained": true,
+    "allDisplayedRatiosChecked": true,
+    "sourceHashesVerified": true,
+    "rawSampleCacheModelTestPayloadReadsByRenderer": 0,
+    "gpuWorkByRenderer": 0,
+    "numericDataRounded": false,
+    "roundingOnlyForDisplay": true
+  },
+  "outputs": [
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-capacity-probe-20261018.png",
+      "sha256": "fa47d105545dfe82b5132a069a88561be2a64b7b6f35ac8c5ec2a88d50f4ed96"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-capacity-probe-20261018.svg",
+      "sha256": "2167fb85af238193db853d4c3e839819eb01a4e51a31286de4b567c43dac84de"
+    }
+  ]
+}

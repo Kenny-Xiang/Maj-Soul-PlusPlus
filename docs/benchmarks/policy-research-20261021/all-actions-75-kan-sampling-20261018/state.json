@@ -1,0 +1,50 @@
+{
+  "status": "completed",
+  "pid": 29555,
+  "startedAtUtc": "2026-10-20T07:40:04.754268+00:00",
+  "planSha256": "cc20e25846dd176e6ece5749e8155f4eb81cbfe0b08d0bb49bfbb6a9481ef44d",
+  "steps": [
+    {
+      "name": "seed42-mix",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/seed42-mix.log",
+      "pid": 29556,
+      "exitCode": 0
+    },
+    {
+      "name": "seed43-mix",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/seed43-mix.log",
+      "pid": 29735,
+      "exitCode": 0
+    },
+    {
+      "name": "fit-diagnostic",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/fit-diagnostic.log",
+      "pid": 29835,
+      "exitCode": 0
+    },
+    {
+      "name": "evaluation",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/evaluation.log",
+      "pid": 29867,
+      "exitCode": 0
+    },
+    {
+      "name": "analysis",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/analysis.log",
+      "pid": 30273,
+      "exitCode": 0
+    }
+  ],
+  "testPayloadReads": 0,
+  "deploymentAllowed": false,
+  "finishedAtUtc": "2026-10-20T07:48:32.804730+00:00",
+  "decisionSha256": "c238666068281d09f6c284f15b03372830eaa0d0c2c34dbadc6c256281ca3838",
+  "qualityStatus": "rejected-full-quality-screen",
+  "completionMeaning": "Fixed experiment completed; model quality and user target are reported separately; no deployment.",
+  "protectedHashesMatchAtEnd": true
+}

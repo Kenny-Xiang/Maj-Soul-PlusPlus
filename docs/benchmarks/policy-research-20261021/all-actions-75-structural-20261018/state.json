@@ -1,0 +1,54 @@
+{
+  "status": "completed",
+  "pid": 18678,
+  "startedAtUtc": "2026-10-18T09:18:03.895739+00:00",
+  "planSha256": "a616465bf07b9269132657472c96c120f0532623ca1b00a1f4befa1561737a24",
+  "steps": [
+    {
+      "name": "seed42-natural",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-structural-20261018/seed42-natural.log",
+      "pid": 18679,
+      "exitCode": 0
+    },
+    {
+      "name": "seed42-mix",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-structural-20261018/seed42-mix.log",
+      "pid": 18768,
+      "exitCode": 0
+    },
+    {
+      "name": "seed43-mix",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-structural-20261018/seed43-mix.log",
+      "pid": 18843,
+      "exitCode": 0
+    },
+    {
+      "name": "seed43-natural",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-structural-20261018/seed43-natural.log",
+      "pid": 18864,
+      "exitCode": 0
+    },
+    {
+      "name": "evaluation",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-structural-20261018/evaluation.log",
+      "pid": 18870,
+      "exitCode": 0
+    },
+    {
+      "name": "analysis",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-structural-20261018/analysis.log",
+      "pid": 18990,
+      "exitCode": 0
+    }
+  ],
+  "testPayloadReads": 0,
+  "deploymentAllowed": false,
+  "finishedAtUtc": "2026-10-18T09:37:42.200752+00:00",
+  "decisionSha256": "578d3d0c42fd1b8b3c8ae93d5f441ade2a54592fc503a3bd52272e6c4b5cd20b"
+}

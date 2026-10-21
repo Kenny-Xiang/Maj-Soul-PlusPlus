@@ -1,0 +1,420 @@
+{
+  "status": "passed",
+  "createdAtUtc": "2026-10-20T10:30:43.048095+00:00",
+  "checks": [
+    {
+      "name": "frozen plan identity",
+      "passed": true
+    },
+    {
+      "name": "completed six-stage chain",
+      "passed": true
+    },
+    {
+      "name": "state binds final decision",
+      "passed": true
+    },
+    {
+      "name": "state and decision quality agree",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-20261018/prepare_pilot.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/bilinear_candidate_policy.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/test_bilinear_candidate_policy.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/train_bilinear.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/evaluate_objective.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/freeze_plan.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/prepare_metadata.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/prepare_payload.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/resource_preflight.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/run_pilot.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/synthetic_qualification.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/test_evaluate_objective.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/test_prepare_metadata.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/test_prepare_payload.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/test_synthetic_qualification.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/test_train_objective.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/train_objective.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/evaluate_kan_sampling.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-stable-20261018/analyze_pilot.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_actions.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_encoded_cache.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_features.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_model.py",
+      "passed": true
+    },
+    {
+      "name": "sourceSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_training.py",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/action-training-evidence-pipeline.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/action-training-evidence-pipeline.log",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/assemble_action_training_results.py",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-1.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-2.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-3.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-4.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-5.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-6.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-7.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-8.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/descriptive-epoch-calibration-plan-3p.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-validation-3p/selection.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-validation-plan-3p.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-validation-plan-4p.draft.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded_validation.py",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/finish_action_training_evidence.py",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/finish_four_player.py",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/four-player-completion-pipeline.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/four-player-completion-pipeline.log",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/full-training-4p-7199c9fbbc274d7d923e11eefe69bfd0.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/full-training-4p.log",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/full-training-plan-4p.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/full_training.py",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/paired-uncertainty-3p.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/paired-uncertainty-plan.json",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/run_expanded_validation.py",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/run_paired_uncertainty.py",
+      "passed": true
+    },
+    {
+      "name": "protectedSha256: /Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/seal_expanded_validation.py",
+      "passed": true
+    },
+    {
+      "name": "decision binding: plan",
+      "passed": true
+    },
+    {
+      "name": "decision binding: evaluation",
+      "passed": true
+    },
+    {
+      "name": "decision binding: inputs",
+      "passed": true
+    },
+    {
+      "name": "decision binding: perGame",
+      "passed": true
+    },
+    {
+      "name": "decision binding: preparation",
+      "passed": true
+    },
+    {
+      "name": "decision binding: analyzer",
+      "passed": true
+    },
+    {
+      "name": "evaluation completed with postchecks",
+      "passed": true
+    },
+    {
+      "name": "analysis completed with postchecks",
+      "passed": true
+    },
+    {
+      "name": "exact evaluation scope",
+      "passed": true
+    },
+    {
+      "name": "evaluation excludes formalValidationPayloadReads",
+      "passed": true
+    },
+    {
+      "name": "evaluation excludes testPayloadReads",
+      "passed": true
+    },
+    {
+      "name": "evaluation excludes rawGameReads",
+      "passed": true
+    },
+    {
+      "name": "evaluation excludes sourceSamplePayloadReads",
+      "passed": true
+    },
+    {
+      "name": "evaluation excludes priorHoldoutPayloadReads",
+      "passed": true
+    },
+    {
+      "name": "analysis excludes cachePayloads",
+      "passed": true
+    },
+    {
+      "name": "analysis excludes modelWeights",
+      "passed": true
+    },
+    {
+      "name": "analysis excludes SQL",
+      "passed": true
+    },
+    {
+      "name": "analysis excludes packedArrays",
+      "passed": true
+    },
+    {
+      "name": "analysis excludes formalValidationPayloadReads",
+      "passed": true
+    },
+    {
+      "name": "analysis excludes testPayloadReads",
+      "passed": true
+    },
+    {
+      "name": "analysis excludes rawGameReads",
+      "passed": true
+    },
+    {
+      "name": "analysis excludes sourceSamplePayloadReads",
+      "passed": true
+    },
+    {
+      "name": "four actual endpoints",
+      "passed": true
+    },
+    {
+      "name": "seed42-natural natural holdout support",
+      "passed": true
+    },
+    {
+      "name": "seed42-natural strict full-action target",
+      "passed": true
+    },
+    {
+      "name": "seed42-natural four-player applicability",
+      "passed": true
+    },
+    {
+      "name": "seed42-mix natural holdout support",
+      "passed": true
+    },
+    {
+      "name": "seed42-mix strict full-action target",
+      "passed": true
+    },
+    {
+      "name": "seed42-mix four-player applicability",
+      "passed": true
+    },
+    {
+      "name": "seed43-natural natural holdout support",
+      "passed": true
+    },
+    {
+      "name": "seed43-natural strict full-action target",
+      "passed": true
+    },
+    {
+      "name": "seed43-natural four-player applicability",
+      "passed": true
+    },
+    {
+      "name": "seed43-mix natural holdout support",
+      "passed": true
+    },
+    {
+      "name": "seed43-mix strict full-action target",
+      "passed": true
+    },
+    {
+      "name": "seed43-mix four-player applicability",
+      "passed": true
+    },
+    {
+      "name": "both seeds govern research screen",
+      "passed": true
+    },
+    {
+      "name": "no deployment or formal certification",
+      "passed": true
+    },
+    {
+      "name": "main checkout unchanged and clean",
+      "passed": true
+    }
+  ],
+  "checksPassed": 95,
+  "bindings": {
+    "plan.json": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/plan.json",
+      "sha256": "efc3a869cfd666d2bebd25e32adb844198dc586f50791d37768319a05462a474"
+    },
+    "state.json": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/state.json",
+      "sha256": "d973b3db78a71bcd18654f5131655e0d6ce5cb811ea59aa34ed84a313384254b"
+    },
+    "decision.json": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/decision.json",
+      "sha256": "1971e962dff54a9c356650d541aab9945df5ed7afa039cb8e1c360c54df5809f"
+    },
+    "evaluation/report.json": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/evaluation/report.json",
+      "sha256": "e38af09a3feeb3b955cc42f72874c523631dbdd21ae9c497019084f13b2beb9a"
+    },
+    "final_artifact_audit.py": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/final_artifact_audit.py",
+      "sha256": "2cd4021a633198e544626d8ea54276e0bf4338a9d29b26e409441d9b3eb06d5b"
+    }
+  },
+  "sourceFilesChecked": 24,
+  "protectedFilesChecked": 29,
+  "mainCheckout": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus",
+    "head": "3e7f57859cbe5994f4c24049f8f4657928d15aef",
+    "clean": true
+  },
+  "scope": "Artifact hashes and aggregate arithmetic only; no model load, inference, training, cache, packed, SQL, raw, formal validation or test payload reads. Per-game derived artifact hashed but not decoded.",
+  "qualityStatus": "rejected-full-quality-screen",
+  "goalAchieved": false,
+  "deploymentAllowed": false
+}

@@ -1,0 +1,2 @@
+# Preserve the exact hashes of archived Matplotlib SVG evidence, including path whitespace.
+docs/benchmarks/policy-research-20261021/expanded-training/*.svg -whitespace

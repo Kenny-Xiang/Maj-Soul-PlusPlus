@@ -1,0 +1,385 @@
+{
+  "schemaVersion": 1,
+  "verifiedAtUtc": "2026-10-21T03:14:28.584668+00:00",
+  "baseCommit": "3e7f57859cbe5994f4c24049f8f4657928d15aef",
+  "integratedPolicyCommit": "aa40896e17cb619ae2241badf0181c9316775c3a",
+  "sourceTreeSha256": "90dc41427bb7062c2507b3c3d6980dae1865ee7598f8e98c05db60c9883a0167",
+  "sourceFileSha256": {
+    "Maj-Soul++.spec": "9f1de6414c5569f16e6a9e0f8b0ecf0c194b6574130fd70f9ec8c9184fb254d5",
+    "requirements-mjai.txt": "be926b8a7136bddc039d5b6e0a46cde92866620a75e2449f1b53d744b49877b3",
+    "requirements-policy.txt": "a2e6bee6cbd78f04d234a2631daf353e71aa0c5a99956ae7d73ea77e2640dfa1",
+    "requirements-training.txt": "86e4829b09b7cdc74be8f01a8ddf21b50a0253d743c608ca8e1fc898673cfb50",
+    "scripts/advisor_calibration.py": "135d74962f0c28e54e167ecf1834aeb8467544a491f12087361a20528b7ca1f0",
+    "scripts/advisor_compare.py": "123235770ab612b4441e2f43f446f60b7a0ad188a34fa15c79a12319aafa1bdc",
+    "scripts/advisor_inference_benchmark.py": "206ff49b2822b3fee6b866501c0e14f220c574df3778c2581b37effa5429aa07",
+    "scripts/advisor_log_fixtures.py": "a623209afd07ebfa8375d85c07250a76bc72ac3e296c8d08e0cb25c7eedb8447",
+    "scripts/advisor_threat_sensitivity.py": "ccf131b9b3850b52a1907487e26a73c3a8446932cc45db73482550770cd19695",
+    "scripts/build.sh": "7e05dd798825de54edc2cd08b9d9d9d369362b3bb16399d8c75e47d5fb21d078",
+    "scripts/plot_riichi_experiment.py": "78767686087e2d551520349e6387c72ca77ade8d0a1d8e94874a1bfc6c7eee53",
+    "scripts/policy_boundary_experiment.py": "00a8dec4deedd562dbae843ea732d30c62875d6118cb06ec431e26f277eb54eb",
+    "scripts/policy_convert_mjai.py": "b38a2cea543f8a23f41dba1f179d62d3b33ebb5d604d2660be826c6709d6b55b",
+    "scripts/policy_corpus_audit.py": "6413b73804f73d11d9dcc87da2a4e54712dfa0bfa158a2caa53f09b075d2e1d5",
+    "scripts/policy_extract.cjs": "33a9ca65623d47c7eab5e4f4f92c88ac4d24840021783eedf473e31f80f5e5bb",
+    "scripts/policy_fetch.py": "f13f27bd9986293b9585ecfc5840459125a55b3b9de0912d83f41c3d62b56fa1",
+    "scripts/policy_freeze_split.py": "9b6b5bb685ef01b23b4d4fd3623241ad2b733958907524f5bfead34f79194c87",
+    "scripts/policy_launch.py": "c0bb01b7dc8e7f11d60c11f314cf2051daa543bedd7003fda52f07551fc7e8c3",
+    "scripts/policy_live_benchmark.py": "1f73a68bd2a8193992a2ebb7b9a98da9ed3b8c824c59bb2ed7bfa9a98e0335fa",
+    "scripts/policy_match_metadata.py": "55ee6d921c280380dcdb4a88597131f93c6144a64f604af19a311c7ade8010ef",
+    "scripts/policy_official_archive.py": "50510e6a7d5fa7ba1b8b440d7bf4c8f7616391a22b7df7f9c45ff2f5cb0c0593",
+    "scripts/policy_official_batch.py": "0f40a63b71ee9c08fca0e7115f056105a656f6b2e8233b2e5f2717271d7181ce",
+    "scripts/policy_official_bridge.py": "b114232256813805c641f529e32dd79ab1ac66b4619b5cc86c5c884646514eab",
+    "scripts/policy_predict.py": "a72f9218c49c11d3942e49a8a0876b4a6d37606c737987e871eb41b551f869b2",
+    "scripts/policy_prepare_bundle.py": "3ce861f0b4848dba81e665f7b851d5bb4e9edb01b6baefc4f9c739dbb9da4d33",
+    "scripts/policy_prepare_cache.py": "2c34053f9e034de1f0464d228fa895fddf0de87271ee122b15800619dd439b9e",
+    "scripts/policy_riichi_experiment.py": "8b4eb02f7ca84f3911ae0854b5662f1a72beb02933934bb3a4a105521f497f2a",
+    "scripts/policy_riichi_result.py": "477f2221e5eca50176aae4b35bbce5ab4a49fe8aed3f1f2c4abbed4978ad6d63",
+    "scripts/policy_train.py": "5d2b46659b1726b0c541aa7bb84875c39f559eea53b3d880f6a4ea212c869eed",
+    "scripts/policy_train_corpus.py": "ac8599d9c23389562b0a08ac3af86d41e5687c61f56f1b5a47e87f3a371fa7f5",
+    "scripts/policy_validate_pairs.py": "e40763625f78cd5cf7bcfcb2a8f24ce0a1f8aa0c2463b75a761ec1f5feb12557",
+    "scripts/test.sh": "fc62f4eaec874388c3a0d15d738c472e2d493c2ad643e8f9f8d50b1bf56d5cc1",
+    "src/advice_worker.py": "c69487e25d31cde213c8e60c339bbab19441a8ad002c159b72919fcf4461247d",
+    "src/advisor.py": "d0bd5a321fce9b8ad9601b26baed48ac21fb253d3c4ff00dea98f37a98e2b470",
+    "src/advisor_continuation.py": "ea8b21d2123834b63dcbdf5b42672646008b05f675a9c7edd6d1f5b3c4f5592f",
+    "src/advisor_policy.py": "d0e114e783a17f122f9325277fe42774494270d2fa95765025a30fdda63bb791",
+    "src/advisor_rank.py": "02eab3b41b043e5e31122ec01a688fffbda65a9644bcccf9aef9e6cc9855447d",
+    "src/advisor_rank_policy.py": "113832a3a52dd921b4902ba63f7dedb8a9e34a185d36e25d4d6b870f6ee94b60",
+    "src/advisor_routes.py": "55b68ce930117d4ac4710650d979b91f703ffe92bf370904ae3eb9682484f007",
+    "src/advisor_settlement.py": "52a2778311f58ba532bdd743968a731bdf5ae7c1bbee185b2b9d5354be030a42",
+    "src/advisor_shanten.py": "db5efc3f88b879d41927658df9d5bcc170e516fb2773edfc543ca9c2c2904ec2",
+    "src/autoplay.js": "5535af0e184e75a784a540526e70b3f4dbcec1dd6429b06132a1add070bbb18b",
+    "src/autoplay_recovery.py": "76e4689d49b7b2fe581f472d9e7e4cbcf79e129111a5d848cdea02d41f61b0a0",
+    "src/background.js": "94c1446f0c9a5bac29bf4b95aac09471f5358e2c895a7751284110c383278bf8",
+    "src/browser.js": "56ca58c73c5740b61fab9a915345453fd17207d10da647eb72ea668b89585cd2",
+    "src/core.cjs": "de17c642e6bfc07452f5ea988b21a11bc4dea9d3f6a9a6631cd9a5632f48a89a",
+    "src/monitor.py": "cf2c8441f21e61e836fd049eabbb7d0d49d7f6515982072be367a6aab8f49216",
+    "src/overlay.js": "fe818b8a206cd7eacd5e4e3b2686dc142f755880d9dd88335713216f20b55a1f",
+    "src/policy_action_diagnostics.py": "e396b2126c0b015e63e0006fe9ab708bc3f1e787ef461877d0b94fe707618bd2",
+    "src/policy_actions.py": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+    "src/policy_bundle.py": "e3d792bc349966f6c1d71b3355d7f402d27f771b091a6b03ed1e43402d9b0716",
+    "src/policy_corpus_training.py": "6170900dd089827323b9c48749ff455359f05e8ba8c2a1f340cad22176aba825",
+    "src/policy_encoded_cache.py": "44babbd91dd903f4e0f299b8fcba21231074e7602f78397c97db40f838b93229",
+    "src/policy_experiment_gate.py": "75ce3ac5d93e128d306cc30ebae4d079d892f2bdd1f45b405d5fed2d90ae3c94",
+    "src/policy_features.py": "86537a62645bce835caaa3ce2f5636c75f2bfaef770cbcd0bf230ff29dccd9c8",
+    "src/policy_metadata.py": "197c9db47f260cd11e46130a905dc11e62df62305ab3f08c59bfaa70571deef4",
+    "src/policy_mjai.py": "0747a712a6113019805188c9f31060b3a1284c26b5b70ec47ed99096bbe83e8e",
+    "src/policy_mjai_state.py": "1ce97ab927fae3e6d7f00278279735b6e9611892eacccbe4fb6467cf24f26a0a",
+    "src/policy_model.py": "c36c96e06c88bd3f87306b20a51474e71ddc7a4c9daf4580727170559deccbe4",
+    "src/policy_replay.cjs": "36aaf1cc9b352441ea9289c306ef4e139aef6b4c232301bcc2d2e5e400679cce",
+    "src/policy_split.py": "85e41d1ab50b59f61e938305cb098d8fe1624427dba4085c8fee84aa7354459e",
+    "src/policy_training.py": "7438965893f4d41a46b5690d891e576d7d203c9fcf5d1eb22412b57df0fe5a4e",
+    "src/policy_verify.py": "fa7945ea2b033bb3d331350315b5aa331e684f221408ffc105d5d82875c20542",
+    "src/terminal_stats.py": "591d63efbd02028b9c9866e0b9e898889c0d199f2a6eb1dda5ecf67da8a3a68d",
+    "src/unity_actions.js": "14a191b580af203b5b525f0061e1f96813cebd26c3009cc136b5d5dd87f358fb",
+    "src/unity_lobby.js": "6f0ca154cbc72bbc3044034a57979bd23a0be5f5bfa538be65081123e9483aa8",
+    "src/unity_transport.js": "dfe2acd1fdee2af0f74bb4094cda421614b33efb8f9a0a3506caef84d2342620",
+    "tests/advisor_target_reference.py": "067511469f35c0c2233136de9e620884a1d6cd8e13273d06652ce09fb27f26de",
+    "tests/fixtures/advisor_call_consistency_cases.json": "80af8145784d2e65b4a2bec827f6ca73df2176fba89a38cabdb217762146abe7",
+    "tests/fixtures/advisor_cases.json": "188161c7c7db6a2fe1f6d34b4e699ea84826f67331fadd55e7fc78e6051fe4f7",
+    "tests/fixtures/advisor_latency_cases.json": "b54437a06298bd016cfaa31273d54026b28d232a30d124805d801927447b6c04",
+    "tests/fixtures/advisor_performance_logged_cases.json": "08fafb2b80db66dc5d386cf2b5a67e3a84dde9124661748c87d9f6d081117e44",
+    "tests/fixtures/advisor_phase_cases.json": "6039caca3a81584b618dc480f14670cdcc64e6b8a2df2f54a5ab5ed4587477c7",
+    "tests/fixtures/advisor_policy_logged_cases.json": "51aeaced0d33c1805c2ed1181c25e565b2f4a11b9cba874f24c08df856a5ba62",
+    "tests/fixtures/advisor_rank_cases.json": "bc26d18f604adedee9c8b5ddc3f059c6456a441fed85bd8f9cb93b6ad4f7a503",
+    "tests/fixtures/advisor_rank_transfer_cases.json": "aa3c899635f8d1af563fff7e669a6c9405b6c8809945849e3f55b09d9cda96d9",
+    "tests/fixtures/advisor_route_cases.json": "9c821d6d5deb3af88ec89f5da7a9b34875601968004226bda478f89a15a743cc",
+    "tests/fixtures/advisor_threat_cases.json": "83eab6ec338d88cef751dc313f9670ff45dcaabafff053c2722db9a96dedf141",
+    "tests/fixtures/advisor_timeout_cases.json": "fee66e4c4c2dc26914431b98a943e34b95c5f78d21950d51456787a62faf6e25",
+    "tests/fixtures/policy_replay_synthetic.json": "a3db4cf1f229414fef3ccef8a7a86c0574cbdabdc559e68a1de3a3d55ec54da2",
+    "tests/fixtures/policy_verify_windows.json": "6adbd703dfc1621fd63aac4655e6523e2037c299420bfaa2e1330570f7007496",
+    "tests/fixtures/recording/capture.json": "938c07772622764674aa0bce501e89aeff3b06d1cda591adbe90f07df97d720f",
+    "tests/fixtures/recording/decoded-events.json": "0fd8d7dc1b5143557c66eb546df0cb12b97d4aa05c4759a8f71389059a1a8eff",
+    "tests/fixtures/sanma_kita_rinshan.json": "0f51a8fa27ae696267cd9896db8c1e69415bc7f7ca0d052b19c316d008fc7669",
+    "tests/fixtures/tenhou_sanma_actions.json": "e1f8b0c0e07081cc2c69203cd5ede43afa418f8da3c50165c1dfda8abd3c9da2",
+    "tests/fixtures/turn.json": "993cba491536ccafb707a923d0f06c4c8411fb76b8ccd4f8298da19cb2f92aab",
+    "tests/helpers/policy_live_windows.cjs": "f4359706f09d8bffe079c482f156389a5bb44d5aa73f379e74880aacaf47636d",
+    "tests/helpers/policy_unity_contract.cjs": "93ee34edd693f4365b03853dec6ae808ad55028a6c386c0c4aaf952e1bb41e6b",
+    "tests/test.cjs": "97e062b945776d0822b634efa45d72fe186b6df373800e9d7c6f07ad1c1aaf72",
+    "tests/test_advice_worker.py": "636a2901ed78de2feb889f5a194ebee423365dce41dc5f31530198c34aa4fc8c",
+    "tests/test_advisor.py": "09a6740f5c94b4912adf346cfadb50a1b288a854b212f93f3c4e7ed4a1b7bfc3",
+    "tests/test_advisor_accounting.py": "510c9344c94e85831e33c6744f0de9c038409ffc448f1231852f02cf068fe57c",
+    "tests/test_advisor_actions.py": "1d4e0575b6d8667c4459466a882c0808ddf8515dd6facba3808ca5d9d4108d43",
+    "tests/test_advisor_benchmark.py": "93ffccc781e052958aeed690d4ef30d89bb8aca9ef5a426fcf4d02206b8a7d1d",
+    "tests/test_advisor_budget.py": "c23449685f0aa029710ea1e917d32942b7067cea8ce067e0d106757ba7b05502",
+    "tests/test_advisor_calibration.py": "4fa5209cf17c24338d01592b417d6e4f0f786312f04dbb2cf6663bd004eef86a",
+    "tests/test_advisor_call_consistency.py": "997574f5c3af9bf32aa2e5461851715d32529a356aaaffa56d046c64aa39ee9b",
+    "tests/test_advisor_coarse_cache.py": "eae09b2a921caba554d30cfed54ff4420b8c472fb3db5531c569abe6916aa4d3",
+    "tests/test_advisor_confirmed_yaku.py": "c92396139c81b637b6f5dd230cd3c0d352a422433e28e3ba8b58fe3478626a9e",
+    "tests/test_advisor_current_policy.py": "4e371a6d3f3e5a604565d0486e497e8f3e5caceddea764bde7e467509fe81394",
+    "tests/test_advisor_danger_cache.py": "fd171d7f3366e364a0e3dad90b5b0081c22e0ae577a6c364af83026f3a185931",
+    "tests/test_advisor_defense_continuation.py": "cddbc529bb70d3905a13224e66c6be2aa42a4fe456c86e07bad073ebfd97cd6a",
+    "tests/test_advisor_endgame.py": "2d1c51b772433758c267afbcd36a15b3eeb84148f17e474ca7a7841d0173f182",
+    "tests/test_advisor_evaluation_config.py": "429d8b9c3de7ef6c2af7332c4e07b480e3905155bf08c288e87e7674a300dd73",
+    "tests/test_advisor_finite_routes.py": "1b0a4fe0027b90f78cb6e1980295f80233c63b5507b4a82cc06cb4740b521c5b",
+    "tests/test_advisor_finite_special_routes.py": "15aeab65cfe46ae4938ff76ea5c74d3f0554a11665fd1a0776a937fd5ae18c31",
+    "tests/test_advisor_frontier_reuse.py": "f650b008e7d0f2906e825f61b07658a3fd095ffca750b117f1e45d74ad65f9a9",
+    "tests/test_advisor_inference_benchmark.py": "9caa6a0ff54f84734af940ba0e8940acf24d994f2247680f2911b36b33b8229d",
+    "tests/test_advisor_kokushi_policy.py": "204ec2d121c5365037dddb48c755749a1b3dc9f4f619ea97facfbdb6cb333bcd",
+    "tests/test_advisor_leaf_reuse.py": "5bfb3a80269a22974f51184305b35c3b665ae0f37e96ba6242f56a95464f6eba",
+    "tests/test_advisor_locked_risk.py": "b824e4539b50281742be61f75250b113ab5353087ba91007b1cc2706da51f660",
+    "tests/test_advisor_lookahead.py": "ab0a024572387b8d40e6a16294af2091da1fd68c22df36a34a3b8b07085bc651",
+    "tests/test_advisor_meld_order.py": "698c3c7e4958d3b271389f05497af9e6570c1ea61cc5801ae2ce103c5bb4606b",
+    "tests/test_advisor_phase.py": "4ac9cc566a99b012b4ac44b57cde791f4a3850c784b473a292ad00fc85c224cd",
+    "tests/test_advisor_physical_safety.py": "079adaae3dcf628f6df24392374daf0cfbb5a0ef42684cef3b7bb4887f0f4848",
+    "tests/test_advisor_projected_value.py": "489a6fb693933d8483139228b9ef407b571562199592db0f3c568e87770e2724",
+    "tests/test_advisor_rank_ledger.py": "0d99e40ada1cf9d2115f000ae2b6288d52fb3778a23fcefd22ca593777cd7a12",
+    "tests/test_advisor_rank_policy.py": "becaf78c9f1839967a1464e062a5d4d3794387c9500be26b13bf4a802495ebe4",
+    "tests/test_advisor_rank_rules.py": "ab7b1be4fa5f1955570b6743144ddacd9a56d71fcddf2650a7780d5a47203f2e",
+    "tests/test_advisor_rank_transfer.py": "acf0d4d4f02ab6766368b55148486db100068517d3c9255e689d50f6fb162f82",
+    "tests/test_advisor_ranking.py": "023fe76fc659920056dee9e009622d2bbdc4a4e091c8c578cc470aa973015277",
+    "tests/test_advisor_risk_rules.py": "e6ac7dfe8c2105c84c9cc8952fd452eebbb285180f79aed4d333a768f70cbcb4",
+    "tests/test_advisor_routes.py": "b8ed713aa8935f089fc9a21d05592944cce46c8682bcc012f447f7377154c013",
+    "tests/test_advisor_scoring_cache.py": "d7c0fbda5b4e64d79e9f6dd15fc28c64ceca5a253b02591cea263d63846db0ed",
+    "tests/test_advisor_selection.py": "471b70ba7f928c9529dfa6135756c74e1b0c89dfd834d46dbc5266b1aefc0986",
+    "tests/test_advisor_settlement.py": "77ab1e5b8516009acd528d8de5d84c8d84719386d7e96173d8258ba25b203611",
+    "tests/test_advisor_strategy.py": "d44749d24ad1e19eaba88f179b51a6be98bf045aab5a36198a0c94e396260d85",
+    "tests/test_advisor_structural_cache.py": "0003024614a5d25ffbe9c1eaf9b29697a79dfcba8b7a20b15d36969d38dc24bc",
+    "tests/test_advisor_suit_cache.py": "1085af05cd2971241afed118b2ec5ce247f30bd8457b0f64c2db51c204e83b7b",
+    "tests/test_advisor_target_reuse.py": "7226a6b12355dc0c846636fbae3f919c49bf8b7ff3d87dbbe3519d7bfff56833",
+    "tests/test_advisor_terminals.py": "226a717cee33fbb690d814c2476fc5b17db1df2f48ed3c36fe95c1ba4cd93de3",
+    "tests/test_advisor_threat.py": "ab707e71f5e348254e83d0683b2ce26520ca30ed90bda27915a05f3fc2e5aafb",
+    "tests/test_advisor_timeout_replay.py": "5b49c4ecd6642aabd4b6f4800784febcd23034c2155eb69c1a3e50e486a81665",
+    "tests/test_advisor_turns.py": "0db16e67c769e6fff556a7c5289d7e167da2dcc67ac6d0abe67c670939f60c35",
+    "tests/test_autoplay.cjs": "48fdea47e0fb8a9159ef70681931eb6ecb6a2b3b70c962492bd583c0e406a0c3",
+    "tests/test_autoplay_recovery.py": "0eae6f8689dd3d252299b7c1e6c28a7a3f77c939582953c0243044f8d8883b63",
+    "tests/test_background.cjs": "d24ec7e61b6596f6523648f8076fa2e613fff896554e96387af9c5aec8f99492",
+    "tests/test_background_activity.py": "e563c50a33d2baf7100f45194f198acbb09e1cda17ce86c17752396afa26a837",
+    "tests/test_native.py": "be38560254a2a6e5d5a2c86d27640f4bf94c23fe4a0c8c82e6e9fcb45e5d5591",
+    "tests/test_overlay.cjs": "5a1a4ad8e0e06c55eb69fd2fa417e7a296f0bee8ec83f64a9c36bbb9067c5110",
+    "tests/test_overlay.py": "b4a3a7a0907f912e1a25cbf3be2623b6bede6efd99cf95e5aae525ed2f5e8a72",
+    "tests/test_policy_action_boundary_loss.py": "143cb5273a198d64552bebc719b9d4b4784a297209574934aa1df7998f13324a",
+    "tests/test_policy_action_diagnostics.py": "7f148933c214973e108f29107bdc82445cf27b358902b148ed10781bbd24aead",
+    "tests/test_policy_actions.py": "d5f86b18700d6f8473a217580e86130403b8088238f0ebc065b2b6e1b7b8e0c6",
+    "tests/test_policy_boundary_experiment.py": "08ce544b381ce10002c4b25e3846d19e238a995f1a0116b5da8055752f18f671",
+    "tests/test_policy_bundle.py": "7c01eb755fae3f0adc54080e5a8424ae112e34eefa9fdc4fcf8faa79d792615e",
+    "tests/test_policy_corpus_audit.py": "d3fdf4fc9228762335c3c5ddfbb100b928d3efb331bebec758c601983ccc5ad5",
+    "tests/test_policy_corpus_batching.py": "f1ee033183253c9397aaf3fab27d825486b4634d3861c9aca179d7dda9e9e2fb",
+    "tests/test_policy_corpus_training.py": "0df6c98c25f96d3247f7ebc491a70aa6dbd09c488d440873e181088620746cac",
+    "tests/test_policy_decoder_review.py": "af2f8ffbbfe7d6bac2a6020bafe0460f0c7cd9d2f30f2d058391bdf1fc3ea5e5",
+    "tests/test_policy_experiment_gate.py": "728d255e12662bd1719aa6b6ab0257d29c720aad1e14f660b94d0c382b99a232",
+    "tests/test_policy_fetch.py": "67948e0b99b161af963c2decdc64839f09afd59d090d75c1efb3fed9b5022593",
+    "tests/test_policy_launch.py": "b7a553deb9d0175ecd63bdf1911d943a043b4eafcc04bac5b33ce4246713f893",
+    "tests/test_policy_live_windows.py": "e719bb6810c0905969cbbaee442e9331a3483c8811a2796230e7847e486d99b7",
+    "tests/test_policy_metadata.py": "f51ef044fe7fd43769ef7ff5997c1ecdaab8be0268c7252a9474441486b9ece6",
+    "tests/test_policy_mjai_batch.py": "6a809ca3578df9ac3e13743141ddf36928be95fc0caf16b54b470cea460f9a0e",
+    "tests/test_policy_mjai_candidates.py": "886a21b7ad9113c86f60f35d82f5846797e7c3116f1d0b63be4d04df29d4c09e",
+    "tests/test_policy_mjai_daiminkan_suffix.py": "b082226585f9540848e3e3a5c7135078efd7c3957554c4e94d83d7a5cbd29e3c",
+    "tests/test_policy_mjai_furiten.py": "4463d012d4b61eeaa605ca3ece720a98640ea4cc048452043883aaef2a7ecbd7",
+    "tests/test_policy_mjai_review.py": "526f3c4ea298c9eae58275af2189334d271d3c4a85e41353940cdf016a82951e",
+    "tests/test_policy_mjai_sanma.py": "44542369431c1975e9dcbd02a8422e41bb12195c8d05ddaa08aa7d6e52bce371",
+    "tests/test_policy_mjai_state.py": "0c022769d11fd3e3750a68b91d4bad77a67860c16f005299ea46623a139030b7",
+    "tests/test_policy_model.py": "bdbb6ae2f94a200c3a6c487e70bd3d5a5b6321d4f3f15417e7cd6a7d7bc22a03",
+    "tests/test_policy_official_archive.py": "e2d54cd552bd171fa517e9af242e1a0bf0f218e4b646c4150a8df66a4b8077f7",
+    "tests/test_policy_official_batch.py": "d58831bbea47365f6f92db5dffe1764480bbefdb3c53e3ab49888208428be59d",
+    "tests/test_policy_official_bridge.py": "28d4319cd3d6039a520b6f75d4a8528e469e87a9ab456162734d678d0814431e",
+    "tests/test_policy_opportunity_metrics.py": "d89378d4723c9b7341eb4cf7a258a8830ed053b97801f2f30d4bcffa31deac29",
+    "tests/test_policy_replay.cjs": "22b01f1688d9977223073c804ac110c6a4f1929a5a921d6e1d29c81f92d343c1",
+    "tests/test_policy_review.py": "c39bbbed4564c5772ac21bcd881d1a9c14fc54028e83c1d26bd1b0e5a78b2926",
+    "tests/test_policy_riichi_experiment.py": "72a35085420152b70b6bc61e555398ca6306bfb92461eb46436efc15d0cfc18e",
+    "tests/test_policy_riichi_result.py": "399d957742557891501622ea2e58047117de241b9ede297297ff5e444c06b825",
+    "tests/test_policy_split.py": "cbbeb19bec973b74d2c00860a8f7e2eeebf06963cfdf934707d4fbfbb46e5cc1",
+    "tests/test_policy_train_monitor.py": "366412fc4672672f2a04d7bccb92fd23d656bf989e80e21c6a8c56b0d66f761a",
+    "tests/test_policy_unity_integration.py": "225d37f3e628f4924172fbe913f5a0aff794827de9879fde55dfb65f1ac8b08c",
+    "tests/test_policy_verify.py": "f8d93f2ceb46972c09a6ed26d008f32dd29b8b00d0d210f5a06fa98acc646371",
+    "tests/test_python.py": "69f9804378d8de3307ac281780a8bc27f9b372df7ce417b7b89d68adb13781e2",
+    "tests/test_unity_actions.cjs": "e88102733c73546c896cf136a2d2057cd9e087abf6e9c9503f1e980303c3685d",
+    "tests/test_unity_flow.cjs": "6f0aa13de8b66d8a11a5184e4dc16b0f7785049264b4c53b60863a04823bb6ad",
+    "tests/test_unity_lobby.cjs": "84982f530bbdab2422d39c71ab772eaa10ba14df8a6d1e2a7947bbef7c39a098",
+    "tests/test_unity_transport.cjs": "9d23ff840b7c8409c2d70993c15dcef1e29cd39a4da6564214a1ac6c9152928b"
+  },
+  "tests": {
+    "node": {
+      "tests": 394,
+      "passed": 394,
+      "skipped": 0,
+      "failures": 0,
+      "command": "node --test tests/test*.cjs"
+    },
+    "policy": {
+      "tests": 284,
+      "passed": 280,
+      "skipped": 4,
+      "failures": 0,
+      "logSha256": "41e0479bedb4dd59f449c647de08ba734ad1cd11f7b80c2c716b5d6fe3644639"
+    },
+    "advisor": {
+      "tests": 471,
+      "passed": 471,
+      "skipped": 0,
+      "failures": 0,
+      "logSha256": "0433816f1546c847863accd1d7fef38ad3466f007d5ec41494c233256fb47b50"
+    },
+    "bridge": {
+      "tests": 58,
+      "passed": 58,
+      "skipped": 0,
+      "failures": 0,
+      "logSha256": "1b6cb8dcedf6e469e0ef8aad5d67c4b963c698e796ac8e3f45c1f9c06de5913b"
+    }
+  },
+  "pythonRuntime": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+  "pythonEnvironment": {
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONPATH": "src (bridge tests additionally tests)",
+    "OMP_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1"
+  },
+  "pythonCommands": {
+    "policy": "python -B -m unittest discover -s tests -p 'test_policy_*.py' -v",
+    "advisor": "python -B -m unittest discover -s tests -p 'test_advi*.py' -v",
+    "bridge": "python -B -m unittest test_python test_background_activity test_autoplay_recovery -v"
+  },
+  "optionalSkippedTests": [
+    "Pinned public sample replay cache is absent",
+    "Cached official riichi-pool replay is absent",
+    "Cached official final-draw probe is absent",
+    "Cached official archive is absent"
+  ],
+  "fixtureRebinding": {
+    "windows": 56,
+    "windowContentsChanged": false,
+    "changedSourceHashes": [
+      "src/browser.js",
+      "src/unity_transport.js"
+    ],
+    "reason": "Rebased model work on main without unrelated PR33 diagnostic additions; regenerated visible windows match the original fixture exactly."
+  },
+  "installedV1App": {
+    "command": "/Users/kenny/Desktop/Maj-Soul++.app/Contents/MacOS/Maj-Soul++ --verify-policy",
+    "exitCode": 0,
+    "stdout": {
+      "status": "ok",
+      "models": {
+        "3": {
+          "sha256": "c5976cd218fe1cd0cbd0bd68d76f05c426095b836eabf6ae2ddc3b674ce7cb92",
+          "readyWindows": 18,
+          "waitingWindows": 12
+        },
+        "4": {
+          "sha256": "4795279dfd1357294d1f49cbd307ce69400a53b1ea2c48804e8403c2e9733303",
+          "readyWindows": 16,
+          "waitingWindows": 10
+        }
+      },
+      "windows": 56,
+      "actionTypes": [
+        "abort",
+        "ankan",
+        "chi",
+        "daiminkan",
+        "discard",
+        "kita",
+        "pass",
+        "pon",
+        "riichi",
+        "ron",
+        "shouminkan",
+        "tsumo"
+      ],
+      "fixtureSha256": "c15e52f81742acf4b5937f080828d97aed721f5b3a0bde9d5faa5d38b1456e8d"
+    },
+    "scope": "Read-only offline verification of the existing v1 application; not a package build or acceptance of this PR v2 source."
+  },
+  "researchSnapshot": {
+    "index": "docs/benchmarks/policy-research-20261021/index.json",
+    "indexSha256": "8b6d5115465213528d7203a7b880814cc240f73c7e9350295d8b3cd26ab60455",
+    "artifacts": 70,
+    "allCopiedArtifactHashesVerified": true
+  },
+  "limitations": [
+    "No GUI or online-game verification",
+    "No new application build or installation",
+    "No training, new checkpoint selection, test payload reads, or paused-diagnostic restart",
+    "Research plans and local artifact links retain frozen original paths; one-off research runners and model/corpus files are not redistributed",
+    "Current v2 runtime rejects v1 weights and no pair of quality-accepted v2 weights exists"
+  ],
+  "replayedCommits": [
+    {
+      "original": "b68d2345950e807e511c5e0535be631bd5a462b7",
+      "replayed": "c27d5c43749a98a3b2908b76276f1520356a98f8",
+      "subject": "Add visible-state policy training from Mahjong Soul replays"
+    },
+    {
+      "original": "a1dcc839578a6a0b1ee02b9d185126603a8dbaf8",
+      "replayed": "1b003acdbc5d62b924ca47b71da42771906d774c",
+      "subject": "Add audited MJAI conversion and streamed policy training"
+    },
+    {
+      "original": "ce0ac18c2260f45b7a935ff94470c2a0e79eea0f",
+      "replayed": "3289a113de29fe2e7dae6de5e6feaa9f990de0ae",
+      "subject": "Preserve existing policy model working state for dataset expansion"
+    },
+    {
+      "original": "1467bb3c4bc36ad3a2f9faf801507fed22454623",
+      "replayed": "dcd47997f1a64bb4903ded40bc5882b41a24e8ae",
+      "subject": "Collect 50k Mahjong Soul games and validate policy action integration"
+    },
+    {
+      "original": "4613e3ff227228483a8231004e12ec2b7e27810f",
+      "replayed": "2b6b34e7add3b5dd18b45d63095cca9d7c04cf87",
+      "subject": "Document 50k cross-platform sanma MJAI and imitation learning scope"
+    },
+    {
+      "original": "2ecb525d8d3b2020ee1d78b543fce302693a68f4",
+      "replayed": "681ec9916f676f53f3af01eb2c7ef5b36669d3c6",
+      "subject": "Train independent sanma action policy and validate live advice windows"
+    },
+    {
+      "original": "29c711cf853c32a6ca6e85505ac42d8b559b4528",
+      "replayed": "3f736a8be529728a196375bebe28c6cf16b1eae6",
+      "subject": "Load and package verified full-corpus policies for both player modes"
+    },
+    {
+      "original": "99def31b523a2e33d3beaa709394c94e57fe5906",
+      "replayed": "b6a96581ab0823a6413e6f7888602d99f70a893a",
+      "subject": "Support cached GPU corpus training with exact checkpoint resume"
+    },
+    {
+      "original": "0170c46b4685e29d18df7a7173a8a2bd6861fdfe",
+      "replayed": "3f7088f285747fe072dc8f2c76fdc123195dfc96",
+      "subject": "Verify bundled policy models on offline live action windows"
+    },
+    {
+      "original": "decc56514a657171e806e0c081ff0b3d7d6913cb",
+      "replayed": "294bf645653f6900a731bb62efc622a3e88d5e29",
+      "subject": "Document fixed public corpora and resumable full GPU training"
+    },
+    {
+      "original": "c2ee3418c15df2c0fb173ed712b64256655f923b",
+      "replayed": "4ca836679141a8b736fb57d3ed00a51fb52a6dac",
+      "subject": "Record completed full-corpus policy training and runtime evidence"
+    },
+    {
+      "original": "32e6ac5a457fd91aca8589cd4cf89cd85d402fae",
+      "replayed": "bca3fa287de0ca977c565f622e872096f397df09",
+      "subject": "Train visible-state v2 policies with validation-only action opportunity metrics"
+    },
+    {
+      "original": "c263e2908e3820ea01e91039261cc699b9227136",
+      "replayed": "8cb91e88450546ed69a3ccb6dff15a2304a9e8a3",
+      "subject": "Vectorize supervised opportunity weights without changing loss semantics"
+    },
+    {
+      "original": "81e7c41e1085ef2f81f94facdb6940e9a735c8e4",
+      "replayed": "7b90b2a45a9c63e445f3219a3468bfb427e05042",
+      "subject": "docs: record v2 fixed experiment validation outcome"
+    },
+    {
+      "original": "5ad0ddec04f73853ad4fb54e985e42ee17f84a98",
+      "replayed": "ad0c9c26f271f75cd075bfeaf59cb7b73584a563",
+      "subject": "Add riichi diagnostics and record matched pilot rejection"
+    },
+    {
+      "original": "340da6ffa9a46fe2ca3436b14d98ba0d82b71f3f",
+      "replayed": "aa40896e17cb619ae2241badf0181c9316775c3a",
+      "subject": "Diagnose action boundaries and recover verified open-kan training windows"
+    }
+  ],
+  "generatedSvgWhitespace": {
+    "preservedByteForByte": true,
+    "scope": "docs/benchmarks/policy-research-20261021/expanded-training/*.svg",
+    "gitAttribute": "-whitespace",
+    "reason": "Matplotlib-generated SVG path lines contain trailing spaces; preserve original artifact hashes while keeping whitespace checks active for source code and prose."
+  }
+}

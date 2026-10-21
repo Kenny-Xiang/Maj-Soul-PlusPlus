@@ -1,0 +1,36 @@
+{
+  "status": "completed-train-only-diagnostic",
+  "createdAtUtc": "2026-10-20T08:53:34.044073+00:00",
+  "goalAchieved": false,
+  "diagnosticPlanFrozen": true,
+  "diagnosticStarted": true,
+  "trainingStarted": false,
+  "newHoldoutGamesConsumed": 0,
+  "testPayloadReads": 0,
+  "deploymentAllowed": false,
+  "next": "Completed and independently reviewed. Continue only in ../all-actions-75-gradient-diagnostic-20261020/README.md; do not restart this diagnostic.",
+  "planSha256": "14e6eb70100836528e0dd2db66e5338bc30777d18f75bd6e8c8cc01d1cb4476b",
+  "updatedAtUtc": "2026-10-20T09:20:45.317131+00:00",
+  "process": {
+    "pid": 35638,
+    "startedAtUtc": "2026-10-20T09:07:03.460250+00:00",
+    "planSha256": "14e6eb70100836528e0dd2db66e5338bc30777d18f75bd6e8c8cc01d1cb4476b",
+    "scriptSha256": "9974615dd66045249c650561786421304d2b904707a4001ec56c01176399774e",
+    "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/diagnostic.log"
+  },
+  "executionState": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/output/state.json",
+  "summary": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/output/summary.json",
+    "sha256": "85eecb69d41cbf7f5541577d9d9bbff54b2ceb376595741e1d14e5f9548ce2c7"
+  },
+  "finalAudit": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/final-artifact-audit.json",
+    "sha256": "42f6fd62a7afd8bea9c7ba86bfa6c5cd9c06be9fc43b281e136d4b5d22a0af90"
+  },
+  "processAbsent": true,
+  "qualityAccepted": false,
+  "independentResultReview": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/result-independent-review.json",
+    "sha256": "13b0409de32868f7ec8c48eae1c760b8a6876439be1a846e7f45d7402319b8ea"
+  }
+}
