@@ -1,0 +1,960 @@
+{
+  "status": "completed-train-only-diagnostic",
+  "plan": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/plan.json",
+    "sha256": "14e6eb70100836528e0dd2db66e5338bc30777d18f75bd6e8c8cc01d1cb4476b"
+  },
+  "scope": "fixed-train-monitor-only",
+  "models": {
+    "parent": {
+      "model": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/full-vectorized/4p-constant.epoch-8.npz",
+        "sha256": "144dd87da5385e715f3bfd209c4b53f0480b672e6dff4171ae894198a36c10d7"
+      },
+      "all": {
+        "opportunityCount": 329137,
+        "actualPositive": 32640,
+        "actualNegative": 296497,
+        "predictedPositive": 23051,
+        "truePositive": 17334,
+        "exactCorrectPositive": 15886,
+        "falsePositive": 5717,
+        "falseNegative": 15306,
+        "exactCorrect": 306110,
+        "completeActionTop1": 0.486703431372549,
+        "typeRecall": 0.5310661764705882,
+        "precision": 0.7519847295128194,
+        "typePrecision": 0.7519847295128194,
+        "completeActionPrecision": 0.6891674981562622,
+        "falsePositiveRate": 0.019281813981254448,
+        "opportunityExactTop1": 0.9300382515487472,
+        "conditionalCorrect": 29393,
+        "conditionalTop1": 0.9005208333333333,
+        "conditionalUpperBoundExceeds75": true,
+        "multipleChiCandidates": {
+          "opportunities": 60819,
+          "actualPositive": 8752,
+          "conditionalCorrect": 5505,
+          "conditionalTop1": 0.6289990859232175
+        },
+        "margin": {
+          "actualChi": {
+            "count": 32640,
+            "positiveInfinity": 0,
+            "finiteCount": 32640,
+            "quantiles": {
+              "min": -7.646430969238281,
+              "p01": -4.958792572021484,
+              "p10": -2.546228790283203,
+              "median": 0.17456626892089844,
+              "p90": 2.93014144897461,
+              "p99": 4.421505813598633,
+              "max": 6.661224365234375
+            },
+            "negative": 15306,
+            "zero": 0,
+            "positive": 17334
+          },
+          "actualNonChi": {
+            "count": 296497,
+            "positiveInfinity": 0,
+            "finiteCount": 296497,
+            "quantiles": {
+              "min": -14.344490051269531,
+              "p01": -9.683456420898438,
+              "p10": -7.7684814453125,
+              "median": -4.914821624755859,
+              "p90": -1.7658454895019529,
+              "p99": 0.5839273071288962,
+              "max": 5.1472320556640625
+            },
+            "negative": 290780,
+            "zero": 0,
+            "positive": 5717
+          }
+        },
+        "trueActionCounts": {
+          "discard": 0,
+          "riichi": 0,
+          "chi": 32640,
+          "pon": 664,
+          "daiminkan": 1,
+          "ankan": 0,
+          "shouminkan": 0,
+          "kita": 0,
+          "tsumo": 0,
+          "ron": 3147,
+          "abort": 0,
+          "pass": 292685
+        },
+        "tiedChiOtherMaximum": 0
+      },
+      "source:old": {
+        "opportunityCount": 162034,
+        "actualPositive": 16010,
+        "actualNegative": 146024,
+        "predictedPositive": 11328,
+        "truePositive": 8573,
+        "exactCorrectPositive": 7857,
+        "falsePositive": 2755,
+        "falseNegative": 7437,
+        "exactCorrect": 150841,
+        "completeActionTop1": 0.49075577763897565,
+        "typeRecall": 0.5354778263585259,
+        "precision": 0.7567973163841808,
+        "typePrecision": 0.7567973163841808,
+        "completeActionPrecision": 0.6935911016949152,
+        "falsePositiveRate": 0.0188667616282255,
+        "opportunityExactTop1": 0.930921905279139,
+        "conditionalCorrect": 14379,
+        "conditionalTop1": 0.8981261711430356,
+        "conditionalUpperBoundExceeds75": true,
+        "multipleChiCandidates": {
+          "opportunities": 29748,
+          "actualPositive": 4323,
+          "conditionalCorrect": 2692,
+          "conditionalTop1": 0.6227157066851723
+        },
+        "margin": {
+          "actualChi": {
+            "count": 16010,
+            "positiveInfinity": 0,
+            "finiteCount": 16010,
+            "quantiles": {
+              "min": -7.646430969238281,
+              "p01": -4.957543716430664,
+              "p10": -2.512604522705078,
+              "median": 0.19540786743164062,
+              "p90": 2.9478626251220703,
+              "p99": 4.4380496215820315,
+              "max": 6.111846923828125
+            },
+            "negative": 7437,
+            "zero": 0,
+            "positive": 8573
+          },
+          "actualNonChi": {
+            "count": 146024,
+            "positiveInfinity": 0,
+            "finiteCount": 146024,
+            "quantiles": {
+              "min": -13.088279724121094,
+              "p01": -9.704701614379882,
+              "p10": -7.784844970703125,
+              "median": -4.932468414306641,
+              "p90": -1.7864795684814438,
+              "p99": 0.5479698562622065,
+              "max": 5.1472320556640625
+            },
+            "negative": 143269,
+            "zero": 0,
+            "positive": 2755
+          }
+        },
+        "trueActionCounts": {
+          "discard": 0,
+          "riichi": 0,
+          "chi": 16010,
+          "pon": 372,
+          "daiminkan": 1,
+          "ankan": 0,
+          "shouminkan": 0,
+          "kita": 0,
+          "tsumo": 0,
+          "ron": 1563,
+          "abort": 0,
+          "pass": 144088
+        },
+        "tiedChiOtherMaximum": 0
+      },
+      "source:new": {
+        "opportunityCount": 167103,
+        "actualPositive": 16630,
+        "actualNegative": 150473,
+        "predictedPositive": 11723,
+        "truePositive": 8761,
+        "exactCorrectPositive": 8029,
+        "falsePositive": 2962,
+        "falseNegative": 7869,
+        "exactCorrect": 155269,
+        "completeActionTop1": 0.48280216476247745,
+        "typeRecall": 0.5268190018039687,
+        "precision": 0.7473343000938326,
+        "typePrecision": 0.7473343000938326,
+        "completeActionPrecision": 0.6848929454917683,
+        "falsePositiveRate": 0.019684594578429353,
+        "opportunityExactTop1": 0.9291814030867189,
+        "conditionalCorrect": 15014,
+        "conditionalTop1": 0.9028262176788936,
+        "conditionalUpperBoundExceeds75": true,
+        "multipleChiCandidates": {
+          "opportunities": 31071,
+          "actualPositive": 4429,
+          "conditionalCorrect": 2813,
+          "conditionalTop1": 0.6351320839918717
+        },
+        "margin": {
+          "actualChi": {
+            "count": 16630,
+            "positiveInfinity": 0,
+            "finiteCount": 16630,
+            "quantiles": {
+              "min": -7.594276428222656,
+              "p01": -4.95781005859375,
+              "p10": -2.571705627441406,
+              "median": 0.15899085998535156,
+              "p90": 2.9124248504638675,
+              "p99": 4.399734382629394,
+              "max": 6.661224365234375
+            },
+            "negative": 7869,
+            "zero": 0,
+            "positive": 8761
+          },
+          "actualNonChi": {
+            "count": 150473,
+            "positiveInfinity": 0,
+            "finiteCount": 150473,
+            "quantiles": {
+              "min": -14.344490051269531,
+              "p01": -9.658487396240234,
+              "p10": -7.753825378417969,
+              "median": -4.898212432861328,
+              "p90": -1.7461990356445307,
+              "p99": 0.613937072753906,
+              "max": 4.473609924316406
+            },
+            "negative": 147511,
+            "zero": 0,
+            "positive": 2962
+          }
+        },
+        "trueActionCounts": {
+          "discard": 0,
+          "riichi": 0,
+          "chi": 16630,
+          "pon": 292,
+          "daiminkan": 0,
+          "ankan": 0,
+          "shouminkan": 0,
+          "kita": 0,
+          "tsumo": 0,
+          "ron": 1584,
+          "abort": 0,
+          "pass": 148597
+        },
+        "tiedChiOtherMaximum": 0
+      },
+      "numerics": {
+        "maximumAbsLogit": 95.54791259765625,
+        "tiedMaximumWindows": 0
+      }
+    },
+    "epoch-8": {
+      "model": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/expanded-20261016/models/4p.epoch-8.npz",
+        "sha256": "551772cce301f6fa5f82ecb4d8910e3ce818f97e1e787cd63576a4637187aa67"
+      },
+      "all": {
+        "opportunityCount": 329137,
+        "actualPositive": 32640,
+        "actualNegative": 296497,
+        "predictedPositive": 19901,
+        "truePositive": 15798,
+        "exactCorrectPositive": 14566,
+        "falsePositive": 4103,
+        "falseNegative": 16842,
+        "exactCorrect": 306420,
+        "completeActionTop1": 0.4462622549019608,
+        "typeRecall": 0.48400735294117647,
+        "precision": 0.7938294558062409,
+        "typePrecision": 0.7938294558062409,
+        "completeActionPrecision": 0.7319230189437717,
+        "falsePositiveRate": 0.01383825131451583,
+        "opportunityExactTop1": 0.9309801085870018,
+        "conditionalCorrect": 29483,
+        "conditionalTop1": 0.9032781862745098,
+        "conditionalUpperBoundExceeds75": true,
+        "multipleChiCandidates": {
+          "opportunities": 60819,
+          "actualPositive": 8752,
+          "conditionalCorrect": 5595,
+          "conditionalTop1": 0.639282449725777
+        },
+        "margin": {
+          "actualChi": {
+            "count": 32640,
+            "positiveInfinity": 0,
+            "finiteCount": 32640,
+            "quantiles": {
+              "min": -8.91778564453125,
+              "p01": -5.040224151611328,
+              "p10": -2.72408447265625,
+              "median": -0.082672119140625,
+              "p90": 2.559211730957032,
+              "p99": 4.074494476318363,
+              "max": 5.8401641845703125
+            },
+            "negative": 16842,
+            "zero": 0,
+            "positive": 15798
+          },
+          "actualNonChi": {
+            "count": 296497,
+            "positiveInfinity": 0,
+            "finiteCount": 296497,
+            "quantiles": {
+              "min": -15.034225463867188,
+              "p01": -10.766023559570312,
+              "p10": -8.521749877929688,
+              "median": -5.306816101074219,
+              "p90": -2.0453430175781246,
+              "p99": 0.26581542968749616,
+              "max": 4.29718017578125
+            },
+            "negative": 292394,
+            "zero": 0,
+            "positive": 4103
+          }
+        },
+        "trueActionCounts": {
+          "discard": 0,
+          "riichi": 0,
+          "chi": 32640,
+          "pon": 664,
+          "daiminkan": 1,
+          "ankan": 0,
+          "shouminkan": 0,
+          "kita": 0,
+          "tsumo": 0,
+          "ron": 3147,
+          "abort": 0,
+          "pass": 292685
+        },
+        "tiedChiOtherMaximum": 0
+      },
+      "source:old": {
+        "opportunityCount": 162034,
+        "actualPositive": 16010,
+        "actualNegative": 146024,
+        "predictedPositive": 9797,
+        "truePositive": 7749,
+        "exactCorrectPositive": 7133,
+        "falsePositive": 2048,
+        "falseNegative": 8261,
+        "exactCorrect": 150820,
+        "completeActionTop1": 0.44553404122423484,
+        "typeRecall": 0.4840099937539038,
+        "precision": 0.7909564152291518,
+        "typePrecision": 0.7909564152291518,
+        "completeActionPrecision": 0.7280800244972951,
+        "falsePositiveRate": 0.014025091765737139,
+        "opportunityExactTop1": 0.9307923028500191,
+        "conditionalCorrect": 14410,
+        "conditionalTop1": 0.9000624609618988,
+        "conditionalUpperBoundExceeds75": true,
+        "multipleChiCandidates": {
+          "opportunities": 29748,
+          "actualPositive": 4323,
+          "conditionalCorrect": 2723,
+          "conditionalTop1": 0.6298866527874162
+        },
+        "margin": {
+          "actualChi": {
+            "count": 16010,
+            "positiveInfinity": 0,
+            "finiteCount": 16010,
+            "quantiles": {
+              "min": -8.91778564453125,
+              "p01": -5.035850219726562,
+              "p10": -2.7116058349609373,
+              "median": -0.07781982421875,
+              "p90": 2.5720626831054694,
+              "p99": 4.062511291503905,
+              "max": 5.8401641845703125
+            },
+            "negative": 8261,
+            "zero": 0,
+            "positive": 7749
+          },
+          "actualNonChi": {
+            "count": 146024,
+            "positiveInfinity": 0,
+            "finiteCount": 146024,
+            "quantiles": {
+              "min": -14.74432373046875,
+              "p01": -10.774056091308594,
+              "p10": -8.539122009277344,
+              "median": -5.320037841796875,
+              "p90": -2.0579086303710925,
+              "p99": 0.2672074890136682,
+              "max": 4.024566650390625
+            },
+            "negative": 143976,
+            "zero": 0,
+            "positive": 2048
+          }
+        },
+        "trueActionCounts": {
+          "discard": 0,
+          "riichi": 0,
+          "chi": 16010,
+          "pon": 372,
+          "daiminkan": 1,
+          "ankan": 0,
+          "shouminkan": 0,
+          "kita": 0,
+          "tsumo": 0,
+          "ron": 1563,
+          "abort": 0,
+          "pass": 144088
+        },
+        "tiedChiOtherMaximum": 0
+      },
+      "source:new": {
+        "opportunityCount": 167103,
+        "actualPositive": 16630,
+        "actualNegative": 150473,
+        "predictedPositive": 10104,
+        "truePositive": 8049,
+        "exactCorrectPositive": 7433,
+        "falsePositive": 2055,
+        "falseNegative": 8581,
+        "exactCorrect": 155600,
+        "completeActionTop1": 0.4469633193024654,
+        "typeRecall": 0.4840048105832832,
+        "precision": 0.7966152019002375,
+        "typePrecision": 0.7966152019002375,
+        "completeActionPrecision": 0.7356492478226445,
+        "falsePositiveRate": 0.013656935131219555,
+        "opportunityExactTop1": 0.9311622173150691,
+        "conditionalCorrect": 15073,
+        "conditionalTop1": 0.9063740228502706,
+        "conditionalUpperBoundExceeds75": true,
+        "multipleChiCandidates": {
+          "opportunities": 31071,
+          "actualPositive": 4429,
+          "conditionalCorrect": 2872,
+          "conditionalTop1": 0.6484533754797923
+        },
+        "margin": {
+          "actualChi": {
+            "count": 16630,
+            "positiveInfinity": 0,
+            "finiteCount": 16630,
+            "quantiles": {
+              "min": -7.7720489501953125,
+              "p01": -5.040298614501953,
+              "p10": -2.7401466369628906,
+              "median": -0.08526611328125,
+              "p90": 2.545352172851563,
+              "p99": 4.084165191650382,
+              "max": 5.719818115234375
+            },
+            "negative": 8581,
+            "zero": 0,
+            "positive": 8049
+          },
+          "actualNonChi": {
+            "count": 150473,
+            "positiveInfinity": 0,
+            "finiteCount": 150473,
+            "quantiles": {
+              "min": -15.034225463867188,
+              "p01": -10.754120483398438,
+              "p10": -8.503988647460938,
+              "median": -5.2950897216796875,
+              "p90": -2.0325347900390622,
+              "p99": 0.26107971191406243,
+              "max": 4.29718017578125
+            },
+            "negative": 148418,
+            "zero": 0,
+            "positive": 2055
+          }
+        },
+        "trueActionCounts": {
+          "discard": 0,
+          "riichi": 0,
+          "chi": 16630,
+          "pon": 292,
+          "daiminkan": 0,
+          "ankan": 0,
+          "shouminkan": 0,
+          "kita": 0,
+          "tsumo": 0,
+          "ron": 1584,
+          "abort": 0,
+          "pass": 148597
+        },
+        "tiedChiOtherMaximum": 0
+      },
+      "numerics": {
+        "maximumAbsLogit": 169.95053100585938,
+        "tiedMaximumWindows": 0
+      }
+    }
+  },
+  "artifacts": {
+    "parentCurve": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/output/parent.curve.jsonl.gz",
+      "sha256": "b61d97ea63c2456ed0814d413b9884764140267d96d75acfc4de326edbfdf7a0",
+      "records": 609873
+    },
+    "parentScalars": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/output/parent.scalars.npy",
+      "sha256": "e7d32cde9eecadccbb33bd1d803191f95ff73876c30d9f50e1e3427230470bc5",
+      "records": 329137,
+      "identity": "gameIndex into frozen selected-caches.jsonl; sampleIndex in that cache"
+    },
+    "epoch-8Curve": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/output/epoch-8.curve.jsonl.gz",
+      "sha256": "611d1d6812695d70715e8df9d83dc670a209016d31df336253e45bf95e106c17",
+      "records": 550903
+    },
+    "epoch-8Scalars": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/output/epoch-8.scalars.npy",
+      "sha256": "11f82b4fe950d2ba0a582bde159566887ca5ac73df839a1722b527b63e6f5371",
+      "records": 329137,
+      "identity": "gameIndex into frozen selected-caches.jsonl; sampleIndex in that cache"
+    }
+  },
+  "counts": {
+    "games": 4096,
+    "samples": 2462767,
+    "choices": 2462763,
+    "forced": 4,
+    "opportunities": 329137,
+    "positives": 32640,
+    "negatives": 296497
+  },
+  "reads": {
+    "status": "completed",
+    "pid": 35638,
+    "planSha256": "14e6eb70100836528e0dd2db66e5338bc30777d18f75bd6e8c8cc01d1cb4476b",
+    "completedGames": 4096,
+    "opportunities": 329137,
+    "cachePayloadReads": 4096,
+    "modelPayloadFiles": 2,
+    "trainingUpdates": 0,
+    "modelWrites": 0,
+    "rawOrSourcePayloadReads": 0,
+    "validationPayloadReads": 0,
+    "testPayloadReads": 0,
+    "newHoldoutPayloadReads": 0,
+    "elapsedSeconds": 64.63937695800269,
+    "peakRssBytes": 605798400,
+    "currentGameIndex": 4095,
+    "currentGameId": "211103-18f411fd-a34f-4ac9-bff3-656349b02510"
+  },
+  "historicalZeroBiasCountsReproduced": true,
+  "historicalPolicyContext": {
+    "policy": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-validation-policy.json",
+      "sha256": "ca948fb66c179498b2b743d267d7d2f7dbbcce8a730befcf76f31b8b42395049"
+    },
+    "guards": [
+      {
+        "metric": "choiceNll",
+        "direction": "lower",
+        "tolerance": 0.005,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 100000,
+        "origin": "original-checkpoint-eligibility"
+      },
+      {
+        "metric": "choiceTop1",
+        "direction": "higher",
+        "tolerance": 0.002,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 100000,
+        "origin": "original-checkpoint-eligibility"
+      },
+      {
+        "metric": "byAction.discard.accuracy",
+        "direction": "higher",
+        "tolerance": 0.002,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 100000,
+        "origin": "original-checkpoint-eligibility"
+      },
+      {
+        "metric": "byOpportunity.chi.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 1,
+        "origin": "original-checkpoint-eligibility",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.pon.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 1,
+        "origin": "original-checkpoint-eligibility",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 1,
+        "origin": "original-checkpoint-eligibility",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.ankan.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 1,
+        "origin": "original-checkpoint-eligibility",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.shouminkan.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 1,
+        "origin": "original-checkpoint-eligibility",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "choiceNll",
+        "direction": "lower",
+        "tolerance": 0.005,
+        "minimumSupport": 100000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "choiceTop1",
+        "direction": "higher",
+        "tolerance": 0.002,
+        "minimumSupport": 100000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byAction.discard.accuracy",
+        "direction": "higher",
+        "tolerance": 0.002,
+        "minimumSupport": 100000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.riichi.recall",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byOpportunity.riichi.exactPositiveRecall",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byOpportunity.riichi.precision",
+        "direction": "higher",
+        "tolerance": 0.01,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byOpportunity.riichi.falsePositiveRate",
+        "direction": "lower",
+        "tolerance": 0.005,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byOpportunity.riichi.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byAction.pon.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.ankan.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.shouminkan.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.kita.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.pass.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.tsumo.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.ron.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.abort.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.precision",
+        "direction": "higher",
+        "tolerance": 0.05,
+        "minimumSupport": 20,
+        "against": [
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.recall",
+        "direction": "higher",
+        "tolerance": 0.01,
+        "minimumSupport": 100,
+        "against": [
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.falsePositiveRate",
+        "direction": "lower",
+        "tolerance": 0.001,
+        "minimumSupport": 1000,
+        "against": [
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.passAvailableExactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0,
+        "minimumSupport": 1000,
+        "against": [
+          "parent"
+        ],
+        "againstMetric": "byOpportunity.daiminkan.alwaysPassTop1",
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.chi.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "minimumSupport": 100,
+        "origin": "same per-action guard as original pon/kan guards; four-player chi",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.riichi.recall",
+        "direction": "higher",
+        "tolerance": 0.0,
+        "against": [
+          "parent"
+        ],
+        "minimumSupport": 1000,
+        "origin": "user-directed strict non-regression vs original v2 parent on the same new validation set"
+      },
+      {
+        "metric": "byOpportunity.riichi.exactPositiveRecall",
+        "direction": "higher",
+        "tolerance": 0.0,
+        "against": [
+          "parent"
+        ],
+        "minimumSupport": 1000,
+        "origin": "user-directed strict non-regression vs original v2 parent on the same new validation set"
+      },
+      {
+        "metric": "byOpportunity.daiminkan.recall",
+        "direction": "higher",
+        "tolerance": 0.0,
+        "against": [
+          "parent"
+        ],
+        "minimumSupport": 100,
+        "origin": "user-directed strict non-regression vs original v2 parent on the same new validation set"
+      },
+      {
+        "metric": "byOpportunity.daiminkan.exactPositiveRecall",
+        "direction": "higher",
+        "tolerance": 0.0,
+        "against": [
+          "parent"
+        ],
+        "minimumSupport": 100,
+        "origin": "user-directed strict non-regression vs original v2 parent on the same new validation set"
+      }
+    ],
+    "absolutePrecision": {
+      "actions": [
+        "chi",
+        "pon",
+        "daiminkan",
+        "ankan",
+        "shouminkan"
+      ],
+      "minimumPredictions": 10,
+      "minimumPrecision": 0.5
+    },
+    "appliedByThisDiagnostic": false
+  },
+  "noThresholdChosen": true,
+  "biasApplied": false,
+  "qualityAccepted": false,
+  "deploymentAllowed": false,
+  "trainingUpdates": 0,
+  "modelWrites": 0,
+  "cacheWrites": 0,
+  "allMetadataSourceAndModelHashesRecheckedAfter": true,
+  "cacheHashesCheckedOnceImmediatelyBeforeDecode": true,
+  "limitations": "Fixed fitted train monitor; no new generalization evidence. Cache semantic qualification is inherited by exact historical SHA; no raw reconstruction. Float64 common-type-bias curve is diagnostic only."
+}

@@ -1,0 +1,415 @@
+{
+  "schemaVersion": 1,
+  "figure": "Completed 3-player full-training curves, epochs 1 through 8",
+  "source": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/expanded-20261016/models/3p.report.json",
+    "sha256": "2ca1bbcbc9a6f5e63a738ed21cbe0f3d9e5af5488e246eb5804968c207c978f0",
+    "historyJsonPath": "$.history",
+    "playerCount": 3,
+    "modelSha256": "87b49a089f07a0eee59371575ffae971541e2d636f3d9a3ce866ba531155ad31"
+  },
+  "policy": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-validation-policy.json",
+    "sha256": "ca948fb66c179498b2b743d267d7d2f7dbbcce8a730befcf76f31b8b42395049",
+    "jsonPath": "$.absolutePrecision",
+    "absolutePrecision": {
+      "actions": [
+        "chi",
+        "pon",
+        "daiminkan",
+        "ankan",
+        "shouminkan"
+      ],
+      "minimumPredictions": 10,
+      "minimumPrecision": 0.5
+    }
+  },
+  "renderer": {
+    "script": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/plot_training_3p_20261018.py",
+    "sha256": "e5573f101ff9a53906d3b50d0e12a7db4553330969e636c45bb61184aa1bac47",
+    "matplotlib": "3.11.2",
+    "fontPath": "/System/Library/Fonts/STHeiti Light.ttc",
+    "fontFamily": "Heiti TC"
+  },
+  "scope": {
+    "trainGames": 75266,
+    "trainMonitorGames": 4096,
+    "trainMonitorIdentitySha256": "290c9d1cc5a9ff7ceab8b005793cb83b999661101b74dc5a7b9962ce13673982",
+    "trainMonitorSelection": "sha256(train-monitor-v1:{seed}:{gameId}) ascending over actual training games",
+    "validationGames": 9408,
+    "testSampleOrCacheReads": 0,
+    "modelInferencePerformed": false
+  },
+  "metricDefinitions": {
+    "unweightedChoiceNll": "Mean full-candidate negative log-likelihood on choice windows, no loss weights.",
+    "riichiExactPositiveRecall": "Complete riichi candidate matches / recorded riichi positives.",
+    "daiminkanPrecision": "Action-type true positives / action-type predicted positives.",
+    "daiminkanRecall": "Action-type true positives / recorded daiminkan positives."
+  },
+  "limitations": [
+    "Training monitor is a fixed sample from fitted training data, not a holdout.",
+    "Validation is the repeatedly monitored split, not a newly opened independent test set.",
+    "No inference, raw-game read, cache read, or test read was performed to produce this figure.",
+    "Choice windows require at least two legal candidates; forced actions are excluded.",
+    "Precision denominators differ by epoch; training epoch 1 has only three predicted positives.",
+    "Panel y-axis ranges differ. No confidence intervals are estimated.",
+    "Behavior cloning measures agreement with recorded actions, not optimality or game strength."
+  ],
+  "rows": [
+    {
+      "epoch": 1,
+      "scope": "trainMonitor",
+      "choices": 1297776,
+      "unweightedChoiceNll": 0.6779362052062233,
+      "riichi": {
+        "opportunityCount": 87271,
+        "actualPositive": 26029,
+        "exactCorrectPositive": 18595,
+        "exactPositiveRecall": 0.7143954819624265
+      },
+      "daiminkan": {
+        "opportunityCount": 8449,
+        "actualPositive": 218,
+        "predictedPositive": 3,
+        "truePositive": 2,
+        "falsePositive": 1,
+        "precision": 0.6666666666666666,
+        "recall": 0.009174311926605505
+      }
+    },
+    {
+      "epoch": 1,
+      "scope": "validation",
+      "choices": 2974312,
+      "unweightedChoiceNll": 0.6815463810622613,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "exactCorrectPositive": 42427,
+        "exactPositiveRecall": 0.710622403859038
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 13,
+        "truePositive": 4,
+        "falsePositive": 9,
+        "precision": 0.3076923076923077,
+        "recall": 0.008583690987124463
+      }
+    },
+    {
+      "epoch": 2,
+      "scope": "trainMonitor",
+      "choices": 1297776,
+      "unweightedChoiceNll": 0.6536624425269734,
+      "riichi": {
+        "opportunityCount": 87271,
+        "actualPositive": 26029,
+        "exactCorrectPositive": 17478,
+        "exactPositiveRecall": 0.6714818087517769
+      },
+      "daiminkan": {
+        "opportunityCount": 8449,
+        "actualPositive": 218,
+        "predictedPositive": 15,
+        "truePositive": 9,
+        "falsePositive": 6,
+        "precision": 0.6,
+        "recall": 0.04128440366972477
+      }
+    },
+    {
+      "epoch": 2,
+      "scope": "validation",
+      "choices": 2974312,
+      "unweightedChoiceNll": 0.6594642344265859,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "exactCorrectPositive": 40022,
+        "exactPositiveRecall": 0.6703403457054804
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 41,
+        "truePositive": 13,
+        "falsePositive": 28,
+        "precision": 0.3170731707317073,
+        "recall": 0.027896995708154508
+      }
+    },
+    {
+      "epoch": 3,
+      "scope": "trainMonitor",
+      "choices": 1297776,
+      "unweightedChoiceNll": 0.641162000051924,
+      "riichi": {
+        "opportunityCount": 87271,
+        "actualPositive": 26029,
+        "exactCorrectPositive": 16232,
+        "exactPositiveRecall": 0.6236121249375697
+      },
+      "daiminkan": {
+        "opportunityCount": 8449,
+        "actualPositive": 218,
+        "predictedPositive": 40,
+        "truePositive": 24,
+        "falsePositive": 16,
+        "precision": 0.6,
+        "recall": 0.11009174311926606
+      }
+    },
+    {
+      "epoch": 3,
+      "scope": "validation",
+      "choices": 2974312,
+      "unweightedChoiceNll": 0.6475888567629581,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "exactCorrectPositive": 37275,
+        "exactPositiveRecall": 0.6243300281388182
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 119,
+        "truePositive": 44,
+        "falsePositive": 75,
+        "precision": 0.3697478991596639,
+        "recall": 0.0944206008583691
+      }
+    },
+    {
+      "epoch": 4,
+      "scope": "trainMonitor",
+      "choices": 1297776,
+      "unweightedChoiceNll": 0.6306785335016842,
+      "riichi": {
+        "opportunityCount": 87271,
+        "actualPositive": 26029,
+        "exactCorrectPositive": 17707,
+        "exactPositiveRecall": 0.6802796880402627
+      },
+      "daiminkan": {
+        "opportunityCount": 8449,
+        "actualPositive": 218,
+        "predictedPositive": 29,
+        "truePositive": 19,
+        "falsePositive": 10,
+        "precision": 0.6551724137931034,
+        "recall": 0.0871559633027523
+      }
+    },
+    {
+      "epoch": 4,
+      "scope": "validation",
+      "choices": 2974312,
+      "unweightedChoiceNll": 0.6388232397547381,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "exactCorrectPositive": 40643,
+        "exactPositiveRecall": 0.6807416588503283
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 77,
+        "truePositive": 30,
+        "falsePositive": 47,
+        "precision": 0.38961038961038963,
+        "recall": 0.06437768240343347
+      }
+    },
+    {
+      "epoch": 5,
+      "scope": "trainMonitor",
+      "choices": 1297776,
+      "unweightedChoiceNll": 0.6204413134753451,
+      "riichi": {
+        "opportunityCount": 87271,
+        "actualPositive": 26029,
+        "exactCorrectPositive": 16548,
+        "exactPositiveRecall": 0.6357524299819433
+      },
+      "daiminkan": {
+        "opportunityCount": 8449,
+        "actualPositive": 218,
+        "predictedPositive": 23,
+        "truePositive": 16,
+        "falsePositive": 7,
+        "precision": 0.6956521739130435,
+        "recall": 0.07339449541284404
+      }
+    },
+    {
+      "epoch": 5,
+      "scope": "validation",
+      "choices": 2974312,
+      "unweightedChoiceNll": 0.6295540110520574,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "exactCorrectPositive": 37805,
+        "exactPositiveRecall": 0.6332071552994775
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 40,
+        "truePositive": 18,
+        "falsePositive": 22,
+        "precision": 0.45,
+        "recall": 0.03862660944206009
+      }
+    },
+    {
+      "epoch": 6,
+      "scope": "trainMonitor",
+      "choices": 1297776,
+      "unweightedChoiceNll": 0.6118006744437672,
+      "riichi": {
+        "opportunityCount": 87271,
+        "actualPositive": 26029,
+        "exactCorrectPositive": 18061,
+        "exactPositiveRecall": 0.6938799031849091
+      },
+      "daiminkan": {
+        "opportunityCount": 8449,
+        "actualPositive": 218,
+        "predictedPositive": 67,
+        "truePositive": 43,
+        "falsePositive": 24,
+        "precision": 0.6417910447761194,
+        "recall": 0.19724770642201836
+      }
+    },
+    {
+      "epoch": 6,
+      "scope": "validation",
+      "choices": 2974312,
+      "unweightedChoiceNll": 0.6221887369899595,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "exactCorrectPositive": 41339,
+        "exactPositiveRecall": 0.6923991692348921
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 159,
+        "truePositive": 77,
+        "falsePositive": 82,
+        "precision": 0.48427672955974843,
+        "recall": 0.16523605150214593
+      }
+    },
+    {
+      "epoch": 7,
+      "scope": "trainMonitor",
+      "choices": 1297776,
+      "unweightedChoiceNll": 0.6072753077951677,
+      "riichi": {
+        "opportunityCount": 87271,
+        "actualPositive": 26029,
+        "exactCorrectPositive": 17071,
+        "exactPositiveRecall": 0.6558454032041184
+      },
+      "daiminkan": {
+        "opportunityCount": 8449,
+        "actualPositive": 218,
+        "predictedPositive": 55,
+        "truePositive": 35,
+        "falsePositive": 20,
+        "precision": 0.6363636363636364,
+        "recall": 0.16055045871559634
+      }
+    },
+    {
+      "epoch": 7,
+      "scope": "validation",
+      "choices": 2974312,
+      "unweightedChoiceNll": 0.6184569327372132,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "exactCorrectPositive": 38992,
+        "exactPositiveRecall": 0.6530885702800482
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 122,
+        "truePositive": 53,
+        "falsePositive": 69,
+        "precision": 0.4344262295081967,
+        "recall": 0.11373390557939914
+      }
+    },
+    {
+      "epoch": 8,
+      "scope": "trainMonitor",
+      "choices": 1297776,
+      "unweightedChoiceNll": 0.6047362635802819,
+      "riichi": {
+        "opportunityCount": 87271,
+        "actualPositive": 26029,
+        "exactCorrectPositive": 17179,
+        "exactPositiveRecall": 0.6599946213838411
+      },
+      "daiminkan": {
+        "opportunityCount": 8449,
+        "actualPositive": 218,
+        "predictedPositive": 65,
+        "truePositive": 41,
+        "falsePositive": 24,
+        "precision": 0.6307692307692307,
+        "recall": 0.18807339449541285
+      }
+    },
+    {
+      "epoch": 8,
+      "scope": "validation",
+      "choices": 2974312,
+      "unweightedChoiceNll": 0.6164448079478682,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "exactCorrectPositive": 39313,
+        "exactPositiveRecall": 0.6584650944660324
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 144,
+        "truePositive": 64,
+        "falsePositive": 80,
+        "precision": 0.4444444444444444,
+        "recall": 0.13733905579399142
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-training-3p-20261018.png",
+      "sha256": "45a8c643f682294ad922dedaa9c35651729641c4647238d0c98dd8b787495d69"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-training-3p-20261018.svg",
+      "sha256": "aaeba047b3630f15e2c3bbb8b092929ae6419c7f3c4ade6d256d8784133b0b8c"
+    }
+  ],
+  "verification": {
+    "sourceHashMatched": true,
+    "policyHashMatched": true,
+    "epochCount": 8,
+    "countRatioChecksPassed": true,
+    "denominatorsConstantWithinScope": true,
+    "numericDataRounded": false,
+    "roundedOnlyInDisplay": true
+  }
+}

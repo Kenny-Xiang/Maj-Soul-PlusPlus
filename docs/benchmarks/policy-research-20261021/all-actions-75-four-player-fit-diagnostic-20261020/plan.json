@@ -1,0 +1,584 @@
+{
+  "budget": {
+    "batchSize": 256,
+    "cpuThreads": 1,
+    "maximumMpsDriverBytes": 2147483648,
+    "maximumRssBytes": 4294967296,
+    "wallSeconds": 1200
+  },
+  "design": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/diagnostic-design.md",
+    "sha256": "50c5e5faab4c6fb281332483b898d7192b3ac0e44fbd5a2ce8d984a484efc8b0"
+  },
+  "endpoints": {
+    "seed42-mix": {
+      "arm": "mix",
+      "model": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed42-mix/final.npz",
+        "sha256": "95efd948eabe3329517f9c14ab6834a273ce04a1082cc1b7a71ad63fc943526f"
+      },
+      "report": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed42-mix/report.json",
+        "sha256": "1971f292d1af7be309ea1d95293d9a6cc6c190deb7ec317c1d5ce94408d1acb2"
+      },
+      "seed": 42
+    },
+    "seed42-natural": {
+      "arm": "natural",
+      "model": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed42-natural/final.npz",
+        "sha256": "4c97aabb0bd56fb91454af468232fad7ff55dd23ea47c849f481ee178b421dc5"
+      },
+      "report": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed42-natural/report.json",
+        "sha256": "3709837abafd57ed4cdbca0910357a09f65b60b8379edd0ec563021e9c07bec8"
+      },
+      "seed": 42
+    },
+    "seed43-mix": {
+      "arm": "mix",
+      "model": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed43-mix/final.npz",
+        "sha256": "6ae3400ebcbf750e5b81678a8e4b79852eaeaa9f5bb17034f9da5357b8647831"
+      },
+      "report": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed43-mix/report.json",
+        "sha256": "c0dd6f9c45d122c88d88deae396aaa9394e74a998e81acbd32cb33feb9f18f2b"
+      },
+      "seed": 43
+    },
+    "seed43-natural": {
+      "arm": "natural",
+      "model": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed43-natural/final.npz",
+        "sha256": "c59242de44c3640cb9c53a81784af4002143bb8a9bdbd6c8238fcc311a58415d"
+      },
+      "report": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed43-natural/report.json",
+        "sha256": "489484163a531f29b0a3e6d5682fb05e1ee1775f94a839a616280dd64d6490cb"
+      },
+      "seed": 43
+    }
+  },
+  "fitStats": {
+    "all": {
+      "actions": {
+        "abort": {
+          "choiceLabels": 389,
+          "choiceOffered": 511,
+          "choicePositiveGames": 365,
+          "labels": 389,
+          "offered": 511,
+          "offeredGames": 475,
+          "positiveGames": 365
+        },
+        "ankan": {
+          "choiceLabels": 2021,
+          "choiceOffered": 13247,
+          "choicePositiveGames": 1609,
+          "labels": 2021,
+          "offered": 13247,
+          "offeredGames": 2639,
+          "positiveGames": 1609
+        },
+        "chi": {
+          "choiceLabels": 32640,
+          "choiceOffered": 329137,
+          "choicePositiveGames": 4063,
+          "labels": 32640,
+          "offered": 329137,
+          "offeredGames": 4096,
+          "positiveGames": 4063
+        },
+        "daiminkan": {
+          "choiceLabels": 309,
+          "choiceOffered": 10362,
+          "choicePositiveGames": 295,
+          "labels": 309,
+          "offered": 10362,
+          "offeredGames": 3680,
+          "positiveGames": 295
+        },
+        "discard": {
+          "choiceLabels": 1889370,
+          "choiceOffered": 1929967,
+          "choicePositiveGames": 4096,
+          "forcedLabels": 4,
+          "forcedOffered": 4,
+          "labels": 1889374,
+          "offered": 1929971,
+          "offeredGames": 4096,
+          "positiveGames": 4096
+        },
+        "kita": {
+          "choicePositiveGames": 0,
+          "offeredGames": 0,
+          "positiveGames": 0
+        },
+        "pass": {
+          "choiceLabels": 423900,
+          "choiceOffered": 532796,
+          "choicePositiveGames": 4096,
+          "labels": 423900,
+          "offered": 532796,
+          "offeredGames": 4096,
+          "positiveGames": 4096
+        },
+        "pon": {
+          "choiceLabels": 47820,
+          "choiceOffered": 191892,
+          "choicePositiveGames": 4091,
+          "labels": 47820,
+          "offered": 191892,
+          "offeredGames": 4096,
+          "positiveGames": 4091
+        },
+        "riichi": {
+          "choiceLabels": 30769,
+          "choiceOffered": 80571,
+          "choicePositiveGames": 4090,
+          "labels": 30769,
+          "offered": 80571,
+          "offeredGames": 4094,
+          "positiveGames": 4090
+        },
+        "ron": {
+          "choiceLabels": 20796,
+          "choiceOffered": 20976,
+          "choicePositiveGames": 4089,
+          "labels": 20796,
+          "offered": 20976,
+          "offeredGames": 4090,
+          "positiveGames": 4089
+        },
+        "shouminkan": {
+          "choiceLabels": 1285,
+          "choiceOffered": 5681,
+          "choicePositiveGames": 1102,
+          "labels": 1285,
+          "offered": 5681,
+          "offeredGames": 2119,
+          "positiveGames": 1102
+        },
+        "tsumo": {
+          "choiceLabels": 13464,
+          "choiceOffered": 13536,
+          "choicePositiveGames": 3937,
+          "labels": 13464,
+          "offered": 13536,
+          "offeredGames": 3938,
+          "positiveGames": 3937
+        }
+      },
+      "candidates": 22618039,
+      "choiceWindows": 2462763,
+      "forced": 4,
+      "games": 4096,
+      "labelSources": {
+        "accepted": 2038867,
+        "inferred_pass": 423900
+      },
+      "windows": 2462767
+    },
+    "new": {
+      "actions": {
+        "abort": {
+          "choiceLabels": 195,
+          "choiceOffered": 253,
+          "choicePositiveGames": 183,
+          "labels": 195,
+          "offered": 253,
+          "offeredGames": 236,
+          "positiveGames": 183
+        },
+        "ankan": {
+          "choiceLabels": 998,
+          "choiceOffered": 6764,
+          "choicePositiveGames": 804,
+          "labels": 998,
+          "offered": 6764,
+          "offeredGames": 1345,
+          "positiveGames": 804
+        },
+        "chi": {
+          "choiceLabels": 16630,
+          "choiceOffered": 167103,
+          "choicePositiveGames": 2040,
+          "labels": 16630,
+          "offered": 167103,
+          "offeredGames": 2057,
+          "positiveGames": 2040
+        },
+        "daiminkan": {
+          "choiceLabels": 161,
+          "choiceOffered": 5279,
+          "choicePositiveGames": 156,
+          "labels": 161,
+          "offered": 5279,
+          "offeredGames": 1859,
+          "positiveGames": 156
+        },
+        "discard": {
+          "choiceLabels": 958831,
+          "choiceOffered": 979255,
+          "choicePositiveGames": 2057,
+          "forcedLabels": 1,
+          "forcedOffered": 1,
+          "labels": 958832,
+          "offered": 979256,
+          "offeredGames": 2057,
+          "positiveGames": 2057
+        },
+        "kita": {
+          "choicePositiveGames": 0,
+          "offeredGames": 0,
+          "positiveGames": 0
+        },
+        "pass": {
+          "choiceLabels": 215498,
+          "choiceOffered": 270180,
+          "choicePositiveGames": 2057,
+          "labels": 215498,
+          "offered": 270180,
+          "offeredGames": 2057,
+          "positiveGames": 2057
+        },
+        "pon": {
+          "choiceLabels": 23804,
+          "choiceOffered": 97190,
+          "choicePositiveGames": 2052,
+          "labels": 23804,
+          "offered": 97190,
+          "offeredGames": 2057,
+          "positiveGames": 2052
+        },
+        "riichi": {
+          "choiceLabels": 15488,
+          "choiceOffered": 40943,
+          "choicePositiveGames": 2054,
+          "labels": 15488,
+          "offered": 40943,
+          "offeredGames": 2056,
+          "positiveGames": 2054
+        },
+        "ron": {
+          "choiceLabels": 10449,
+          "choiceOffered": 10522,
+          "choicePositiveGames": 2051,
+          "labels": 10449,
+          "offered": 10522,
+          "offeredGames": 2051,
+          "positiveGames": 2051
+        },
+        "shouminkan": {
+          "choiceLabels": 645,
+          "choiceOffered": 2893,
+          "choicePositiveGames": 553,
+          "labels": 645,
+          "offered": 2893,
+          "offeredGames": 1061,
+          "positiveGames": 553
+        },
+        "tsumo": {
+          "choiceLabels": 6736,
+          "choiceOffered": 6771,
+          "choicePositiveGames": 1969,
+          "labels": 6736,
+          "offered": 6771,
+          "offeredGames": 1969,
+          "positiveGames": 1969
+        }
+      },
+      "candidates": 11478679,
+      "choiceWindows": 1249435,
+      "forced": 1,
+      "games": 2057,
+      "labelSources": {
+        "accepted": 1033938,
+        "inferred_pass": 215498
+      },
+      "windows": 1249436
+    },
+    "old": {
+      "actions": {
+        "abort": {
+          "choiceLabels": 194,
+          "choiceOffered": 258,
+          "choicePositiveGames": 182,
+          "labels": 194,
+          "offered": 258,
+          "offeredGames": 239,
+          "positiveGames": 182
+        },
+        "ankan": {
+          "choiceLabels": 1023,
+          "choiceOffered": 6483,
+          "choicePositiveGames": 805,
+          "labels": 1023,
+          "offered": 6483,
+          "offeredGames": 1294,
+          "positiveGames": 805
+        },
+        "chi": {
+          "choiceLabels": 16010,
+          "choiceOffered": 162034,
+          "choicePositiveGames": 2023,
+          "labels": 16010,
+          "offered": 162034,
+          "offeredGames": 2039,
+          "positiveGames": 2023
+        },
+        "daiminkan": {
+          "choiceLabels": 148,
+          "choiceOffered": 5083,
+          "choicePositiveGames": 139,
+          "labels": 148,
+          "offered": 5083,
+          "offeredGames": 1821,
+          "positiveGames": 139
+        },
+        "discard": {
+          "choiceLabels": 930539,
+          "choiceOffered": 950712,
+          "choicePositiveGames": 2039,
+          "forcedLabels": 3,
+          "forcedOffered": 3,
+          "labels": 930542,
+          "offered": 950715,
+          "offeredGames": 2039,
+          "positiveGames": 2039
+        },
+        "kita": {
+          "choicePositiveGames": 0,
+          "offeredGames": 0,
+          "positiveGames": 0
+        },
+        "pass": {
+          "choiceLabels": 208402,
+          "choiceOffered": 262616,
+          "choicePositiveGames": 2039,
+          "labels": 208402,
+          "offered": 262616,
+          "offeredGames": 2039,
+          "positiveGames": 2039
+        },
+        "pon": {
+          "choiceLabels": 24016,
+          "choiceOffered": 94702,
+          "choicePositiveGames": 2039,
+          "labels": 24016,
+          "offered": 94702,
+          "offeredGames": 2039,
+          "positiveGames": 2039
+        },
+        "riichi": {
+          "choiceLabels": 15281,
+          "choiceOffered": 39628,
+          "choicePositiveGames": 2036,
+          "labels": 15281,
+          "offered": 39628,
+          "offeredGames": 2038,
+          "positiveGames": 2036
+        },
+        "ron": {
+          "choiceLabels": 10347,
+          "choiceOffered": 10454,
+          "choicePositiveGames": 2038,
+          "labels": 10347,
+          "offered": 10454,
+          "offeredGames": 2039,
+          "positiveGames": 2038
+        },
+        "shouminkan": {
+          "choiceLabels": 640,
+          "choiceOffered": 2788,
+          "choicePositiveGames": 549,
+          "labels": 640,
+          "offered": 2788,
+          "offeredGames": 1058,
+          "positiveGames": 549
+        },
+        "tsumo": {
+          "choiceLabels": 6728,
+          "choiceOffered": 6765,
+          "choicePositiveGames": 1968,
+          "labels": 6728,
+          "offered": 6765,
+          "offeredGames": 1969,
+          "positiveGames": 1968
+        }
+      },
+      "candidates": 11139360,
+      "choiceWindows": 1213328,
+      "forced": 3,
+      "games": 2039,
+      "labelSources": {
+        "accepted": 1004929,
+        "inferred_pass": 208402
+      },
+      "windows": 1213331
+    }
+  },
+  "freezePayloadReads": 0,
+  "inputs": {
+    "controlPlan": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/plan.json",
+      "sha256": "efc3a869cfd666d2bebd25e32adb844198dc586f50791d37768319a05462a474"
+    },
+    "fitRecords": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/selected-fit.jsonl",
+      "sha256": "1cca78014971eb83693796f06fed334e761e36da4083ef2996eadbe238e71933"
+    },
+    "historicalPlan": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-validation-plan-4p.json",
+      "sha256": "883dc10aeebddb8c5165d21abb2ec75d4098184bfb15291a56744ed62562b4d8"
+    },
+    "initialization": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/synthetic-qualification.json",
+      "sha256": "496c73c3ed6e43953c11b5f566919610e143fc09ccc3f4eb45791d6a25c7d728"
+    },
+    "metadata.cacheIndex": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-cache-index-4p.jsonl",
+      "sha256": "9923f3661fb22f16bbf7db077dfb942925d9962572a71e4950e2972142350c14"
+    },
+    "metadata.fitMonitor": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/selected-caches.jsonl",
+      "sha256": "995cb25170fe8cd44fd2fdb940ca6bbdab27450be280c583f3c0f88efdde183d"
+    },
+    "metadata.manifest": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/expanded-20261016/four-player/training/manifest.jsonl",
+      "sha256": "75c8772247fcb4e533e40da5b650a340882c1da5c233841bfc3ae539eb4d1796"
+    },
+    "metadata.oldSplit": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/split.json",
+      "sha256": "951a9aeb150eea5368acfc4a1d06040d184dae93b304b4ac8541a72d03159d70"
+    },
+    "metadata.split": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/combined-four-player/split.json",
+      "sha256": "ff8b6f568160f64b947f65415bc329577a778f79f2a201af8ab6166a54378300"
+    },
+    "preparation": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/pilot-preparation.json",
+      "sha256": "cba9526ec952c74a493c0b45e33cedc16a3ba8b76273626c198c1e86f568a528"
+    },
+    "qualificationRule": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/payload-rule.json",
+      "sha256": "064d1e3499a3d9b9369de7ed23100e8761d4a21746fa5f449ae2ee7f439f3b34"
+    },
+    "resourcePreflight": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/resource-preflight.json",
+      "sha256": "97ff7534bf99821a3393eaf0fbb4d07c71a8020f93532f5a5c40d03dd1dfcfac"
+    },
+    "selected.fit": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/selected-fit.jsonl",
+      "sha256": "1cca78014971eb83693796f06fed334e761e36da4083ef2996eadbe238e71933"
+    },
+    "selected.holdout": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/selected-holdout.jsonl",
+      "sha256": "4ed2dd43db7ac6bf1c656cabbe2459b4109588874ac6fb1da262a85cd52839e3"
+    },
+    "selection": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/selection-metadata.json",
+      "sha256": "bfd42757e3f77ff4971d3b6c4188b5bc7b3790a69164acbb714578cf62ab33bc"
+    },
+    "selectionDesign": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/preparation-design.md",
+      "sha256": "abba1cd726e0e39beb553ca4837e00408f50cf0f5afccfd894ee9ffcc534a385"
+    },
+    "selectionRule": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/selection-rule.json",
+      "sha256": "2aa5692dd40db7e35378d3f06ed97669ffd910fb83cb490b8b7070d8ff5c4855"
+    },
+    "stablePlan": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-stable-20261018/plan.json",
+      "sha256": "e6299b8514e803131b76ad6ea0d2fe99de5cdc9fdd9777fa81e096ad95fe191f"
+    }
+  },
+  "labels": {
+    "bytes": 2462763,
+    "dtype": "|u1",
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/fit-labels.bin",
+    "sha256": "ad6f83f85872a17dcbb3b6363eb92ec2ecd673559f8e3d30b6d1fff8f8a296fe",
+    "shape": [
+      2462763
+    ]
+  },
+  "output": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/output",
+  "quotas": [
+    306,
+    16,
+    17,
+    19,
+    11,
+    12,
+    12,
+    0,
+    14,
+    15,
+    12,
+    78
+  ],
+  "rules": {
+    "chiMinimumTypePrecision": 0.5,
+    "chiNaturalPrecisionMaximumDrop": 0.05,
+    "commonBiasesAreSeparate": true,
+    "daiminkanMaximumFpr": 0.01,
+    "daiminkanMinimumTypePrecision": 0.5,
+    "exposureBuckets": [
+      "0",
+      "1",
+      "2",
+      "3+"
+    ],
+    "minimumCompleteRecallExclusive": 0.75,
+    "minimumPredictions": 30,
+    "noBiasChosenOrApplied": true
+  },
+  "scope": {
+    "cacheWrites": 0,
+    "formalValidationPayloadReads": 0,
+    "holdoutPayloadReads": 0,
+    "modelWrites": 0,
+    "otherPackedReads": 0,
+    "rawGameReads": 0,
+    "sourceSamplePayloadReads": 0,
+    "sqlReads": 0,
+    "testPayloadReads": 0,
+    "trainingUpdates": 0
+  },
+  "sources": {
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-20261018/prepare_pilot.py": "bc22fd29b8fffb4aee6d6e4dd9dbb969c3982faa10f0a79ef2ca62516359846d",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/bilinear_candidate_policy.py": "9b1daab9cf7f1dfc0795575b5adf7e3493c5db8ebf53b08daea6365aa99e1487",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/test_bilinear_candidate_policy.py": "282cf6624a803ea9f37121097bd501882021b9d86f51ca72f7fe650bc5052311",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/train_bilinear.py": "074f759f00c2abfb1d1b6c6bdd5c9142d81e8b3bbeadfbe598152b147ae5910a",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/chi_diagnostic.py": "9974615dd66045249c650561786421304d2b904707a4001ec56c01176399774e",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/fit_diagnostic.py": "89f3a980193f3d287ae2019084381c074f2ba887d5baa7c1708ca56b1eb0b33c",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/test_fit_diagnostic.py": "5b10ee543113a302eb59d4d99c4a62a7818e4a36b1a388b270cff7dfc4f2470e",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/evaluate_objective.py": "0792003d377fd98b673bc7f31f30af2b6f7673852a23a8452a332bf0e356fe20",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/freeze_plan.py": "4320b6914b321cbb072fa85ae16b42a1a3b0a4e4cf28ec7e2282b9723b62d953",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/prepare_metadata.py": "d9f0583cc2937b3fa4109afb8a3c2db04932822eebf5b623d2fbe8eaa509ffdb",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/prepare_payload.py": "c913c906e9ef10a67afdca93c383f46f5d9dfa85a546bfe103ab02d9f3b5fcb4",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/resource_preflight.py": "7a9f795655349a5048902331ab92c505e724ce9d535ee38d3d965b5e978b869d",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/run_pilot.py": "dc216a2d6be87219f085a017d979cfb012467e6aec9741ca5170838f19290316",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/synthetic_qualification.py": "2f7505547c00777136c9c0229fca6c9c7acefc2766087fa83f44eecc3cb91b78",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/test_evaluate_objective.py": "087ca20b31a5861ab10af9d2d0bc1f835255c8e815d250992a12bc262d3ab41a",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/test_prepare_metadata.py": "1e940ab40f73f21eeaed47c7f40a1160d83b60acc542d5cd1ec09cd0cbff8c61",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/test_prepare_payload.py": "4fa71d2038be5a0e3b305b02d40d2c9e7a90c237e468f218c0788fb53a779cd8",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/test_synthetic_qualification.py": "7019b87ade7cda93c740f165f23823446cea098e5b667470ac5409d7a80ba536",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/test_train_objective.py": "f610bb353d3808eed2348e80f932f76706dba238e9dee3ce119d85edd1228840",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/train_objective.py": "ff9b4d9f6c1f22ccd308014bbfe8b3a1027e10cc267dab49d4b373b4b9a51a31",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-kan-sampling-20261018/evaluate_kan_sampling.py": "ceef02a23b6c457fe05af219b945c77ca877d902351a82c7203a892aee2fa40e",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-stable-20261018/analyze_pilot.py": "730aa92584c5ecafa1f358804e781b4d35aceba8c3130a7c0bc8f45be4f71469",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_actions.py": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_encoded_cache.py": "44babbd91dd903f4e0f299b8fcba21231074e7602f78397c97db40f838b93229",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_features.py": "86537a62645bce835caaa3ce2f5636c75f2bfaef770cbcd0bf230ff29dccd9c8",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_model.py": "c36c96e06c88bd3f87306b20a51474e71ddc7a4c9daf4580727170559deccbe4",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_training.py": "7438965893f4d41a46b5690d891e576d7d203c9fcf5d1eb22412b57df0fe5a4e"
+  },
+  "status": "frozen-fit-diagnostic",
+  "tests": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-fit-diagnostic-20261020/freeze-synthetic-tests.log",
+    "sha256": "6541254b3b8c9728b8c4d565cdcbf72bdff634779253bece94fbb6ce92901717"
+  },
+  "trainingAuthorized": false
+}

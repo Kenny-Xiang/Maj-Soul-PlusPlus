@@ -1,0 +1,199 @@
+{
+  "status": "completed",
+  "createdAtUtc": "2026-10-20T09:40:44.001393+00:00",
+  "goalAchieved": false,
+  "selectionRuleFrozen": true,
+  "metadataSelectionStarted": true,
+  "payloadQualificationStarted": true,
+  "trainingStarted": true,
+  "newHoldoutPayloadReads": 8192,
+  "testPayloadReads": 0,
+  "deploymentAllowed": false,
+  "next": "Review four endpoint results and support/false-positive guards; do not restart completed chain.",
+  "updatedAtUtc": "2026-10-20T10:29:28.118208+00:00",
+  "metadataSelectionCompleted": true,
+  "selectionRule": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/selection-rule.json",
+    "sha256": "2aa5692dd40db7e35378d3f06ed97669ffd910fb83cb490b8b7070d8ff5c4855"
+  },
+  "metadataSelection": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/selection-metadata.json",
+    "sha256": "bfd42757e3f77ff4971d3b6c4188b5bc7b3790a69164acbb714578cf62ab33bc"
+  },
+  "selectionSourceReview": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/implementation-independent-review.json",
+    "sha256": "0a43ea5c31a110966b3694fb3664b68873bc8587120d886bc1f5f0f5ca54e620"
+  },
+  "metadataTests": {
+    "passed": 8,
+    "failed": 0,
+    "payloadReads": 0
+  },
+  "payloadRuleSha256": "064d1e3499a3d9b9369de7ed23100e8761d4a21746fa5f449ae2ee7f439f3b34",
+  "payloadPid": 38235,
+  "syntheticQualificationStatus": "passed-synthetic-only",
+  "syntheticQualificationSha256": "496c73c3ed6e43953c11b5f566919610e143fc09ccc3f4eb45791d6a25c7d728",
+  "payloadQualificationCompleted": true,
+  "payloadQualification": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/pilot-preparation.json",
+    "sha256": "cba9526ec952c74a493c0b45e33cedc16a3ba8b76273626c198c1e86f568a528"
+  },
+  "resourcePreflightCompleted": true,
+  "resourcePreflight": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/resource-preflight.json",
+    "sha256": "97ff7534bf99821a3393eaf0fbb4d07c71a8020f93532f5a5c40d03dd1dfcfac"
+  },
+  "metadataIndependentReview": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/metadata-result-review.json",
+    "sha256": "3171c950ecd80d3b535c3b770465c0ed4698e46a0937515deec3e5b150bda06b"
+  },
+  "trainingResourceReview": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/training-resource-review.json",
+    "sha256": "3e6ce2139477993dbdf6997dd1715649da8155e871ab916e313fde17f7e7a12a"
+  },
+  "trainingPlanFrozen": true,
+  "plan": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/plan.json",
+    "sha256": "efc3a869cfd666d2bebd25e32adb844198dc586f50791d37768319a05462a474"
+  },
+  "pid": 38991,
+  "stages": [
+    {
+      "name": "seed42-natural",
+      "status": "completed",
+      "startedAtUtc": "2026-10-20T10:12:39.127658+00:00",
+      "command": [
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+        "-B",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/train_objective.py",
+        "--plan",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/plan.json",
+        "--plan-sha256",
+        "efc3a869cfd666d2bebd25e32adb844198dc586f50791d37768319a05462a474",
+        "--seed",
+        "42",
+        "--arm",
+        "natural"
+      ],
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed42-natural.log",
+      "pid": 38992,
+      "returnCode": 0,
+      "endedAtUtc": "2026-10-20T10:14:02.053104+00:00"
+    },
+    {
+      "name": "seed42-mix",
+      "status": "completed",
+      "startedAtUtc": "2026-10-20T10:14:02.055132+00:00",
+      "command": [
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+        "-B",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/train_objective.py",
+        "--plan",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/plan.json",
+        "--plan-sha256",
+        "efc3a869cfd666d2bebd25e32adb844198dc586f50791d37768319a05462a474",
+        "--seed",
+        "42",
+        "--arm",
+        "mix"
+      ],
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed42-mix.log",
+      "pid": 39032,
+      "returnCode": 0,
+      "endedAtUtc": "2026-10-20T10:15:24.768886+00:00"
+    },
+    {
+      "name": "seed43-natural",
+      "status": "completed",
+      "startedAtUtc": "2026-10-20T10:15:24.770918+00:00",
+      "command": [
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+        "-B",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/train_objective.py",
+        "--plan",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/plan.json",
+        "--plan-sha256",
+        "efc3a869cfd666d2bebd25e32adb844198dc586f50791d37768319a05462a474",
+        "--seed",
+        "43",
+        "--arm",
+        "natural"
+      ],
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed43-natural.log",
+      "pid": 39049,
+      "returnCode": 0,
+      "endedAtUtc": "2026-10-20T10:16:47.397345+00:00"
+    },
+    {
+      "name": "seed43-mix",
+      "status": "completed",
+      "startedAtUtc": "2026-10-20T10:16:47.399341+00:00",
+      "command": [
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+        "-B",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/train_objective.py",
+        "--plan",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/plan.json",
+        "--plan-sha256",
+        "efc3a869cfd666d2bebd25e32adb844198dc586f50791d37768319a05462a474",
+        "--seed",
+        "43",
+        "--arm",
+        "mix"
+      ],
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/seed43-mix.log",
+      "pid": 39068,
+      "returnCode": 0,
+      "endedAtUtc": "2026-10-20T10:18:10.221296+00:00"
+    },
+    {
+      "name": "evaluate",
+      "status": "completed",
+      "startedAtUtc": "2026-10-20T10:18:10.223311+00:00",
+      "command": [
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+        "-B",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/evaluate_objective.py",
+        "--evaluate",
+        "--plan",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/plan.json",
+        "--plan-sha256",
+        "efc3a869cfd666d2bebd25e32adb844198dc586f50791d37768319a05462a474",
+        "--output",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/evaluation"
+      ],
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/evaluate.log",
+      "pid": 39101,
+      "returnCode": 0,
+      "endedAtUtc": "2026-10-20T10:29:25.002308+00:00"
+    },
+    {
+      "name": "analyze",
+      "status": "completed",
+      "startedAtUtc": "2026-10-20T10:29:25.004514+00:00",
+      "command": [
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+        "-B",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/evaluate_objective.py",
+        "--analyze",
+        "--plan",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/plan.json",
+        "--plan-sha256",
+        "efc3a869cfd666d2bebd25e32adb844198dc586f50791d37768319a05462a474",
+        "--output",
+        "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/decision.json"
+      ],
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/analyze.log",
+      "pid": 39628,
+      "returnCode": 0,
+      "endedAtUtc": "2026-10-20T10:29:28.095503+00:00"
+    }
+  ],
+  "planSha256": "efc3a869cfd666d2bebd25e32adb844198dc586f50791d37768319a05462a474",
+  "currentStage": null,
+  "qualityStatus": "rejected-full-quality-screen",
+  "decision": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-objective-20261020/decision.json",
+    "sha256": "1971e962dff54a9c356650d541aab9945df5ed7afa039cb8e1c360c54df5809f"
+  }
+}

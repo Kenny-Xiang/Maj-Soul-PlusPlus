@@ -1,0 +1,97 @@
+{
+  "status": "passed",
+  "createdAt": "2026-10-16T03:28:08.260834+00:00",
+  "seconds": 15.94,
+  "baselineFilesUnchanged": 9,
+  "results": {
+    "three-player": {
+      "players": 3,
+      "oldRawGames": 50000,
+      "newRawGames": 49074,
+      "combinedRawGames": 99074,
+      "newSourceEligibleGames": 47019,
+      "newExcludedGames": 2055,
+      "newFileCount": 49074,
+      "independentlyRehashedNewGames": 49074,
+      "compressedBytes": 372958334,
+      "decodedBytes": 2775701858,
+      "events": 33015352,
+      "rounds": 442996,
+      "newOldIdOverlap": 0,
+      "hashChecks": {
+        "compressedSha256": {
+          "newUnique": 49074,
+          "overlapWithOld": 0
+        },
+        "decodedSha256": {
+          "newUnique": 49074,
+          "overlapWithOld": 0
+        },
+        "eventsSha256": {
+          "newUnique": 49074,
+          "overlapWithOld": 0
+        }
+      },
+      "oldPartitionAssignmentsPreserved": 47063,
+      "oldExclusionsPreserved": 2937,
+      "partitions": {
+        "train": 75266,
+        "validation": 9408,
+        "test": 9408
+      },
+      "crossPartitionIdAndContentOverlap": 0,
+      "probeGamesOnlyFromNewTrain": 64,
+      "manifestSha256": "92f4c0fec810b3b7eeb024fb5b910e27e436dbf1ecb0fd6f35c210f71ec37415",
+      "combinedManifestSha256": "7f497c422aa22ef773b1e4e6fe8d05509dbb3980c234e941afa03f24e13afd7d",
+      "combinedSplitSha256": "64860f84fec5a7e0e15c3799b6246bb8cd5b32d7dffc704363a842203fe9aecb"
+    },
+    "four-player": {
+      "players": 4,
+      "oldRawGames": 50000,
+      "newRawGames": 50000,
+      "combinedRawGames": 100000,
+      "newSourceEligibleGames": 50000,
+      "newExcludedGames": 0,
+      "newFileCount": 50000,
+      "independentlyRehashedNewGames": 50000,
+      "compressedBytes": 270613410,
+      "decodedBytes": 2732092997,
+      "events": 54132047,
+      "rounds": 530743,
+      "newOldIdOverlap": 0,
+      "hashChecks": {
+        "compressedSha256": {
+          "newUnique": 50000,
+          "overlapWithOld": 0
+        },
+        "decodedSha256": {
+          "newUnique": 50000,
+          "overlapWithOld": 0
+        },
+        "eventsSha256": {
+          "newUnique": 50000,
+          "overlapWithOld": 0
+        }
+      },
+      "oldPartitionAssignmentsPreserved": 49951,
+      "oldExclusionsPreserved": 49,
+      "partitions": {
+        "train": 79961,
+        "validation": 9995,
+        "test": 9995
+      },
+      "crossPartitionIdAndContentOverlap": 0,
+      "probeGamesOnlyFromNewTrain": 64,
+      "manifestSha256": "22dec5f743cde7fce5c5d9e59e8bdc004aa56f40fe4a9acd1a28010a129a7738",
+      "combinedManifestSha256": "872398c7550521ce7931994726b6acbc5efaabbe08df53d66cad39d24769c2f5",
+      "combinedSplitSha256": "ff8b6f568160f64b947f65415bc329577a778f79f2a201af8ab6166a54378300"
+    }
+  },
+  "scope": "All newly stored compressed, decoded and canonical event hashes independently recomputed; combined files and frozen whole-game partitions verified.",
+  "limits": [
+    "No full legal-action replay",
+    "No full supervised sample extraction",
+    "No model training or gameplay",
+    "Existing raw game bytes are hard-linked and checked for identity to their original paths; baseline manifests and split bytes verified unchanged."
+  ]
+}

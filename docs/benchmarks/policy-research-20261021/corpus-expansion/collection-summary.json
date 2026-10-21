@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "target": "Approximately 50000 additional complete games per player count",
+  "threePlayer": {
+    "originalGames": 50000,
+    "addedGames": 49074,
+    "sourcePlatform": "tenhou",
+    "newManifest": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/three-player/manifest.jsonl",
+    "newManifestSha256": "92f4c0fec810b3b7eeb024fb5b910e27e436dbf1ecb0fd6f35c210f71ec37415",
+    "collectionReport": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/three-player/report.json",
+    "totalRawGames": 99074,
+    "addedSourceEligibleGames": 47019,
+    "sourceEligibleGames": 94082,
+    "excludedGames": 4992,
+    "partitions": {
+      "train": 75266,
+      "validation": 9408,
+      "test": 9408
+    },
+    "priorPartitionAssignmentsPreserved": 47063,
+    "newOldIdOverlap": 0,
+    "manifest": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/combined-three-player/manifest.jsonl",
+    "manifestSha256": "7f497c422aa22ef773b1e4e6fe8d05509dbb3980c234e941afa03f24e13afd7d",
+    "split": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/combined-three-player/split.json",
+    "splitSha256": "64860f84fec5a7e0e15c3799b6246bb8cd5b32d7dffc704363a842203fe9aecb",
+    "probeGames": 64,
+    "probePartition": "train",
+    "newGamesFullyExtractedForTraining": false,
+    "sampleExtractionProbe": {
+      "games": 64,
+      "samples": 20774,
+      "failedGames": 0,
+      "partition": "new train games only",
+      "report": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/validation/three-player/report.json",
+      "reportSha256": "95ee4e77ef12745c32f0d030a2165984c79488296dbd3dde324dfb31fa29f5c9",
+      "converterSignature": "96872ac64e57897511a367b3d25e9f26958a738cbe0ab9de61b6cf8feb6e4f42",
+      "fullCorpusExtraction": false
+    }
+  },
+  "fourPlayer": {
+    "originalGames": 50000,
+    "addedGames": 50000,
+    "sourcePlatform": "majsoul",
+    "newManifest": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/four-player/manifest.jsonl",
+    "newManifestSha256": "22dec5f743cde7fce5c5d9e59e8bdc004aa56f40fe4a9acd1a28010a129a7738",
+    "collectionReport": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/four-player/report.json",
+    "totalRawGames": 100000,
+    "addedSourceEligibleGames": 50000,
+    "sourceEligibleGames": 99951,
+    "excludedGames": 49,
+    "partitions": {
+      "train": 79961,
+      "validation": 9995,
+      "test": 9995
+    },
+    "priorPartitionAssignmentsPreserved": 49951,
+    "newOldIdOverlap": 0,
+    "manifest": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/combined-four-player/manifest.jsonl",
+    "manifestSha256": "872398c7550521ce7931994726b6acbc5efaabbe08df53d66cad39d24769c2f5",
+    "split": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/combined-four-player/split.json",
+    "splitSha256": "ff8b6f568160f64b947f65415bc329577a778f79f2a201af8ab6166a54378300",
+    "probeGames": 64,
+    "probePartition": "train",
+    "newGamesFullyExtractedForTraining": false,
+    "sampleExtractionProbe": {
+      "games": 64,
+      "samples": 37459,
+      "failedGames": 0,
+      "partition": "new train games only",
+      "report": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/validation/four-player/report.json",
+      "reportSha256": "dd74ddaa20c8e24ba6225695ae6d29655dc8443233ff961b6f5283aa1ead5be1",
+      "converterSignature": "96872ac64e57897511a367b3d25e9f26958a738cbe0ab9de61b6cf8feb6e4f42",
+      "fullCorpusExtraction": false
+    }
+  },
+  "storage": "Combined corpus uses hard links; source file contents must remain immutable.",
+  "scope": "Complete MJAI collection and frozen source partitions; no new full-corpus sample extraction or model training.",
+  "baselineUnchanged": true,
+  "preservedBaselineFiles": 9,
+  "independentAudit": {
+    "report": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/research/independent-audit.json",
+    "sha256": "fc2508d75d989c2efc209e2f5bdc5ae6940992fd1c4d7b0095d5bcc133794b85"
+  }
+}

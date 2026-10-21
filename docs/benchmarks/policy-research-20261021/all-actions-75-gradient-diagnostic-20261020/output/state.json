@@ -1,0 +1,27 @@
+{
+  "status": "completed-train-only-gradient-diagnostic",
+  "pid": 36746,
+  "planSha256": "80912373642c7482eba38fdc153ab583b4628c2ba7b4e49b723ef5263efb7854",
+  "cachePayloadReads": 512,
+  "completedCaches": 512,
+  "modelPayloadFiles": 2,
+  "completedBatches": 128,
+  "trainingUpdates": 0,
+  "modelWrites": 0,
+  "rawOrSourcePayloadReads": 0,
+  "holdoutPayloadReads": 0,
+  "validationPayloadReads": 0,
+  "testPayloadReads": 0,
+  "SQLReads": 0,
+  "packedReads": 0,
+  "elapsedSeconds": 11.08712349999405,
+  "peakRssBytes": 1007894528,
+  "currentMonitor": "added",
+  "currentGameIndex": 49123,
+  "originalWindows": 8192,
+  "addedWindows": 8192,
+  "summary": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/summary.json",
+    "sha256": "335b0f15e96abeca6f04529a9fdcc90392a0ec927d9355b863f38c14c4cb31a8"
+  }
+}

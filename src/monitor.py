@@ -6,6 +6,7 @@ from pathlib import Path
 import signal
 import sys
 import time
+from zipfile import BadZipFile
 
 from autoplay_recovery import AutoplayRecovery
 
@@ -199,6 +200,30 @@ def accept_event(advisor, log, event):
     log.accept(event)
 
 
+def create_advice_worker(environ=None, resource_root=None, write=None):
+    """Load bundled models or explicit overrides; no-model builds stay optional."""
+    from advice_worker import AdviceWorker
+    from policy_bundle import resolve_models
+    environ = os.environ if environ is None else environ
+    try:
+        paths = resolve_models(ROOT if resource_root is None else resource_root, environ)
+        if not paths:
+            return AdviceWorker()
+        from policy_model import PolicyAdvisor
+        calculate = PolicyAdvisor(paths)
+        if write:
+            for players, model in sorted(calculate.models.items()):
+                write(f"[策略模型] {players} 人模型已加载 · SHA256 {model.sha256}")
+        return AdviceWorker(calculate=calculate)
+    except (ImportError, OSError, ValueError, KeyError, TypeError, BadZipFile) as error:
+        message = f"策略模型未能加载：{error}"
+        if write:
+            write(message)
+        return AdviceWorker(calculate=lambda state: {
+            "status": "unavailable", "kind": "policy", "message": message,
+            "candidates": [], "best": None})
+
+
 def deliver_advice(advisor, view, log):
     """Called only by the UI timer; worker diagnostics also drain without advice."""
     packet = advisor.take_result()
@@ -227,7 +252,6 @@ def main():
     from Foundation import (NSObject, NSURL, NSURLRequest, NSUUID, NSTimer, NSProcessInfo,
                             NSActivityUserInitiatedAllowingIdleSystemSleep, NSActivityIdleSystemSleepDisabled)
     from terminal_stats import TerminalLog
-    from advice_worker import AdviceWorker
 
     # A named persistent WebKit profile keeps this window's login separate from Safari.
     profile_id = "382523D9-074A-4A9B-8FA4-1BC45E1EDCE7"
@@ -261,7 +285,7 @@ def main():
     log.write("Maj-Soul++ · 开局发牌及每个场上动作后更新浮层")
     log.write("正在打开独立游戏窗口；采集器自动安装。首次请在新窗口登录。")
     log.write(f"文本记录：{log.text_path}\n结构化记录：{log.json_path}")
-    advisor = AdviceWorker()
+    advisor = create_advice_worker(write=log.write)
     advice_target = [None]
     background = BackgroundActivity(NSProcessInfo.processInfo(),
         NSActivityUserInitiatedAllowingIdleSystemSleep | NSActivityIdleSystemSleepDisabled,
@@ -410,7 +434,16 @@ def main():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2 and sys.argv[1] in ("--verify-native", "--verify-overlay", "--verify-advisor"):
+    if len(sys.argv) == 2 and sys.argv[1] == "--verify-policy":
+        try:
+            from policy_verify import verify_policy
+            test_root = ROOT / "source/tests" if getattr(sys, "frozen", False) else ROOT.parent / "tests"
+            report = verify_policy(ROOT, test_root / "fixtures/policy_verify_windows.json")
+        except Exception as error:
+            print(json.dumps({"status": "error", "message": str(error)}, ensure_ascii=False), flush=True)
+            raise SystemExit(1)
+        print(json.dumps(report, ensure_ascii=False, allow_nan=False), flush=True)
+    elif len(sys.argv) == 2 and sys.argv[1] in ("--verify-native", "--verify-overlay", "--verify-advisor"):
         # Exercise the packaged runtime offline, without touching the game profile.
         import runpy
         test_root = ROOT / "source/tests" if getattr(sys, "frozen", False) else ROOT.parent / "tests"

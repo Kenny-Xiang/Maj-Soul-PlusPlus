@@ -1,0 +1,419 @@
+{
+  "date": "2026-10-10",
+  "requestedMinimumGames": 10000,
+  "goalReached": false,
+  "officialDownloadQueue": {
+    "gameIds": 23179,
+    "path": "requests/throne-2026-23179-uuids.txt",
+    "note": "An index only, not downloaded original-format records",
+    "sha256": "69c33a9a57ec96f436526d6d2ea6333e9cd3b5d0c99d7ec6204cc26780671897"
+  },
+  "status": "19 complete official Throne raw games archived and verified; 10000-game target incomplete. Official error 540 means replay retrieval limit exceeded. Collection and local bridge are stopped; no automatic retries.",
+  "noLoginCredentialsRead": true,
+  "noBulkOfficialRequestsStarted": false,
+  "authenticatedAccessAttempt": {
+    "userReportsLoggedIn": true,
+    "renewedReadOnlyBrowserAuthorization": true,
+    "previousTabAvailable": false,
+    "authenticatedReplayRequestsSent": null,
+    "newOriginalGamesThisAttempt": 19,
+    "officialPageReopened": true,
+    "currentBlocker": "official replay retrieval limit, error 540",
+    "initialReopenBlockedBy": "browser automatic approval review",
+    "verifiedSuccessfulProbeResponses": 3,
+    "requestAccountingNote": "Three saved probes plus 16 saved bulk successes; native checks and an earlier interrupted batch mean no exact all-attempt request total is claimed.",
+    "officialReplayRequestsSentThisChat": null
+  },
+  "offlineValidation": {
+    "archiveTestsPassed": 11,
+    "existingImporterTestsPassed": 14,
+    "collectorMockTestsPassed": 18,
+    "cachedOfficialSchemaSyntheticRoundTrip": "passed",
+    "browserCompatibilityVerified": true,
+    "newRealOfficialGamesDownloaded": 19,
+    "files": {
+      "scripts/policy_official_archive.py": "50510e6a7d5fa7ba1b8b440d7bf4c8f7616391a22b7df7f9c45ff2f5cb0c0593",
+      "tests/test_policy_official_archive.py": "e2d54cd552bd171fa517e9af242e1a0bf0f218e4b646c4150a8df66a4b8077f7",
+      ".local/policy-official/collector.js": "e6a2bf5f966409a798d2bea77138697f3ceed917be7142289c373b356b36399d",
+      ".local/policy-official/test-collector.cjs": "048a1381b056b7ff1bae8d9703c05b0e081246cf9fd8919a27736ceab41aeb3b"
+    },
+    "archiveBatchBridgeTestsPassed": 40,
+    "browserRunnerMockTestsPassed": 29,
+    "priorCountsNote": "Other individual test counts record earlier verification runs; the latest combined archive/batch/bridge suite passed 40 tests."
+  },
+  "verifiedThroneOriginalArchiveGames": 19,
+  "threeProbePassed": true,
+  "currentVerification": {
+    "verifiedAt": "2026-10-11",
+    "source": "authenticated official fetchGameRecord responses in the user-authorized game page",
+    "clientVersion": "WebGL_2022-0.16.283",
+    "completeThroneRawGames": 3,
+    "modeIds": [
+      16
+    ],
+    "totalRecordCount": 3256,
+    "totalRoundCount": 32,
+    "records": [
+      {
+        "dataSource": "inline",
+        "endTime": 1767200461,
+        "files": {
+          "data": {
+            "bytes": 106322,
+            "path": "games/260101-009fac7b-c497-4c17-9664-0d0b5e52b032/data.wrapper.pb",
+            "sha256": "2cfcab71f50a1ed6be017397b5157fe661104987d121ab89b5c9aa64939e33e7"
+          },
+          "head": {
+            "bytes": 2499,
+            "path": "games/260101-009fac7b-c497-4c17-9664-0d0b5e52b032/head.json",
+            "sha256": "e2ebefac7bc48ed20e4017680bb717f196e953a2c3be2e7afa7d060e666a3007"
+          },
+          "response": {
+            "bytes": 107043,
+            "path": "games/260101-009fac7b-c497-4c17-9664-0d0b5e52b032/response.bin",
+            "sha256": "d1e8f44a61eb18d1d711fb78c6dc7db29d6c1dc1312ef542e763817f25407e01"
+          }
+        },
+        "gameId": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032",
+        "modeId": 16,
+        "playerCount": 4,
+        "recordCount": 1209,
+        "recordTypes": {
+          "RecordAnGangAddGang": 1,
+          "RecordChiPengGang": 18,
+          "RecordDealTile": 571,
+          "RecordDiscardTile": 597,
+          "RecordHule": 7,
+          "RecordNewRound": 11,
+          "RecordNoTile": 4
+        },
+        "recordsWithOperations": 732,
+        "responseFormat": "ws-response",
+        "roomEvidence": {
+          "category": 2,
+          "kind": "official-header-config",
+          "modeId": 16,
+          "room": "throne"
+        },
+        "roundCount": 11,
+        "schemaSha256": "f2955c3d10cf2d42bee9309f672c062540941ea0cffe1bd62e3f436c7afc404c",
+        "sourceFormat": "majsoul-fetchGameRecord-protobuf",
+        "startTime": 1767198300,
+        "unknownFields": [],
+        "userInputCount": 724,
+        "validationScope": "complete original header, four-player starting hands and round/result boundaries; not full rules replay"
+      },
+      {
+        "dataSource": "inline",
+        "endTime": 1767284671,
+        "files": {
+          "data": {
+            "bytes": 91106,
+            "path": "games/260101-017041dc-179e-4165-af79-132a7c4aff37/data.wrapper.pb",
+            "sha256": "54dfb391f6c3c11e9244d05bc2929063815275c0c7f464e773fe37c1ce42bc1b"
+          },
+          "head": {
+            "bytes": 2408,
+            "path": "games/260101-017041dc-179e-4165-af79-132a7c4aff37/head.json",
+            "sha256": "7c5abfe5f917bf0858970208fb56a790b2a1c3ed4b32ac0cddc8a616dbfb1a7e"
+          },
+          "response": {
+            "bytes": 91811,
+            "path": "games/260101-017041dc-179e-4165-af79-132a7c4aff37/response.bin",
+            "sha256": "0be656f8fd0addf797695966deefeae8c2a04b468f3310d393621a1da52bbe2e"
+          }
+        },
+        "gameId": "260101-017041dc-179e-4165-af79-132a7c4aff37",
+        "modeId": 16,
+        "playerCount": 4,
+        "recordCount": 1032,
+        "recordTypes": {
+          "RecordAnGangAddGang": 1,
+          "RecordChiPengGang": 25,
+          "RecordDealTile": 478,
+          "RecordDiscardTile": 508,
+          "RecordHule": 9,
+          "RecordNewRound": 10,
+          "RecordNoTile": 1
+        },
+        "recordsWithOperations": 638,
+        "responseFormat": "ws-response",
+        "roomEvidence": {
+          "category": 2,
+          "kind": "official-header-config",
+          "modeId": 16,
+          "room": "throne"
+        },
+        "roundCount": 10,
+        "schemaSha256": "f2955c3d10cf2d42bee9309f672c062540941ea0cffe1bd62e3f436c7afc404c",
+        "sourceFormat": "majsoul-fetchGameRecord-protobuf",
+        "startTime": 1767282537,
+        "unknownFields": [],
+        "userInputCount": 644,
+        "validationScope": "complete original header, four-player starting hands and round/result boundaries; not full rules replay"
+      },
+      {
+        "dataSource": "inline",
+        "endTime": 1767244228,
+        "files": {
+          "data": {
+            "bytes": 91489,
+            "path": "games/260101-02013eef-db4a-4040-834c-d887aeb23722/data.wrapper.pb",
+            "sha256": "41b970aa6326fbcaadf63f3aa13835f95bc790208df9fea2c82363feaf8f60b4"
+          },
+          "head": {
+            "bytes": 2569,
+            "path": "games/260101-02013eef-db4a-4040-834c-d887aeb23722/head.json",
+            "sha256": "c4549a07181fc37ed04b99d6fbc41c60c509e3c7d102a36b3ce74d2e8999bbe3"
+          },
+          "response": {
+            "bytes": 92235,
+            "path": "games/260101-02013eef-db4a-4040-834c-d887aeb23722/response.bin",
+            "sha256": "dd297e854454d1145291c28732c190e39bb74356f5981c3348b6addf162cefba"
+          }
+        },
+        "finalDrawScoreValidation": "one recorded old_scores plus delta_scores settlement equals header result; no inferred riichi-stick allocation",
+        "gameId": "260101-02013eef-db4a-4040-834c-d887aeb23722",
+        "modeId": 16,
+        "playerCount": 4,
+        "recordCount": 1015,
+        "recordTypes": {
+          "RecordChiPengGang": 19,
+          "RecordDealTile": 474,
+          "RecordDiscardTile": 500,
+          "RecordHule": 8,
+          "RecordLiuJu": 1,
+          "RecordNewRound": 11,
+          "RecordNoTile": 2
+        },
+        "recordsWithOperations": 628,
+        "responseFormat": "ws-response",
+        "roomEvidence": {
+          "category": 2,
+          "kind": "official-header-config",
+          "modeId": 16,
+          "room": "throne"
+        },
+        "roundCount": 11,
+        "schemaSha256": "f2955c3d10cf2d42bee9309f672c062540941ea0cffe1bd62e3f436c7afc404c",
+        "sourceFormat": "majsoul-fetchGameRecord-protobuf",
+        "startTime": 1767242284,
+        "unknownFields": [],
+        "userInputCount": 657,
+        "validationScope": "complete original header, four-player starting hands and round/result boundaries; not full rules replay"
+      }
+    ],
+    "trainingReader": {
+      "gamesVerified": 3,
+      "samples": 1894,
+      "explicitSamples": 1889,
+      "acceptedResultSamples": 4,
+      "inferredPassSamples": 1,
+      "firstTwoReport": "probes/training-verification/report.json",
+      "thirdReport": "probes/training-verification/third-report.json",
+      "aggregation": "Arithmetic combination of independently verified first-two and third-game reports; not a combined rerun",
+      "rawFilesUnchanged": true
+    },
+    "pendingBulkBatchCounted": false,
+    "browserDownloadPathReliable": false,
+    "localBridge": {
+      "implemented": true,
+      "offlineArchiveBatchBridgeTests": 35,
+      "browserRunnerMockTests": 29,
+      "liveValidated": true,
+      "currentBlocker": "official fetchGameRecord error 540; collection stopped without retry",
+      "userApprovalGranted": true,
+      "healthHttpStatus": 200,
+      "batchPostSucceeded": true,
+      "running": false,
+      "evidence": "probes/bulk-20261011.json"
+    }
+  },
+  "legacyPublicDecodedSamples": {
+    "newPublicOfficialFormatGames": 2,
+    "format": "decoded official ResGameRecord JSON; not MJAI",
+    "rankedRoom": "Jade South, mode_id 12",
+    "newTrainingSamples": 862,
+    "sourceSamples": [
+      {
+        "gameId": "230921-0a39a19b-4820-4b40-9fda-dd5481d023e4",
+        "path": "230921-0a39a19b-4820-4b40-9fda-dd5481d023e4.response.json",
+        "format": "decoded-official-ResGameRecord-JSON",
+        "bytes": 488188,
+        "sha256": "c929fba0bb83c18a80f3496a26527c41c6a2841e6c8e6ec1c2eb64aa8f28d7e3",
+        "url": "https://raw.githubusercontent.com/0num4/vscode-devcontainer-test/c0a188685da2206684d94d270475c473635dbae8/cpp/parseGameRecordAndAnalyze_py/paifu/mahjongsoul_paifu_230921-0a39a19b-4820-4b40-9fda-dd5481d023e4.txt",
+        "sourceCommit": "c0a188685da2206684d94d270475c473635dbae8",
+        "modeId": 12,
+        "levelIds": [
+          10403,
+          10502,
+          10402,
+          10402
+        ],
+        "validation": "Official importer, replay extractor, and training reader passed",
+        "license": "no repository LICENSE found; no redistribution grant inferred",
+        "trainingSamples": 326,
+        "resultRecords": 528,
+        "extraction": {
+          "gameId": "230921-0a39a19b-4820-4b40-9fda-dd5481d023e4",
+          "records": 528,
+          "rounds": 5,
+          "windows": 326,
+          "emitted": 326,
+          "labels": {
+            "accepted": 1,
+            "explicit": 325,
+            "inferred_pass": 0
+          },
+          "excluded": {
+            "missing_actor_operations": 7
+          }
+        }
+      },
+      {
+        "gameId": "230921-2e8495ad-c9df-4b0f-9f10-dd354b9daeeb",
+        "path": "230921-2e8495ad-c9df-4b0f-9f10-dd354b9daeeb.response.json",
+        "format": "decoded-official-ResGameRecord-JSON",
+        "bytes": 820662,
+        "sha256": "5422f57784e3301969c902bc43cdb28e0550a118d18a1536730b547d28f38e75",
+        "url": "https://raw.githubusercontent.com/0num4/vscode-devcontainer-test/c0a188685da2206684d94d270475c473635dbae8/cpp/parseGameRecordAndAnalyze_py/paifu/mahjongsoul_paifu_230921-2e8495ad-c9df-4b0f-9f10-dd354b9daeeb.txt",
+        "sourceCommit": "c0a188685da2206684d94d270475c473635dbae8",
+        "modeId": 12,
+        "levelIds": [
+          10402,
+          10402,
+          10401,
+          10401
+        ],
+        "validation": "Official importer, replay extractor, and training reader passed",
+        "license": "no repository LICENSE found; no redistribution grant inferred",
+        "trainingSamples": 536,
+        "resultRecords": 849,
+        "extraction": {
+          "gameId": "230921-2e8495ad-c9df-4b0f-9f10-dd354b9daeeb",
+          "records": 849,
+          "rounds": 9,
+          "windows": 538,
+          "emitted": 536,
+          "labels": {
+            "accepted": 0,
+            "explicit": 536,
+            "inferred_pass": 0
+          },
+          "excluded": {
+            "censored_response": 2,
+            "missing_actor_operations": 15,
+            "input_without_window": 1
+          }
+        }
+      }
+    ],
+    "officialApiProbe": {
+      "requests": 1,
+      "authenticated": false,
+      "responseCode": 1004,
+      "meaning": "ERR_ACC_NOT_LOGIN",
+      "evidence": "../policy-bulk/research/anonymous-official/report.json"
+    }
+  },
+  "lastVerifiedAt": "2026-10-11T02:20:15.384608+00:00",
+  "format": "Exact official WebSocket ResGameRecord response and GameDetailRecords Wrapper protobuf bytes",
+  "rankedRoom": "Four-player Throne South, mode_id 16",
+  "remainingRequiredGames": 9981,
+  "bulkVerification": {
+    "status": "insufficient_games",
+    "verifiedAt": "2026-10-11T02:20:15.384608+00:00",
+    "archiveDirectory": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.local/policy-official/archive",
+    "minimumRequiredGames": 10000,
+    "verifiedUniqueGames": 19,
+    "verifiedUniqueBodies": 19,
+    "queueSize": 23179,
+    "queueSha256": "69c33a9a57ec96f436526d6d2ea6333e9cd3b5d0c99d7ec6204cc26780671897",
+    "schemaSha256": "f2955c3d10cf2d42bee9309f672c062540941ea0cffe1bd62e3f436c7afc404c",
+    "manifestSha256": "ccdf013037bab2b9b5e112a55efce7c973d4c583fb313c59b09117995cc060c8",
+    "manifestBytes": 25450,
+    "modeCounts": {
+      "16": 19
+    },
+    "totals": {
+      "gamesWithUnknownFields": 0,
+      "recordCount": 18797,
+      "recordsWithOperations": 11625,
+      "roundCount": 190,
+      "userInputCount": 11911
+    },
+    "recordTypes": {
+      "RecordAnGangAddGang": 16,
+      "RecordChiPengGang": 377,
+      "RecordDealTile": 8769,
+      "RecordDiscardTile": 9255,
+      "RecordHule": 159,
+      "RecordLiuJu": 1,
+      "RecordNewRound": 190,
+      "RecordNoTile": 30
+    },
+    "unknownFieldGameCounts": {},
+    "originalFileBytes": {
+      "data": 1668556,
+      "head": 50085,
+      "response": 1683167
+    },
+    "validationScope": "Every manifest-listed original file size and SHA-256, UUID/body uniqueness, queue membership, pinned schema, and existing official header/record consistency checks; not a full Mahjong rules replay or cryptographic proof of server origin.",
+    "readOnly": true,
+    "networkRequests": 0
+  },
+  "currentBulkRun": {
+    "batchId": "edad164bd84a14e40cefdd9909a195b8",
+    "spool": ".local/policy-official/bridge-spool/edad164bd84a14e40cefdd9909a195b8.ndjson",
+    "spoolSha256": "d68aead1ed6eb586863e27b9f6c3647d48bf6a9e67dbe62b471266ced780f433",
+    "spoolBytes": 1859742,
+    "requestedGames": 50,
+    "receivedResponses": 17,
+    "successfulResponses": 16,
+    "firstReceivedAt": "2026-10-11T02:07:36.059Z",
+    "lastReceivedAt": "2026-10-11T02:08:15.117Z",
+    "officialErrors": [
+      {
+        "gameId": "260101-081a5f76-65d3-4fe1-b1fa-fde52e5aa7cd",
+        "code": 540,
+        "receivedAt": "2026-10-11T02:08:15.117Z",
+        "responseBytes": 12,
+        "responseSha256": "d5c898995c2a0951fef24061be5f2fb8318c1fd60106e219c3b5cf2ca90c9395"
+      }
+    ],
+    "browserLoopbackHealthHttpStatus": 200,
+    "browserLoopbackPostSucceeded": true,
+    "automaticRetries": 0,
+    "bridgeRunning": false,
+    "collectorRunning": false,
+    "loginCredentialsExported": false,
+    "stopReason": "official_replay_retrieval_limit",
+    "officialCurrentClientMessageZh": "超出牌谱拉取限制，请稍后重试",
+    "specificQuotaKnown": false,
+    "cooldownKnown": false,
+    "durableGamesBeforeBatch": 3,
+    "newCompleteGames": 16,
+    "verifiedUniqueGames": 19,
+    "offlineRecoveredGames": 1,
+    "remainingRequiredGames": 9981,
+    "finalVerification": "final-verification.json",
+    "offlineRecovery": "probes/bulk-20261011-offline-recovery.json",
+    "officialErrorEvidence": "probes/error-540/evidence.json"
+  },
+  "localBridgeAuthorization": {
+    "explicitUserApprovalGranted": true,
+    "liveTransferVerified": true,
+    "processRunning": false,
+    "evidence": "local-bridge-authorization-20261011.json"
+  },
+  "resumeState": {
+    "blockedBy": "official_replay_retrieval_limit_540",
+    "officialMessage": "超出牌谱拉取限制，请稍后重试",
+    "quotaKnown": false,
+    "recoveryTimeKnown": false,
+    "automaticRetryScheduled": false,
+    "sameScopePermissionAlreadyGranted": true,
+    "queue": "requests/throne-2026-23179-uuids.txt",
+    "skipVerifiedManifestGames": 19
+  }
+}

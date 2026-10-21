@@ -1,0 +1,479 @@
+{
+  "schemaVersion": 1,
+  "figure": "All eight sanma epochs: ranking AP and default precision/recall",
+  "source": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/continuation-3p-ranking-analysis-20261018.json",
+    "sha256": "ac76054546a3c8d603aeac7b0d36f25a3f89d94efd73f63a4933c039a985bbb3"
+  },
+  "originalInputBindings": {
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/selection.json": {
+      "sha256": "e9dfd516c30fcbc3e0ce28b0f07c0418a895ea45a24cd3ddd08177b6c7d611e9",
+      "bytes": 315242
+    },
+    ".local/improvement/action-causes-20261016/paired-uncertainty-3p.json": {
+      "sha256": "c4219c8e1d1b922cadfc1caf1c5e5feacb34765af385ca451b789ff38c8e375a",
+      "bytes": 63771
+    },
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/calibration.json": {
+      "sha256": "7a31b5df68d26aec24a9ad9e0c36b86832439ee0a279af5acab6626afc74be39",
+      "bytes": 41189
+    },
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/parent-monitor-calibration.json": {
+      "sha256": "0254e9d756d6544fd9e02e386d2d73b18bd5fae1cac3e737afaf79b6081f2768",
+      "bytes": 33937
+    },
+    ".local/improvement/expanded-20261016/models/3p.report.json": {
+      "sha256": "2ca1bbcbc9a6f5e63a738ed21cbe0f3d9e5af5488e246eb5804968c207c978f0",
+      "bytes": 3840520
+    },
+    ".local/improvement/action-causes-20261016/descriptive-epoch-calibration-plan-3p.json": {
+      "sha256": "aa03acd668578bda6ced9efb58daf85d05ed4897b0f6b74fcb747daf20629682",
+      "bytes": 1883
+    },
+    ".local/improvement/action-causes-20261016/expanded_validation.py": {
+      "sha256": "871e947beca97ef64970cfcc31bd4e52c5d7cb6eef9b1cf518b9f3e040c9b407",
+      "bytes": 52492
+    },
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/3p.parent.json": {
+      "sha256": "226742081ffe91fab49996e855f5a161c93409f03fbba4c66e0a37ee91f5d4ee",
+      "bytes": 312182
+    },
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/3p.epoch-1.json": {
+      "sha256": "e33a0e51d761251e8a57087c76642b1bd6ebc9669855519a4ed099f35dd5e66d",
+      "bytes": 311414
+    },
+    ".local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-1.json": {
+      "sha256": "b3357dda8d8280da41b463d6d9c0eecabd6662ef46e0b29c69887c8640449780",
+      "bytes": 34050
+    },
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/3p.epoch-2.json": {
+      "sha256": "5bd5ab2985d0a427bed8f18db845a242c847c7b7e36d0c45141a84fc788037be",
+      "bytes": 312051
+    },
+    ".local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-2.json": {
+      "sha256": "06fb342f0047dff145c2c62adce177c6a7efaf03204242fc9980157daa74b6f9",
+      "bytes": 34222
+    },
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/3p.epoch-3.json": {
+      "sha256": "04847fe16cf6035c7cc0f4f49988f0bf433d475b4fb7209d0db51755e87e8854",
+      "bytes": 311999
+    },
+    ".local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-3.json": {
+      "sha256": "d984134a93975a96adbe8a7dda9e5b2f3536ab3095c10054425a02690f9cf064",
+      "bytes": 34429
+    },
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/3p.epoch-4.json": {
+      "sha256": "cce7dcbfa90226315bf2c134141541e4a801dc5323393dd568359e9fe7c34b26",
+      "bytes": 312426
+    },
+    ".local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-4.json": {
+      "sha256": "2f2ca43b8eebb10c9ca50eb440125b9f641560f1b9ead00a13f517e0b9230f35",
+      "bytes": 34255
+    },
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/3p.epoch-5.json": {
+      "sha256": "2a9dc02935673d8a36ff15b2a3dc080e14fc6401b060b05a7d7514284aa74cdb",
+      "bytes": 312232
+    },
+    ".local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-5.json": {
+      "sha256": "adf77334d5957bfcaa7c916ae988eeb9eff51f99883af298956e6cfa9cc6a847",
+      "bytes": 34218
+    },
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/3p.epoch-6.json": {
+      "sha256": "c5008be053ffcd5d47080c5338e1897f81f428d3787b5400ccf445d7edab05f2",
+      "bytes": 312239
+    },
+    ".local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-6.json": {
+      "sha256": "7162ebd8f46e3dcd5fd1ca260150dc9a6beda4fc246b175a7d79727e0403a8d3",
+      "bytes": 34425
+    },
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/3p.epoch-7.json": {
+      "sha256": "9a4c4310f4f60d811a2e9519ba3f05b68127aaec381cef83208c53dd7d51d105",
+      "bytes": 312399
+    },
+    ".local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-7.json": {
+      "sha256": "16b26d497803707b260aaeeb6bb7bc3dcac24b4c7b8ff60dcde97523a6e49f2c",
+      "bytes": 34465
+    },
+    ".local/improvement/action-causes-20261016/expanded-validation-3p/3p.epoch-8.json": {
+      "sha256": "1f793a10ff11666c2e0353f4f8233d23c3c6e48878fcc3a1d0253c48895e5bdc",
+      "bytes": 312412
+    },
+    ".local/improvement/action-causes-20261016/descriptive-epoch-calibration-3p/3p.epoch-8.json": {
+      "sha256": "7975d7cab8273c0dbfa912c298131a9f1b863540d906ad7a5e6ea884f76949ab",
+      "bytes": 34552
+    }
+  },
+  "renderer": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/plot_ranking_calibration_3p_20261018.py",
+    "sha256": "ab32d710226d750a840904e1e998229d199764552e69c0bdd0ddb2a7f1e1d654",
+    "matplotlib": "3.11.2",
+    "fontPath": "/System/Library/Fonts/STHeiti Light.ttc",
+    "fontFamily": "Heiti TC"
+  },
+  "scope": {
+    "rawPayloadReads": 0,
+    "testPayloadReads": 0,
+    "scalarPayloadReads": 0,
+    "inferenceRuns": 0,
+    "trainingRuns": 0,
+    "acceptanceChanges": 0,
+    "modelSelectionPerformed": false
+  },
+  "validationSupport": {
+    "games": 9408,
+    "choiceWindows": 2974312,
+    "riichiOpportunities": 200320,
+    "riichiPositives": 59704,
+    "daiminkanOpportunities": 19716,
+    "daiminkanPositives": 466
+  },
+  "formalSelection": {
+    "status": "rejected",
+    "selected": null,
+    "eligibleEpochs": []
+  },
+  "definitions": {
+    "probabilityAP": "AP ranking sum of softmax probabilities across focal-type candidates",
+    "marginAP": "AP ranking max focal logit minus max other-type logit",
+    "fixed10BinECE": "sum count/N * abs(mean probability - empirical positive rate) in existing ten bins; description only",
+    "intervals": "Original 2000 whole-game paired bootstrap, unadjusted pointwise 95% percentile intervals; differences versus parent, not e6 versus e8"
+  },
+  "rows": [
+    {
+      "epoch": 1,
+      "eligible": false,
+      "naturalNll": 0.6815463891328242,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "predictedPositive": 78503,
+        "truePositive": 47635,
+        "falsePositive": 30868,
+        "precision": 0.6067920971173076,
+        "recall": 0.7978527401849123,
+        "exactCorrectPositive": 42427,
+        "exactPositiveRecall": 0.710622403859038,
+        "averagePrecisionProbability": 0.7294910419874262,
+        "averagePrecisionBestMargin": 0.72062637461096,
+        "brier": 0.1354143165089913,
+        "meanProbabilityFromBuckets": 0.3474172451683319,
+        "actualPositiveRate": 0.29804313099041535,
+        "fixed10BinECE": 0.04937411417791654
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 13,
+        "truePositive": 4,
+        "falsePositive": 9,
+        "precision": 0.3076923076923077,
+        "recall": 0.008583690987124463,
+        "exactCorrectPositive": 4,
+        "exactPositiveRecall": 0.008583690987124463,
+        "averagePrecisionProbability": 0.18267924312693873,
+        "averagePrecisionBestMargin": 0.17878937207658774,
+        "brier": 0.021052106654324287,
+        "meanProbabilityFromBuckets": 0.01560355156388058,
+        "actualPositiveRate": 0.023635625887603977,
+        "fixed10BinECE": 0.008970017961011528
+      }
+    },
+    {
+      "epoch": 2,
+      "eligible": false,
+      "naturalNll": 0.6594642424154213,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "predictedPositive": 67922,
+        "truePositive": 44429,
+        "falsePositive": 23493,
+        "precision": 0.6541179588351345,
+        "recall": 0.7441544955111885,
+        "exactCorrectPositive": 40022,
+        "exactPositiveRecall": 0.6703403457054804,
+        "averagePrecisionProbability": 0.7444795338128685,
+        "averagePrecisionBestMargin": 0.7369298767002004,
+        "brier": 0.12819578025433365,
+        "meanProbabilityFromBuckets": 0.310789375093255,
+        "actualPositiveRate": 0.29804313099041535,
+        "fixed10BinECE": 0.017781772994163843
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 41,
+        "truePositive": 13,
+        "falsePositive": 28,
+        "precision": 0.3170731707317073,
+        "recall": 0.027896995708154508,
+        "exactCorrectPositive": 13,
+        "exactPositiveRecall": 0.027896995708154508,
+        "averagePrecisionProbability": 0.20595054346210223,
+        "averagePrecisionBestMargin": 0.20549075958464577,
+        "brier": 0.020557689352805,
+        "meanProbabilityFromBuckets": 0.019405730049467485,
+        "actualPositiveRate": 0.023635625887603977,
+        "fixed10BinECE": 0.005842589983970462
+      }
+    },
+    {
+      "epoch": 3,
+      "eligible": false,
+      "naturalNll": 0.6475888644740836,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "predictedPositive": 59775,
+        "truePositive": 41216,
+        "falsePositive": 18559,
+        "precision": 0.6895190296946884,
+        "recall": 0.690339005761758,
+        "exactCorrectPositive": 37275,
+        "exactPositiveRecall": 0.6243300281388182,
+        "averagePrecisionProbability": 0.7519959744003415,
+        "averagePrecisionBestMargin": 0.7451953624073924,
+        "brier": 0.1257982543113378,
+        "meanProbabilityFromBuckets": 0.2844888317394538,
+        "actualPositiveRate": 0.29804313099041535,
+        "fixed10BinECE": 0.013554299250961544
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 119,
+        "truePositive": 44,
+        "falsePositive": 75,
+        "precision": 0.3697478991596639,
+        "recall": 0.0944206008583691,
+        "exactCorrectPositive": 44,
+        "exactPositiveRecall": 0.0944206008583691,
+        "averagePrecisionProbability": 0.23589253972458699,
+        "averagePrecisionBestMargin": 0.23415672434773926,
+        "brier": 0.020384754510017,
+        "meanProbabilityFromBuckets": 0.026158535720031333,
+        "actualPositiveRate": 0.023635625887603977,
+        "fixed10BinECE": 0.00537098145013126
+      }
+    },
+    {
+      "epoch": 4,
+      "eligible": false,
+      "naturalNll": 0.6388232473018253,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "predictedPositive": 67187,
+        "truePositive": 44647,
+        "falsePositive": 22540,
+        "precision": 0.6645184336255525,
+        "recall": 0.7478058421546295,
+        "exactCorrectPositive": 40643,
+        "exactPositiveRecall": 0.6807416588503283,
+        "averagePrecisionProbability": 0.7557732508673289,
+        "averagePrecisionBestMargin": 0.749881665692348,
+        "brier": 0.1254401178917991,
+        "meanProbabilityFromBuckets": 0.3152117923938084,
+        "actualPositiveRate": 0.29804313099041535,
+        "fixed10BinECE": 0.02080790785429667
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 77,
+        "truePositive": 30,
+        "falsePositive": 47,
+        "precision": 0.38961038961038963,
+        "recall": 0.06437768240343347,
+        "exactCorrectPositive": 30,
+        "exactPositiveRecall": 0.06437768240343347,
+        "averagePrecisionProbability": 0.2536049104645938,
+        "averagePrecisionBestMargin": 0.253146406543384,
+        "brier": 0.01978006711246272,
+        "meanProbabilityFromBuckets": 0.020574154430769785,
+        "actualPositiveRate": 0.023635625887603977,
+        "fixed10BinECE": 0.004620877063025881
+      }
+    },
+    {
+      "epoch": 5,
+      "eligible": false,
+      "naturalNll": 0.629554018768155,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "predictedPositive": 59133,
+        "truePositive": 41394,
+        "falsePositive": 17739,
+        "precision": 0.700015219927959,
+        "recall": 0.6933203805440171,
+        "exactCorrectPositive": 37805,
+        "exactPositiveRecall": 0.6332071552994775,
+        "averagePrecisionProbability": 0.762471321763836,
+        "averagePrecisionBestMargin": 0.7556941853416949,
+        "brier": 0.12293945866879813,
+        "meanProbabilityFromBuckets": 0.28534452660368453,
+        "actualPositiveRate": 0.29804313099041535,
+        "fixed10BinECE": 0.012698604386730799
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 40,
+        "truePositive": 18,
+        "falsePositive": 22,
+        "precision": 0.45,
+        "recall": 0.03862660944206009,
+        "exactCorrectPositive": 18,
+        "exactPositiveRecall": 0.03862660944206009,
+        "averagePrecisionProbability": 0.2589930240413752,
+        "averagePrecisionBestMargin": 0.2576592369497751,
+        "brier": 0.019813793955495897,
+        "meanProbabilityFromBuckets": 0.016477418512743543,
+        "actualPositiveRate": 0.023635625887603977,
+        "fixed10BinECE": 0.0076776257672688175
+      }
+    },
+    {
+      "epoch": 6,
+      "eligible": false,
+      "naturalNll": 0.622188744505386,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "predictedPositive": 67573,
+        "truePositive": 45182,
+        "falsePositive": 22391,
+        "precision": 0.6686398413567549,
+        "recall": 0.7567667157979365,
+        "exactCorrectPositive": 41339,
+        "exactPositiveRecall": 0.6923991692348921,
+        "averagePrecisionProbability": 0.7657617436258949,
+        "averagePrecisionBestMargin": 0.7583541046998243,
+        "brier": 0.12246024006475381,
+        "meanProbabilityFromBuckets": 0.31739876008080203,
+        "actualPositiveRate": 0.29804313099041535,
+        "fixed10BinECE": 0.02127701045211626
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 159,
+        "truePositive": 77,
+        "falsePositive": 82,
+        "precision": 0.48427672955974843,
+        "recall": 0.16523605150214593,
+        "exactCorrectPositive": 77,
+        "exactPositiveRecall": 0.16523605150214593,
+        "averagePrecisionProbability": 0.2815839228764683,
+        "averagePrecisionBestMargin": 0.2807393799354098,
+        "brier": 0.019733129549207647,
+        "meanProbabilityFromBuckets": 0.024542817689963276,
+        "actualPositiveRate": 0.023635625887603977,
+        "fixed10BinECE": 0.0056984118624104725
+      }
+    },
+    {
+      "epoch": 7,
+      "eligible": false,
+      "naturalNll": 0.6184569401995123,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "predictedPositive": 60985,
+        "truePositive": 42416,
+        "falsePositive": 18569,
+        "precision": 0.6955152906452406,
+        "recall": 0.710438161597213,
+        "exactCorrectPositive": 38992,
+        "exactPositiveRecall": 0.6530885702800482,
+        "averagePrecisionProbability": 0.768759562495486,
+        "averagePrecisionBestMargin": 0.7613173304920494,
+        "brier": 0.12125922594317444,
+        "meanProbabilityFromBuckets": 0.2931378093956705,
+        "actualPositiveRate": 0.29804313099041535,
+        "fixed10BinECE": 0.00540339441100774
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 122,
+        "truePositive": 53,
+        "falsePositive": 69,
+        "precision": 0.4344262295081967,
+        "recall": 0.11373390557939914,
+        "exactCorrectPositive": 53,
+        "exactPositiveRecall": 0.11373390557939914,
+        "averagePrecisionProbability": 0.275858391295538,
+        "averagePrecisionBestMargin": 0.27366810145222564,
+        "brier": 0.019558514074876472,
+        "meanProbabilityFromBuckets": 0.021842085495202907,
+        "actualPositiveRate": 0.023635625887603977,
+        "fixed10BinECE": 0.004839022447536575
+      }
+    },
+    {
+      "epoch": 8,
+      "eligible": false,
+      "naturalNll": 0.6164448154451737,
+      "riichi": {
+        "opportunityCount": 200320,
+        "actualPositive": 59704,
+        "predictedPositive": 61459,
+        "truePositive": 42783,
+        "falsePositive": 18676,
+        "precision": 0.6961226183309198,
+        "recall": 0.7165851534235562,
+        "exactCorrectPositive": 39313,
+        "exactPositiveRecall": 0.6584650944660324,
+        "averagePrecisionProbability": 0.7711140633760323,
+        "averagePrecisionBestMargin": 0.7646507076207689,
+        "brier": 0.12055063559531386,
+        "meanProbabilityFromBuckets": 0.29589053028777523,
+        "actualPositiveRate": 0.29804313099041535,
+        "fixed10BinECE": 0.00448187428504298
+      },
+      "daiminkan": {
+        "opportunityCount": 19716,
+        "actualPositive": 466,
+        "predictedPositive": 144,
+        "truePositive": 64,
+        "falsePositive": 80,
+        "precision": 0.4444444444444444,
+        "recall": 0.13733905579399142,
+        "exactCorrectPositive": 64,
+        "exactPositiveRecall": 0.13733905579399142,
+        "averagePrecisionProbability": 0.28404164723109193,
+        "averagePrecisionBestMargin": 0.2817792050036669,
+        "brier": 0.019541914183438265,
+        "meanProbabilityFromBuckets": 0.02287548515478299,
+        "actualPositiveRate": 0.023635625887603977,
+        "fixed10BinECE": 0.005320711726310176
+      }
+    }
+  ],
+  "limitations": [
+    "All eight epochs retained; no threshold fitting or model selection.",
+    "Validation repeatedly observed; not a fresh blind test.",
+    "AP and choice metrics are descriptive; no AP confidence intervals.",
+    "Panel y-axis ranges differ. Shading marks e6 to e8 for comparison only.",
+    "50% precision is only one of multiple unchanged acceptance criteria.",
+    "Agreement with recorded actions does not establish optimal play or live results."
+  ],
+  "outputs": [
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-ranking-calibration-3p-20261018.png",
+      "sha256": "d627b6381031c1676d8849dfbceb8122fa24548875801842d21d411b0a660784"
+    },
+    {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/docs/benchmarks/action-ranking-calibration-3p-20261018.svg",
+      "sha256": "20a4c788a904deb590c58ac0953afe82a8cfd23841752c7b39cd71cdd011c5a9"
+    }
+  ],
+  "verification": {
+    "all24InputHashesMatched": true,
+    "allEightEpochsRetained": true,
+    "ratiosChecked": true,
+    "unroundedValuesPreserved": true
+  }
+}

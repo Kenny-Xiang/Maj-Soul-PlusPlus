@@ -1,0 +1,1349 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-13T10:34:28.531919+00:00",
+  "objective": "Visible current state to the recorded expert action; supervised behavior cloning only.",
+  "trainingCodeCommit": "99def31b523a2e33d3beaa709394c94e57fe5906",
+  "sourceHeadAtReceipt": "decc56514a657171e806e0c081ff0b3d7d6913cb",
+  "models": {
+    "3": {
+      "modelPath": ".local/high-rank-50k/models/three-player-full.npz",
+      "modelSha256": "c5976cd218fe1cd0cbd0bd68d76f05c426095b836eabf6ae2ddc3b674ce7cb92",
+      "reportPath": ".local/high-rank-50k/models/three-player-full.report.json",
+      "reportSha256": "03b28ef772267f1ecc2a58fd686c8a8542db9e7cc94864d48b38d3d58cdce7a8",
+      "bundleIdentity": {
+        "file": "three-player.npz",
+        "playerCount": 3,
+        "sha256": "c5976cd218fe1cd0cbd0bd68d76f05c426095b836eabf6ae2ddc3b674ce7cb92",
+        "report": "three-player.report.json",
+        "reportSha256": "03b28ef772267f1ecc2a58fd686c8a8542db9e7cc94864d48b38d3d58cdce7a8",
+        "selectedGames": 47063,
+        "selectedGameCounts": {
+          "test": 4706,
+          "train": 37651,
+          "validation": 4706
+        },
+        "manifestSha256": "3d25dd7e75ddf2c02573a50d7c851d6cfbe626a5ed06973e7f021f6935bb86a7",
+        "frozenSplitSha256": "8b555a88b2b22c2c10e15a18e0b85a459eb62c9976a1167b3ddab3dcca0a8b38",
+        "featureSignature": "36dfc511791fa866b43dfcb9ebb4ffc359c9bc2db56cc5756cca20eb62d2d7ec",
+        "actionVersion": 1
+      },
+      "conversionReportSha256": "3f04efc2140f09401590a4c2cd6fbb26d7d5961b1a69b000ff1f454c61e71507",
+      "independentReviewSha256": "d74d2d8806592d8043daaba2c4008aaeac5565d5e51d50ac25afd702a5d0def6",
+      "independentReviewStatus": "passed-with-quality-limitation",
+      "independentReviewFindings": [
+        {
+          "severity": "quality-limitation",
+          "action": "daiminkan",
+          "message": "Final test 0/222 and validation 1/224; coverage exists but learned recall is inadequate."
+        }
+      ],
+      "sourcePlatform": "tenhou",
+      "conversion": {
+        "convertedGames": 47063,
+        "samples": 14887401,
+        "actions": {
+          "discard": 11743697,
+          "kita": 1064610,
+          "pon": 391308,
+          "pass": 1004779,
+          "ankan": 26926,
+          "riichi": 299130,
+          "ron": 165375,
+          "shouminkan": 15135,
+          "tsumo": 161860,
+          "abort": 12370,
+          "daiminkan": 2211
+        },
+        "labelSources": {
+          "accepted": 13882622,
+          "inferred_pass": 1004779
+        },
+        "excludedWindows": {
+          "hand_suffix_after_kan": 47953,
+          "declaration_without_window": 17926,
+          "unfinished_window": 0,
+          "censored_response": 13881,
+          "hand_suffix_after_rob_north_uncertainty": 410
+        },
+        "limitations": [
+          "Operation masks are reconstructed with riichienv, not official server masks.",
+          "Windows after any kan are excluded until the next hand.",
+          "Competing claims and unresolved responses are censored.",
+          "Potential rob-North suffixes are excluded; no speculative pass labels are added.",
+          "Mahjong Soul match length stays unknown without verified header metadata.",
+          "Tenhou ranks and GO rules are verified against XML; matches with BYE are excluded.",
+          "Mahjong Soul throne classification comes from the archive publisher."
+        ]
+      },
+      "dataAudit": {
+        "manifest": "manifest.jsonl",
+        "manifestSha256": "3d25dd7e75ddf2c02573a50d7c851d6cfbe626a5ed06973e7f021f6935bb86a7",
+        "manifestGames": 47063,
+        "manifestSamples": 14887401,
+        "maxGames": null,
+        "selectedGames": 47063,
+        "selectedSamples": 14887401,
+        "selectedGameCounts": {
+          "test": 4706,
+          "train": 37651,
+          "validation": 4706
+        },
+        "matchLengthCoverage": {
+          "south": 47063
+        },
+        "frozenSplit": {
+          "file": "split.json",
+          "sha256": "8b555a88b2b22c2c10e15a18e0b85a459eb62c9976a1167b3ddab3dcca0a8b38",
+          "schemaVersion": 1,
+          "unit": "whole-game-all-seats",
+          "excludedGames": 2937
+        },
+        "converterSignature": "96872ac64e57897511a367b3d25e9f26958a738cbe0ab9de61b6cf8feb6e4f42",
+        "partitions": {
+          "test": {
+            "games": 4706,
+            "samples": 1487425,
+            "actions": {
+              "daiminkan": 222,
+              "discard": 1173621,
+              "kita": 106187,
+              "pass": 100342,
+              "pon": 39200,
+              "riichi": 29789,
+              "ron": 16535,
+              "tsumo": 16073,
+              "abort": 1209,
+              "shouminkan": 1512,
+              "ankan": 2735
+            },
+            "labelSources": {
+              "accepted": 1387083,
+              "inferred_pass": 100342
+            },
+            "duplicateSamples": 0
+          },
+          "train": {
+            "games": 37651,
+            "samples": 11908341,
+            "actions": {
+              "ankan": 21463,
+              "discard": 9393002,
+              "kita": 851799,
+              "pass": 804061,
+              "pon": 313102,
+              "riichi": 239354,
+              "ron": 132457,
+              "tsumo": 129390,
+              "shouminkan": 12099,
+              "abort": 9849,
+              "daiminkan": 1765
+            },
+            "labelSources": {
+              "accepted": 11104280,
+              "inferred_pass": 804061
+            },
+            "duplicateSamples": 0
+          },
+          "validation": {
+            "games": 4706,
+            "samples": 1491635,
+            "actions": {
+              "discard": 1177074,
+              "kita": 106624,
+              "pass": 100376,
+              "pon": 39006,
+              "riichi": 29987,
+              "ron": 16383,
+              "tsumo": 16397,
+              "ankan": 2728,
+              "abort": 1312,
+              "shouminkan": 1524,
+              "daiminkan": 224
+            },
+            "labelSources": {
+              "accepted": 1391259,
+              "inferred_pass": 100376
+            },
+            "duplicateSamples": 0
+          }
+        }
+      },
+      "epochs": 3,
+      "bestEpoch": 3,
+      "device": "mps",
+      "parameterCount": 756545,
+      "config": {
+        "channels": 64,
+        "blocks": 3,
+        "hidden": 256
+      },
+      "batchSize": 2048,
+      "learningRate": 0.001,
+      "history": [
+        {
+          "epoch": 1,
+          "trainLoss": 0.8151816218146548,
+          "trainChoices": 11908341,
+          "validation": {
+            "samples": 1491635,
+            "choices": 1491635,
+            "forced": 0,
+            "choiceTop1": 0.742395425154277,
+            "choiceTop3": 0.9505495647393631,
+            "choiceNll": 0.7113718497078475,
+            "byAction": {
+              "kita": {
+                "count": 106624,
+                "correct": 103758,
+                "accuracy": 0.9731204981992797
+              },
+              "discard": {
+                "count": 1177074,
+                "correct": 826295,
+                "accuracy": 0.701990698970498
+              },
+              "pass": {
+                "count": 100376,
+                "correct": 93402,
+                "accuracy": 0.9305212401370846
+              },
+              "pon": {
+                "count": 39006,
+                "correct": 28665,
+                "accuracy": 0.7348869404706968
+              },
+              "riichi": {
+                "count": 29987,
+                "correct": 18457,
+                "accuracy": 0.6155000500216761
+              },
+              "tsumo": {
+                "count": 16397,
+                "correct": 16397,
+                "accuracy": 1.0
+              },
+              "ron": {
+                "count": 16383,
+                "correct": 16383,
+                "accuracy": 1.0
+              },
+              "ankan": {
+                "count": 2728,
+                "correct": 1850,
+                "accuracy": 0.6781524926686217
+              },
+              "abort": {
+                "count": 1312,
+                "correct": 1300,
+                "accuracy": 0.9908536585365854
+              },
+              "shouminkan": {
+                "count": 1524,
+                "correct": 874,
+                "accuracy": 0.573490813648294
+              },
+              "daiminkan": {
+                "count": 224,
+                "correct": 2,
+                "accuracy": 0.008928571428571428
+              }
+            },
+            "macroActionAccuracy": 0.746131360371028
+          }
+        },
+        {
+          "epoch": 2,
+          "trainLoss": 0.6903542573664557,
+          "trainChoices": 11908341,
+          "validation": {
+            "samples": 1491635,
+            "choices": 1491635,
+            "forced": 0,
+            "choiceTop1": 0.7506011859469642,
+            "choiceTop3": 0.9545331129934602,
+            "choiceNll": 0.6853062058122322,
+            "byAction": {
+              "kita": {
+                "count": 106624,
+                "correct": 103788,
+                "accuracy": 0.9734018607442977
+              },
+              "discard": {
+                "count": 1177074,
+                "correct": 838658,
+                "accuracy": 0.7124938618982324
+              },
+              "pass": {
+                "count": 100376,
+                "correct": 91836,
+                "accuracy": 0.9149199011715948
+              },
+              "pon": {
+                "count": 39006,
+                "correct": 32011,
+                "accuracy": 0.8206686150848588
+              },
+              "riichi": {
+                "count": 29987,
+                "correct": 16518,
+                "accuracy": 0.5508386967685998
+              },
+              "tsumo": {
+                "count": 16397,
+                "correct": 16397,
+                "accuracy": 1.0
+              },
+              "ron": {
+                "count": 16383,
+                "correct": 16383,
+                "accuracy": 1.0
+              },
+              "ankan": {
+                "count": 2728,
+                "correct": 1674,
+                "accuracy": 0.6136363636363636
+              },
+              "abort": {
+                "count": 1312,
+                "correct": 1289,
+                "accuracy": 0.9824695121951219
+              },
+              "shouminkan": {
+                "count": 1524,
+                "correct": 1066,
+                "accuracy": 0.699475065616798
+              },
+              "daiminkan": {
+                "count": 224,
+                "correct": 3,
+                "accuracy": 0.013392857142857142
+              }
+            },
+            "macroActionAccuracy": 0.752845157659884
+          }
+        },
+        {
+          "epoch": 3,
+          "trainLoss": 0.6714482926629499,
+          "trainChoices": 11908341,
+          "validation": {
+            "samples": 1491635,
+            "choices": 1491635,
+            "forced": 0,
+            "choiceTop1": 0.7544184736882682,
+            "choiceTop3": 0.9569023253007606,
+            "choiceNll": 0.6702397869979063,
+            "byAction": {
+              "kita": {
+                "count": 106624,
+                "correct": 104294,
+                "accuracy": 0.9781475090036015
+              },
+              "discard": {
+                "count": 1177074,
+                "correct": 840092,
+                "accuracy": 0.7137121370449097
+              },
+              "pass": {
+                "count": 100376,
+                "correct": 93745,
+                "accuracy": 0.9339383916474058
+              },
+              "pon": {
+                "count": 39006,
+                "correct": 30626,
+                "accuracy": 0.7851612572424755
+              },
+              "riichi": {
+                "count": 29987,
+                "correct": 19302,
+                "accuracy": 0.6436789275352652
+              },
+              "tsumo": {
+                "count": 16397,
+                "correct": 16397,
+                "accuracy": 1.0
+              },
+              "ron": {
+                "count": 16383,
+                "correct": 16381,
+                "accuracy": 0.9998779222364647
+              },
+              "ankan": {
+                "count": 2728,
+                "correct": 1974,
+                "accuracy": 0.7236070381231672
+              },
+              "abort": {
+                "count": 1312,
+                "correct": 1300,
+                "accuracy": 0.9908536585365854
+              },
+              "shouminkan": {
+                "count": 1524,
+                "correct": 1205,
+                "accuracy": 0.7906824146981627
+              },
+              "daiminkan": {
+                "count": 224,
+                "correct": 1,
+                "accuracy": 0.004464285714285714
+              }
+            },
+            "macroActionAccuracy": 0.7785566856165748
+          }
+        }
+      ],
+      "metrics": {
+        "test": {
+          "samples": 1487425,
+          "choices": 1487425,
+          "forced": 0,
+          "choiceTop1": 0.753330083869775,
+          "choiceTop3": 0.9566331075516412,
+          "choiceNll": 0.6729296302425701,
+          "byAction": {
+            "kita": {
+              "count": 106187,
+              "correct": 103840,
+              "accuracy": 0.9778974827427086
+            },
+            "discard": {
+              "count": 1173621,
+              "correct": 836138,
+              "accuracy": 0.7124429436760249
+            },
+            "riichi": {
+              "count": 29789,
+              "correct": 19134,
+              "accuracy": 0.6423176340259827
+            },
+            "tsumo": {
+              "count": 16073,
+              "correct": 16073,
+              "accuracy": 1.0
+            },
+            "pon": {
+              "count": 39200,
+              "correct": 30679,
+              "accuracy": 0.7826275510204082
+            },
+            "pass": {
+              "count": 100342,
+              "correct": 93732,
+              "accuracy": 0.9341252915030596
+            },
+            "ron": {
+              "count": 16535,
+              "correct": 16535,
+              "accuracy": 1.0
+            },
+            "daiminkan": {
+              "count": 222,
+              "correct": 0,
+              "accuracy": 0.0
+            },
+            "abort": {
+              "count": 1209,
+              "correct": 1199,
+              "accuracy": 0.9917287014061208
+            },
+            "shouminkan": {
+              "count": 1512,
+              "correct": 1182,
+              "accuracy": 0.7817460317460317
+            },
+            "ankan": {
+              "count": 2735,
+              "correct": 2010,
+              "accuracy": 0.7349177330895795
+            }
+          },
+          "macroActionAccuracy": 0.7779821244736287
+        },
+        "train": {
+          "samples": 11908341,
+          "choices": 11908341,
+          "forced": 0,
+          "choiceTop1": 0.7583372024701006,
+          "choiceTop3": 0.9584696978361638,
+          "choiceNll": 0.6588833754981548,
+          "byAction": {
+            "discard": {
+              "count": 9393002,
+              "correct": 6745682,
+              "accuracy": 0.7181603921728112
+            },
+            "kita": {
+              "count": 851799,
+              "correct": 833882,
+              "accuracy": 0.9789656949585525
+            },
+            "ankan": {
+              "count": 21463,
+              "correct": 15821,
+              "accuracy": 0.7371290127195639
+            },
+            "pass": {
+              "count": 804061,
+              "correct": 752400,
+              "accuracy": 0.9357498995722962
+            },
+            "ron": {
+              "count": 132457,
+              "correct": 132454,
+              "accuracy": 0.9999773511403701
+            },
+            "riichi": {
+              "count": 239354,
+              "correct": 153922,
+              "accuracy": 0.6430726037584499
+            },
+            "tsumo": {
+              "count": 129390,
+              "correct": 129390,
+              "accuracy": 1.0
+            },
+            "pon": {
+              "count": 313102,
+              "correct": 247594,
+              "accuracy": 0.7907774463273949
+            },
+            "shouminkan": {
+              "count": 12099,
+              "correct": 9659,
+              "accuracy": 0.7983304405322754
+            },
+            "abort": {
+              "count": 9849,
+              "correct": 9730,
+              "accuracy": 0.9879175550817342
+            },
+            "daiminkan": {
+              "count": 1765,
+              "correct": 4,
+              "accuracy": 0.0022662889518413596
+            }
+          },
+          "macroActionAccuracy": 0.7811224259286628
+        },
+        "validation": {
+          "samples": 1491635,
+          "choices": 1491635,
+          "forced": 0,
+          "choiceTop1": 0.7544184736882682,
+          "choiceTop3": 0.9569023253007606,
+          "choiceNll": 0.6702397869979063,
+          "byAction": {
+            "kita": {
+              "count": 106624,
+              "correct": 104294,
+              "accuracy": 0.9781475090036015
+            },
+            "discard": {
+              "count": 1177074,
+              "correct": 840092,
+              "accuracy": 0.7137121370449097
+            },
+            "pass": {
+              "count": 100376,
+              "correct": 93745,
+              "accuracy": 0.9339383916474058
+            },
+            "pon": {
+              "count": 39006,
+              "correct": 30626,
+              "accuracy": 0.7851612572424755
+            },
+            "riichi": {
+              "count": 29987,
+              "correct": 19302,
+              "accuracy": 0.6436789275352652
+            },
+            "tsumo": {
+              "count": 16397,
+              "correct": 16397,
+              "accuracy": 1.0
+            },
+            "ron": {
+              "count": 16383,
+              "correct": 16381,
+              "accuracy": 0.9998779222364647
+            },
+            "ankan": {
+              "count": 2728,
+              "correct": 1974,
+              "accuracy": 0.7236070381231672
+            },
+            "abort": {
+              "count": 1312,
+              "correct": 1300,
+              "accuracy": 0.9908536585365854
+            },
+            "shouminkan": {
+              "count": 1524,
+              "correct": 1205,
+              "accuracy": 0.7906824146981627
+            },
+            "daiminkan": {
+              "count": 224,
+              "correct": 1,
+              "accuracy": 0.004464285714285714
+            }
+          },
+          "macroActionAccuracy": 0.7785566856165748
+        }
+      },
+      "streaming": {
+        "unit": "bounded-game-window",
+        "gameWindow": 16,
+        "largestTrainingGameSamples": 914,
+        "largestTrainingWindowSamples": 6974,
+        "optimizerSteps": 21169,
+        "gameAndDecisionOrder": "shuffled-each-epoch",
+        "encodedCache": true,
+        "resumed": false,
+        "checkpointEveryGames": 1000
+      },
+      "exportParity": {
+        "samples": 32,
+        "maxAbsError": 3.814697265625e-06,
+        "argmaxAgreement": true
+      },
+      "elapsedSeconds": 4605.573678041052,
+      "versions": {
+        "torch": "2.14.1",
+        "numpy": "2.5.3"
+      },
+      "limitations": [
+        "Behavior cloning predicts recorded choices, not optimal actions.",
+        "Only selected manifest games were trained; no playing-strength claim.",
+        "Unknown match lengths are explicit missing features; East/South endgame behavior is not validated."
+      ]
+    },
+    "4": {
+      "modelPath": ".local/high-rank-50k/models/four-player-full.npz",
+      "modelSha256": "4795279dfd1357294d1f49cbd307ce69400a53b1ea2c48804e8403c2e9733303",
+      "reportPath": ".local/high-rank-50k/models/four-player-full.report.json",
+      "reportSha256": "c2d53d1081003425441242c4d80d4b2ddbde21334fe110775966e08367b33556",
+      "bundleIdentity": {
+        "file": "four-player.npz",
+        "playerCount": 4,
+        "sha256": "4795279dfd1357294d1f49cbd307ce69400a53b1ea2c48804e8403c2e9733303",
+        "report": "four-player.report.json",
+        "reportSha256": "c2d53d1081003425441242c4d80d4b2ddbde21334fe110775966e08367b33556",
+        "selectedGames": 49951,
+        "selectedGameCounts": {
+          "test": 4995,
+          "train": 39961,
+          "validation": 4995
+        },
+        "manifestSha256": "8fc01365a42f1c61b655ced68173930d9f850f2f3b0732d3f1fb5037dfd1678e",
+        "frozenSplitSha256": "951a9aeb150eea5368acfc4a1d06040d184dae93b304b4ac8541a72d03159d70",
+        "featureSignature": "36dfc511791fa866b43dfcb9ebb4ffc359c9bc2db56cc5756cca20eb62d2d7ec",
+        "actionVersion": 1
+      },
+      "conversionReportSha256": "1b19c4a4f26ae5ea199b7d0e0952effa440216a16207af91e5315328de55dffc",
+      "independentReviewSha256": "05fedbb7e1b3f0eb8323efab3bf023670665da30fcafe75f2f43008ceb593944",
+      "independentReviewStatus": "passed-with-quality-limitation",
+      "independentReviewFindings": [
+        {
+          "severity": "quality-limitation",
+          "action": "daiminkan",
+          "message": "Final test 0/380 and validation 2/375; coverage exists but learned recall is inadequate."
+        }
+      ],
+      "sourcePlatform": "majsoul",
+      "conversion": {
+        "convertedGames": 49951,
+        "samples": 29809311,
+        "actions": {
+          "discard": 22865854,
+          "pass": 5119637,
+          "pon": 585626,
+          "ankan": 23957,
+          "riichi": 374053,
+          "chi": 398084,
+          "ron": 253184,
+          "tsumo": 163473,
+          "abort": 5285,
+          "shouminkan": 16227,
+          "daiminkan": 3931
+        },
+        "labelSources": {
+          "accepted": 24689674,
+          "inferred_pass": 5119637
+        },
+        "excludedWindows": {
+          "hand_suffix_after_kan": 47095,
+          "unfinished_window": 0,
+          "censored_response": 149351,
+          "declaration_without_window": 18180
+        },
+        "limitations": [
+          "Operation masks are reconstructed with riichienv, not official server masks.",
+          "Windows after any kan are excluded until the next hand.",
+          "Competing claims and unresolved responses are censored.",
+          "Potential rob-North suffixes are excluded; no speculative pass labels are added.",
+          "Mahjong Soul match length stays unknown without verified header metadata.",
+          "Tenhou ranks and GO rules are verified against XML; matches with BYE are excluded.",
+          "Mahjong Soul throne classification comes from the archive publisher."
+        ]
+      },
+      "dataAudit": {
+        "manifest": "manifest.jsonl",
+        "manifestSha256": "8fc01365a42f1c61b655ced68173930d9f850f2f3b0732d3f1fb5037dfd1678e",
+        "manifestGames": 49951,
+        "manifestSamples": 29809311,
+        "maxGames": null,
+        "selectedGames": 49951,
+        "selectedSamples": 29809311,
+        "selectedGameCounts": {
+          "test": 4995,
+          "train": 39961,
+          "validation": 4995
+        },
+        "matchLengthCoverage": {
+          "unknown": 49951
+        },
+        "frozenSplit": {
+          "file": "split.json",
+          "sha256": "951a9aeb150eea5368acfc4a1d06040d184dae93b304b4ac8541a72d03159d70",
+          "schemaVersion": 1,
+          "unit": "whole-game-all-seats",
+          "excludedGames": 49
+        },
+        "converterSignature": "96872ac64e57897511a367b3d25e9f26958a738cbe0ab9de61b6cf8feb6e4f42",
+        "partitions": {
+          "test": {
+            "games": 4995,
+            "samples": 2976819,
+            "actions": {
+              "chi": 39500,
+              "discard": 2283459,
+              "pass": 511098,
+              "pon": 58593,
+              "riichi": 37579,
+              "ron": 25120,
+              "tsumo": 16652,
+              "ankan": 2310,
+              "abort": 492,
+              "daiminkan": 380,
+              "shouminkan": 1636
+            },
+            "labelSources": {
+              "accepted": 2465721,
+              "inferred_pass": 511098
+            },
+            "duplicateSamples": 0
+          },
+          "train": {
+            "games": 39961,
+            "samples": 23829723,
+            "actions": {
+              "chi": 318326,
+              "discard": 18278066,
+              "pass": 4093008,
+              "pon": 468495,
+              "riichi": 299089,
+              "ron": 202518,
+              "tsumo": 130466,
+              "daiminkan": 3176,
+              "shouminkan": 12961,
+              "ankan": 19330,
+              "abort": 4288
+            },
+            "labelSources": {
+              "accepted": 19736715,
+              "inferred_pass": 4093008
+            },
+            "duplicateSamples": 0
+          },
+          "validation": {
+            "games": 4995,
+            "samples": 3002769,
+            "actions": {
+              "chi": 40258,
+              "discard": 2304329,
+              "pass": 515531,
+              "pon": 58538,
+              "riichi": 37385,
+              "ron": 25546,
+              "tsumo": 16355,
+              "ankan": 2317,
+              "shouminkan": 1630,
+              "daiminkan": 375,
+              "abort": 505
+            },
+            "labelSources": {
+              "accepted": 2487238,
+              "inferred_pass": 515531
+            },
+            "duplicateSamples": 0
+          }
+        }
+      },
+      "epochs": 3,
+      "bestEpoch": 3,
+      "device": "mps",
+      "parameterCount": 756545,
+      "config": {
+        "channels": 64,
+        "blocks": 3,
+        "hidden": 256
+      },
+      "batchSize": 2048,
+      "learningRate": 0.001,
+      "history": [
+        {
+          "epoch": 1,
+          "trainLoss": 0.830086728871216,
+          "trainChoices": 23829678,
+          "validation": {
+            "samples": 3002769,
+            "choices": 3002766,
+            "forced": 3,
+            "choiceTop1": 0.7261404984604195,
+            "choiceTop3": 0.9435940063261673,
+            "choiceNll": 0.757464768379136,
+            "byAction": {
+              "discard": {
+                "count": 2304326,
+                "correct": 1554701,
+                "accuracy": 0.6746879564783802
+              },
+              "pon": {
+                "count": 58538,
+                "correct": 40952,
+                "accuracy": 0.6995797601557963
+              },
+              "pass": {
+                "count": 515531,
+                "correct": 498516,
+                "accuracy": 0.9669951952452908
+              },
+              "riichi": {
+                "count": 37385,
+                "correct": 25208,
+                "accuracy": 0.6742811287949713
+              },
+              "chi": {
+                "count": 40258,
+                "correct": 16390,
+                "accuracy": 0.40712404987828504
+              },
+              "tsumo": {
+                "count": 16355,
+                "correct": 16355,
+                "accuracy": 1.0
+              },
+              "ron": {
+                "count": 25546,
+                "correct": 25546,
+                "accuracy": 1.0
+              },
+              "ankan": {
+                "count": 2317,
+                "correct": 1400,
+                "accuracy": 0.6042296072507553
+              },
+              "shouminkan": {
+                "count": 1630,
+                "correct": 857,
+                "accuracy": 0.5257668711656441
+              },
+              "daiminkan": {
+                "count": 375,
+                "correct": 1,
+                "accuracy": 0.0026666666666666666
+              },
+              "abort": {
+                "count": 505,
+                "correct": 504,
+                "accuracy": 0.998019801980198
+              }
+            },
+            "macroActionAccuracy": 0.686668276146908
+          }
+        },
+        {
+          "epoch": 2,
+          "trainLoss": 0.7444534457678916,
+          "trainChoices": 23829678,
+          "validation": {
+            "samples": 3002769,
+            "choices": 3002766,
+            "forced": 3,
+            "choiceTop1": 0.7317456638312809,
+            "choiceTop3": 0.9467094672045707,
+            "choiceNll": 0.7387552080581647,
+            "byAction": {
+              "discard": {
+                "count": 2304326,
+                "correct": 1565348,
+                "accuracy": 0.6793083964682081
+              },
+              "pon": {
+                "count": 58538,
+                "correct": 45468,
+                "accuracy": 0.7767262291161297
+              },
+              "pass": {
+                "count": 515531,
+                "correct": 495079,
+                "accuracy": 0.9603282828772663
+              },
+              "riichi": {
+                "count": 37385,
+                "correct": 27777,
+                "accuracy": 0.7429985288217199
+              },
+              "chi": {
+                "count": 40258,
+                "correct": 18470,
+                "accuracy": 0.4587907993442297
+              },
+              "tsumo": {
+                "count": 16355,
+                "correct": 16355,
+                "accuracy": 1.0
+              },
+              "ron": {
+                "count": 25546,
+                "correct": 25545,
+                "accuracy": 0.9999608549283645
+              },
+              "ankan": {
+                "count": 2317,
+                "correct": 1597,
+                "accuracy": 0.6892533448424687
+              },
+              "shouminkan": {
+                "count": 1630,
+                "correct": 1118,
+                "accuracy": 0.6858895705521473
+              },
+              "daiminkan": {
+                "count": 375,
+                "correct": 1,
+                "accuracy": 0.0026666666666666666
+              },
+              "abort": {
+                "count": 505,
+                "correct": 503,
+                "accuracy": 0.996039603960396
+              }
+            },
+            "macroActionAccuracy": 0.726542025234327
+          }
+        },
+        {
+          "epoch": 3,
+          "trainLoss": 0.7293813485528041,
+          "trainChoices": 23829678,
+          "validation": {
+            "samples": 3002769,
+            "choices": 3002766,
+            "forced": 3,
+            "choiceTop1": 0.7354239391281239,
+            "choiceTop3": 0.9485407787353394,
+            "choiceNll": 0.7273771095364677,
+            "byAction": {
+              "discard": {
+                "count": 2304326,
+                "correct": 1576766,
+                "accuracy": 0.6842634245328135
+              },
+              "pon": {
+                "count": 58538,
+                "correct": 43268,
+                "accuracy": 0.7391438040247361
+              },
+              "pass": {
+                "count": 515531,
+                "correct": 499618,
+                "accuracy": 0.9691327970577909
+              },
+              "riichi": {
+                "count": 37385,
+                "correct": 26715,
+                "accuracy": 0.7145914136685837
+              },
+              "chi": {
+                "count": 40258,
+                "correct": 16982,
+                "accuracy": 0.4218292016493616
+              },
+              "tsumo": {
+                "count": 16355,
+                "correct": 16355,
+                "accuracy": 1.0
+              },
+              "ron": {
+                "count": 25546,
+                "correct": 25545,
+                "accuracy": 0.9999608549283645
+              },
+              "ankan": {
+                "count": 2317,
+                "correct": 1432,
+                "accuracy": 0.6180405697022011
+              },
+              "shouminkan": {
+                "count": 1630,
+                "correct": 1125,
+                "accuracy": 0.6901840490797546
+              },
+              "daiminkan": {
+                "count": 375,
+                "correct": 2,
+                "accuracy": 0.005333333333333333
+              },
+              "abort": {
+                "count": 505,
+                "correct": 498,
+                "accuracy": 0.9861386138613861
+              }
+            },
+            "macroActionAccuracy": 0.7116925510762114
+          }
+        }
+      ],
+      "metrics": {
+        "test": {
+          "samples": 2976819,
+          "choices": 2976815,
+          "forced": 4,
+          "choiceTop1": 0.7356002976335446,
+          "choiceTop3": 0.9485376148668964,
+          "choiceNll": 0.7269156471656587,
+          "byAction": {
+            "discard": {
+              "count": 2283455,
+              "correct": 1562192,
+              "accuracy": 0.6841352249113734
+            },
+            "pass": {
+              "count": 511098,
+              "correct": 495628,
+              "accuracy": 0.9697318322513491
+            },
+            "pon": {
+              "count": 58593,
+              "correct": 43349,
+              "accuracy": 0.7398324031880942
+            },
+            "ron": {
+              "count": 25120,
+              "correct": 25120,
+              "accuracy": 1.0
+            },
+            "chi": {
+              "count": 39500,
+              "correct": 16859,
+              "accuracy": 0.42681012658227846
+            },
+            "riichi": {
+              "count": 37579,
+              "correct": 26903,
+              "accuracy": 0.715905159796695
+            },
+            "tsumo": {
+              "count": 16652,
+              "correct": 16652,
+              "accuracy": 1.0
+            },
+            "ankan": {
+              "count": 2310,
+              "correct": 1424,
+              "accuracy": 0.6164502164502165
+            },
+            "daiminkan": {
+              "count": 380,
+              "correct": 0,
+              "accuracy": 0.0
+            },
+            "abort": {
+              "count": 492,
+              "correct": 484,
+              "accuracy": 0.983739837398374
+            },
+            "shouminkan": {
+              "count": 1636,
+              "correct": 1135,
+              "accuracy": 0.6937652811735942
+            }
+          },
+          "macroActionAccuracy": 0.7118518256138159
+        },
+        "train": {
+          "samples": 23829723,
+          "choices": 23829678,
+          "forced": 45,
+          "choiceTop1": 0.7378561304940839,
+          "choiceTop3": 0.9497975591613114,
+          "choiceNll": 0.7198989370065385,
+          "byAction": {
+            "discard": {
+              "count": 18278021,
+              "correct": 12554090,
+              "accuracy": 0.6868407690307392
+            },
+            "pass": {
+              "count": 4093008,
+              "correct": 3970236,
+              "accuracy": 0.9700044563802465
+            },
+            "pon": {
+              "count": 468495,
+              "correct": 347945,
+              "accuracy": 0.7426866882250611
+            },
+            "chi": {
+              "count": 318326,
+              "correct": 137311,
+              "accuracy": 0.43135339243417126
+            },
+            "riichi": {
+              "count": 299089,
+              "correct": 214827,
+              "accuracy": 0.7182711500590125
+            },
+            "ron": {
+              "count": 202518,
+              "correct": 202509,
+              "accuracy": 0.9999555595058217
+            },
+            "tsumo": {
+              "count": 130466,
+              "correct": 130466,
+              "accuracy": 1.0
+            },
+            "shouminkan": {
+              "count": 12961,
+              "correct": 9035,
+              "accuracy": 0.6970912738214644
+            },
+            "daiminkan": {
+              "count": 3176,
+              "correct": 40,
+              "accuracy": 0.012594458438287154
+            },
+            "ankan": {
+              "count": 19330,
+              "correct": 12182,
+              "accuracy": 0.6302121055354372
+            },
+            "abort": {
+              "count": 4288,
+              "correct": 4233,
+              "accuracy": 0.9871735074626866
+            }
+          },
+          "macroActionAccuracy": 0.7160166691720843
+        },
+        "validation": {
+          "samples": 3002769,
+          "choices": 3002766,
+          "forced": 3,
+          "choiceTop1": 0.7354239391281239,
+          "choiceTop3": 0.9485407787353394,
+          "choiceNll": 0.7273771095364677,
+          "byAction": {
+            "discard": {
+              "count": 2304326,
+              "correct": 1576766,
+              "accuracy": 0.6842634245328135
+            },
+            "pon": {
+              "count": 58538,
+              "correct": 43268,
+              "accuracy": 0.7391438040247361
+            },
+            "pass": {
+              "count": 515531,
+              "correct": 499618,
+              "accuracy": 0.9691327970577909
+            },
+            "riichi": {
+              "count": 37385,
+              "correct": 26715,
+              "accuracy": 0.7145914136685837
+            },
+            "chi": {
+              "count": 40258,
+              "correct": 16982,
+              "accuracy": 0.4218292016493616
+            },
+            "tsumo": {
+              "count": 16355,
+              "correct": 16355,
+              "accuracy": 1.0
+            },
+            "ron": {
+              "count": 25546,
+              "correct": 25545,
+              "accuracy": 0.9999608549283645
+            },
+            "ankan": {
+              "count": 2317,
+              "correct": 1432,
+              "accuracy": 0.6180405697022011
+            },
+            "shouminkan": {
+              "count": 1630,
+              "correct": 1125,
+              "accuracy": 0.6901840490797546
+            },
+            "daiminkan": {
+              "count": 375,
+              "correct": 2,
+              "accuracy": 0.005333333333333333
+            },
+            "abort": {
+              "count": 505,
+              "correct": 498,
+              "accuracy": 0.9861386138613861
+            }
+          },
+          "macroActionAccuracy": 0.7116925510762114
+        }
+      },
+      "streaming": {
+        "unit": "bounded-game-window",
+        "gameWindow": 16,
+        "largestTrainingGameSamples": 1431,
+        "largestTrainingWindowSamples": 12097,
+        "optimizerSteps": 38439,
+        "gameAndDecisionOrder": "shuffled-each-epoch",
+        "encodedCache": true,
+        "resumed": false,
+        "checkpointEveryGames": 1000
+      },
+      "exportParity": {
+        "samples": 32,
+        "maxAbsError": 3.814697265625e-06,
+        "argmaxAgreement": true
+      },
+      "elapsedSeconds": 6637.228088916978,
+      "versions": {
+        "torch": "2.14.1",
+        "numpy": "2.5.3"
+      },
+      "limitations": [
+        "Behavior cloning predicts recorded choices, not optimal actions.",
+        "Only selected manifest games were trained; no playing-strength claim.",
+        "Unknown match lengths are explicit missing features; East/South endgame behavior is not validated."
+      ]
+    }
+  },
+  "runtimeBenchmark": {
+    "path": ".local/high-rank-50k/research/full-training/full-model-live-benchmark.json",
+    "sha256": "5e991a8a49e57fc7e19e9c4f6045095f654ce636a372b44c00bcce87dedfbd47",
+    "scope": "Synthetic ActionPrototype wire frames through real browser/core; real model weights and AdviceWorker; no WebKit or network latency.",
+    "repeats": 20,
+    "nativeTimerIncluded": false,
+    "metrics": {
+      "3": {
+        "inference": {
+          "count": 360,
+          "medianMs": 0.34545850940048695,
+          "p95Ms": 0.36991701927036047,
+          "maxMs": 0.5395420012064278
+        },
+        "workerQueue": {
+          "count": 360,
+          "medianMs": 0.037,
+          "p95Ms": 0.043,
+          "maxMs": 0.145
+        },
+        "workerCalculate": {
+          "count": 360,
+          "medianMs": 0.349,
+          "p95Ms": 0.375,
+          "maxMs": 0.553
+        },
+        "workerDeliveryWait": {
+          "count": 360,
+          "medianMs": 0.009,
+          "p95Ms": 0.012,
+          "maxMs": 0.015
+        },
+        "workerTotal": {
+          "count": 360,
+          "medianMs": 0.395,
+          "p95Ms": 0.42910000000000004,
+          "maxMs": 0.594
+        },
+        "nativeScriptBuild": {
+          "count": 360,
+          "medianMs": 0.018083519535139203,
+          "p95Ms": 0.025044087669812143,
+          "maxMs": 0.4264590097591281
+        },
+        "callerTotal": {
+          "count": 360,
+          "medianMs": 0.41852102731354535,
+          "p95Ms": 0.4605669848388061,
+          "maxMs": 0.8912920020520687
+        }
+      },
+      "4": {
+        "inference": {
+          "count": 320,
+          "medianMs": 0.33552051172591746,
+          "p95Ms": 0.3531038644723594,
+          "maxMs": 0.4877089522778988
+        },
+        "workerQueue": {
+          "count": 320,
+          "medianMs": 0.0375,
+          "p95Ms": 0.043,
+          "maxMs": 0.13
+        },
+        "workerCalculate": {
+          "count": 320,
+          "medianMs": 0.34,
+          "p95Ms": 0.35405,
+          "maxMs": 0.463
+        },
+        "workerDeliveryWait": {
+          "count": 320,
+          "medianMs": 0.008,
+          "p95Ms": 0.012,
+          "maxMs": 0.014
+        },
+        "workerTotal": {
+          "count": 320,
+          "medianMs": 0.387,
+          "p95Ms": 0.406,
+          "maxMs": 0.513
+        },
+        "nativeScriptBuild": {
+          "count": 320,
+          "medianMs": 0.01662501017563045,
+          "p95Ms": 0.02246521762572229,
+          "maxMs": 0.026374997105449438
+        },
+        "callerTotal": {
+          "count": 320,
+          "medianMs": 0.40845846524462104,
+          "p95Ms": 0.4320440493756905,
+          "maxMs": 0.532125006429851
+        }
+      }
+    }
+  },
+  "sourceSha256": {
+    "src/policy_actions.py": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+    "src/policy_features.py": "f57d2844ce47617155e9d00ff4e0e455be3a35e31b2e6e3b27cb784efd161682",
+    "src/policy_training.py": "b671617debc219a726543bc1c9ee436fedc84cb47d393c01ab77def96ae7279f",
+    "src/policy_corpus_training.py": "5a5309125854d577ff7ee25c6fa7e4bcb4e6b7593dc9788da3650f111846864e",
+    "src/policy_encoded_cache.py": "44babbd91dd903f4e0f299b8fcba21231074e7602f78397c97db40f838b93229",
+    "src/policy_model.py": "e2501b933567b1c69f1781f3385bd1dfcbc487ecd8070a84b227c3a9a186efe6",
+    "src/policy_bundle.py": "e3d792bc349966f6c1d71b3355d7f402d27f771b091a6b03ed1e43402d9b0716",
+    "src/policy_verify.py": "fa7945ea2b033bb3d331350315b5aa331e684f221408ffc105d5d82875c20542",
+    "src/monitor.py": "1d14e84fbcdcb161f824e195f95d131a168da38b595b3854a9679f421fd52288",
+    "scripts/policy_prepare_bundle.py": "3ce861f0b4848dba81e665f7b851d5bb4e9edb01b6baefc4f9c739dbb9da4d33"
+  }
+}

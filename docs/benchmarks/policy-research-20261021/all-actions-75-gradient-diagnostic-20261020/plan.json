@@ -1,0 +1,175 @@
+{
+  "status": "frozen-before-payload",
+  "purpose": "fixed-train-ce-gradient-diagnostic",
+  "inputs": {
+    "trainingPlan": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/plan.json",
+      "sha256": "3d10f415076d211d66ec4ffcc80fab08ef8bdedebac2490d66d880d4fc222a64"
+    },
+    "evaluationInputs": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/evaluation/inputs.json",
+      "sha256": "c7efa52ff6083290f58cc20b147acec52b9072163ad5ec0a0a5ce6de90b09b56"
+    },
+    "preparation": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/pilot-preparation.json",
+      "sha256": "6bc8ca9aa06a4534938faa0f376cc7ed35d79176c206b25f594c9e5b5c090946"
+    },
+    "qualification": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/payload-validation.json",
+      "sha256": "fd5a3975caba3bb186d8f465a441599545d839ba091318c857950f5d92b095f9"
+    },
+    "selection": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/selection-metadata.json",
+      "sha256": "5e5cf40479d75237a21d773c0a32d0aabcf2560126d800007faf2e9ad2a959b6"
+    },
+    "selectedIndex": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/selected-cache-index.jsonl",
+      "sha256": "24db433ac5dfee601e6637acfca09fce35d0bcdb502c47a9ad3ec3e9749419b4"
+    },
+    "fitMonitorOriginal": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/fit-monitor-original.jsonl",
+      "sha256": "d4e1442d44e3769cb09b0c1032694f2ac868fa5a7d308a5e1825b7551b82cb49"
+    },
+    "fitMonitorAdded": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/fit-monitor-added.jsonl",
+      "sha256": "5051e30c107d60f34b3909e907d1094223bfb89facb8b47aeb541bb4493a6801"
+    },
+    "design": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/diagnostic-design.md",
+      "sha256": "c59ec3e668960ddb12f2e807132090c989ced161607ed187ae91ca3bc2c71a7c"
+    }
+  },
+  "sourceSha256": {
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_actions.py": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_features.py": "86537a62645bce835caaa3ce2f5636c75f2bfaef770cbcd0bf230ff29dccd9c8",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_model.py": "c36c96e06c88bd3f87306b20a51474e71ddc7a4c9daf4580727170559deccbe4",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_training.py": "7438965893f4d41a46b5690d891e576d7d203c9fcf5d1eb22412b57df0fe5a4e",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_encoded_cache.py": "44babbd91dd903f4e0f299b8fcba21231074e7602f78397c97db40f838b93229",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/bilinear_candidate_policy.py": "9b1daab9cf7f1dfc0795575b5adf7e3493c5db8ebf53b08daea6365aa99e1487",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/chi_diagnostic.py": "9974615dd66045249c650561786421304d2b904707a4001ec56c01176399774e",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/gradient_diagnostic.py": "68134014158bc8fa4763ffebbb51f5d149bbac752c96638a0ec76b1fb2f008c1",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/test_gradient_diagnostic.py": "bee8c0cda3824cafbd84a935902144371bab6c92c798c3fa9cda228a8d04387a"
+  },
+  "models": {
+    "42": {
+      "report": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/seed42-mix/report.json",
+        "sha256": "02f68bccb6789936525e3658fb75e95bebd6d2a8a1b0de732d37d5588402d0fb"
+      },
+      "model": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/seed42-mix/final.npz",
+        "sha256": "4bd9b057daceb45373f4deee24c7f46a1b5691f6f0f93d28233bb568ddb675c2"
+      },
+      "finalStateSha256": "f19888a7df87e36c25d458ff9d8dc256f5894d5e4d051f120c45f241e6d512de",
+      "training": {
+        "planSha256": "3d10f415076d211d66ec4ffcc80fab08ef8bdedebac2490d66d880d4fc222a64",
+        "seed": 42,
+        "arm": "mix",
+        "initialStateSha256": "69c9950c4e6a63c0b8e68e8c43b1522441f349fc137b004a73a2af4072d6bd6a",
+        "step": 5000,
+        "objective": "mix"
+      }
+    },
+    "43": {
+      "report": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/seed43-mix/report.json",
+        "sha256": "4cb160b0276b805ff0489b7c3e8ae60ac1c0d461421b1deb5222bcc8c72e2907"
+      },
+      "model": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/seed43-mix/final.npz",
+        "sha256": "c6722adb558873ecaa5ded757fa1f4c059fe7134f2a688b6ff2a49f3a670da16"
+      },
+      "finalStateSha256": "647090c493bbc3cbfa643bdf604c5c1517effd0c881a35f664285852dcc55c7c",
+      "training": {
+        "planSha256": "3d10f415076d211d66ec4ffcc80fab08ef8bdedebac2490d66d880d4fc222a64",
+        "seed": 43,
+        "arm": "mix",
+        "initialStateSha256": "d3c0c7c7703597718380ffd32917b270b6850ee208912ba996f68a0907f7a13c",
+        "step": 5000,
+        "objective": "mix"
+      }
+    }
+  },
+  "selectedChoices": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/selected-choices.json",
+    "sha256": "def809c4a8e620766a6f388101ee5ae0823ee9db8b8ad6083c426fff7e236421"
+  },
+  "syntheticTests": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/synthetic-tests.json",
+    "sha256": "583e872a6d3314f3907b75e8144b68a9cca6d32377db38da892d568d88f8e424"
+  },
+  "fullFitClassCounts": [
+    2041277,
+    51552,
+    0,
+    68096,
+    421,
+    4749,
+    2687,
+    185325,
+    28312,
+    28868,
+    2150,
+    175323
+  ],
+  "mixedDensity": [
+    0.7788228665416083,
+    1.8912836465210767,
+    0.0,
+    1.6140074974367737,
+    140.5016735046426,
+    13.139019697926836,
+    22.646335893358593,
+    1.0674717633641146,
+    2.8281101492460636,
+    2.7880855807625933,
+    28.115327695560257,
+    1.085583206683975
+  ],
+  "sampling": {
+    "seed": 20261020,
+    "choicesPerMonitor": 8192,
+    "rule": "One default_rng stream: original draw then added draw, uniform without replacement; sorted global choice ordinals",
+    "pooled": "50/50 sample mixture; not all-512-game natural population or full-fit gradient"
+  },
+  "execution": {
+    "device": "mps",
+    "cpuThreads": 1,
+    "batchSize": 256,
+    "wallSeconds": 900,
+    "maximumRssBytes": 8589934592
+  },
+  "tolerance": {
+    "lossAbs": 2e-05,
+    "gradientAbs": 0.0002,
+    "gradientRelative": 0.0002
+  },
+  "environment": {
+    "python": "3.12.15 (main, Oct  3 2026, 00:54:33) [Clang 22.1.3 ]",
+    "executable": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "packages": {
+      "numpy": "2.5.3",
+      "torch": "2.14.1",
+      "zstandard": "0.25.0"
+    }
+  },
+  "components": [
+    "naturalWithin",
+    "naturalType",
+    "mixedWithin",
+    "mixedType",
+    "discardWithin",
+    "discardType",
+    "riichiMultiWithin",
+    "riichiMultiType"
+  ],
+  "scope": "Two fitted monitors only; each separately and equal-size 50/50 sample pooled",
+  "normalization": "Natural/mixed sums divided by selected windows; discard/riichiMulti sums by actual group support; no batch self normalization",
+  "trainingUpdates": 0,
+  "freezePayloadReads": 0,
+  "SQLReads": 0,
+  "modelWrites": 0,
+  "cacheWrites": 0,
+  "newHoldoutReads": 0
+}

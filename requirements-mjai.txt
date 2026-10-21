@@ -1,0 +1,4 @@
+# Offline MJAI audit and conversion only; not desktop runtime dependencies.
+-r requirements-policy.txt
+riichienv==0.4.10
+zstandard==0.25.0

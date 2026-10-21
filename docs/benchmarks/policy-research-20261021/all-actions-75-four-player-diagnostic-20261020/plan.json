@@ -1,0 +1,574 @@
+{
+  "schemaVersion": 1,
+  "status": "frozen-before-cache-or-model-payload",
+  "purpose": "fixed-four-player-train-monitor-chi-diagnostic",
+  "metadata": {
+    "historicalPlan": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-validation-plan-4p.json",
+      "sha256": "883dc10aeebddb8c5165d21abb2ec75d4098184bfb15291a56744ed62562b4d8"
+    },
+    "parentMonitor": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-validation-4p/4p.parent.monitor.json",
+      "sha256": "125c2dc51ab37bbb78ab4b7d99bf143287649297791201ce2cb33951e27047dc"
+    },
+    "trainingReport": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/expanded-20261016/models/4p.report.json",
+      "sha256": "f6e5ac2932d8a63a602ad4e34622115c16cb7cc9bcfd970eedb4f93aa93e6ccb"
+    },
+    "manifest": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/expanded-20261016/four-player/training/manifest.jsonl",
+      "sha256": "75c8772247fcb4e533e40da5b650a340882c1da5c233841bfc3ae539eb4d1796"
+    },
+    "split": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-dataset-expansion-20261016/combined-four-player/split.json",
+      "sha256": "ff8b6f568160f64b947f65415bc329577a778f79f2a201af8ab6166a54378300"
+    },
+    "oldSplit": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/split.json",
+      "sha256": "951a9aeb150eea5368acfc4a1d06040d184dae93b304b4ac8541a72d03159d70"
+    },
+    "cacheIndex": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-cache-index-4p.jsonl",
+      "sha256": "9923f3661fb22f16bbf7db077dfb942925d9962572a71e4950e2972142350c14"
+    },
+    "historicalPolicy": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-validation-policy.json",
+      "sha256": "ca948fb66c179498b2b743d267d7d2f7dbbcce8a730befcf76f31b8b42395049"
+    },
+    "design": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/diagnostic-design.md",
+      "sha256": "e4a76e3254899dd90b8262e6861efbf8b89d06661e21f66fb0166182d7cd5fb4"
+    }
+  },
+  "sourceSha256": {
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_actions.py": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_features.py": "86537a62645bce835caaa3ce2f5636c75f2bfaef770cbcd0bf230ff29dccd9c8",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_model.py": "c36c96e06c88bd3f87306b20a51474e71ddc7a4c9daf4580727170559deccbe4",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_training.py": "7438965893f4d41a46b5690d891e576d7d203c9fcf5d1eb22412b57df0fe5a4e",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_encoded_cache.py": "44babbd91dd903f4e0f299b8fcba21231074e7602f78397c97db40f838b93229",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded_validation.py": "871e947beca97ef64970cfcc31bd4e52c5d7cb6eef9b1cf518b9f3e040c9b407",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/chi_diagnostic.py": "9974615dd66045249c650561786421304d2b904707a4001ec56c01176399774e",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/test_chi_diagnostic.py": "67faad9cab1c85bc5ce221a32e8c16702743481f8bc6eff7f9fd45af4b93e3ea"
+  },
+  "syntheticTests": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/synthetic-tests.json",
+    "sha256": "d852a628a30f6c80eab485d4253b3ae4b0032acaf6224e1a815e93827c587d67"
+  },
+  "selectedCaches": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/selected-caches.jsonl",
+    "sha256": "995cb25170fe8cd44fd2fdb940ca6bbdab27450be280c583f3c0f88efdde183d"
+  },
+  "models": {
+    "parent": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/full-vectorized/4p-constant.epoch-8.npz",
+      "sha256": "144dd87da5385e715f3bfd209c4b53f0480b672e6dff4171ae894198a36c10d7"
+    },
+    "epoch-8": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/expanded-20261016/models/4p.epoch-8.npz",
+      "sha256": "551772cce301f6fa5f82ecb4d8910e3ce818f97e1e787cd63576a4637187aa67"
+    }
+  },
+  "scope": "fixed-train-monitor-only",
+  "expected": {
+    "games": 4096,
+    "samples": 2462767,
+    "choices": 2462763,
+    "forced": 4,
+    "opportunities": 329137,
+    "positives": 32640,
+    "negatives": 296497
+  },
+  "execution": {
+    "device": "mps",
+    "cpuThreads": 1,
+    "batchSize": 512,
+    "wallSeconds": 900,
+    "maximumRssBytes": 8589934592
+  },
+  "environment": {
+    "python": "3.12.15 (main, Oct  3 2026, 00:54:33) [Clang 22.1.3 ]",
+    "executable": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "packages": {
+      "numpy": "2.5.3",
+      "torch": "2.14.1",
+      "zstandard": "0.25.0"
+    }
+  },
+  "historicalBaseline": {
+    "parent": {
+      "opportunityCount": 329137,
+      "actualPositive": 32640,
+      "predictedPositive": 23051,
+      "truePositive": 17334,
+      "exactCorrectPositive": 15886,
+      "falsePositive": 5717,
+      "falseNegative": 15306,
+      "exactCorrect": 306110,
+      "passAvailable": 329137,
+      "passCorrect": 292685,
+      "passAvailableExactCorrect": 306110,
+      "binaryNll": {
+        "actualPositive": {
+          "count": 32640,
+          "sum": 30954.366110309173,
+          "mean": 0.9483568048501585
+        },
+        "actualNegative": {
+          "count": 296497,
+          "sum": 22267.975598175275,
+          "mean": 0.07510354438046683
+        }
+      },
+      "actualNegative": 296497,
+      "precision": 0.7519847295128194,
+      "recall": 0.5310661764705882,
+      "exactPositiveRecall": 0.486703431372549,
+      "falsePositiveRate": 0.019281813981254448,
+      "falseSelectionRate": 0.017369666734520884,
+      "exactCandidateTop1": 0.9300382515487472,
+      "alwaysPassTop1": 0.8892497652953025,
+      "passAvailableExactCandidateTop1": 0.9300382515487472
+    },
+    "epoch-8": {
+      "opportunityCount": 329137,
+      "actualPositive": 32640,
+      "predictedPositive": 19901,
+      "truePositive": 15798,
+      "exactCorrectPositive": 14566,
+      "falsePositive": 4103,
+      "falseNegative": 16842,
+      "exactCorrect": 306420,
+      "passAvailable": 329137,
+      "passCorrect": 292685,
+      "passAvailableExactCorrect": 306420,
+      "precision": 0.7938294558062409,
+      "recall": 0.48400735294117647,
+      "exactPositiveRecall": 0.4462622549019608,
+      "falseSelectionRate": 0.012465933638576034,
+      "falsePositiveRate": 0.01383825131451583,
+      "exactCandidateTop1": 0.9309801085870018,
+      "alwaysPassTop1": 0.8892497652953025,
+      "passAvailableExactCandidateTop1": 0.9309801085870018
+    }
+  },
+  "sampleIdentity": "ab25fbf0c39455a1c3a333a794d7695127222f1379822939910f3fc4ddd9a611",
+  "trainerIdentity": "44902ae27959c7cbc175f64e67215c8c21eed668fde938ac4fa8522d21ee9023",
+  "cacheHashesSha256": "187404fdc74512b80d14cefecc4c44652d4a5364e4682380ec3754baba9a2bc4",
+  "historicalPolicyContext": {
+    "policy": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/action-causes-20261016/expanded-validation-policy.json",
+      "sha256": "ca948fb66c179498b2b743d267d7d2f7dbbcce8a730befcf76f31b8b42395049"
+    },
+    "guards": [
+      {
+        "metric": "choiceNll",
+        "direction": "lower",
+        "tolerance": 0.005,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 100000,
+        "origin": "original-checkpoint-eligibility"
+      },
+      {
+        "metric": "choiceTop1",
+        "direction": "higher",
+        "tolerance": 0.002,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 100000,
+        "origin": "original-checkpoint-eligibility"
+      },
+      {
+        "metric": "byAction.discard.accuracy",
+        "direction": "higher",
+        "tolerance": 0.002,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 100000,
+        "origin": "original-checkpoint-eligibility"
+      },
+      {
+        "metric": "byOpportunity.chi.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 1,
+        "origin": "original-checkpoint-eligibility",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.pon.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 1,
+        "origin": "original-checkpoint-eligibility",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 1,
+        "origin": "original-checkpoint-eligibility",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.ankan.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 1,
+        "origin": "original-checkpoint-eligibility",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.shouminkan.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "nllReference"
+        ],
+        "minimumSupport": 1,
+        "origin": "original-checkpoint-eligibility",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "choiceNll",
+        "direction": "lower",
+        "tolerance": 0.005,
+        "minimumSupport": 100000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "choiceTop1",
+        "direction": "higher",
+        "tolerance": 0.002,
+        "minimumSupport": 100000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byAction.discard.accuracy",
+        "direction": "higher",
+        "tolerance": 0.002,
+        "minimumSupport": 100000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.riichi.recall",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byOpportunity.riichi.exactPositiveRecall",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byOpportunity.riichi.precision",
+        "direction": "higher",
+        "tolerance": 0.01,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byOpportunity.riichi.falsePositiveRate",
+        "direction": "lower",
+        "tolerance": 0.005,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byOpportunity.riichi.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining"
+      },
+      {
+        "metric": "byAction.pon.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.ankan.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.shouminkan.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.kita.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.pass.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.tsumo.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.ron.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.abort.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.precision",
+        "direction": "higher",
+        "tolerance": 0.05,
+        "minimumSupport": 20,
+        "against": [
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.recall",
+        "direction": "higher",
+        "tolerance": 0.01,
+        "minimumSupport": 100,
+        "against": [
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.falsePositiveRate",
+        "direction": "lower",
+        "tolerance": 0.001,
+        "minimumSupport": 1000,
+        "against": [
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.daiminkan.passAvailableExactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0,
+        "minimumSupport": 1000,
+        "against": [
+          "parent"
+        ],
+        "againstMetric": "byOpportunity.daiminkan.alwaysPassTop1",
+        "origin": "frozen-riichi-pilot-guard; original control mapped explicitly to original v2 parent in this non-paired full retraining",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byAction.chi.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "against": [
+          "v1",
+          "parent"
+        ],
+        "minimumSupport": 100,
+        "origin": "same per-action guard as original pon/kan guards; four-player chi",
+        "absentBothNotApplicable": true
+      },
+      {
+        "metric": "byOpportunity.riichi.recall",
+        "direction": "higher",
+        "tolerance": 0.0,
+        "against": [
+          "parent"
+        ],
+        "minimumSupport": 1000,
+        "origin": "user-directed strict non-regression vs original v2 parent on the same new validation set"
+      },
+      {
+        "metric": "byOpportunity.riichi.exactPositiveRecall",
+        "direction": "higher",
+        "tolerance": 0.0,
+        "against": [
+          "parent"
+        ],
+        "minimumSupport": 1000,
+        "origin": "user-directed strict non-regression vs original v2 parent on the same new validation set"
+      },
+      {
+        "metric": "byOpportunity.daiminkan.recall",
+        "direction": "higher",
+        "tolerance": 0.0,
+        "against": [
+          "parent"
+        ],
+        "minimumSupport": 100,
+        "origin": "user-directed strict non-regression vs original v2 parent on the same new validation set"
+      },
+      {
+        "metric": "byOpportunity.daiminkan.exactPositiveRecall",
+        "direction": "higher",
+        "tolerance": 0.0,
+        "against": [
+          "parent"
+        ],
+        "minimumSupport": 100,
+        "origin": "user-directed strict non-regression vs original v2 parent on the same new validation set"
+      }
+    ],
+    "absolutePrecision": {
+      "actions": [
+        "chi",
+        "pon",
+        "daiminkan",
+        "ankan",
+        "shouminkan"
+      ],
+      "minimumPredictions": 10,
+      "minimumPrecision": 0.5
+    },
+    "appliedByThisDiagnostic": false
+  },
+  "predictionRule": "First maximum in original complete-candidate order; never merge chi candidates",
+  "curveRule": "All exact float64 margin breakpoints, singleton ties and open intervals; no selected/applied bias",
+  "interpretation": "Mechanical completion is not quality acceptance; fitted train only. Conditional chi Top1 bounds exact recall under a common chi bias.",
+  "forbiddenReads": [
+    "raw",
+    "source-samples",
+    "validation-payload",
+    "test-payload",
+    "new-holdout",
+    "SQL",
+    "packed"
+  ],
+  "trainingUpdates": 0,
+  "modelWrites": 0,
+  "cacheWrites": 0,
+  "freezePayloadReads": 0,
+  "outputDirectory": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/output"
+}

@@ -1,0 +1,256 @@
+{
+  "date": "2026-10-13",
+  "task": "Public cross-platform high-rank game datasets and action imitation learning",
+  "modelObjective": {
+    "input": "Current visible state and legal action candidates",
+    "label": "Actual expert action with action parameters",
+    "loss": "Cross entropy over legal candidates",
+    "rewardTarget": false,
+    "valueHead": false,
+    "hiddenOrFutureInformationAllowed": false
+  },
+  "tenhou": {
+    "publisherUrl": "https://pathofhouou.blogspot.com/2021/04/guide-replay-analysis.html",
+    "sourceArchives": [
+      {
+        "year": 2016,
+        "bytes": 1684483072,
+        "sha256": "e085b472fde339e202491098e4988510382e016ed2b0b85d2b1e64d6b16ad2d1"
+      },
+      {
+        "year": 2017,
+        "bytes": 1698210816,
+        "sha256": "784dd0b9c1e83928e95d02a9cba6685eef9171794beaf7a3898aaeb521a4b547"
+      }
+    ],
+    "rawCompleteSanmaGames": 99727,
+    "eligibleSouthGames": 99074,
+    "selectedGames": 50000,
+    "selectedYears": {
+      "2016": 47491,
+      "2017": 2509
+    },
+    "selectedRounds": 452990,
+    "selectedDanCodes": {
+      "16": 74992,
+      "17": 51666,
+      "18": 19083,
+      "19": 2705,
+      "20": 1554
+    },
+    "rankMapping": {
+      "source": "https://blog.kobalab.net/entry/20170720/1500479235",
+      "evidence": "Original converter author's dan_name array, indexed by each UN dan value in player().",
+      "mapping": {
+        "16": "七段",
+        "17": "八段",
+        "18": "九段",
+        "19": "十段",
+        "20": "天鳳位"
+      },
+      "corroboration": "https://kyphd.github.io/renow-docs/renow/mjlog/#dan"
+    },
+    "selectionManifestSha256": "3a8a01c71e9a037cedea2a410f374450496190341e9144a9416dc44e70a6e44b",
+    "converted": {
+      "schemaVersion": 1,
+      "sourcePlatform": "tenhou",
+      "players": 3,
+      "requestedGames": 50000,
+      "convertedGames": 50000,
+      "rounds": 452990,
+      "compressedBytes": 381888769,
+      "eventCount": 33864741,
+      "eventTypes": {
+        "dahai": 14539061,
+        "end_game": 50000,
+        "end_kyoku": 452990,
+        "hora": 384733,
+        "kita": 1155701,
+        "pon": 426522,
+        "reach": 337178,
+        "reach_accepted": 323137,
+        "start_game": 50000,
+        "start_kyoku": 452990,
+        "tsumo": 15521088,
+        "ankan": 30910,
+        "dora": 50270,
+        "ryukyoku": 69948,
+        "kakan": 17616,
+        "daiminkan": 2597
+      },
+      "failures": [],
+      "sourceManifestSha256": "3a8a01c71e9a037cedea2a410f374450496190341e9144a9416dc44e70a6e44b",
+      "outputManifestSha256": "b972b1a5911aa0a5924518f87b7d479c9a58c9271b099ad46da8c87b07336f7f",
+      "converterSha256": "4defd2e1a251963ac2b5d5ff51da2f05d7ae6a4d6138547d3d76947e8cf18465",
+      "runnerSha256": "9134844501700d7f1f7d551dee12496a6887d369a120967703748dfd96ae1519",
+      "structuralAuditorSha256": "6413b73804f73d11d9dcc87da2a4e54712dfa0bfa158a2caa53f09b075d2e1d5",
+      "physicalInventoryChecked": true,
+      "scoreContinuityChecked": true,
+      "legalActionReplay": false,
+      "trainingEligibleGames": 0,
+      "seconds": 242.33,
+      "limits": [
+        "No complete rules-engine replay",
+        "No Mahjong Soul rules equivalence approval",
+        "Source usage for Mahjong Soul model not established",
+        "No model training or live gameplay"
+      ]
+    },
+    "sourceUseUrl": "https://tenhou.net/sc/raw/",
+    "sourceUseForMahjongSoulModelEstablished": false,
+    "futureChecks": [
+      "Generate per-player decision windows without hidden/future observations",
+      "Align expert actions to legal candidate sets and protocol parameters",
+      "Audit source/target differences affecting legal choices",
+      "Evaluate on held-out Mahjong Soul games"
+    ]
+  },
+  "riichiCity": {
+    "officialIndex": "https://www.mahjong-jp.com/loglibrary",
+    "converterApi": "https://rc.honk.li/api",
+    "indexRecordsFetched": 60,
+    "fullGamesFetched": 3,
+    "hands": 28,
+    "kitaEvents": 64,
+    "samples": [
+      {
+        "file": "riichicity-sanma-full-sample.json",
+        "game_id": "db6fu2b3dkde5viqh1pg",
+        "sha256": "b77b89da171994c65f74becf8eafa2b088808c0ebfd5583abc8089e2d8b39d40",
+        "bytes": 5677,
+        "hands": 10,
+        "table": "Galaxy",
+        "stageLevels": [
+          21,
+          17,
+          53
+        ],
+        "stageLabels": [
+          "Legend",
+          "7 Dan",
+          "Legend 32 Star"
+        ],
+        "nukidora_count": 26,
+        "call_markers": {
+          "f": 26,
+          "p": 8,
+          "k": 1
+        },
+        "schema_checks": {
+          "three_real_seats": true,
+          "all_13_tile_start_hands": true,
+          "no_chi": true,
+          "round_results_present": true,
+          "score_transition_checks_passed": 10,
+          "score_transition_checks_total": 10,
+          "score_issues": []
+        },
+        "final_scores_match_official_index": true,
+        "last_index": [
+          6,
+          0,
+          0
+        ],
+        "riichi_cancellations": []
+      },
+      {
+        "file": "riichicity-sanma-db6fv9102h9do2hf1bcg.json",
+        "game_id": "db6fv9102h9do2hf1bcg",
+        "sha256": "7ce4cbd38cecd9e28402a6d51399cf3bef6e4b521a7f67ae916dc6fb371af036",
+        "bytes": 4693,
+        "hands": 9,
+        "table": "Galaxy",
+        "stageLevels": [
+          30,
+          17,
+          23
+        ],
+        "stageLabels": [
+          "Legend 9 Star",
+          "7 Dan",
+          "Legend 2 Star"
+        ],
+        "nukidora_count": 18,
+        "call_markers": {
+          "p": 10,
+          "f": 18
+        },
+        "schema_checks": {
+          "three_real_seats": true,
+          "all_13_tile_start_hands": true,
+          "no_chi": true,
+          "round_results_present": true,
+          "score_transition_checks_passed": 9,
+          "score_transition_checks_total": 9,
+          "score_issues": []
+        },
+        "final_scores_match_official_index": true,
+        "last_index": [
+          6,
+          0,
+          0
+        ],
+        "riichi_cancellations": []
+      },
+      {
+        "file": "riichicity-sanma-db6g1d33dkde5viqhk9g.json",
+        "game_id": "db6g1d33dkde5viqhk9g",
+        "sha256": "e9627c7a1433f4a3140f1bcbe8118517088a03569e7feb5643686ece8b14f53a",
+        "bytes": 4291,
+        "hands": 9,
+        "table": "Galaxy",
+        "stageLevels": [
+          20,
+          21,
+          17
+        ],
+        "stageLabels": [
+          "10 Dan",
+          "Legend",
+          "7 Dan"
+        ],
+        "nukidora_count": 20,
+        "call_markers": {
+          "f": 20,
+          "p": 12,
+          "m": 1
+        },
+        "schema_checks": {
+          "three_real_seats": true,
+          "all_13_tile_start_hands": true,
+          "no_chi": true,
+          "round_results_present": true,
+          "score_transition_checks_passed": 9,
+          "score_transition_checks_total": 9,
+          "score_issues": []
+        },
+        "final_scores_match_official_index": true,
+        "last_index": [
+          4,
+          4,
+          0
+        ],
+        "riichi_cancellations": [
+          {
+            "hand_index": 3,
+            "actor": 1,
+            "reason": "ron_on_riichi_declaration_discard"
+          }
+        ]
+      }
+    ],
+    "fullLegalReplay": false,
+    "rulesEquivalenceVerified": false
+  },
+  "otherPublicFourPlayerCandidate": {
+    "url": "https://huggingface.co/datasets/hhim8826/tenhou-houou-mjai",
+    "publisherReportedGames": 2120954,
+    "containsSanma": false,
+    "publisherReportedDuplicatePairs": 48196,
+    "status": "Card and public preview checked; full shards not downloaded"
+  },
+  "mahjongSoulFourPlayerGamesAlreadyCollected": 50000,
+  "newModelTrainingPerformed": false,
+  "liveGameplayPerformed": false,
+  "evidenceRoot": ".local/high-rank-50k/research/"
+}

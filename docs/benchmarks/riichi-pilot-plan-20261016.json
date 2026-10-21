@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 1,
+  "purpose": "riichi-screening-only",
+  "createdAtUtc": "2026-10-16T00:37:35.506391+00:00",
+  "userDate": "2026-10-16",
+  "output": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/riichi-20261016",
+  "manifest": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/three-player-full/training/manifest.jsonl",
+  "split": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/three-player-full/split.json",
+  "v1Source": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/src",
+  "v1Cache": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/encoded-cache",
+  "v1Model": "/Users/kenny/Desktop/Maj-Soul++.app/Contents/Resources/policy-models/three-player.npz",
+  "v2Cache": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/encoded-cache",
+  "v2CacheIndex": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/research/fresh-cache-index.jsonl",
+  "parentModel": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/full-vectorized/3p-opportunity.epoch-8.npz",
+  "parentResume": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/full-vectorized/3p-opportunity.resume.pt",
+  "trainGames": 2048,
+  "monitorGames": 512,
+  "validationGames": 4706,
+  "epochs": 3,
+  "primaryEpoch": 3,
+  "learningRate": 0.0001,
+  "batchSize": 2048,
+  "gameWindow": 16,
+  "arms": {
+    "control": {
+      "opportunityWeights": {
+        "daiminkan": 4,
+        "chi": 1.5,
+        "pon": 1.5,
+        "ankan": 2,
+        "shouminkan": 2
+      }
+    },
+    "riichi2": {
+      "opportunityWeights": {
+        "daiminkan": 4,
+        "chi": 1.5,
+        "pon": 1.5,
+        "ankan": 2,
+        "shouminkan": 2,
+        "riichi": 2
+      }
+    }
+  },
+  "partitionSelection": "Original frozen split order: first 2048 train; first512 train monitor; all4706 validation. No sample-based selection.",
+  "partitionIdentities": {
+    "train": "093798a400d61f97b9b96f479c80dca90af64cd91b5f4fae962c3d2e7101391d",
+    "monitor": "d8a45090b94641c161683237ecf94cc4a6939f17d6980e522b637813d9fc9279",
+    "validation": "4eb99e53fb39e4648ed3572ee8ca923ff8a87260a02fb43349f206338580110e"
+  },
+  "initialization": "Same original v2 epoch8 weights, AdamW moments/steps and NumPy/CPU Torch RNG; LR reset to1e-4 in both arms; same order across arms; no fresh randomness or model selection.",
+  "weightSemantics": "Existing max offered-action weight, not multiplication. riichi2 adds riichi:2; windows already weighted >=2 unchanged; all recorded positive and negative full labels retained.",
+  "screeningPolicy": {
+    "guards": [
+      {
+        "metric": "choiceNll",
+        "direction": "lower",
+        "tolerance": 0.005,
+        "minimumSupport": 100000,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "choiceTop1",
+        "direction": "higher",
+        "tolerance": 0.002,
+        "minimumSupport": 100000,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byAction.discard.accuracy",
+        "direction": "higher",
+        "tolerance": 0.002,
+        "minimumSupport": 100000,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byOpportunity.riichi.recall",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byOpportunity.riichi.exactPositiveRecall",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byOpportunity.riichi.precision",
+        "direction": "higher",
+        "tolerance": 0.01,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byOpportunity.riichi.falsePositiveRate",
+        "direction": "lower",
+        "tolerance": 0.005,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byOpportunity.riichi.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byAction.pon.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byAction.ankan.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byAction.shouminkan.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byAction.kita.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byAction.pass.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byAction.tsumo.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byAction.ron.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byAction.abort.accuracy",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 100,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byOpportunity.daiminkan.precision",
+        "direction": "higher",
+        "tolerance": 0.05,
+        "minimumSupport": 20,
+        "against": [
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byOpportunity.daiminkan.recall",
+        "direction": "higher",
+        "tolerance": 0.01,
+        "minimumSupport": 100,
+        "against": [
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byOpportunity.daiminkan.falsePositiveRate",
+        "direction": "lower",
+        "tolerance": 0.001,
+        "minimumSupport": 1000,
+        "against": [
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byOpportunity.daiminkan.exactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0.003,
+        "minimumSupport": 1000,
+        "against": [
+          "v1",
+          "parent",
+          "control"
+        ]
+      },
+      {
+        "metric": "byOpportunity.daiminkan.passAvailableExactCandidateTop1",
+        "direction": "higher",
+        "tolerance": 0,
+        "minimumSupport": 1000,
+        "against": [
+          "control"
+        ],
+        "againstMetric": "byOpportunity.daiminkan.alwaysPassTop1"
+      }
+    ],
+    "improvements": [
+      {
+        "metric": "byOpportunity.riichi.recall",
+        "direction": "higher",
+        "minimumDelta": 0.005,
+        "minimumSupport": 1000,
+        "against": [
+          "control"
+        ]
+      },
+      {
+        "metric": "byOpportunity.riichi.exactPositiveRecall",
+        "direction": "higher",
+        "minimumDelta": 0.005,
+        "minimumSupport": 1000,
+        "against": [
+          "control"
+        ]
+      }
+    ],
+    "improvementMode": "all"
+  },
+  "testSampleReadsAllowed": 0,
+  "deploymentAllowed": false,
+  "fullRetrainingAutomatic": false,
+  "primaryDecision": "Only terminal epoch3 is primary. All3epochs reported. No post-hoc epoch or hyperparameter selection. Passed screening permits consideration of a new full-training plan, not deployment.",
+  "convergenceRules": {
+    "naturalLossPlateauAbsoluteDelta": 0.001,
+    "requiredConsecutiveIntervals": 2,
+    "riichiRecallMaxPlateauSwing": 0.003,
+    "kanPositiveMinimumSupport": 100,
+    "interpretation": "Small pilot can show fitting direction/plateau over its budget, not global convergence. Weighted online train loss is not compared with natural validation loss.",
+    "numericalFailure": "Nonfinite legal logits/loss/gradients or top1 tie disagreement rejects evaluation. Report all-equal logits and spans; no hidden repair."
+  },
+  "scope": "Only existing fixed public 3p corpus. v2 still excludes round count/index/end-game information. No personal logs, reward/value objectives, new data, App edits or test evaluation.",
+  "protectedSha256": {
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/three-player-full/training/manifest.jsonl": "3d25dd7e75ddf2c02573a50d7c851d6cfbe626a5ed06973e7f021f6935bb86a7",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/three-player-full/split.json": "8b555a88b2b22c2c10e15a18e0b85a459eb62c9976a1167b3ddab3dcca0a8b38",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/research/fresh-cache-index.jsonl": "dcb4aa2cbc97c51fa44854969461f27ff5aca61a76a21835445eeda37fdfc350",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/full-vectorized/3p-opportunity.resume.pt": "cc6da0da02690bb9c6476061f7b55b8fe3c21b19e0d178af31bbabf957dbb821",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/full-vectorized/3p-opportunity.epoch-8.npz": "55b41a84ace33a4ad3def122ad9e20266ae900e063d494e70be41e978a0901b1",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/full-vectorized/3p-opportunity.report.json": "3f2ddc30c8d59385a026ccbd5768ff99ca4e4818440d05a7bc69ebd7c790a35d",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_training.py": "7438965893f4d41a46b5690d891e576d7d203c9fcf5d1eb22412b57df0fe5a4e",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_corpus_training.py": "b27cc097bbac7dde4fdcf1c306a80eb9c6c1c9037c64412852ae1263fadc79f5",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_features.py": "86537a62645bce835caaa3ce2f5636c75f2bfaef770cbcd0bf230ff29dccd9c8",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_actions.py": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_model.py": "c36c96e06c88bd3f87306b20a51474e71ddc7a4c9daf4580727170559deccbe4",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_encoded_cache.py": "44babbd91dd903f4e0f299b8fcba21231074e7602f78397c97db40f838b93229",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_split.py": "cfa5b460ba4fd3ef7617e25bd44dfedf7e48a26f1d61e0cb535cccc25aa52f9a",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_action_diagnostics.py": "e396b2126c0b015e63e0006fe9ab708bc3f1e787ef461877d0b94fe707618bd2",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_experiment_gate.py": "75ce3ac5d93e128d306cc30ebae4d079d892f2bdd1f45b405d5fed2d90ae3c94",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/src/policy_training.py": "b671617debc219a726543bc1c9ee436fedc84cb47d393c01ab77def96ae7279f",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/src/policy_features.py": "f57d2844ce47617155e9d00ff4e0e455be3a35e31b2e6e3b27cb784efd161682",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/src/policy_actions.py": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/src/policy_model.py": "e2501b933567b1c69f1781f3385bd1dfcbc487ecd8070a84b227c3a9a186efe6",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/src/policy_encoded_cache.py": "44babbd91dd903f4e0f299b8fcba21231074e7602f78397c97db40f838b93229",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/src/policy_split.py": "cfa5b460ba4fd3ef7617e25bd44dfedf7e48a26f1d61e0cb535cccc25aa52f9a",
+    "/Users/kenny/Desktop/Maj-Soul++.app/Contents/Resources/policy-models/manifest.json": "164461e1c3a02a172a1ebdb4a40bc72b9c99f143327c7fb02c5bdfe4f6acfd4e",
+    "/Users/kenny/Desktop/Maj-Soul++.app/Contents/Resources/policy-models/three-player.npz": "c5976cd218fe1cd0cbd0bd68d76f05c426095b836eabf6ae2ddc3b674ce7cb92",
+    "/Users/kenny/Desktop/Maj-Soul++.app/Contents/Resources/policy-models/four-player.npz": "4795279dfd1357294d1f49cbd307ce69400a53b1ea2c48804e8403c2e9733303",
+    "/Users/kenny/Desktop/Maj-Soul++.app/Contents/Resources/overlay.js": "fe818b8a206cd7eacd5e4e3b2686dc142f755880d9dd88335713216f20b55a1f",
+    "/Users/kenny/Desktop/Maj-Soul++.app/Contents/Resources/autoplay.js": "fd2f1fbf2bf67f4075e2ec8d415e1cd01936dcf05a4c01c87dbe08fb88df375d",
+    "/Users/kenny/Desktop/Maj-Soul++.app/Contents/Resources/unity_actions.js": "0076d2163c8fda8531ffd40c42e3449446766190ec43bd24707869184c84a723",
+    "/Users/kenny/Desktop/Maj-Soul++.app/Contents/Resources/source/src/policy_model.py": "e2501b933567b1c69f1781f3385bd1dfcbc487ecd8070a84b227c3a9a186efe6",
+    "/Users/kenny/Desktop/Maj-Soul++.app/Contents/Resources/source/src/policy_features.py": "f57d2844ce47617155e9d00ff4e0e455be3a35e31b2e6e3b27cb784efd161682",
+    "/Users/kenny/Desktop/Maj-Soul++.app/Contents/Resources/source/src/policy_actions.py": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+    "/Users/kenny/Desktop/Maj-Soul++.app/Contents/Info.plist": "66f256a6face229e17b2e1f30a2b961ea4eede64a1502be99acfb867b1ed1c7a",
+    "/Users/kenny/Desktop/Maj-Soul++.app/Contents/_CodeSignature/CodeResources": "46a97ea63704967396a8a07e228057490c94882713c7f31986ed89e69674d9b0",
+    "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/scripts/policy_riichi_experiment.py": "d895b66bb419393f4f9a4a6cd4c34effe1fde56dd1f7e53daa716f0f8b1e1b85"
+  }
+}

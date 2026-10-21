@@ -117,6 +117,16 @@
       check(matches.length === 1, '建议与服务端组合不能唯一匹配');
       put('index', 2, matches[0]);
     }
+    function moqie(tile) {
+      if (!Object.hasOwn(choice, 'moqie')) return isDrawn(state, tile);
+      check(typeof choice.moqie === 'boolean', '建议摸切标志格式无效');
+      const drawn = isDrawn(state, tile);
+      if (choice.moqie) check(drawn && state.lastAction?.name === 'ActionDealTile' &&
+        state.lastAction.seat === state.selfSeat, '建议摸切牌不是本次摸牌');
+      else check(!locked && state.hand.filter(value => value === tile).length > Number(drawn),
+        '建议手切牌没有可用的手中副本，或立直后不能手切');
+      return choice.moqie;
+    }
     if (action === 'pass') {
       check(!state.canDiscard, '不能用跳过代替弃牌');
       put('cancel_operation', callChannel ? 3 : 4, true);
@@ -131,7 +141,7 @@
           check(!locked && detail.combination.some(tile => validTile(tile) &&
             family(tile) === family(choice.tile)), '建议立直弃牌未经服务端许可');
         }
-        put('tile', 3, choice.tile); put('moqie', 5, isDrawn(state, choice.tile));
+        put('tile', 3, choice.tile); put('moqie', 5, moqie(choice.tile));
       } else if (['chi','pon','daiminkan'].includes(action)) {
         const last = state.lastAction, river = state.rivers?.[choice.fromSeat]?.at(-1);
         check(!locked && reaction && last?.name === 'ActionDiscardTile' && last.step === state.lastStep &&
@@ -160,7 +170,7 @@
       } else if (action === 'kita') {
         check(!reaction && state.playerCount === 3 && state.hand.includes('4z'), '拔北需要三麻及手中北牌');
         check(!locked || state.lastDraw === '4z', '立直后只能拔本次摸到的北');
-        put('moqie', 5, isDrawn(state, '4z'));
+        put('moqie', 5, moqie('4z'));
       } else if (action === 'abort') {
         const terminals = new Set(state.hand.map(family).filter(tile => /^[19][mps]$|^[1-7]z$/.test(tile)));
         check(!reaction && !locked && terminals.size >= 9, '九种九牌的手牌条件不成立');

@@ -1,0 +1,276 @@
+{
+  "status": "passed",
+  "checkedAtUtc": "2026-10-20T09:37:27.448259+00:00",
+  "checks": [
+    {
+      "name": "plan",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/plan.json",
+      "sha256": "80912373642c7482eba38fdc153ab583b4628c2ba7b4e49b723ef5263efb7854",
+      "actualSha256": "80912373642c7482eba38fdc153ab583b4628c2ba7b4e49b723ef5263efb7854",
+      "passed": true
+    },
+    {
+      "name": "summary",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/summary.json",
+      "sha256": "335b0f15e96abeca6f04529a9fdcc90392a0ec927d9355b863f38c14c4cb31a8",
+      "actualSha256": "335b0f15e96abeca6f04529a9fdcc90392a0ec927d9355b863f38c14c4cb31a8",
+      "passed": true
+    },
+    {
+      "name": "source:/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_actions.py",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_actions.py",
+      "sha256": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+      "actualSha256": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+      "passed": true
+    },
+    {
+      "name": "source:/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_features.py",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_features.py",
+      "sha256": "86537a62645bce835caaa3ce2f5636c75f2bfaef770cbcd0bf230ff29dccd9c8",
+      "actualSha256": "86537a62645bce835caaa3ce2f5636c75f2bfaef770cbcd0bf230ff29dccd9c8",
+      "passed": true
+    },
+    {
+      "name": "source:/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_model.py",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_model.py",
+      "sha256": "c36c96e06c88bd3f87306b20a51474e71ddc7a4c9daf4580727170559deccbe4",
+      "actualSha256": "c36c96e06c88bd3f87306b20a51474e71ddc7a4c9daf4580727170559deccbe4",
+      "passed": true
+    },
+    {
+      "name": "source:/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_training.py",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_training.py",
+      "sha256": "7438965893f4d41a46b5690d891e576d7d203c9fcf5d1eb22412b57df0fe5a4e",
+      "actualSha256": "7438965893f4d41a46b5690d891e576d7d203c9fcf5d1eb22412b57df0fe5a4e",
+      "passed": true
+    },
+    {
+      "name": "source:/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_encoded_cache.py",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/src/policy_encoded_cache.py",
+      "sha256": "44babbd91dd903f4e0f299b8fcba21231074e7602f78397c97db40f838b93229",
+      "actualSha256": "44babbd91dd903f4e0f299b8fcba21231074e7602f78397c97db40f838b93229",
+      "passed": true
+    },
+    {
+      "name": "source:/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/bilinear_candidate_policy.py",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-bilinear-20261018/bilinear_candidate_policy.py",
+      "sha256": "9b1daab9cf7f1dfc0795575b5adf7e3493c5db8ebf53b08daea6365aa99e1487",
+      "actualSha256": "9b1daab9cf7f1dfc0795575b5adf7e3493c5db8ebf53b08daea6365aa99e1487",
+      "passed": true
+    },
+    {
+      "name": "source:/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/chi_diagnostic.py",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/chi_diagnostic.py",
+      "sha256": "9974615dd66045249c650561786421304d2b904707a4001ec56c01176399774e",
+      "actualSha256": "9974615dd66045249c650561786421304d2b904707a4001ec56c01176399774e",
+      "passed": true
+    },
+    {
+      "name": "source:/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/gradient_diagnostic.py",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/gradient_diagnostic.py",
+      "sha256": "68134014158bc8fa4763ffebbb51f5d149bbac752c96638a0ec76b1fb2f008c1",
+      "actualSha256": "68134014158bc8fa4763ffebbb51f5d149bbac752c96638a0ec76b1fb2f008c1",
+      "passed": true
+    },
+    {
+      "name": "source:/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/test_gradient_diagnostic.py",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/test_gradient_diagnostic.py",
+      "sha256": "bee8c0cda3824cafbd84a935902144371bab6c92c798c3fa9cda228a8d04387a",
+      "actualSha256": "bee8c0cda3824cafbd84a935902144371bab6c92c798c3fa9cda228a8d04387a",
+      "passed": true
+    },
+    {
+      "name": "metadata:trainingPlan",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/plan.json",
+      "sha256": "3d10f415076d211d66ec4ffcc80fab08ef8bdedebac2490d66d880d4fc222a64",
+      "actualSha256": "3d10f415076d211d66ec4ffcc80fab08ef8bdedebac2490d66d880d4fc222a64",
+      "passed": true
+    },
+    {
+      "name": "metadata:evaluationInputs",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/evaluation/inputs.json",
+      "sha256": "c7efa52ff6083290f58cc20b147acec52b9072163ad5ec0a0a5ce6de90b09b56",
+      "actualSha256": "c7efa52ff6083290f58cc20b147acec52b9072163ad5ec0a0a5ce6de90b09b56",
+      "passed": true
+    },
+    {
+      "name": "metadata:preparation",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/pilot-preparation.json",
+      "sha256": "6bc8ca9aa06a4534938faa0f376cc7ed35d79176c206b25f594c9e5b5c090946",
+      "actualSha256": "6bc8ca9aa06a4534938faa0f376cc7ed35d79176c206b25f594c9e5b5c090946",
+      "passed": true
+    },
+    {
+      "name": "metadata:qualification",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/payload-validation.json",
+      "sha256": "fd5a3975caba3bb186d8f465a441599545d839ba091318c857950f5d92b095f9",
+      "actualSha256": "fd5a3975caba3bb186d8f465a441599545d839ba091318c857950f5d92b095f9",
+      "passed": true
+    },
+    {
+      "name": "metadata:selection",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/selection-metadata.json",
+      "sha256": "5e5cf40479d75237a21d773c0a32d0aabcf2560126d800007faf2e9ad2a959b6",
+      "actualSha256": "5e5cf40479d75237a21d773c0a32d0aabcf2560126d800007faf2e9ad2a959b6",
+      "passed": true
+    },
+    {
+      "name": "metadata:selectedIndex",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/selected-cache-index.jsonl",
+      "sha256": "24db433ac5dfee601e6637acfca09fce35d0bcdb502c47a9ad3ec3e9749419b4",
+      "actualSha256": "24db433ac5dfee601e6637acfca09fce35d0bcdb502c47a9ad3ec3e9749419b4",
+      "passed": true
+    },
+    {
+      "name": "metadata:fitMonitorOriginal",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/fit-monitor-original.jsonl",
+      "sha256": "d4e1442d44e3769cb09b0c1032694f2ac868fa5a7d308a5e1825b7551b82cb49",
+      "actualSha256": "d4e1442d44e3769cb09b0c1032694f2ac868fa5a7d308a5e1825b7551b82cb49",
+      "passed": true
+    },
+    {
+      "name": "metadata:fitMonitorAdded",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/fit-monitor-added.jsonl",
+      "sha256": "5051e30c107d60f34b3909e907d1094223bfb89facb8b47aeb541bb4493a6801",
+      "actualSha256": "5051e30c107d60f34b3909e907d1094223bfb89facb8b47aeb541bb4493a6801",
+      "passed": true
+    },
+    {
+      "name": "metadata:design",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/diagnostic-design.md",
+      "sha256": "c59ec3e668960ddb12f2e807132090c989ced161607ed187ae91ca3bc2c71a7c",
+      "actualSha256": "c59ec3e668960ddb12f2e807132090c989ced161607ed187ae91ca3bc2c71a7c",
+      "passed": true
+    },
+    {
+      "name": "selection",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/selected-choices.json",
+      "sha256": "def809c4a8e620766a6f388101ee5ae0823ee9db8b8ad6083c426fff7e236421",
+      "actualSha256": "def809c4a8e620766a6f388101ee5ae0823ee9db8b8ad6083c426fff7e236421",
+      "passed": true
+    },
+    {
+      "name": "syntheticTests",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/synthetic-tests.json",
+      "sha256": "583e872a6d3314f3907b75e8144b68a9cca6d32377db38da892d568d88f8e424",
+      "actualSha256": "583e872a6d3314f3907b75e8144b68a9cca6d32377db38da892d568d88f8e424",
+      "passed": true
+    },
+    {
+      "name": "model:42",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/seed42-mix/final.npz",
+      "sha256": "4bd9b057daceb45373f4deee24c7f46a1b5691f6f0f93d28233bb568ddb675c2",
+      "actualSha256": "4bd9b057daceb45373f4deee24c7f46a1b5691f6f0f93d28233bb568ddb675c2",
+      "passed": true
+    },
+    {
+      "name": "model:43",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/seed43-mix/final.npz",
+      "sha256": "c6722adb558873ecaa5ded757fa1f4c059fe7134f2a688b6ff2a49f3a670da16",
+      "actualSha256": "c6722adb558873ecaa5ded757fa1f4c059fe7134f2a688b6ff2a49f3a670da16",
+      "passed": true
+    },
+    {
+      "name": "trainingReport:42",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/seed42-mix/report.json",
+      "sha256": "02f68bccb6789936525e3658fb75e95bebd6d2a8a1b0de732d37d5588402d0fb",
+      "actualSha256": "02f68bccb6789936525e3658fb75e95bebd6d2a8a1b0de732d37d5588402d0fb",
+      "passed": true
+    },
+    {
+      "name": "trainingReport:43",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/seed43-mix/report.json",
+      "sha256": "4cb160b0276b805ff0489b7c3e8ae60ac1c0d461421b1deb5222bcc8c72e2907",
+      "actualSha256": "4cb160b0276b805ff0489b7c3e8ae60ac1c0d461421b1deb5222bcc8c72e2907",
+      "passed": true
+    },
+    {
+      "name": "gradientSum:42-original",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/42-original.gradient-sums.npy",
+      "sha256": "a9590b4a2930d23c5d5b522ec79a846ec4cb548d81a1d961cb3f55091bbee60c",
+      "actualSha256": "a9590b4a2930d23c5d5b522ec79a846ec4cb548d81a1d961cb3f55091bbee60c",
+      "passed": true
+    },
+    {
+      "name": "gradientSum:42-added",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/42-added.gradient-sums.npy",
+      "sha256": "7ab54552a1ba76fecb32645259569beee1275b9c6a09972e5dafc347be8b83c2",
+      "actualSha256": "7ab54552a1ba76fecb32645259569beee1275b9c6a09972e5dafc347be8b83c2",
+      "passed": true
+    },
+    {
+      "name": "gradientSum:43-original",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/43-original.gradient-sums.npy",
+      "sha256": "7aa8bb482d989f58fc8bd51ab45ce6711deb81355eacc1f7e30c06d732919a62",
+      "actualSha256": "7aa8bb482d989f58fc8bd51ab45ce6711deb81355eacc1f7e30c06d732919a62",
+      "passed": true
+    },
+    {
+      "name": "gradientSum:43-added",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/43-added.gradient-sums.npy",
+      "sha256": "bb7080030740fd549e7e8205e81e5e469d0c6371f2222335da45a003fd8bf1fc",
+      "actualSha256": "bb7080030740fd549e7e8205e81e5e469d0c6371f2222335da45a003fd8bf1fc",
+      "passed": true
+    },
+    {
+      "name": "batches",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/batches.jsonl",
+      "sha256": "39209cfa2500c9d41b231758c338c9806050169ac3232c9fbe801d9fbaca1162",
+      "actualSha256": "39209cfa2500c9d41b231758c338c9806050169ac3232c9fbe801d9fbaca1162",
+      "passed": true
+    },
+    {
+      "name": "selectedIdentities",
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/selected-identities.jsonl",
+      "sha256": "7cf18098217d8eeaaee9853a1a461eb43edad3c93197cc93506d182c26638214",
+      "actualSha256": "7cf18098217d8eeaaee9853a1a461eb43edad3c93197cc93506d182c26638214",
+      "passed": true
+    }
+  ],
+  "process": {
+    "pid": 36746,
+    "absent": true,
+    "output": "  PID  PPID ELAPSED COMMAND\n"
+  },
+  "main": {
+    "head": "3e7f57859cbe5994f4c24049f8f4657928d15aef",
+    "porcelain": ""
+  },
+  "runtimeCoverage": {
+    "status": "completed-train-only-gradient-diagnostic",
+    "pid": 36746,
+    "planSha256": "80912373642c7482eba38fdc153ab583b4628c2ba7b4e49b723ef5263efb7854",
+    "cachePayloadReads": 512,
+    "completedCaches": 512,
+    "modelPayloadFiles": 2,
+    "completedBatches": 128,
+    "trainingUpdates": 0,
+    "modelWrites": 0,
+    "rawOrSourcePayloadReads": 0,
+    "holdoutPayloadReads": 0,
+    "validationPayloadReads": 0,
+    "testPayloadReads": 0,
+    "SQLReads": 0,
+    "packedReads": 0,
+    "elapsedSeconds": 11.08712349999405,
+    "peakRssBytes": 1007894528,
+    "currentMonitor": "added",
+    "currentGameIndex": 49123,
+    "originalWindows": 8192,
+    "addedWindows": 8192,
+    "summary": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-gradient-diagnostic-20261020/output/summary.json",
+      "sha256": "335b0f15e96abeca6f04529a9fdcc90392a0ec927d9355b863f38c14c4cb31a8"
+    }
+  },
+  "reads": {
+    "cachePayloads": 0,
+    "modelFilesHashed": 2,
+    "rawOrSourcePayloads": 0,
+    "testPayloads": 0,
+    "validationPayloads": 0
+  },
+  "goalAchieved": false,
+  "qualityAccepted": false,
+  "deploymentAllowed": false
+}

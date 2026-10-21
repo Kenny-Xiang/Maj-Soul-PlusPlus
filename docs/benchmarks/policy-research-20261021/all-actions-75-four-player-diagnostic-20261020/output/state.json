@@ -1,0 +1,23 @@
+{
+  "status": "completed-train-only-diagnostic",
+  "pid": 35638,
+  "planSha256": "14e6eb70100836528e0dd2db66e5338bc30777d18f75bd6e8c8cc01d1cb4476b",
+  "completedGames": 4096,
+  "opportunities": 329137,
+  "cachePayloadReads": 4096,
+  "modelPayloadFiles": 2,
+  "trainingUpdates": 0,
+  "modelWrites": 0,
+  "rawOrSourcePayloadReads": 0,
+  "validationPayloadReads": 0,
+  "testPayloadReads": 0,
+  "newHoldoutPayloadReads": 0,
+  "elapsedSeconds": 64.63937695800269,
+  "peakRssBytes": 605798400,
+  "currentGameIndex": 4095,
+  "currentGameId": "211103-18f411fd-a34f-4ac9-bff3-656349b02510",
+  "summary": {
+    "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-four-player-diagnostic-20261020/output/summary.json",
+    "sha256": "85eecb69d41cbf7f5541577d9d9bbff54b2ceb376595741e1d14e5f9548ce2c7"
+  }
+}

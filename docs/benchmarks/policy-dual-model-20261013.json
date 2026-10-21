@@ -1,0 +1,1099 @@
+{
+  "schemaVersion": 1,
+  "createdAt": "2026-10-13T07:48:42.556177+00:00",
+  "baselineCommit": "4613e3ff227228483a8231004e12ec2b7e27810f",
+  "akagiReferenceCommit": "cd68865f9e93eddcda6451cd18874a6f68c5fb49",
+  "objective": "visible current state -> actual high-rank player action; independent sanma/yonma supervised behavior cloning; masked categorical cross entropy; no reward/value/RL target",
+  "implementationFiles": {
+    "src/policy_mjai.py": "0c853a7068d002e0cc4544b46b51e5d6eae5cf96d5c5d6e95664d7261a2587c8",
+    "src/policy_mjai_state.py": "1ce97ab927fae3e6d7f00278279735b6e9611892eacccbe4fb6467cf24f26a0a",
+    "src/policy_metadata.py": "197c9db47f260cd11e46130a905dc11e62df62305ab3f08c59bfaa70571deef4",
+    "scripts/policy_convert_mjai.py": "f5ae8561567fd86cfa1b164c4def8d00a8a638638f42a00713807f7096c0c022",
+    "src/overlay.js": "fe818b8a206cd7eacd5e4e3b2686dc142f755880d9dd88335713216f20b55a1f",
+    "src/policy_model.py": "e2501b933567b1c69f1781f3385bd1dfcbc487ecd8070a84b227c3a9a186efe6",
+    "src/policy_features.py": "f57d2844ce47617155e9d00ff4e0e455be3a35e31b2e6e3b27cb784efd161682",
+    "src/policy_actions.py": "4ce54592dca8ef35459f23b6733566abb5bec6fdc86718e355ecb15094556052",
+    "src/policy_training.py": "b671617debc219a726543bc1c9ee436fedc84cb47d393c01ab77def96ae7279f",
+    "src/policy_corpus_training.py": "9e5fad7c59f635262239fe68c39bd8a5fa0e74a78acb8410c4688f4678958c17",
+    "src/advice_worker.py": "c69487e25d31cde213c8e60c339bbab19441a8ad002c159b72919fcf4461247d",
+    "src/monitor.py": "09462b9cdc611e21f5460242c5b7eb41855c2e28b95e93159a2b8af45abf17fe",
+    "scripts/policy_live_benchmark.py": "1f73a68bd2a8193992a2ebb7b9a98da9ed3b8c824c59bb2ed7bfa9a98e0335fa"
+  },
+  "collectedCompleteMjaiGames": {
+    "threePlayerTenhou": 50000,
+    "fourPlayerMahjongSoul": 50000
+  },
+  "fullCorpusTrainingCompleted": false,
+  "threePlayerExtraction": {
+    "sourceGames": 49000,
+    "convertedGames": 500,
+    "samples": 161180,
+    "compressedBytes": 11342640,
+    "elapsedSeconds": 18.102772957994603,
+    "sourceManifestSha256": "7f44737069079e86a2604d601f6c90bf9a5321458d208443e17cd771478483a6",
+    "converterSignature": "96872ac64e57897511a367b3d25e9f26958a738cbe0ab9de61b6cf8feb6e4f42",
+    "engineVersion": "0.4.10",
+    "actions": {
+      "discard": 127265,
+      "kita": 11518,
+      "pon": 4218,
+      "pass": 10921,
+      "ankan": 273,
+      "riichi": 3166,
+      "ron": 1689,
+      "shouminkan": 168,
+      "tsumo": 1816,
+      "abort": 125,
+      "daiminkan": 21
+    },
+    "labelSources": {
+      "accepted": 150259,
+      "inferred_pass": 10921
+    },
+    "excludedWindows": {
+      "hand_suffix_after_kan": 495,
+      "declaration_without_window": 180,
+      "unfinished_window": 0,
+      "censored_response": 137,
+      "hand_suffix_after_rob_north_uncertainty": 3
+    },
+    "excludedGames": 18,
+    "excludedGameReasons": {
+      "ValueError: Tenhou game contains disconnect BYE; human labels unverified": 18
+    },
+    "developmentGamesExcludedBeforeSelection": 1000,
+    "source": {
+      "path": ".local/high-rank-50k/three-player-pilot-training/manifest.jsonl",
+      "sha256": "b40f2af7a9bdd13556a6781a9d21184f191108c01b1a6950054ded92508f6715"
+    },
+    "report": {
+      "path": ".local/high-rank-50k/three-player-pilot-training/report.json",
+      "sha256": "ef86611cde0190d518e3b7c502090447e3f4a1b3832e196f61e8a1937062b221"
+    }
+  },
+  "models": {
+    "3": {
+      "model": {
+        "path": ".local/high-rank-50k/models/three-player-pilot.npz",
+        "sha256": "63435f5673dc61628c370725f9146536bd1e5b23bbd4075e4dc15bad94809710"
+      },
+      "report": {
+        "path": ".local/high-rank-50k/models/three-player-pilot.report.json",
+        "sha256": "0ef597dfb0c139c14f976c6c43be0594547b23c5f8cffca9836238dc5aaeeb30"
+      },
+      "sourcePlatform": "tenhou",
+      "playerCount": 3,
+      "purpose": "behavior-cloning",
+      "parameterCount": 756545,
+      "config": {
+        "channels": 64,
+        "blocks": 3,
+        "hidden": 256
+      },
+      "epochs": 2,
+      "bestEpoch": 2,
+      "elapsedSeconds": 288.7172522500041,
+      "exportParity": {
+        "samples": 32,
+        "maxAbsError": 1.430511474609375e-06,
+        "argmaxAgreement": true
+      },
+      "metrics": {
+        "train": {
+          "samples": 129661,
+          "choices": 129661,
+          "forced": 0,
+          "choiceTop1": 0.46966319864878414,
+          "choiceTop3": 0.7562258504870393,
+          "choiceNll": 1.541857470953279,
+          "byAction": {
+            "discard": {
+              "count": 102335,
+              "correct": 38695,
+              "accuracy": 0.3781208775101383
+            },
+            "kita": {
+              "count": 9281,
+              "correct": 9226,
+              "accuracy": 0.994073914448874
+            },
+            "ankan": {
+              "count": 217,
+              "correct": 41,
+              "accuracy": 0.1889400921658986
+            },
+            "pass": {
+              "count": 8786,
+              "correct": 7490,
+              "accuracy": 0.8524926018666059
+            },
+            "ron": {
+              "count": 1381,
+              "correct": 1381,
+              "accuracy": 1.0
+            },
+            "riichi": {
+              "count": 2570,
+              "correct": 435,
+              "accuracy": 0.16926070038910507
+            },
+            "tsumo": {
+              "count": 1457,
+              "correct": 1457,
+              "accuracy": 1.0
+            },
+            "pon": {
+              "count": 3389,
+              "correct": 2073,
+              "accuracy": 0.6116848627913839
+            },
+            "shouminkan": {
+              "count": 133,
+              "correct": 5,
+              "accuracy": 0.03759398496240601
+            },
+            "abort": {
+              "count": 95,
+              "correct": 94,
+              "accuracy": 0.9894736842105263
+            },
+            "daiminkan": {
+              "count": 17,
+              "correct": 0,
+              "accuracy": 0.0
+            }
+          },
+          "macroActionAccuracy": 0.5656037016677217
+        },
+        "validation": {
+          "samples": 15900,
+          "choices": 15900,
+          "forced": 0,
+          "choiceTop1": 0.46182389937106916,
+          "choiceTop3": 0.7538364779874214,
+          "choiceNll": 1.5583181201597989,
+          "byAction": {
+            "kita": {
+              "count": 1127,
+              "correct": 1116,
+              "accuracy": 0.9902395740905058
+            },
+            "discard": {
+              "count": 12592,
+              "correct": 4685,
+              "accuracy": 0.37206162642947904
+            },
+            "pass": {
+              "count": 1071,
+              "correct": 915,
+              "accuracy": 0.8543417366946778
+            },
+            "pon": {
+              "count": 407,
+              "correct": 232,
+              "accuracy": 0.5700245700245701
+            },
+            "riichi": {
+              "count": 307,
+              "correct": 50,
+              "accuracy": 0.16286644951140064
+            },
+            "tsumo": {
+              "count": 174,
+              "correct": 174,
+              "accuracy": 1.0
+            },
+            "ron": {
+              "count": 155,
+              "correct": 155,
+              "accuracy": 1.0
+            },
+            "ankan": {
+              "count": 31,
+              "correct": 6,
+              "accuracy": 0.1935483870967742
+            },
+            "abort": {
+              "count": 13,
+              "correct": 10,
+              "accuracy": 0.7692307692307693
+            },
+            "shouminkan": {
+              "count": 20,
+              "correct": 0,
+              "accuracy": 0.0
+            },
+            "daiminkan": {
+              "count": 3,
+              "correct": 0,
+              "accuracy": 0.0
+            }
+          },
+          "macroActionAccuracy": 0.5374830102798343
+        },
+        "test": {
+          "samples": 15619,
+          "choices": 15619,
+          "forced": 0,
+          "choiceTop1": 0.46584288366732823,
+          "choiceTop3": 0.7486394775593828,
+          "choiceNll": 1.561621668175194,
+          "byAction": {
+            "kita": {
+              "count": 1110,
+              "correct": 1105,
+              "accuracy": 0.9954954954954955
+            },
+            "discard": {
+              "count": 12338,
+              "correct": 4593,
+              "accuracy": 0.3722645485491976
+            },
+            "riichi": {
+              "count": 289,
+              "correct": 47,
+              "accuracy": 0.16262975778546712
+            },
+            "tsumo": {
+              "count": 185,
+              "correct": 185,
+              "accuracy": 1.0
+            },
+            "pon": {
+              "count": 422,
+              "correct": 258,
+              "accuracy": 0.6113744075829384
+            },
+            "pass": {
+              "count": 1064,
+              "correct": 912,
+              "accuracy": 0.8571428571428571
+            },
+            "ron": {
+              "count": 153,
+              "correct": 153,
+              "accuracy": 1.0
+            },
+            "daiminkan": {
+              "count": 1,
+              "correct": 0,
+              "accuracy": 0.0
+            },
+            "abort": {
+              "count": 17,
+              "correct": 17,
+              "accuracy": 1.0
+            },
+            "shouminkan": {
+              "count": 15,
+              "correct": 0,
+              "accuracy": 0.0
+            },
+            "ankan": {
+              "count": 25,
+              "correct": 6,
+              "accuracy": 0.24
+            }
+          },
+          "macroActionAccuracy": 0.567173369686905
+        }
+      },
+      "gameCounts": {
+        "train": 400,
+        "validation": 50,
+        "test": 50
+      },
+      "selectedSamples": 161180,
+      "evaluationScope": "Internal whole-game pilot holdout, not the full 50000-game formal test set."
+    },
+    "4": {
+      "model": {
+        "path": ".local/high-rank-50k/models/four-player-pilot.npz",
+        "sha256": "a5d6b4b7c529a0f181a9fe459a07ed803a61c57b485dbc79455a55b33e6feef4"
+      },
+      "report": {
+        "path": ".local/high-rank-50k/models/four-player-pilot.report.json",
+        "sha256": "9f15f53985227e48fd46f1ed0f769e3d06a730b1447404350ea092b219b4dba1"
+      },
+      "sourcePlatform": "majsoul",
+      "playerCount": 4,
+      "purpose": "behavior-cloning",
+      "parameterCount": 756545,
+      "config": {
+        "channels": 64,
+        "blocks": 3,
+        "hidden": 256
+      },
+      "epochs": 1,
+      "bestEpoch": 1,
+      "elapsedSeconds": 147.4834497079719,
+      "exportParity": {
+        "samples": 32,
+        "maxAbsError": 5.960464477539062e-07,
+        "argmaxAgreement": true
+      },
+      "metrics": {
+        "train": {
+          "samples": 100317,
+          "choices": 100317,
+          "forced": 0,
+          "choiceTop1": 0.5473050430136467,
+          "choiceTop3": 0.7702682496486138,
+          "choiceNll": 1.3558499331458342,
+          "byAction": {
+            "discard": {
+              "count": 76968,
+              "correct": 35106,
+              "accuracy": 0.45611163080760836
+            },
+            "pass": {
+              "count": 17186,
+              "correct": 16608,
+              "accuracy": 0.9663679739322705
+            },
+            "chi": {
+              "count": 1378,
+              "correct": 0,
+              "accuracy": 0.0
+            },
+            "tsumo": {
+              "count": 550,
+              "correct": 550,
+              "accuracy": 1.0
+            },
+            "pon": {
+              "count": 1993,
+              "correct": 969,
+              "accuracy": 0.4862017059708981
+            },
+            "riichi": {
+              "count": 1225,
+              "correct": 783,
+              "accuracy": 0.6391836734693878
+            },
+            "ron": {
+              "count": 845,
+              "correct": 845,
+              "accuracy": 1.0
+            },
+            "shouminkan": {
+              "count": 55,
+              "correct": 6,
+              "accuracy": 0.10909090909090909
+            },
+            "ankan": {
+              "count": 80,
+              "correct": 18,
+              "accuracy": 0.225
+            },
+            "daiminkan": {
+              "count": 18,
+              "correct": 0,
+              "accuracy": 0.0
+            },
+            "abort": {
+              "count": 19,
+              "correct": 19,
+              "accuracy": 1.0
+            }
+          },
+          "macroActionAccuracy": 0.534723263024643
+        },
+        "validation": {
+          "samples": 12458,
+          "choices": 12458,
+          "forced": 0,
+          "choiceTop1": 0.5527371969818591,
+          "choiceTop3": 0.7753250923101621,
+          "choiceNll": 1.3486306927181682,
+          "byAction": {
+            "discard": {
+              "count": 9479,
+              "correct": 4386,
+              "accuracy": 0.46270703660723705
+            },
+            "pass": {
+              "count": 2162,
+              "correct": 2084,
+              "accuracy": 0.9639222941720629
+            },
+            "pon": {
+              "count": 269,
+              "correct": 120,
+              "accuracy": 0.44609665427509293
+            },
+            "tsumo": {
+              "count": 69,
+              "correct": 69,
+              "accuracy": 1.0
+            },
+            "riichi": {
+              "count": 169,
+              "correct": 108,
+              "accuracy": 0.6390532544378699
+            },
+            "chi": {
+              "count": 176,
+              "correct": 0,
+              "accuracy": 0.0
+            },
+            "ron": {
+              "count": 112,
+              "correct": 112,
+              "accuracy": 1.0
+            },
+            "ankan": {
+              "count": 15,
+              "correct": 3,
+              "accuracy": 0.2
+            },
+            "abort": {
+              "count": 3,
+              "correct": 3,
+              "accuracy": 1.0
+            },
+            "shouminkan": {
+              "count": 4,
+              "correct": 1,
+              "accuracy": 0.25
+            }
+          },
+          "macroActionAccuracy": 0.5961779239492262
+        },
+        "test": {
+          "samples": 12890,
+          "choices": 12890,
+          "forced": 0,
+          "choiceTop1": 0.5462373933281613,
+          "choiceTop3": 0.7699767261442979,
+          "choiceNll": 1.368529596262253,
+          "byAction": {
+            "discard": {
+              "count": 9921,
+              "correct": 4525,
+              "accuracy": 0.4561032154016732
+            },
+            "pass": {
+              "count": 2190,
+              "correct": 2118,
+              "accuracy": 0.9671232876712329
+            },
+            "pon": {
+              "count": 255,
+              "correct": 120,
+              "accuracy": 0.47058823529411764
+            },
+            "riichi": {
+              "count": 162,
+              "correct": 104,
+              "accuracy": 0.6419753086419753
+            },
+            "chi": {
+              "count": 166,
+              "correct": 0,
+              "accuracy": 0.0
+            },
+            "tsumo": {
+              "count": 84,
+              "correct": 84,
+              "accuracy": 1.0
+            },
+            "ron": {
+              "count": 88,
+              "correct": 88,
+              "accuracy": 1.0
+            },
+            "ankan": {
+              "count": 12,
+              "correct": 1,
+              "accuracy": 0.08333333333333333
+            },
+            "shouminkan": {
+              "count": 9,
+              "correct": 0,
+              "accuracy": 0.0
+            },
+            "abort": {
+              "count": 1,
+              "correct": 1,
+              "accuracy": 1.0
+            },
+            "daiminkan": {
+              "count": 2,
+              "correct": 0,
+              "accuracy": 0.0
+            }
+          },
+          "macroActionAccuracy": 0.5108293982129393
+        }
+      },
+      "gameCounts": {
+        "train": 160,
+        "validation": 20,
+        "test": 20
+      },
+      "selectedSamples": 125665,
+      "evaluationScope": "Internal whole-game pilot holdout, not the full 50000-game formal test set."
+    }
+  },
+  "fourPlayerRegression": {
+    "createdAt": "2026-10-13T07:43:48.244215+00:00",
+    "games": 200,
+    "converterSignature": "96872ac64e57897511a367b3d25e9f26958a738cbe0ab9de61b6cf8feb6e4f42",
+    "oldConverterSignatures": [
+      "2986eca960b3d081adf2ed8aaa799744db4c5e9eb99681e13b08b22a0caffb4b"
+    ],
+    "featureSignature": "36dfc511791fa866b43dfcb9ebb4ffc359c9bc2db56cc5756cca20eb62d2d7ec",
+    "counts": {
+      "missingDecisions": 0,
+      "addedDecisions": 0,
+      "gameOrderEqual": 200,
+      "stateEqual": 125665,
+      "actionLabelEqual": 125665,
+      "labelSourceEqual": 125665,
+      "sampleExceptAddedProvenanceEqual": 125665,
+      "candidateListEqual": 125665,
+      "targetCandidateIndexEqual": 125665,
+      "statePlanesEqual": 125665,
+      "stateGlobalsEqual": 125665,
+      "candidateFeaturesEqual": 125665,
+      "comparedDecisions": 125665
+    },
+    "sampleFieldDifferences": {
+      "added:ruleEngineRules:\"majsoul\"": 125665,
+      "added:sourcePlatform:\"majsoul\"": 125665
+    },
+    "auditFieldDifferences": {
+      "added:playerCount:4": 200,
+      "added:ruleEngineRules:\"majsoul\"": 200,
+      "added:sourcePlatform:\"majsoul\"": 200
+    },
+    "featureBytesSha256": {
+      "old": "2ec474c3170df8730f849687e1f3f15abf3955c3d8983601cae2671733bd73c5",
+      "new": "2ec474c3170df8730f849687e1f3f15abf3955c3d8983601cae2671733bd73c5"
+    },
+    "unexpectedDifferenceExamples": [],
+    "elapsedSeconds": 36.02239933301462,
+    "evidence": {
+      "path": ".local/high-rank-50k/research/four-player-regression-96872ac-report.json",
+      "sha256": "0cb29206a3b560dee2ba1e152f2daf8fcd65d64f9b9f5ee9095e0f970c097a20"
+    }
+  },
+  "liveLatency": {
+    "createdAt": "2026-10-13T07:46:56.476037+00:00",
+    "platform": "macOS-27.0.1-arm64-arm-64bit",
+    "python": "3.12.15",
+    "repeats": 20,
+    "scope": "Synthetic ActionPrototype wire frames through real browser/core; real model weights and AdviceWorker; no WebKit or network latency.",
+    "nativeTimerIntervalMs": 50,
+    "nativeTimerIncluded": false,
+    "models": {
+      "3": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/models/three-player-pilot.npz",
+        "sha256": "63435f5673dc61628c370725f9146536bd1e5b23bbd4075e4dc15bad94809710",
+        "playerCount": 3,
+        "purpose": "behavior-cloning"
+      },
+      "4": {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/models/four-player-pilot.npz",
+        "sha256": "a5d6b4b7c529a0f181a9fe459a07ed803a61c57b485dbc79455a55b33e6feef4",
+        "playerCount": 4,
+        "purpose": "behavior-cloning"
+      }
+    },
+    "modes": {
+      "3": {
+        "windowsPerRepeat": 18,
+        "windows": [
+          {
+            "scenario": "3p-draw",
+            "step": 0,
+            "trigger": "ActionNewRound",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "3p-draw",
+            "step": 2,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1,
+              7,
+              8
+            ]
+          },
+          {
+            "scenario": "3p-call-3",
+            "step": 1,
+            "trigger": "ActionDiscardTile",
+            "operations": [
+              3,
+              9
+            ]
+          },
+          {
+            "scenario": "3p-call-3",
+            "step": 2,
+            "trigger": "ActionChiPengGang",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "3p-call-5",
+            "step": 1,
+            "trigger": "ActionDiscardTile",
+            "operations": [
+              5,
+              9
+            ]
+          },
+          {
+            "scenario": "3p-call-5",
+            "step": 3,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "3p-ankan",
+            "step": 0,
+            "trigger": "ActionNewRound",
+            "operations": [
+              1,
+              4
+            ]
+          },
+          {
+            "scenario": "3p-ankan",
+            "step": 2,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "3p-shouminkan",
+            "step": 1,
+            "trigger": "ActionDiscardTile",
+            "operations": [
+              3
+            ]
+          },
+          {
+            "scenario": "3p-shouminkan",
+            "step": 2,
+            "trigger": "ActionChiPengGang",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "3p-shouminkan",
+            "step": 4,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1,
+              6
+            ]
+          },
+          {
+            "scenario": "3p-shouminkan",
+            "step": 6,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "3p-abort",
+            "step": 0,
+            "trigger": "ActionNewRound",
+            "operations": [
+              1,
+              10
+            ]
+          },
+          {
+            "scenario": "3p-rob-ankan",
+            "step": 1,
+            "trigger": "ActionAnGangAddGang",
+            "operations": [
+              9
+            ]
+          },
+          {
+            "scenario": "3p-kita-replacement",
+            "step": 0,
+            "trigger": "ActionNewRound",
+            "operations": [
+              1,
+              11
+            ]
+          },
+          {
+            "scenario": "3p-kita-replacement",
+            "step": 2,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1,
+              11
+            ]
+          },
+          {
+            "scenario": "3p-kita-replacement",
+            "step": 4,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "3p-rob-kita",
+            "step": 1,
+            "trigger": "ActionBaBei",
+            "operations": [
+              9
+            ]
+          }
+        ],
+        "metrics": {
+          "inference": {
+            "count": 360,
+            "medianMs": 0.3380209964234382,
+            "p95Ms": 0.37186423141974956,
+            "maxMs": 0.5940000410191715
+          },
+          "workerQueue": {
+            "count": 360,
+            "medianMs": 0.038,
+            "p95Ms": 0.047,
+            "maxMs": 0.132
+          },
+          "workerCalculate": {
+            "count": 360,
+            "medianMs": 0.343,
+            "p95Ms": 0.3845000000000001,
+            "maxMs": 0.556
+          },
+          "workerDeliveryWait": {
+            "count": 360,
+            "medianMs": 0.008,
+            "p95Ms": 0.012,
+            "maxMs": 0.055
+          },
+          "workerTotal": {
+            "count": 360,
+            "medianMs": 0.39,
+            "p95Ms": 0.45205,
+            "maxMs": 0.669
+          },
+          "nativeScriptBuild": {
+            "count": 360,
+            "medianMs": 0.02004150883294642,
+            "p95Ms": 0.02634342235978693,
+            "maxMs": 0.24041696451604366
+          },
+          "callerTotal": {
+            "count": 360,
+            "medianMs": 0.4128754953853786,
+            "p95Ms": 0.4832785401958973,
+            "maxMs": 0.8218330331146717
+          }
+        }
+      },
+      "4": {
+        "windowsPerRepeat": 16,
+        "windows": [
+          {
+            "scenario": "4p-draw",
+            "step": 0,
+            "trigger": "ActionNewRound",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "4p-draw",
+            "step": 2,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1,
+              7,
+              8
+            ]
+          },
+          {
+            "scenario": "4p-call-3",
+            "step": 1,
+            "trigger": "ActionDiscardTile",
+            "operations": [
+              3,
+              9
+            ]
+          },
+          {
+            "scenario": "4p-call-3",
+            "step": 2,
+            "trigger": "ActionChiPengGang",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "4p-call-5",
+            "step": 1,
+            "trigger": "ActionDiscardTile",
+            "operations": [
+              5,
+              9
+            ]
+          },
+          {
+            "scenario": "4p-call-5",
+            "step": 3,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "4p-call-2",
+            "step": 1,
+            "trigger": "ActionDiscardTile",
+            "operations": [
+              2,
+              9
+            ]
+          },
+          {
+            "scenario": "4p-call-2",
+            "step": 2,
+            "trigger": "ActionChiPengGang",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "4p-ankan",
+            "step": 0,
+            "trigger": "ActionNewRound",
+            "operations": [
+              1,
+              4
+            ]
+          },
+          {
+            "scenario": "4p-ankan",
+            "step": 2,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "4p-shouminkan",
+            "step": 1,
+            "trigger": "ActionDiscardTile",
+            "operations": [
+              3
+            ]
+          },
+          {
+            "scenario": "4p-shouminkan",
+            "step": 2,
+            "trigger": "ActionChiPengGang",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "4p-shouminkan",
+            "step": 4,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1,
+              6
+            ]
+          },
+          {
+            "scenario": "4p-shouminkan",
+            "step": 6,
+            "trigger": "ActionDealTile",
+            "operations": [
+              1
+            ]
+          },
+          {
+            "scenario": "4p-abort",
+            "step": 0,
+            "trigger": "ActionNewRound",
+            "operations": [
+              1,
+              10
+            ]
+          },
+          {
+            "scenario": "4p-rob-ankan",
+            "step": 1,
+            "trigger": "ActionAnGangAddGang",
+            "operations": [
+              9
+            ]
+          }
+        ],
+        "metrics": {
+          "inference": {
+            "count": 320,
+            "medianMs": 0.3268539730925113,
+            "p95Ms": 0.35537467629183084,
+            "maxMs": 0.5268750246614218
+          },
+          "workerQueue": {
+            "count": 320,
+            "medianMs": 0.038,
+            "p95Ms": 0.046,
+            "maxMs": 0.086
+          },
+          "workerCalculate": {
+            "count": 320,
+            "medianMs": 0.332,
+            "p95Ms": 0.3642500000000001,
+            "maxMs": 0.442
+          },
+          "workerDeliveryWait": {
+            "count": 320,
+            "medianMs": 0.008,
+            "p95Ms": 0.012,
+            "maxMs": 0.059
+          },
+          "workerTotal": {
+            "count": 320,
+            "medianMs": 0.378,
+            "p95Ms": 0.42305,
+            "maxMs": 0.499
+          },
+          "nativeScriptBuild": {
+            "count": 320,
+            "medianMs": 0.01772900577634573,
+            "p95Ms": 0.02454618806950748,
+            "maxMs": 0.040207989513874054
+          },
+          "callerTotal": {
+            "count": 320,
+            "medianMs": 0.40083349449560046,
+            "p95Ms": 0.4453455185284838,
+            "maxMs": 0.5380840157158673
+          }
+        }
+      }
+    },
+    "evidence": {
+      "path": ".local/high-rank-50k/research/dual-policy-live-benchmark.json",
+      "sha256": "7d23142225ce2659e3d173482174aa5d0d685dc63d688b515c00169e5c798385"
+    }
+  },
+  "launchCheck": {
+    "python": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+    "dependencies": {
+      "numpy": true,
+      "objc": true,
+      "Foundation": true,
+      "AppKit": true,
+      "WebKit": true
+    },
+    "models": [
+      {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/models/three-player-pilot.npz",
+        "sha256": "63435f5673dc61628c370725f9146536bd1e5b23bbd4075e4dc15bad94809710",
+        "format": "majsoul-candidate-cnn-v1",
+        "playerCount": 3,
+        "purpose": "behavior-cloning",
+        "featureSignature": "36dfc511791fa866b43dfcb9ebb4ffc359c9bc2db56cc5756cca20eb62d2d7ec",
+        "actionVersion": 1
+      },
+      {
+        "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/models/four-player-pilot.npz",
+        "sha256": "a5d6b4b7c529a0f181a9fe459a07ed803a61c57b485dbc79455a55b33e6feef4",
+        "format": "majsoul-candidate-cnn-v1",
+        "playerCount": 4,
+        "purpose": "behavior-cloning",
+        "featureSignature": "36dfc511791fa866b43dfcb9ebb4ffc359c9bc2db56cc5756cca20eb62d2d7ec",
+        "actionVersion": 1
+      }
+    ],
+    "existingInstanceRunning": false,
+    "automaticPlay": "off at startup",
+    "evidence": {
+      "path": ".local/high-rank-50k/research/dual-policy-launch-check.json",
+      "sha256": "e92fa62e908262dbc35f04eaf86ea58b9f6d762db4f85380b6c04b614a76fd2e"
+    }
+  },
+  "validation": {
+    "pythonPolicy": {
+      "run": 177,
+      "passed": 173,
+      "skipped": 4,
+      "failed": 0,
+      "skipReason": "Optional locally cached real replay/official archive fixtures unavailable",
+      "log": {
+        "path": ".local/high-rank-50k/research/dual-policy-python-tests.log",
+        "sha256": "e3af6a4a4576d0cbb907b60b24dc36654c7b6f83895f653e22a2637c5a6d61a5"
+      }
+    },
+    "pythonAdviceWorker": {
+      "run": 16,
+      "passed": 16,
+      "failed": 0,
+      "log": {
+        "path": ".local/high-rank-50k/research/dual-policy-worker-tests.log",
+        "sha256": "678f9ee0dd75a047df08bded64efec0d83f634eb499dcab199400cfa64b6cc33"
+      }
+    },
+    "node": {
+      "run": 195,
+      "passed": 195,
+      "failed": 0,
+      "log": {
+        "path": ".local/high-rank-50k/research/dual-policy-node-tests.log",
+        "sha256": "b03dc1df9a1b253020c5ec0374731adddccc9f9ca50667a4ee3d6a609b408ef6"
+      }
+    },
+    "crossLanguageCoverage": "12 action types, independent model routing, actual ActionPrototype wire decoding with in-memory WebSocket, replacement draws, rob-ankan/rob-kita windows, stale results, deadline expiry, ACK and authoritative echo",
+    "realOnlineGameTested": false,
+    "nativeWebKitGuiTested": false,
+    "installedAppModified": false
+  },
+  "limitations": [
+    "Collected complete MJAI count is not the count of verified training games; only selected pilots were trained.",
+    "Tenhou rules and Mahjong Soul rules are not identical; no target-domain playing-strength validation.",
+    "Post-kan hand suffixes and potential rob-North suffixes are censored in MJAI training extraction.",
+    "Hidden hands are never model features; source-rule replay and conservative suffix censoring can depend on them.",
+    "Rare actions remain underfit in both pilot models.",
+    "Latency is an offline model/worker measurement, not real end-to-end WebKit/game latency.",
+    "Source-use terms are documented in policy-cross-platform-data.md; the pilot does not establish cross-product deployment rights."
+  ],
+  "independentSanmaReview": {
+    "confirmedRemainingBugs": 0,
+    "realFixtureObservationWindows": 416,
+    "kitaReplacementWindows": 12,
+    "sourceTargetPresetMatchedSamples": 168,
+    "scope": "Small fixture comparison and regression probes, not proof of rule equivalence",
+    "evidence": [
+      {
+        "path": ".local/high-rank-50k/research/akagi-design/sanma-fix-recheck.md",
+        "sha256": "cbbc02da3b4721bfbdcdbc2f421474dd5b6e49c8e34932837cc408fd4d1b4ba8"
+      },
+      {
+        "path": ".local/high-rank-50k/research/akagi-design/sanma-fix-recheck.json",
+        "sha256": "eb9b28ad295ec2522cca0c7cfac11195fd4244a00ccf10571e0ee05cb0340410"
+      },
+      {
+        "path": ".local/high-rank-50k/research/akagi-design/sanma-source-target-rule-probe.json",
+        "sha256": "ad47aecfcb300ae6329ad60bf1560d89b014b9dbd9dbeed5b475920dd2d2bb18"
+      }
+    ]
+  }
+}

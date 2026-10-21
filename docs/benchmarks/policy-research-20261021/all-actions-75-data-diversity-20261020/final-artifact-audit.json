@@ -1,0 +1,191 @@
+{
+  "status": "passed-final-artifact-audit",
+  "createdAtUtc": "2026-10-20T08:47:17.805848+00:00",
+  "bindings": {
+    "plan": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/plan.json",
+      "sha256": "3d10f415076d211d66ec4ffcc80fab08ef8bdedebac2490d66d880d4fc222a64"
+    },
+    "state": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/state.json",
+      "sha256": "306ffee3aa0dd42a3fb9d272d2804bb5737c5bf8c8d376831820d17ea360d77a"
+    },
+    "decision": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/decision.json",
+      "sha256": "7b837a93e0b917204003115baed329a70f7d0d6e85d716ab4f5df6421d56c59d"
+    },
+    "evaluation": {
+      "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/evaluation/report.json",
+      "sha256": "b24363e86f879deff7a729e0e81aa39e04be9c0a0828432269734e09c7182f0d"
+    }
+  },
+  "checks": [
+    {
+      "name": "frozen plan",
+      "status": "passed"
+    },
+    {
+      "name": "all phases complete",
+      "status": "passed"
+    },
+    {
+      "name": "decision identity",
+      "status": "passed"
+    },
+    {
+      "name": "sourceSha256",
+      "status": "passed"
+    },
+    {
+      "name": "protectedSha256",
+      "status": "passed"
+    },
+    {
+      "name": "four endpoint sets",
+      "status": "passed"
+    },
+    {
+      "name": "42 final endpoint",
+      "status": "passed"
+    },
+    {
+      "name": "42 initialization",
+      "status": "passed"
+    },
+    {
+      "name": "42 separate sample chains",
+      "status": "passed"
+    },
+    {
+      "name": "42 exposure audit",
+      "status": "passed"
+    },
+    {
+      "name": "42 input/source binding",
+      "status": "passed"
+    },
+    {
+      "name": "42 training scope",
+      "status": "passed"
+    },
+    {
+      "name": "42 bilinear-data-diversity model hash",
+      "status": "passed"
+    },
+    {
+      "name": "42 bilinear-kan-sampling model hash",
+      "status": "passed"
+    },
+    {
+      "name": "43 final endpoint",
+      "status": "passed"
+    },
+    {
+      "name": "43 initialization",
+      "status": "passed"
+    },
+    {
+      "name": "43 separate sample chains",
+      "status": "passed"
+    },
+    {
+      "name": "43 exposure audit",
+      "status": "passed"
+    },
+    {
+      "name": "43 input/source binding",
+      "status": "passed"
+    },
+    {
+      "name": "43 training scope",
+      "status": "passed"
+    },
+    {
+      "name": "43 bilinear-data-diversity model hash",
+      "status": "passed"
+    },
+    {
+      "name": "43 bilinear-kan-sampling model hash",
+      "status": "passed"
+    },
+    {
+      "name": "evaluation status and bindings",
+      "status": "passed"
+    },
+    {
+      "name": "unique evaluated games",
+      "status": "passed"
+    },
+    {
+      "name": "holdout population",
+      "status": "passed"
+    },
+    {
+      "name": "monitor population",
+      "status": "passed"
+    },
+    {
+      "name": "payload scope",
+      "status": "passed"
+    },
+    {
+      "name": "seed42-bilinear-data-diversity-mix natural support",
+      "status": "passed"
+    },
+    {
+      "name": "seed42-bilinear-kan-sampling-mix natural support",
+      "status": "passed"
+    },
+    {
+      "name": "seed43-bilinear-data-diversity-mix natural support",
+      "status": "passed"
+    },
+    {
+      "name": "seed43-bilinear-kan-sampling-mix natural support",
+      "status": "passed"
+    },
+    {
+      "name": "decision/evaluation equality",
+      "status": "passed"
+    },
+    {
+      "name": "bootstrap definition",
+      "status": "passed"
+    },
+    {
+      "name": "support unchanged and passed",
+      "status": "passed"
+    },
+    {
+      "name": "main checkout preserved",
+      "status": "passed"
+    }
+  ],
+  "sourceHashesVerified": 97,
+  "protectedHashesVerified": 32,
+  "mainCheckout": {
+    "head": "3e7f57859cbe5994f4c24049f8f4657928d15aef",
+    "clean": true
+  },
+  "modelHashesVerified": 4,
+  "payloadReads": 0,
+  "modelWeightParses": 0,
+  "inferenceCalls": 0,
+  "scope": "JSON aggregates and file hashes only; model/per-game file bytes hashed without parsing; no sample/cache/packed/raw/formal validation/test payload",
+  "processObservation": {
+    "checkedAtUtc": "2026-10-20T08:47:34.473333+00:00",
+    "recordedPids": [
+      33590,
+      33591,
+      33868,
+      34050,
+      34224
+    ],
+    "allAbsent": true,
+    "psExitCode": 1,
+    "stdout": "  PID  PPID ELAPSED STAT COMMAND\n",
+    "stderr": ""
+  },
+  "qualityStatus": "rejected-full-quality-screen",
+  "goalAchieved": false
+}

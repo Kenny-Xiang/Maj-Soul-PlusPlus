@@ -1,0 +1,1074 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-13",
+  "baseline": "ce0ac18",
+  "scope": "public Mahjong Soul MJAI collection and offline source-app integration; no live game",
+  "targets": {
+    "fourPlayer": 50000,
+    "threePlayer": 50000
+  },
+  "collected": {
+    "fourPlayer": 50000,
+    "threePlayer": 0
+  },
+  "fourPlayer": {
+    "completeGames": 50000,
+    "playerCounts": {
+      "4": 50000
+    },
+    "years": {
+      "2026": 23179,
+      "2021": 26821
+    },
+    "rounds": 528449,
+    "events": 53608412,
+    "compressedBytes": 273222258,
+    "manifestSha256": "638c50eb3f4494e2162a58a5cdc959f7aa9bf8f2db4383dafa5b21fb1b344181",
+    "splitCounts": {
+      "train": 39961,
+      "validation": 4995,
+      "test": 4995
+    },
+    "excludedDevelopmentGames": 49,
+    "preservedPreviousSplitGames": 10000,
+    "pilotGames": 200,
+    "pilotYears": {
+      "2021": 100,
+      "2026": 100
+    },
+    "pilotAllWithinFormalTraining": true
+  },
+  "archiveAudit": {
+    "schemaVersion": 1,
+    "format": "mjai-jsonl-zstandard",
+    "targetGames": 50000,
+    "uniqueCompleteGames": 50000,
+    "resumedGames": 0,
+    "newGames": 50000,
+    "visitedMembers": 50006,
+    "goalReached": true,
+    "excluded": {
+      "missing_round_result": 6
+    },
+    "excludedExamples": [
+      {
+        "archive": "majsoul-throne-2026.tar",
+        "member": "majsoul-throne-2026/260120_8f65f0b3_49db_4f11_8c32_e58be508e35f.mjai.json.zst",
+        "reason": "missing_round_result"
+      },
+      {
+        "archive": "majsoul-throne-2026.tar",
+        "member": "majsoul-throne-2026/260122_237d155f_70e3_4e92_aa84_82836c0a6089.mjai.json.zst",
+        "reason": "missing_round_result"
+      },
+      {
+        "archive": "majsoul-throne-2026.tar",
+        "member": "majsoul-throne-2026/260122_ec028c14_582e_4a1a_935d_8a1ee7aad5b6.mjai.json.zst",
+        "reason": "missing_round_result"
+      },
+      {
+        "archive": "majsoul-throne-2021.tar",
+        "member": "majsoul-throne-2021/210122_93722146_d519_4e8b_a72d_c2491c9c7e0e.mjai.json.zst",
+        "reason": "missing_round_result"
+      },
+      {
+        "archive": "majsoul-throne-2021.tar",
+        "member": "majsoul-throne-2021/210901_9277ee27_af38_4c44_a08d_ca76e4b4c49f.mjai.json.zst",
+        "reason": "missing_round_result"
+      },
+      {
+        "archive": "majsoul-throne-2021.tar",
+        "member": "majsoul-throne-2021/211012_2cf4c575_05fa_444b_91a9_79e9908eb754.mjai.json.zst",
+        "reason": "missing_round_result"
+      }
+    ],
+    "archives": [
+      {
+        "name": "majsoul-throne-2026.tar",
+        "sha256": "86319ea7d42ff9ec6d877567ad83d1788c5840a49abaf672e6330d6132501f02",
+        "bytes": 170055680,
+        "fullyScanned": true
+      },
+      {
+        "name": "majsoul-throne-2021.tar",
+        "sha256": "cc07362085ca44c2fd702e9bbfdcd9d66771be3704e201f55b1dbd21837b7073",
+        "bytes": 293683200,
+        "fullyScanned": false
+      }
+    ],
+    "validationScope": "game and round boundaries, four complete initial hands, tiles and seat indices; not full rules replay",
+    "officialOperationLists": false,
+    "roomEvidence": "Publisher archive classification only; individual ranks not verified"
+  },
+  "training": {
+    "fullCorpusTrainingCompleted": false,
+    "purpose": "behavior-cloning",
+    "games": {
+      "train": 160,
+      "validation": 20,
+      "test": 20
+    },
+    "samples": 125665,
+    "epochs": 1,
+    "elapsedSeconds": 147.4834497079719,
+    "metrics": {
+      "train": {
+        "samples": 100317,
+        "choices": 100317,
+        "forced": 0,
+        "choiceTop1": 0.5473050430136467,
+        "choiceTop3": 0.7702682496486138,
+        "choiceNll": 1.3558499331458342,
+        "byAction": {
+          "discard": {
+            "count": 76968,
+            "correct": 35106,
+            "accuracy": 0.45611163080760836
+          },
+          "pass": {
+            "count": 17186,
+            "correct": 16608,
+            "accuracy": 0.9663679739322705
+          },
+          "chi": {
+            "count": 1378,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "tsumo": {
+            "count": 550,
+            "correct": 550,
+            "accuracy": 1.0
+          },
+          "pon": {
+            "count": 1993,
+            "correct": 969,
+            "accuracy": 0.4862017059708981
+          },
+          "riichi": {
+            "count": 1225,
+            "correct": 783,
+            "accuracy": 0.6391836734693878
+          },
+          "ron": {
+            "count": 845,
+            "correct": 845,
+            "accuracy": 1.0
+          },
+          "shouminkan": {
+            "count": 55,
+            "correct": 6,
+            "accuracy": 0.10909090909090909
+          },
+          "ankan": {
+            "count": 80,
+            "correct": 18,
+            "accuracy": 0.225
+          },
+          "daiminkan": {
+            "count": 18,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "abort": {
+            "count": 19,
+            "correct": 19,
+            "accuracy": 1.0
+          }
+        },
+        "macroActionAccuracy": 0.534723263024643
+      },
+      "validation": {
+        "samples": 12458,
+        "choices": 12458,
+        "forced": 0,
+        "choiceTop1": 0.5527371969818591,
+        "choiceTop3": 0.7753250923101621,
+        "choiceNll": 1.3486306927181682,
+        "byAction": {
+          "discard": {
+            "count": 9479,
+            "correct": 4386,
+            "accuracy": 0.46270703660723705
+          },
+          "pass": {
+            "count": 2162,
+            "correct": 2084,
+            "accuracy": 0.9639222941720629
+          },
+          "pon": {
+            "count": 269,
+            "correct": 120,
+            "accuracy": 0.44609665427509293
+          },
+          "tsumo": {
+            "count": 69,
+            "correct": 69,
+            "accuracy": 1.0
+          },
+          "riichi": {
+            "count": 169,
+            "correct": 108,
+            "accuracy": 0.6390532544378699
+          },
+          "chi": {
+            "count": 176,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "ron": {
+            "count": 112,
+            "correct": 112,
+            "accuracy": 1.0
+          },
+          "ankan": {
+            "count": 15,
+            "correct": 3,
+            "accuracy": 0.2
+          },
+          "abort": {
+            "count": 3,
+            "correct": 3,
+            "accuracy": 1.0
+          },
+          "shouminkan": {
+            "count": 4,
+            "correct": 1,
+            "accuracy": 0.25
+          }
+        },
+        "macroActionAccuracy": 0.5961779239492262
+      },
+      "test": {
+        "samples": 12890,
+        "choices": 12890,
+        "forced": 0,
+        "choiceTop1": 0.5462373933281613,
+        "choiceTop3": 0.7699767261442979,
+        "choiceNll": 1.368529596262253,
+        "byAction": {
+          "discard": {
+            "count": 9921,
+            "correct": 4525,
+            "accuracy": 0.4561032154016732
+          },
+          "pass": {
+            "count": 2190,
+            "correct": 2118,
+            "accuracy": 0.9671232876712329
+          },
+          "pon": {
+            "count": 255,
+            "correct": 120,
+            "accuracy": 0.47058823529411764
+          },
+          "riichi": {
+            "count": 162,
+            "correct": 104,
+            "accuracy": 0.6419753086419753
+          },
+          "chi": {
+            "count": 166,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "tsumo": {
+            "count": 84,
+            "correct": 84,
+            "accuracy": 1.0
+          },
+          "ron": {
+            "count": 88,
+            "correct": 88,
+            "accuracy": 1.0
+          },
+          "ankan": {
+            "count": 12,
+            "correct": 1,
+            "accuracy": 0.08333333333333333
+          },
+          "shouminkan": {
+            "count": 9,
+            "correct": 0,
+            "accuracy": 0.0
+          },
+          "abort": {
+            "count": 1,
+            "correct": 1,
+            "accuracy": 1.0
+          },
+          "daiminkan": {
+            "count": 2,
+            "correct": 0,
+            "accuracy": 0.0
+          }
+        },
+        "macroActionAccuracy": 0.5108293982129393
+      }
+    },
+    "exportParity": {
+      "samples": 32,
+      "maxAbsError": 5.960464477539062e-07,
+      "argmaxAgreement": true
+    },
+    "modelSha256": "a5d6b4b7c529a0f181a9fe459a07ed803a61c57b485dbc79455a55b33e6feef4",
+    "modelPath": ".local/high-rank-50k/models/four-player-pilot.npz"
+  },
+  "checks": {
+    "python": {
+      "run": 166,
+      "passed": 162,
+      "skipped": 4,
+      "reason": "optional cached official replay tests not present in isolated clone"
+    },
+    "node": {
+      "run": 130,
+      "passed": 130
+    },
+    "protocolContract": {
+      "actionCases": 36,
+      "actionTypes": 12,
+      "smokeAndStaleZeroSend": true,
+      "transport": "real implementation with in-memory socket"
+    },
+    "launchCheck": "passed; no GUI launched",
+    "preservation": {
+      "sourceStatusMatchesBaseline": true,
+      "sourceFilesCompared": 183,
+      "sourceFilesChanged": [],
+      "primaryStatus": "",
+      "primaryHead": "3e7f57859cbe5994f4c24049f8f4657928d15aef",
+      "appLaunched": false,
+      "appReplaced": false
+    },
+    "trainedModelProtocol": {
+      "verifiedAt": "2026-10-13T06:20:28.471323+00:00",
+      "modelPath": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/models/four-player-pilot.npz",
+      "modelSha256": "a5d6b4b7c529a0f181a9fe459a07ed803a61c57b485dbc79455a55b33e6feef4",
+      "modelPurpose": "behavior-cloning",
+      "sourceGames": 4,
+      "realReplayDecisions": 32,
+      "yearCounts": {
+        "2021": 8,
+        "2026": 24
+      },
+      "seatCounts": {
+        "0": 8,
+        "1": 8,
+        "2": 8,
+        "3": 8
+      },
+      "actions": {
+        "discard": 32
+      },
+      "sources": [
+        {
+          "gameId": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a",
+          "samplePath": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.local/policy-data/four-player.samples.jsonl",
+          "sampleSha256": "c3adfea231f9957601805b706910be8bd9af1911e1537df211e738b82fdeecdb",
+          "normalizedPath": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.local/policy-data/public-four-player.normalized.json",
+          "normalizedSha256": "f5c0999dc8acdb96aa0cf286297ccf29eff7951ff3c6133310e433571c5f67fa",
+          "headerEvidence": {
+            "uuid": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a",
+            "category": 2,
+            "modeId": 12
+          },
+          "operationSource": "recorded-official-operation-lists",
+          "selectedDecisions": 8
+        },
+        {
+          "gameId": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032",
+          "samplePath": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.local/policy-official/probes/training-verification/260101-009fac7b-c497-4c17-9664-0d0b5e52b032.samples.jsonl",
+          "sampleSha256": "0410723e1e47d467d549f593b168b6a754eb54cfa660d2bf47d506f16fcd6e8b",
+          "normalizedPath": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.local/policy-official/probes/training-verification/260101-009fac7b-c497-4c17-9664-0d0b5e52b032.normalized.json",
+          "normalizedSha256": "d7ee084c8ca9efdc07231448c376e1d4b444173fcd2dbba06f5c9d93cfc95683",
+          "headerEvidence": {
+            "uuid": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032",
+            "category": 2,
+            "modeId": 16
+          },
+          "operationSource": "recorded-official-operation-lists",
+          "selectedDecisions": 8
+        },
+        {
+          "gameId": "260101-017041dc-179e-4165-af79-132a7c4aff37",
+          "samplePath": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.local/policy-official/probes/training-verification/260101-017041dc-179e-4165-af79-132a7c4aff37.samples.jsonl",
+          "sampleSha256": "c9bcac39f552ac09bb47fa17ccb67e5f42d76702f4ee87b70699a99f17c8fb94",
+          "normalizedPath": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.local/policy-official/probes/training-verification/260101-017041dc-179e-4165-af79-132a7c4aff37.normalized.json",
+          "normalizedSha256": "692361c05b18ca4d26cd310756877ee4eed9c096a84fa5889a6c09d9c509e66a",
+          "headerEvidence": {
+            "uuid": "260101-017041dc-179e-4165-af79-132a7c4aff37",
+            "category": 2,
+            "modeId": 16
+          },
+          "operationSource": "recorded-official-operation-lists",
+          "selectedDecisions": 8
+        },
+        {
+          "gameId": "260101-02013eef-db4a-4040-834c-d887aeb23722",
+          "samplePath": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.local/policy-official/probes/training-verification/260101-02013eef-db4a-4040-834c-d887aeb23722.samples.jsonl",
+          "sampleSha256": "0d35707351a0c54a013a2df203d38bb6f8b32910b4bf243c41253fb65dbc9c13",
+          "normalizedPath": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.local/policy-official/probes/training-verification/260101-02013eef-db4a-4040-834c-d887aeb23722.normalized.json",
+          "normalizedSha256": "d9f24be38ce2db90310192847c00c42329c1137523bc8a54037caefe2cc71d2c",
+          "headerEvidence": {
+            "uuid": "260101-02013eef-db4a-4040-834c-d887aeb23722",
+            "category": 2,
+            "modeId": 16
+          },
+          "operationSource": "recorded-official-operation-lists",
+          "selectedDecisions": 8
+        }
+      ],
+      "decisions": [
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat0/line1",
+          "gameId": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a",
+          "year": 2021,
+          "seat": 0,
+          "sampleLine": 1,
+          "lastStep": 0,
+          "actionId": "[1,\"discard\",\"3z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat1/line2",
+          "gameId": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a",
+          "year": 2021,
+          "seat": 1,
+          "sampleLine": 2,
+          "lastStep": 2,
+          "actionId": "[1,\"discard\",\"2z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat2/line3",
+          "gameId": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a",
+          "year": 2021,
+          "seat": 2,
+          "sampleLine": 3,
+          "lastStep": 4,
+          "actionId": "[1,\"discard\",\"3z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat3/line4",
+          "gameId": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a",
+          "year": 2021,
+          "seat": 3,
+          "sampleLine": 4,
+          "lastStep": 6,
+          "actionId": "[1,\"discard\",\"7z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat0/line5",
+          "gameId": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a",
+          "year": 2021,
+          "seat": 0,
+          "sampleLine": 5,
+          "lastStep": 8,
+          "actionId": "[1,\"discard\",\"1z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat1/line6",
+          "gameId": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a",
+          "year": 2021,
+          "seat": 1,
+          "sampleLine": 6,
+          "lastStep": 10,
+          "actionId": "[1,\"discard\",\"2s\",[],null,null,null,true]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat2/line7",
+          "gameId": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a",
+          "year": 2021,
+          "seat": 2,
+          "sampleLine": 7,
+          "lastStep": 12,
+          "actionId": "[1,\"discard\",\"7z\",[],null,null,null,true]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat3/line8",
+          "gameId": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a",
+          "year": 2021,
+          "seat": 3,
+          "sampleLine": 8,
+          "lastStep": 14,
+          "actionId": "[1,\"discard\",\"6z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat0/line1",
+          "gameId": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032",
+          "year": 2026,
+          "seat": 0,
+          "sampleLine": 1,
+          "lastStep": 0,
+          "actionId": "[1,\"discard\",\"4z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat1/line2",
+          "gameId": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032",
+          "year": 2026,
+          "seat": 1,
+          "sampleLine": 2,
+          "lastStep": 2,
+          "actionId": "[1,\"discard\",\"6z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat2/line3",
+          "gameId": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032",
+          "year": 2026,
+          "seat": 2,
+          "sampleLine": 3,
+          "lastStep": 4,
+          "actionId": "[1,\"discard\",\"2z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat3/line4",
+          "gameId": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032",
+          "year": 2026,
+          "seat": 3,
+          "sampleLine": 4,
+          "lastStep": 6,
+          "actionId": "[1,\"discard\",\"3z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat0/line5",
+          "gameId": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032",
+          "year": 2026,
+          "seat": 0,
+          "sampleLine": 5,
+          "lastStep": 8,
+          "actionId": "[1,\"discard\",\"4z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat1/line7",
+          "gameId": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032",
+          "year": 2026,
+          "seat": 1,
+          "sampleLine": 7,
+          "lastStep": 10,
+          "actionId": "[1,\"discard\",\"6z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat2/line8",
+          "gameId": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032",
+          "year": 2026,
+          "seat": 2,
+          "sampleLine": 8,
+          "lastStep": 12,
+          "actionId": "[1,\"discard\",\"2z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat3/line10",
+          "gameId": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032",
+          "year": 2026,
+          "seat": 3,
+          "sampleLine": 10,
+          "lastStep": 14,
+          "actionId": "[1,\"discard\",\"1z\",[],null,null,null,true]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat0/line1",
+          "gameId": "260101-017041dc-179e-4165-af79-132a7c4aff37",
+          "year": 2026,
+          "seat": 0,
+          "sampleLine": 1,
+          "lastStep": 0,
+          "actionId": "[1,\"discard\",\"2z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat1/line3",
+          "gameId": "260101-017041dc-179e-4165-af79-132a7c4aff37",
+          "year": 2026,
+          "seat": 1,
+          "sampleLine": 3,
+          "lastStep": 2,
+          "actionId": "[1,\"discard\",\"4z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat2/line4",
+          "gameId": "260101-017041dc-179e-4165-af79-132a7c4aff37",
+          "year": 2026,
+          "seat": 2,
+          "sampleLine": 4,
+          "lastStep": 4,
+          "actionId": "[1,\"discard\",\"3z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat3/line5",
+          "gameId": "260101-017041dc-179e-4165-af79-132a7c4aff37",
+          "year": 2026,
+          "seat": 3,
+          "sampleLine": 5,
+          "lastStep": 6,
+          "actionId": "[1,\"discard\",\"4z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat0/line6",
+          "gameId": "260101-017041dc-179e-4165-af79-132a7c4aff37",
+          "year": 2026,
+          "seat": 0,
+          "sampleLine": 6,
+          "lastStep": 8,
+          "actionId": "[1,\"discard\",\"2z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat1/line8",
+          "gameId": "260101-017041dc-179e-4165-af79-132a7c4aff37",
+          "year": 2026,
+          "seat": 1,
+          "sampleLine": 8,
+          "lastStep": 10,
+          "actionId": "[1,\"discard\",\"4z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat2/line9",
+          "gameId": "260101-017041dc-179e-4165-af79-132a7c4aff37",
+          "year": 2026,
+          "seat": 2,
+          "sampleLine": 9,
+          "lastStep": 12,
+          "actionId": "[1,\"discard\",\"3z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat3/line10",
+          "gameId": "260101-017041dc-179e-4165-af79-132a7c4aff37",
+          "year": 2026,
+          "seat": 3,
+          "sampleLine": 10,
+          "lastStep": 14,
+          "actionId": "[1,\"discard\",\"1z\",[],null,null,null,true]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat0/line1",
+          "gameId": "260101-02013eef-db4a-4040-834c-d887aeb23722",
+          "year": 2026,
+          "seat": 0,
+          "sampleLine": 1,
+          "lastStep": 0,
+          "actionId": "[1,\"discard\",\"4z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat1/line2",
+          "gameId": "260101-02013eef-db4a-4040-834c-d887aeb23722",
+          "year": 2026,
+          "seat": 1,
+          "sampleLine": 2,
+          "lastStep": 2,
+          "actionId": "[1,\"discard\",\"4z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat2/line3",
+          "gameId": "260101-02013eef-db4a-4040-834c-d887aeb23722",
+          "year": 2026,
+          "seat": 2,
+          "sampleLine": 3,
+          "lastStep": 4,
+          "actionId": "[1,\"discard\",\"2z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat3/line4",
+          "gameId": "260101-02013eef-db4a-4040-834c-d887aeb23722",
+          "year": 2026,
+          "seat": 3,
+          "sampleLine": 4,
+          "lastStep": 6,
+          "actionId": "[1,\"discard\",\"3z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat0/line5",
+          "gameId": "260101-02013eef-db4a-4040-834c-d887aeb23722",
+          "year": 2026,
+          "seat": 0,
+          "sampleLine": 5,
+          "lastStep": 8,
+          "actionId": "[1,\"discard\",\"3z\",[],null,null,null,true]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat1/line6",
+          "gameId": "260101-02013eef-db4a-4040-834c-d887aeb23722",
+          "year": 2026,
+          "seat": 1,
+          "sampleLine": 6,
+          "lastStep": 10,
+          "actionId": "[1,\"discard\",\"2p\",[],null,null,null,true]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat2/line7",
+          "gameId": "260101-02013eef-db4a-4040-834c-d887aeb23722",
+          "year": 2026,
+          "seat": 2,
+          "sampleLine": 7,
+          "lastStep": 12,
+          "actionId": "[1,\"discard\",\"5z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat3/line8",
+          "gameId": "260101-02013eef-db4a-4040-834c-d887aeb23722",
+          "year": 2026,
+          "seat": 3,
+          "sampleLine": 8,
+          "lastStep": 14,
+          "actionId": "[1,\"discard\",\"3z\",[],null,null,null,false]",
+          "featureParity": true,
+          "candidateParity": true,
+          "predictionParity": true
+        }
+      ],
+      "results": [
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat0/line1",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat1/line2",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat2/line3",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat3/line4",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat0/line5",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat1/line6",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 44
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat2/line7",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 44
+        },
+        {
+          "name": "210815-6da08e40-2605-42fb-a5e3-f8aa5940362a/seat3/line8",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat0/line1",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat1/line2",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat2/line3",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat3/line4",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat0/line5",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat1/line7",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat2/line8",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-009fac7b-c497-4c17-9664-0d0b5e52b032/seat3/line10",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 44
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat0/line1",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat1/line3",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat2/line4",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat3/line5",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat0/line6",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat1/line8",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat2/line9",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-017041dc-179e-4165-af79-132a7c4aff37/seat3/line10",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 44
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat0/line1",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat1/line2",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat2/line3",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat3/line4",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat0/line5",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 44
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat1/line6",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 44
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat2/line7",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "260101-02013eef-db4a-4040-834c-d887aeb23722/seat3/line8",
+          "action": "discard",
+          "method": ".lq.FastTest.inputOperation",
+          "bytes": 42
+        },
+        {
+          "name": "unknown-ranked-category-rejected",
+          "rejected": true
+        }
+      ],
+      "featureCandidateAndPredictionParity": true,
+      "unknownCategoryRejection": {
+        "manifestPath": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/pilot-training/manifest.jsonl",
+        "manifestSha256": "fdcdaa90ceee5b1547135f94584c82578fd7dc6b89ae6fb977f6723fecb6535f",
+        "shardPath": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/pilot-training/games/260119-dcb9f0c4-b76f-499d-b2ab-ea15dcfdfe48.jsonl.zst",
+        "shardSha256": "849560fe3723c8f1ae9b20b7e67c293b71a556d237ea7a8e9ffe99df062fb927",
+        "sampleLine": 1,
+        "networkSubmissions": 0
+      },
+      "helperSha256": "9e40a208e54f1600a926f3f88b5c93614d3ff602f4a5f978073cc777fe441e6e",
+      "javascriptHarnessSha256": "93ee34edd693f4365b03853dec6ae808ad55028a6c386c0c4aaf952e1bb41e6b",
+      "networkRequests": 0,
+      "scope": "Real trained weights and actor-visible replay states; real JS action/transport code over in-memory sockets.",
+      "runtimeFixtures": [
+        "game connection identity and account ID",
+        "operation countdown and fixed clock",
+        "ACK and matching predicted-action echo"
+      ],
+      "restoredMetadata": "match.category copied from same UUID's official-format replay header; feature/candidate/prediction equality checked",
+      "limitations": [
+        "No live game, GUI, service acceptance or playing-strength validation.",
+        "ACK and echo are simulated confirmations of the predicted action, not the recorded human action.",
+        "Real-weight integration cases cover discard only; all action types have separate deterministic-model contract tests.",
+        "The 2021 replay is a public third-party export; 2026 replays are previously archived official responses."
+      ]
+    },
+    "launch": {
+      "python": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-model/.venv/bin/python",
+      "dependencies": {
+        "numpy": true,
+        "objc": true,
+        "Foundation": true,
+        "AppKit": true,
+        "WebKit": true
+      },
+      "models": [
+        {
+          "path": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-training-20261013/.local/high-rank-50k/models/four-player-pilot.npz",
+          "sha256": "a5d6b4b7c529a0f181a9fe459a07ed803a61c57b485dbc79455a55b33e6feef4",
+          "format": "majsoul-candidate-cnn-v1",
+          "playerCount": 4,
+          "purpose": "behavior-cloning",
+          "featureSignature": "36dfc511791fa866b43dfcb9ebb4ffc359c9bc2db56cc5756cca20eb62d2d7ec",
+          "actionVersion": 1
+        }
+      ],
+      "existingInstanceRunning": false,
+      "automaticPlay": "off at startup"
+    }
+  },
+  "threePlayer": {
+    "completeGames": 0,
+    "publicIndexProbeStatus": 429,
+    "rateLimitRetries": 0,
+    "requires": "a verified public full-game corpus or authorized index API access plus a full-replay acquisition channel",
+    "structuralAuditorSupported": true,
+    "trainingConverterReady": false,
+    "realModelAvailable": false
+  },
+  "artifacts": {
+    "split.json": "951a9aeb150eea5368acfc4a1d06040d184dae93b304b4ac8541a72d03159d70",
+    "four-player/manifest.jsonl": "638c50eb3f4494e2162a58a5cdc959f7aa9bf8f2db4383dafa5b21fb1b344181",
+    "pilot-training/manifest.jsonl": "fdcdaa90ceee5b1547135f94584c82578fd7dc6b89ae6fb977f6723fecb6535f",
+    "models/four-player-pilot.report.json": "9f15f53985227e48fd46f1ed0f769e3d06a730b1447404350ea092b219b4dba1",
+    "research/source-findings.json": "164bf0e68740b8db56794a7c134e2788d1f349e2d12861772c276fa9038620e7",
+    "research/sanma-engine-probe.json": "7c5638bb70ed1f7e3e6f95240f0e8dc97ab74604adc854de4095f1eab10b1706",
+    "research/real-model-action-check.json": "883ad51b734daab3c983d2681c68e92ff937c8d3558caf253f531b591b410509"
+  }
+}

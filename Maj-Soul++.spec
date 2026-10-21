@@ -1,12 +1,19 @@
 # Build from the repository root using scripts/build.sh.
 from pathlib import Path
+import os
+import sys
 from PyInstaller.utils.hooks import copy_metadata
 
 root = Path(SPECPATH)
+policy_bundle = os.environ.get('MAJSOUL_POLICY_BUNDLE')
 datas = [(str(root / 'src' / name), '.') for name in
          ('core.cjs', 'browser.js', 'overlay.js', 'autoplay.js', 'background.js',
           'unity_transport.js', 'unity_actions.js', 'unity_lobby.js')]
 datas += copy_metadata('mahjong')
+if policy_bundle:
+    sys.path.insert(0, str(root / 'scripts'))
+    from policy_prepare_bundle import validate_bundle
+    datas += validate_bundle(policy_bundle)
 datas += [(str(root / 'docs'), 'docs')]
 datas += [(str(root / name), '.') for name in ('README.md', 'README.en.md')]
 for folder in ('src', 'tests', 'docs', 'scripts'):

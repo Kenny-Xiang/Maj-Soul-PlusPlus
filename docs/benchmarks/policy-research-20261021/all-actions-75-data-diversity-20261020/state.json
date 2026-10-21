@@ -1,0 +1,44 @@
+{
+  "status": "completed",
+  "pid": 33590,
+  "startedAtUtc": "2026-10-20T08:34:50.011809+00:00",
+  "planSha256": "3d10f415076d211d66ec4ffcc80fab08ef8bdedebac2490d66d880d4fc222a64",
+  "steps": [
+    {
+      "name": "seed42-mix",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/seed42-mix.log",
+      "pid": 33591,
+      "exitCode": 0
+    },
+    {
+      "name": "seed43-mix",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/seed43-mix.log",
+      "pid": 33868,
+      "exitCode": 0
+    },
+    {
+      "name": "evaluation",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/evaluation.log",
+      "pid": 34050,
+      "exitCode": 0
+    },
+    {
+      "name": "analysis",
+      "status": "completed",
+      "log": "/Users/kenny/Desktop/Maj-Soul-PlusPlus-improvement-20261013/.local/improvement/all-actions-75-data-diversity-20261020/analysis.log",
+      "pid": 34224,
+      "exitCode": 0
+    }
+  ],
+  "goalAchieved": false,
+  "testPayloadReads": 0,
+  "deploymentAllowed": false,
+  "finishedAtUtc": "2026-10-20T08:45:27.577940+00:00",
+  "decisionSha256": "7b837a93e0b917204003115baed329a70f7d0d6e85d716ab4f5df6421d56c59d",
+  "qualityStatus": "rejected-full-quality-screen",
+  "protectedHashesMatchAtEnd": true,
+  "completionMeaning": "Fixed experiment completed; quality and strict per-model target reported separately; no deployment."
+}

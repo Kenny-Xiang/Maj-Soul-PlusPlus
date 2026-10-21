@@ -40,14 +40,20 @@ class Element {
   }
 }
 
-function overlay(autoplay) {
-  const events = new Map();
+function overlay(autoplay, now = () => 0) {
+  const events = new Map(), timers = new Map();
+  let timerId = 0;
   const body = new Element(), context = {window: {__mjAutoplay: autoplay}, location: {hostname: 'game.maj-soul.com'}, innerHeight: 760,
     document: {body, readyState: 'complete', createElement: () => new Element(), addEventListener() {}},
+    performance: {now},
+    setTimeout: (fn, ms) => {timers.set(++timerId, {fn, at:now() + ms}); return timerId;},
+    clearTimeout: id => timers.delete(id),
     addEventListener: (type, listener) => events.set(type, listener)};
   vm.runInNewContext(source, context);
   const root = body.children[0].shadowRoot, api = context.window.__mjStatsOverlay;
-  return {api, root, events, window: context.window, show(advice, text = normalText, key = 'test:1') {
+  return {api, root, events, timers, runTimers() {
+    for (const [id, timer] of [...timers]) if (timer.at <= now()) {timers.delete(id); timer.fn();}
+  }, window: context.window, show(advice, text = normalText, key = 'test:1') {
     api.expectAdvice(key); api.update({kind: 'turn', adviceKey: key, text, advice});
   }};
 }
@@ -58,6 +64,77 @@ const candidate = {action: 'discard', actionId: 'discard:7z', tile: '7z', shante
     '当前进攻：与弃和路线按同一终局净收益比较；新窗口重新评估', '听牌；有效未见牌 4 张',
     '对各家均有现物或实体枚数安全依据']};
 const result = best => ({status: 'ready', best, candidates: [best]});
+
+test('policy recommendations show preference and exact choices without heuristic win metrics', () => {
+  const {root, show} = overlay();
+  const choices = [
+    {action:'discard', tile:'5p', moqie:false, policyProbability:.5},
+    {action:'discard', tile:'5p', moqie:true, policyProbability:.3},
+    {action:'pon', tile:'5p', calledTile:'5p', consumed:['0p','5p'], policyProbability:.2}
+  ];
+  show({status:'ready', kind:'policy', best:choices[0], candidates:choices});
+  assert.match(root.textContent, /模型偏好 50\.0%/);
+  assert.match(root.textContent, /手中牌/);
+  assert.match(root.textContent, /摸切/);
+  assert.match(root.textContent, /使用 赤5筒 5筒/);
+  assert.equal(root.querySelectorAll('.metrics').length, 0);
+  assert.doesNotMatch(root.textContent, /后续胡牌率|胡牌得点|放铳输点/);
+  show({status:'analysis', kind:'policy', best:{action:'tsumo'}, candidates:[{action:'tsumo', policyProbability:1}]});
+  assert.match(root.textContent, /样例模型 · 仅供验证/);
+  assert.match(root.textContent, /自摸/);
+});
+
+test('same-key policy results arriving after the server deadline are not shown as current choices', () => {
+  let time = 1000;
+  const {root, api, show, window} = overlay(undefined, () => time);
+  window.__mjMonitor = {getSnapshot:() => ({state:{operationTiming:{receivedAt:1000, timeFixed:5000, timeAdd:20000}}})};
+  const policy = {status:'ready', kind:'policy', best:{action:'discard', tile:'7z'},
+    candidates:[{action:'discard', tile:'7z', policyProbability:1}]};
+  show(policy);
+  assert.equal(root.querySelector('.advice').dataset.status, 'ready');
+  time = 25999;
+  api.update({kind:'advice', adviceKey:'test:1', advice:policy});
+  assert.equal(root.querySelectorAll('.best-action').length, 1);
+  time = 26000;
+  api.update({kind:'advice', adviceKey:'test:1', advice:policy});
+  assert.equal(root.querySelector('.advice').dataset.status, 'waiting');
+  assert.equal(root.querySelectorAll('.best-action').length, 0);
+  assert.match(root.querySelector('.advice').textContent, /操作窗口已结束/);
+  assert.equal(policy.status, 'ready', 'rendering must not mutate model output');
+  show({...policy, status:'analysis'});
+  assert.equal(root.querySelectorAll('.best-action').length, 0);
+});
+
+test('policy suggestions expire without another event and old timers cannot clear a newer window', () => {
+  let time = 1000;
+  const {root, api, show, window, timers, runTimers, events} = overlay(undefined, () => time);
+  let timing = {receivedAt:1000, timeFixed:5000, timeAdd:20000};
+  window.__mjMonitor = {getSnapshot:() => ({state:{operationTiming:timing}})};
+  const policy = {status:'ready', kind:'policy', best:{action:'kita'},
+    candidates:[{action:'kita', policyProbability:1}]};
+  show(policy);
+  assert.equal(timers.size, 1);
+  time = 25999; runTimers();
+  assert.equal(root.querySelectorAll('.best-action').length, 1);
+  time = 26000; runTimers();
+  assert.equal(root.querySelectorAll('.best-action').length, 0);
+  assert.equal(timers.size, 0);
+  assert.equal(root.querySelector('.advice').dataset.status, 'waiting');
+  timing = {...timing, receivedAt:time};
+  show(policy, normalText, 'test:2');
+  const oldTimer = [...timers.values()][0].fn;
+  show(policy, normalText, 'test:3');
+  assert.equal(timers.size, 1, 'replacing a suggestion cancels its timer');
+  oldTimer();
+  assert.equal(root.querySelectorAll('.best-action').length, 1);
+  api.invalidateAdvice();
+  assert.equal(timers.size, 0);
+  assert.equal(root.querySelector('.advice').hidden, true);
+  show(policy, normalText, 'test:4');
+  events.get('pagehide')();
+  assert.equal(timers.size, 0, 'page cleanup cancels the timer');
+  assert.equal(root.querySelector('.advice').hidden, true);
+});
 
 test('automation starts off in four-player east mode and missing controller cannot change it', () => {
   const {root} = overlay();

@@ -1,0 +1,496 @@
+"""Streaming corpus training, provenance and split regressions."""
+from copy import deepcopy
+import hashlib
+import json
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+
+try:
+    import numpy as np
+    import torch
+    import zstandard
+except ImportError:
+    np = torch = zstandard = None
+
+from test_policy_model import visible_state
+
+
+@unittest.skipIf(torch is None, "optional policy training and zstandard dependencies are not installed")
+class CorpusTrainingTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        torch.set_num_threads(1)
+
+    def setUp(self):
+        self.folder = tempfile.TemporaryDirectory()
+        self.addCleanup(self.folder.cleanup)
+        self.root = Path(self.folder.name)
+
+    def write_game(self, identifier, count, compressed=True):
+        from policy_actions import legal_actions
+        from policy_features import RULESET
+        rows = []
+        for index in range(count):
+            state = visible_state()
+            state["left"] -= index
+            actions = legal_actions(state)
+            rows.append({"schemaVersion": 1, "ruleset": RULESET, "gameId": identifier,
+                         "roundId": "0", "decisionId": f"0:{index}", "seat": 0,
+                         "state": state, "action": actions[index % len(actions)], "labelSource": "accepted"})
+        data = "".join(json.dumps(row) + "\n" for row in rows).encode()
+        name = identifier + (".jsonl.zst" if compressed else ".jsonl")
+        if compressed:
+            data = zstandard.ZstdCompressor().compress(data)
+        (self.root / name).write_bytes(data)
+        return {"gameId": identifier, "path": name, "samples": count,
+                "sha256": hashlib.sha256(data).hexdigest()}
+
+    def manifest(self, count=6):
+        rows = [self.write_game(f"game-{i}", i % 3 + 2) for i in range(count)]
+        path = self.root / "manifest.jsonl"
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+        return path, rows
+
+    def frozen_manifest(self):
+        from policy_split import freeze_split
+        path, rows = self.manifest()
+        for row in rows:
+            row["sourceSha256"] = hashlib.sha256(("source:" + row["gameId"]).encode()).hexdigest()
+            row["converterSignature"] = "a" * 64
+        corpus = [{"gameId": row["gameId"], "compressedSha256": row["sourceSha256"],
+                   "eventsSha256": hashlib.sha256(("events:" + row["gameId"]).encode()).hexdigest()}
+                  for row in rows]
+        split = freeze_split(corpus, [row["gameId"] for row in rows], {}, count=len(rows))
+        split_path = self.root / "split.json"
+        split_path.write_text(json.dumps(split))
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+        return path, rows, split_path, split
+
+    def test_frozen_partition_selection_reads_only_manifest_and_enforces_completeness(self):
+        from policy_corpus_training import read_manifest
+        path, rows, split_path, split = self.frozen_manifest()
+        names = ("train", "validation")
+        selected_ids = {game for name in names for game in split["groups"][name]}
+        selected_rows = [row for row in rows if row["gameId"] in selected_ids]
+        for row in rows:
+            (self.root / row["path"]).unlink()
+            if row["gameId"] not in selected_ids:
+                row["converterSignature"] = "b" * 64
+        for supplied in (rows, selected_rows):
+            path.write_text("".join(json.dumps(row) + "\n" for row in supplied))
+            partitions, groups, audit = read_manifest(path, 42, split_file=split_path, partitions=names)
+            self.assertEqual(groups, {name: split["groups"][name] for name in names})
+            self.assertEqual(set(partitions), set(names))
+            self.assertEqual(audit["manifestGames"], len(supplied))
+            self.assertEqual(audit["selectedGames"], len(selected_rows))
+            self.assertEqual(audit["selectedSamples"], sum(row["samples"] for row in selected_rows))
+            self.assertEqual(audit["converterSignature"], "a" * 64)
+        for invalid in (selected_rows[1:], [{**selected_rows[0], "gameId": "unknown"}, *selected_rows[1:]]):
+            path.write_text("".join(json.dumps(row) + "\n" for row in invalid))
+            with self.assertRaisesRegex(ValueError, "manifest games"):
+                read_manifest(path, 42, split_file=split_path, partitions=names)
+        with self.assertRaisesRegex(ValueError, "requires a frozen split"):
+            read_manifest(path, 42, partitions=names)
+
+    def test_validation_only_accepts_full_and_selected_frozen_manifests_without_test_reads(self):
+        import policy_corpus_training as corpus
+        path, rows, split_path, split = self.frozen_manifest()
+        selected_rows = [row for row in rows if row["gameId"] not in split["groups"]["test"]]
+        for row in rows:
+            if row not in selected_rows:
+                (self.root / row["path"]).unlink()
+        original = corpus.load_game
+        seen = set()
+
+        def guarded(row, *args, **kwargs):
+            self.assertNotIn(row["gameId"], split["groups"]["test"])
+            seen.add(row["gameId"])
+            return original(row, *args, **kwargs)
+
+        for index, supplied in enumerate((rows, selected_rows)):
+            path.write_text("".join(json.dumps(row) + "\n" for row in supplied))
+            with patch.object(corpus, "load_game", side_effect=guarded):
+                _, report = corpus.train_corpus(path, self.root / f"selected-{index}.npz", epochs=1,
+                    batch_size=2, config={"channels": 4, "blocks": 1, "hidden": 8},
+                    validation_only=True, split_file=split_path)
+            self.assertEqual(report["gameSplit"], {name: split["groups"][name] for name in ("train", "validation")})
+            self.assertEqual(set(report["metrics"]), {"validation"})
+        self.assertEqual(seen, {row["gameId"] for row in selected_rows})
+
+    def test_cache_cli_selects_frozen_partitions_without_dispatching_test_games(self):
+        from concurrent.futures import ThreadPoolExecutor
+        from contextlib import redirect_stdout
+        import io
+        import sys
+        import policy_corpus_training as corpus
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        import policy_prepare_cache as prepare
+        path, rows, split_path, split = self.frozen_manifest()
+        allowed = set(split["groups"]["train"] + split["groups"]["validation"])
+        for row in rows:
+            if row["gameId"] not in allowed:
+                (self.root / row["path"]).unlink()
+        original = corpus.prepare_game_cache
+        seen = set()
+
+        def guarded(args):
+            self.assertIn(args[0]["gameId"], allowed)
+            seen.add(args[0]["gameId"])
+            return original(args)
+
+        argv = ["policy_prepare_cache", "--manifest", str(path), "--players", "4",
+                "--encoded-cache", str(self.root / "cache"), "--partitions", "train", "validation"]
+        with patch.object(sys, "argv", argv), self.assertRaises(SystemExit):
+            prepare.main()
+        output = io.StringIO()
+        with patch.object(sys, "argv", argv + ["--split", str(split_path)]), \
+                patch.object(prepare, "ProcessPoolExecutor", ThreadPoolExecutor), \
+                patch.object(corpus, "prepare_game_cache", side_effect=guarded), redirect_stdout(output):
+            prepare.main()
+        report = json.loads(output.getvalue().splitlines()[-1])
+        self.assertEqual(seen, allowed)
+        self.assertEqual(report["games"], len(allowed))
+        self.assertEqual(report["samples"], sum(row["samples"] for row in rows if row["gameId"] in allowed))
+        self.assertEqual(report["selectedPartitions"], ["train", "validation"])
+        self.assertEqual(report["frozenSplit"]["fullPartitionCounts"]["test"], 1)
+
+    def test_compressed_and_plain_samples_have_identical_features(self):
+        from policy_training import read_samples
+        compressed = self.write_game("game-a", 3)
+        plain = self.write_game("game-a", 3, compressed=False)
+        first, first_audit = read_samples([self.root / compressed["path"]], 4)
+        second, second_audit = read_samples([self.root / plain["path"]], 4)
+        self.assertEqual(len(first), 3)
+        for lhs, rhs in zip(first, second):
+            for field in ("planes", "globals", "actions"):
+                np.testing.assert_array_equal(lhs[field], rhs[field])
+            self.assertEqual(lhs["target"], rhs["target"])
+        self.assertEqual(first_audit["inputs"][0]["sha256"], compressed["sha256"])
+        self.assertEqual(second_audit["inputs"][0]["sha256"], plain["sha256"])
+
+    def test_manifest_split_is_disjoint_deterministic_and_subset_is_explicit(self):
+        from policy_corpus_training import read_manifest
+        path, rows = self.manifest(40)
+        first, groups, audit = read_manifest(path, seed=42, max_games=30)
+        path.write_text("".join(json.dumps(row) + "\n" for row in reversed(rows)))
+        second, reversed_groups, _ = read_manifest(path, seed=42, max_games=30)
+        self.assertEqual(groups, reversed_groups)
+        self.assertEqual({name: len(values) for name, values in groups.items()},
+                         {"train": 24, "validation": 3, "test": 3})
+        combined = [identifier for values in groups.values() for identifier in values]
+        self.assertEqual(len(set(combined)), 30)
+        self.assertEqual(audit["manifestGames"], 40)
+        self.assertEqual(audit["selectedGames"], 30)
+        self.assertEqual(audit["maxGames"], 30)
+        self.assertEqual(audit["matchLengthCoverage"], {"unknown": 30})
+        self.assertEqual(first, second)
+        with self.assertRaisesRegex(ValueError, "three distinct games"):
+            read_manifest(path, seed=42, max_games=2)
+
+    def test_manifest_and_shard_identity_counts_and_hashes_are_enforced(self):
+        from policy_corpus_training import read_manifest, load_game
+        path, rows = self.manifest()
+        for changed in ([*rows, rows[0]], [{**rows[0], "path": "../outside.jsonl.zst"}, *rows[1:]],
+                        [{**rows[0], "samples": 0}, *rows[1:]],
+                        [{**rows[0], "sha256": "bad"}, *rows[1:]]):
+            path.write_text("".join(json.dumps(row) + "\n" for row in changed))
+            with self.assertRaises(ValueError):
+                read_manifest(path, 42)
+        path.write_text("".join(json.dumps(row) + "\n" for row in rows))
+        groups, _, _ = read_manifest(path, 42)
+        row = groups["train"][0]
+        for changed in ({**row, "gameId": "wrong-game"}, {**row, "samples": row["samples"] + 1},
+                        {**row, "sha256": "0" * 64}):
+            with self.assertRaises(ValueError):
+                load_game(changed, 4)
+
+    def test_frozen_manifest_preserves_partitions_and_rejects_mixed_converters(self):
+        from policy_corpus_training import read_manifest
+        from policy_split import freeze_split
+        path, rows = self.manifest(6)
+        corpus = []
+        for i, row in enumerate(rows):
+            row['sourceSha256'] = hashlib.sha256(f'source-{i}'.encode()).hexdigest()
+            row['converterSignature'] = 'a' * 64
+            corpus.append({'gameId': row['gameId'], 'compressedSha256': row['sourceSha256'],
+                           'eventsSha256': hashlib.sha256(f'events-{i}'.encode()).hexdigest()})
+        split = freeze_split(corpus, [r['gameId'] for r in rows], {}, count=6)
+        split_path = self.root / 'split.json'
+        split_path.write_text(json.dumps(split))
+        path.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+        _, groups, audit = read_manifest(path, 999, split_file=split_path)
+        self.assertEqual(groups, split['groups'])
+        self.assertEqual(audit['converterSignature'], 'a' * 64)
+        with self.assertRaisesRegex(ValueError, 'cannot change a frozen split'):
+            read_manifest(path, 42, max_games=3, split_file=split_path)
+        rows[0]['converterSignature'] = 'b' * 64
+        path.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+        with self.assertRaisesRegex(ValueError, 'mixes converter'):
+            read_manifest(path, 42, split_file=split_path)
+
+    def test_metric_merge_weights_decisions_instead_of_games(self):
+        from policy_corpus_training import merge_metrics
+        from policy_training import CandidatePolicy, read_samples, evaluate
+        row = self.write_game("metrics", 4)
+        samples, _ = read_samples([self.root / row["path"]], 4)
+        samples = samples + [deepcopy(samples[0])]
+        samples[-1]["actions"] = samples[-1]["actions"][:1]
+        samples[-1]["target"] = 0
+        model = CandidatePolicy({"channels": 4, "blocks": 1, "hidden": 8})
+        direct = evaluate(model, samples, "cpu", 2)
+        merged = merge_metrics([evaluate(model, samples[:1], "cpu", 2),
+                                evaluate(model, samples[1:], "cpu", 2)])
+        for field in ("samples", "choices", "forced", "byAction", "macroActionAccuracy"):
+            self.assertEqual(merged[field], direct[field])
+        for field in ("choiceTop1", "choiceTop3", "choiceNll"):
+            self.assertAlmostEqual(merged[field], direct[field], places=6)
+
+    def test_shared_state_scoring_preserves_logits_and_training_gradients(self):
+        import torch
+        from policy_training import CandidatePolicy, read_samples, batch_tensors
+        row = self.write_game('factorized', 3)
+        samples, _ = read_samples([self.root / row['path']], 4)
+        model = CandidatePolicy({'channels': 4, 'blocks': 1, 'hidden': 8})
+        planes, globals_, actions, mask, targets = batch_tensors(samples, 'cpu')
+        old_encoded = model.blocks(torch.relu(model.conv(planes))).flatten(1)
+        old_encoded = torch.relu(model.state(torch.cat((old_encoded, globals_), dim=1)))
+        expanded = old_encoded[:, None, :].expand(-1, actions.shape[1], -1)
+        expected = model.score(torch.cat((expanded, actions), dim=2)).squeeze(-1).masked_fill(~mask, -torch.inf)
+        actual = model(planes, globals_, actions, mask)
+        torch.testing.assert_close(actual, expected, atol=1e-6, rtol=1e-5)
+        torch.nn.functional.cross_entropy(expected, targets).backward()
+        old_gradients = {name: value.grad.clone() for name, value in model.named_parameters()}
+        model.zero_grad(set_to_none=True)
+        torch.nn.functional.cross_entropy(actual, targets).backward()
+        for name, value in model.named_parameters():
+            torch.testing.assert_close(value.grad, old_gradients[name], atol=1e-6, rtol=1e-5)
+
+    def test_streamed_training_exports_held_out_report_and_reads_one_game_at_a_time(self):
+        import policy_corpus_training as corpus
+        from policy_model import PolicyModel
+        path, _ = self.manifest()
+        output = self.root / "model.npz"
+        actual_read = corpus.read_samples
+        actual_batch = corpus.batch_tensors
+        calls, sizes = [], []
+
+        def read_one(paths, players):
+            self.assertEqual(len(paths), 1)
+            calls.append(paths[0])
+            return actual_read(paths, players)
+
+        def bounded_batch(samples, device):
+            sizes.append(len(samples))
+            self.assertLessEqual(len(samples), 2)
+            return actual_batch(samples, device)
+
+        with patch.object(corpus, "read_samples", side_effect=read_one), \
+                patch.object(corpus, "batch_tensors", side_effect=bounded_batch):
+            _, report = corpus.train_corpus(path, output, max_games=4, batch_size=2,
+                                             config={"channels": 4, "blocks": 1, "hidden": 8})
+        self.assertTrue(calls)
+        self.assertTrue(sizes)
+        self.assertEqual(report["purpose"], "behavior-cloning")
+        self.assertEqual(report["dataAudit"]["manifestGames"], 6)
+        self.assertEqual(report["dataAudit"]["selectedGames"], 4)
+        self.assertEqual(report["dataAudit"]["selectedGameCounts"], {"train": 2, "validation": 1, "test": 1})
+        self.assertEqual(report["bestEpoch"], 1)
+        self.assertTrue(report["exportParity"]["argmaxAgreement"])
+        self.assertLess(report["exportParity"]["maxAbsError"], 1e-4)
+        self.assertEqual(PolicyModel(output).metadata["purpose"], "behavior-cloning")
+        self.assertEqual(json.loads(output.with_suffix(".report.json").read_text()), report)
+        for name, values in report["metrics"].items():
+            self.assertEqual(values["samples"], report["dataAudit"]["partitions"][name]["samples"])
+            self.assertIsNotNone(values["choiceNll"])
+
+    def test_failed_export_parity_keeps_existing_model_and_removes_temporary(self):
+        import policy_corpus_training as corpus
+        path, _ = self.manifest(3)
+        output = self.root / "model.npz"
+        output.write_bytes(b"existing-model")
+        with patch.object(corpus, "verify_export", side_effect=ValueError("export parity failed")):
+            with self.assertRaisesRegex(ValueError, "export parity failed"):
+                corpus.train_corpus(path, output, batch_size=2,
+                                    config={"channels": 4, "blocks": 1, "hidden": 8})
+        self.assertEqual(output.read_bytes(), b"existing-model")
+        self.assertFalse(output.with_suffix(".report.json").exists())
+        self.assertEqual(list(self.root.glob(".policy-corpus-*.npz")), [])
+
+    def test_encoded_cache_is_exact_reuses_verified_features_and_rechecks_source(self):
+        import policy_corpus_training as corpus
+        path, _ = self.manifest()
+        partitions, _, _ = corpus.read_manifest(path, 42)
+        row = partitions["train"][0]
+        expected, audit = corpus.load_game(row, 4)
+        cache = self.root / "cache"
+        corpus.load_game(row, 4, cache)
+        with patch.object(corpus, "read_samples", side_effect=AssertionError("cache recomputed features")):
+            actual, cached_audit = corpus.load_game(row, 4, cache)
+        self.assertEqual(cached_audit, audit)
+        for left, right in zip(expected, actual):
+            for key in ("planes", "globals", "actions"):
+                np.testing.assert_array_equal(left[key], right[key])
+            for key in ("game", "target", "action", "labelSource"):
+                self.assertEqual(left[key], right[key])
+        row["path"].write_bytes(b"changed source bytes")
+        with self.assertRaisesRegex(ValueError, "SHA256 mismatch"):
+            corpus.load_game(row, 4, cache)
+
+    def test_resume_restores_exact_training_order_optimizer_rng_and_final_test_once(self):
+        import policy_corpus_training as corpus
+        path, _ = self.manifest()
+        options = {"epochs": 2, "batch_size": 2, "checkpoint_every_games": 1,
+                   "game_window": 2, "config": {"channels": 4, "blocks": 1, "hidden": 8}}
+        expected, expected_report = corpus.train_corpus(path, self.root / "baseline.npz", **options)
+        output = self.root / "resumed.npz"
+        original_save, original_evaluate = corpus.save_training_checkpoint, corpus.evaluate_corpus
+        phases = []
+
+        def interrupt_after_save(checkpoint, payload):
+            original_save(checkpoint, payload)
+            raise InterruptedError("simulated process interruption")
+
+        def record_evaluation(*args, **kwargs):
+            phases.append(kwargs.get("phase"))
+            return original_evaluate(*args, **kwargs)
+
+        with patch.object(corpus, "save_training_checkpoint", side_effect=interrupt_after_save), \
+                patch.object(corpus, "evaluate_corpus", side_effect=record_evaluation):
+            with self.assertRaises(InterruptedError):
+                corpus.train_corpus(path, output, **options)
+        self.assertEqual(phases, [])
+        with patch.object(corpus, "evaluate_corpus", side_effect=record_evaluation):
+            actual, report = corpus.train_corpus(path, output, resume=True, **options)
+        for key, value in expected.state_dict().items():
+            torch.testing.assert_close(value, actual.state_dict()[key], rtol=0, atol=0)
+        for field in ("gameSplit", "history", "metrics", "bestEpoch"):
+            self.assertEqual(report[field], expected_report[field])
+        self.assertEqual(report["streaming"]["optimizerSteps"], expected_report["streaming"]["optimizerSteps"])
+        self.assertEqual(phases.count("final-test"), 1)
+        self.assertLessEqual(report["streaming"]["largestTrainingWindowSamples"],
+                             2 * report["streaming"]["largestTrainingGameSamples"])
+        with self.assertRaisesRegex(ValueError, "already completed"):
+            corpus.train_corpus(path, output, resume=True, **options)
+
+    def test_resume_rejects_changed_hyperparameters_or_manifest(self):
+        import policy_corpus_training as corpus
+        path, _ = self.manifest()
+        output = self.root / "resumed.npz"
+        options = {"epochs": 2, "batch_size": 2, "checkpoint_every_games": 1,
+                   "config": {"channels": 4, "blocks": 1, "hidden": 8}}
+        original_save = corpus.save_training_checkpoint
+
+        def interrupt_after_save(checkpoint, payload):
+            original_save(checkpoint, payload)
+            raise InterruptedError()
+
+        with patch.object(corpus, "save_training_checkpoint", side_effect=interrupt_after_save):
+            with self.assertRaises(InterruptedError):
+                corpus.train_corpus(path, output, **options)
+        for changed in ({"batch_size": 3}, {"learning_rate": .002}, {"seed": 43}, {"epochs": 3},
+                        {"game_window": 2}, {"final_lr_ratio": .1},
+                        {"action_weights": {"discard": 2.}}, {"opportunity_weights": {"discard": 2.}}):
+            with self.assertRaisesRegex(ValueError, "differs in source"):
+                corpus.train_corpus(path, output, resume=True, **{**options, **changed})
+        path.write_text("\n".join(reversed(path.read_text().splitlines())) + "\n")
+        with self.assertRaisesRegex(ValueError, "differs in source"):
+            corpus.train_corpus(path, output, resume=True, **options)
+
+    def test_validation_only_preserves_fixed_prefixes_and_never_reads_test(self):
+        import policy_corpus_training as corpus
+        path, _ = self.manifest(30)
+        partitions, groups, _ = corpus.read_manifest(path, 42)
+        allowed = {row["path"] for name in ("train", "validation") for row in partitions[name][:2]}
+        original = corpus.load_game
+        seen = []
+
+        def guarded(row, *args, **kwargs):
+            self.assertIn(row["path"], allowed)
+            seen.append(row["path"])
+            return original(row, *args, **kwargs)
+
+        with patch.object(corpus, "load_game", side_effect=guarded):
+            _, report = corpus.train_corpus(path, self.root / "experiment.npz", epochs=2,
+                batch_size=2, config={"channels": 4, "blocks": 1, "hidden": 8},
+                validation_only=True, train_game_limit=2, validation_game_limit=2,
+                final_lr_ratio=.1, action_weights={"discard": 1.5}, save_epoch_models=True)
+        self.assertTrue(seen)
+        self.assertEqual(report["gameSplit"], {name: groups[name][:2] for name in ("train", "validation")})
+        self.assertEqual(set(report["metrics"]), {"validation"})
+        self.assertEqual(report["history"][0]["learningRate"], .001)
+        self.assertAlmostEqual(report["history"][1]["learningRate"], .0001)
+        self.assertTrue((self.root / "experiment.epoch-2.npz").exists())
+        with self.assertRaisesRegex(ValueError, "only permitted"):
+            corpus.train_corpus(path, self.root / "invalid.npz", train_game_limit=2)
+
+    def test_weighted_loss_keeps_negative_examples_and_complete_candidate_targets(self):
+        from policy_corpus_training import supervised_loss
+        from policy_features import ACTIONS
+        logits = torch.tensor([[0., 1., 2.], [1., 2., 0.]], requires_grad=True)
+        targets = torch.tensor([2, 0])
+        actions = torch.zeros(2, 3, len(ACTIONS))
+        for row in range(2):
+            for column, action in enumerate(("pass", "pon", "daiminkan")):
+                actions[row, column, ACTIONS.index(action)] = 1
+        losses = torch.nn.functional.cross_entropy(logits, targets, reduction="none")
+        ones = torch.ones_like(losses)
+        torch.testing.assert_close(supervised_loss(logits, targets, actions, {}),
+                                   (losses * ones).sum() / ones.sum(), rtol=0, atol=0)
+        weighted = supervised_loss(logits, targets, actions, {"daiminkan": 4.})
+        torch.testing.assert_close(weighted, (4 * losses[0] + losses[1]) / 5)
+        weighted.backward()
+        self.assertGreater(float(logits.grad[1].abs().sum()), 0)
+
+    def test_opportunity_weight_depends_on_legal_set_and_retains_negative_labels(self):
+        from policy_corpus_training import supervised_loss, train_corpus
+        from policy_features import ACTIONS
+        def encoded(*names):
+            return np.eye(len(ACTIONS), dtype=np.float32)[[ACTIONS.index(name) for name in names]]
+        samples = [{"action": "daiminkan", "actions": encoded("daiminkan", "pass")},
+                   {"action": "pass", "actions": encoded("daiminkan", "pass")},
+                   {"action": "discard", "actions": encoded("discard", "riichi")}]
+        logits = torch.tensor([[0., 1.], [1., 0.], [0., 2.]], requires_grad=True)
+        targets = torch.tensor([0, 1, 0])
+        losses = torch.nn.functional.cross_entropy(logits, targets, reduction="none")
+        actions = torch.as_tensor(np.stack([sample["actions"] for sample in samples]))
+        result = supervised_loss(logits, targets, actions, {}, {"daiminkan": 4.})
+        torch.testing.assert_close(result, (4 * losses[0] + 4 * losses[1] + losses[2]) / 9)
+        result.backward()
+        self.assertGreater(float(logits.grad[1].abs().sum()), 0)
+        with self.assertRaisesRegex(ValueError, "invalid learning rate ratio or action"):
+            train_corpus(self.root / "unread.jsonl", self.root / "unwritten.npz",
+                         opportunity_weights={"kakan": 2.})
+
+    def test_vectorized_weights_preserve_padding_duplicates_clamp_and_recorded_label(self):
+        from policy_corpus_training import supervised_loss
+        from policy_features import ACTIONS
+        candidates = (("pass", "daiminkan", "daiminkan"), ("chi", "chi", "pon"),
+                      ("chi", "chi"), ("discard", "riichi", "pass"))
+        actions = torch.zeros(4, 4, len(ACTIONS))
+        for row, names in enumerate(candidates):
+            for column, action in enumerate(names):
+                actions[row, column, ACTIONS.index(action)] = 1
+        targets = torch.tensor([0, 1, 1, 1])
+        logits = torch.tensor([[0., 1., 2., -torch.inf], [2., 0., 1., -torch.inf],
+                               [1., 0., -torch.inf, -torch.inf], [2., 0., 1., -torch.inf]], requires_grad=True)
+        # The actual pass receives its legal kan opportunity weight, duplicate
+        # chi candidates do not add weight, and opportunities below one clamp.
+        expected_weights = torch.tensor([2., 3., 1.5, .75])
+        reference_logits = logits.detach().clone().requires_grad_()
+        reference_losses = torch.nn.functional.cross_entropy(reference_logits, targets, reduction="none")
+        expected = (reference_losses * expected_weights).sum() / expected_weights.sum()
+        actual = supervised_loss(logits, targets, actions,
+                                 {"pass": .5, "chi": 1.5, "riichi": .75},
+                                 {"daiminkan": 4., "chi": .25, "pon": 2.})
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+        actual.backward()
+        expected.backward()
+        torch.testing.assert_close(logits.grad, reference_logits.grad, rtol=0, atol=0)
+        self.assertGreater(float(logits.grad[0].abs().sum()), 0)
+        self.assertEqual(float(logits.grad[:, -1].abs().sum()), 0)
+
+
+if __name__ == "__main__":
+    unittest.main()
